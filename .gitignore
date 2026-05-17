@@ -2,7 +2,10 @@
 # 🔐 ENV & SECRETS
 # =========================
 .env
-.env.*
+.env.local
+.env.production
+.env.*.local
+!.env.example
 *.key
 *.pem
 *.crt
@@ -89,5 +92,3 @@ Thumbs.db
 *.pid.lock
 
 
-.env.production
-.env.local
