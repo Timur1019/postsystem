@@ -10,7 +10,8 @@
     "dev": "POS_EMBEDDED=1 electron .",
     "dist": "electron-builder",
     "dist:mac": "electron-builder --mac",
-    "dist:win": "electron-builder --win"
+    "dist:win": "electron-builder --win --config.win.signAndEditExecutable=false --config.win.verifyUpdateCodeSignature=false",
+    "dist:win:dir": "electron-builder --win dir --config.win.signAndEditExecutable=false"
   },
   "build": {
     "appId": "com.aurent.pos.cashier",
@@ -46,7 +47,9 @@
       "target": [
         { "target": "nsis", "arch": ["x64"] }
       ],
-      "artifactName": "Aurent-Cashier-Setup-${version}-${arch}.${ext}"
+      "artifactName": "Aurent-Cashier-Setup-${version}-${arch}.${ext}",
+      "signAndEditExecutable": false,
+      "verifyUpdateCodeSignature": false
     },
     "nsis": {
       "oneClick": false,
