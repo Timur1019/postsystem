@@ -43,13 +43,21 @@
       "target": ["dmg"]
     },
     "win": {
-      "target": ["nsis"]
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "artifactName": "Aurent-Cashier-Setup-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Aurent Cashier"
+      "shortcutName": "Aurent Cashier",
+      "unicode": true,
+      "installerLanguages": ["ru_RU", "en_US"],
+      "language": "1049",
+      "deleteAppDataOnUninstall": false
     }
   },
   "dependencies": {

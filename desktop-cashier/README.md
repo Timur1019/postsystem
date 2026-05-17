@@ -20,13 +20,26 @@ SERVER_HOST=111.88.132.126 SERVER_PORT=8080 ./scripts/build-cashier.sh
 
 ## Windows .exe
 
-Собирается **только на Windows**:
+Собирается **только на ПК с Windows 10/11** (64-bit):
 
-```bash
-SERVER_HOST=111.88.132.126 ./scripts/build-cashier.sh
+```powershell
+cd desktop-cashier
+npm install
+# сначала web-dist (см. build-cashier.sh)
+npm run dist:win
 ```
 
-Скопировать `desktop-cashier/release/*Setup*.exe` в `dist/.../windows/`.
+Файл: `release/Aurent-Cashier-Setup-1.0.0-x64.exe`
+
+### Совместимость ОС
+
+| ОС | Поддержка |
+|----|-----------|
+| Windows 11 x64 | Да |
+| Windows 10 x64 | Да |
+| Windows 7 / 8 | **Нет** (Electron 28 требует Win10+) |
+
+На Windows 7 — касса через браузер: `http://IP_СЕРВЕРА/`
 
 ## Разработка
 
