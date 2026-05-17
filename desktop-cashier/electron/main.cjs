@@ -118,7 +118,15 @@ async function waitForServices() {
     };
   }
 
-  let apiOk = await httpOk(config.apiHealthUrl);
+  // API через встроенный прокси (так же ходит форма входа)
+  const apiViaProxy = config.useEmbedded
+    ? `${config.cashierUrl}/api/v1/actuator/health`
+    : config.apiHealthUrl;
+
+  let apiOk = await httpOk(apiViaProxy);
+  if (!apiOk && config.useEmbedded) {
+    apiOk = await httpOk(config.apiHealthUrl);
+  }
   if (!apiOk) {
     try {
       await configureServerInteractive();

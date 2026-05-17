@@ -25,11 +25,27 @@ function startEmbeddedUi({ port, backendOrigin }) {
   }
 
   const app = express();
+  const target = String(backendOrigin || '').replace(/\/$/, '');
+  // pathFilter без app.use('/api') — иначе Express срезает префикс и ломает /api/v1/*
   app.use(
-    '/api',
     createProxyMiddleware({
-      target: backendOrigin,
+      target,
       changeOrigin: true,
+      secure: false,
+      pathFilter: (pathname) => pathname.startsWith('/api'),
+      on: {
+        error: (err, _req, res) => {
+          console.error('[Aurent proxy]', err.message);
+          if (res && typeof res.writeHead === 'function' && !res.headersSent) {
+            res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(
+              JSON.stringify({
+                message: 'Не удалось связаться с сервером Aurent. Проверьте IP, порт 8080 и интернет.',
+              })
+            );
+          }
+        },
+      },
     })
   );
   app.use(express.static(distPath, { index: false }));

@@ -62,6 +62,8 @@
     "signIn": "Kirish",
     "welcome": "Xush kelibsiz, {{name}}!",
     "failed": "Kirish xatosi",
+    "badCredentials": "Login yoki parol noto‘g‘ri",
+    "networkError": "Server bilan aloqa yo‘q. IP, 8080 porti va Aurent → server sozlamalarini tekshiring",
     "footer": "Aurent · © {{year}}"
   },
   "validation": {

@@ -58,7 +58,14 @@ export default function LoginPage() {
             : '/dashboard';
       navigate(target, { replace: true });
     } catch (err) {
-      toast.error(err.response?.data?.message ?? t('login.failed'));
+      const apiMsg = err.response?.data?.message;
+      if (!err.response) {
+        toast.error(t('login.networkError'));
+      } else if (apiMsg) {
+        toast.error(apiMsg === 'Invalid username or password' ? t('login.badCredentials') : apiMsg);
+      } else {
+        toast.error(t('login.failed'));
+      }
     } finally {
       setLoading(false);
     }

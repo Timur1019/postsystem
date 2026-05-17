@@ -62,6 +62,8 @@
     "signIn": "Войти",
     "welcome": "С возвращением, {{name}}!",
     "failed": "Ошибка входа",
+    "badCredentials": "Неверный логин или пароль",
+    "networkError": "Нет связи с сервером. Проверьте IP, порт 8080 и меню Aurent → «Настройка сервера»",
     "footer": "Aurent · © {{year}}"
   },
   "validation": {
