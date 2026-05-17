@@ -1,14 +1,71 @@
-const { app, BrowserWindow, dialog, shell } = require('electron');
+const { app, BrowserWindow, dialog, shell, Menu } = require('electron');
+const fs = require('fs');
 const http = require('http');
 const path = require('path');
 const { loadConfig } = require('./config.cjs');
 const { startEmbeddedUi, stopEmbeddedUi } = require('./embedded-server.cjs');
-const { showSetupWindow } = require('./setup-window.cjs');
+const { showSetupWindow, configPath } = require('./setup-window.cjs');
 
 const ALLOWED_PATH_PREFIXES = ['/login', '/cashier', '/receipt'];
 
 let mainWindow;
 let config;
+
+function hasUserServerConfig() {
+  try {
+    return fs.existsSync(configPath());
+  } catch {
+    return false;
+  }
+}
+
+async function configureServerInteractive() {
+  const saved = await showSetupWindow(config);
+  config.backendOrigin = saved.backendOrigin;
+  config.apiHealthUrl = saved.apiHealthUrl;
+  if (config.useEmbedded) {
+    await stopEmbeddedUi();
+    const url = await startEmbeddedUi({
+      port: config.embeddedPort,
+      backendOrigin: config.backendOrigin,
+    });
+    config.cashierUrl = url.replace(/\/$/, '');
+  }
+  return config;
+}
+
+function buildAppMenu() {
+  const template = [
+    {
+      label: 'Aurent',
+      submenu: [
+        {
+          label: 'Настройка сервера…',
+          click: async () => {
+            try {
+              await configureServerInteractive();
+              if (mainWindow) {
+                mainWindow.loadURL(`${config.cashierUrl}/login`);
+              }
+            } catch {
+              // cancelled
+            }
+          },
+        },
+        { type: 'separator' },
+        { role: 'quit', label: 'Выход' },
+      ],
+    },
+    {
+      label: 'Вид',
+      submenu: [
+        { role: 'reload', label: 'Обновить' },
+        { role: 'togglefullscreen', label: 'На весь экран' },
+      ],
+    },
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
 
 function isAllowedLocation(urlString) {
   try {
@@ -64,17 +121,7 @@ async function waitForServices() {
   let apiOk = await httpOk(config.apiHealthUrl);
   if (!apiOk) {
     try {
-      const saved = await showSetupWindow(config);
-      config.backendOrigin = saved.backendOrigin;
-      config.apiHealthUrl = saved.apiHealthUrl;
-      if (config.useEmbedded) {
-        await stopEmbeddedUi();
-        const url = await startEmbeddedUi({
-          port: config.embeddedPort,
-          backendOrigin: config.backendOrigin,
-        });
-        config.cashierUrl = url.replace(/\/$/, '');
-      }
+      await configureServerInteractive();
       apiOk = await httpOk(config.apiHealthUrl);
     } catch {
       apiOk = false;
@@ -133,7 +180,18 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  buildAppMenu();
   config = loadConfig();
+
+  if (!hasUserServerConfig()) {
+    try {
+      await configureServerInteractive();
+      config = loadConfig();
+    } catch {
+      app.quit();
+      return;
+    }
+  }
 
   let check = await waitForServices();
   if (!check.ok) {

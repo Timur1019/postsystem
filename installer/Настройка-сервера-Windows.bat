@@ -6,8 +6,9 @@ set CONFIG_FILE=%CONFIG_DIR%\config.json
 echo.
 echo === Aurent Cashier - адрес сервера ===
 echo.
-set /p HOST=IP или домен сервера (например 192.168.1.50): 
+set /p HOST=IP или домен сервера [111.88.132.126]: 
 set /p PORT=Порт API [8080]: 
+if "%HOST%"=="" set HOST=111.88.132.126
 if "%PORT%"=="" set PORT=8080
 
 if not exist "%CONFIG_DIR%" mkdir "%CONFIG_DIR%"

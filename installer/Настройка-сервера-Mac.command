@@ -5,8 +5,9 @@ CONFIG_FILE="$CONFIG_DIR/config.json"
 echo ""
 echo "=== Aurent Cashier — адрес сервера ==="
 echo ""
-read -r -p "IP или домен сервера (например 192.168.1.50): " HOST
+read -r -p "IP или домен сервера [111.88.132.126]: " HOST
 read -r -p "Порт API [8080]: " PORT
+HOST="${HOST:-111.88.132.126}"
 PORT="${PORT:-8080}"
 
 HOST="${HOST#http://}"

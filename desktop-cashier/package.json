@@ -29,6 +29,10 @@
         "to": "config.default.json"
       },
       {
+        "from": "server.default.json",
+        "to": "server.default.json"
+      },
+      {
         "from": "web-dist",
         "to": "web-dist",
         "filter": ["**/*"]

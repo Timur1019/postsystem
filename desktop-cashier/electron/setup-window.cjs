@@ -7,8 +7,27 @@ function configPath() {
   return path.join(app.getPath('userData'), 'config.json');
 }
 
+function defaultServerHost() {
+  if (process.env.POS_DEFAULT_SERVER_HOST) {
+    return process.env.POS_DEFAULT_SERVER_HOST;
+  }
+  try {
+    const packaged = path.join(process.resourcesPath, 'server.default.json');
+    const dev = path.join(__dirname, '..', 'server.default.json');
+    for (const file of [packaged, dev]) {
+      if (fs.existsSync(file)) {
+        const j = JSON.parse(fs.readFileSync(file, 'utf8'));
+        if (j.host) return String(j.host);
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return '';
+}
+
 function buildSetupHtml(current) {
-  const host = current?.host ?? '';
+  const host = current?.host || defaultServerHost();
   const port = current?.port ?? '8080';
   return `data:text/html;charset=utf-8,${encodeURIComponent(`<!DOCTYPE html>
 <html lang="ru">
