@@ -1,0 +1,10 @@
+package com.pos.dto.company;
+
+public record UpdateCompanyRequest(
+    String name,
+    String legalName,
+    String tin,
+    String address,
+    String phone,
+    Boolean active
+) {}

@@ -1,0 +1,35 @@
+package com.pos.service.cache;
+
+import com.pos.service.analytics.ReportAnalyticsCacheService;
+import com.pos.service.salesledger.SalesLedgerCacheService;
+import com.pos.util.LogUtil;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class PosCacheRefreshScheduler {
+
+    private final ReportAnalyticsCacheService analyticsCacheService;
+    private final SalesLedgerCacheService salesLedgerCacheService;
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void warmOnStartup() {
+        LogUtil.info(PosCacheRefreshScheduler.class, "Warming POS caches on startup (analytics + sales ledger)");
+        refreshAll();
+    }
+
+    @Scheduled(cron = "${app.cache.refresh-cron:0 0 1 * * *}", zone = "${app.cache.zone-id:Asia/Tashkent}")
+    public void nightlyRefresh() {
+        LogUtil.info(PosCacheRefreshScheduler.class, "Nightly POS cache refresh started");
+        refreshAll();
+    }
+
+    private void refreshAll() {
+        analyticsCacheService.refresh();
+        salesLedgerCacheService.refresh();
+    }
+}

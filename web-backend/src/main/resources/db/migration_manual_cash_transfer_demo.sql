@@ -1,0 +1,1 @@
+-- См. migration_manual_z_reports_from_sales.sql (передача кассы = те же Z-отчёты).

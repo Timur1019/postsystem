@@ -1,0 +1,6 @@
+# Разработка: подробные логи приложения и кеша аналитики
+logging:
+  level:
+    root: INFO
+    com.pos: DEBUG
+    com.pos.service.analytics: DEBUG

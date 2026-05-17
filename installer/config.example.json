@@ -1,0 +1,4 @@
+{
+  "backendOrigin": "http://192.168.1.50:8080",
+  "apiHealthUrl": "http://192.168.1.50:8080/api/v1/actuator/health"
+}

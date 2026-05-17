@@ -1,0 +1,69 @@
+/** Маршрут → ключ справочника */
+const ROUTE_MAP = [
+  { test: (p) => p.startsWith('/cashier/pos'), id: 'cashierPos' },
+  { test: (p) => p.startsWith('/cashier/sales'), id: 'cashierSales' },
+  { test: (p) => p === '/dashboard', id: 'dashboard' },
+  { test: (p) => p.startsWith('/products'), id: 'products' },
+  { test: (p) => p.startsWith('/categories'), id: 'categories' },
+  { test: (p) => p.startsWith('/stock/products'), id: 'stockProducts' },
+  { test: (p) => p.startsWith('/stock/suppliers'), id: 'stockSuppliers' },
+  { test: (p) => p.startsWith('/orders'), id: 'ordersList' },
+  { test: (p) => p.startsWith('/cash-registers/list'), id: 'registersList' },
+  { test: (p) => p.startsWith('/cash-registers/z-reports'), id: 'registersZReports' },
+  { test: (p) => p.startsWith('/cash-registers/transfer'), id: 'registersTransfer' },
+  { test: (p) => p.startsWith('/cash-registers/config'), id: 'registersConfig' },
+  { test: (p) => p.startsWith('/reports/sales'), id: 'reportsSales' },
+  { test: (p) => p.startsWith('/reports/returns'), id: 'reportsReturns' },
+  { test: (p) => p.startsWith('/reports/analytics'), id: 'reportsAnalytics' },
+  { test: (p) => p.startsWith('/stores'), id: 'stores' },
+  { test: (p) => p.startsWith('/users'), id: 'users' },
+  { test: (p) => p.startsWith('/checkout'), id: 'checkout' },
+];
+
+export const HANDBOOK_GROUPS = {
+  admin: ['main', 'goods', 'stock', 'orders', 'registers', 'reports', 'settings', 'cashier'],
+  cashier: ['cashier'],
+};
+
+export const ADMIN_MODULE_IDS = [
+  { id: 'dashboard', group: 'main', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'products', group: 'goods', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'categories', group: 'goods', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'stockProducts', group: 'stock', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'stockSuppliers', group: 'stock', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'ordersList', group: 'orders', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'registersList', group: 'registers', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'registersZReports', group: 'registers', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'registersTransfer', group: 'registers', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'registersConfig', group: 'registers', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'reportsSales', group: 'reports', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'reportsReturns', group: 'reports', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'reportsAnalytics', group: 'reports', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'stores', group: 'settings', roles: ['ADMIN'] },
+  { id: 'users', group: 'settings', roles: ['ADMIN'] },
+  { id: 'checkout', group: 'main', roles: ['ADMIN', 'MANAGER'] },
+];
+
+export const CASHIER_MODULE_IDS = [
+  { id: 'cashierPos', group: 'cashier', roles: ['CASHIER', 'ADMIN', 'MANAGER'] },
+  { id: 'cashierSales', group: 'cashier', roles: ['CASHIER', 'ADMIN', 'MANAGER'] },
+];
+
+export function resolveHandbookModuleId(pathname) {
+  if (pathname.startsWith('/handbook/')) {
+    const id = pathname.slice('/handbook/'.length).split('/')[0];
+    return id || 'dashboard';
+  }
+  if (pathname.startsWith('/cashier/handbook/')) {
+    const id = pathname.slice('/cashier/handbook/'.length).split('/')[0];
+    return id || 'cashierPos';
+  }
+  const hit = ROUTE_MAP.find((r) => r.test(pathname));
+  return hit?.id ?? 'dashboard';
+}
+
+export function modulesForScope(scope, userRole) {
+  const list = scope === 'cashier' ? CASHIER_MODULE_IDS : ADMIN_MODULE_IDS;
+  if (!userRole) return list;
+  return list.filter((m) => m.roles.includes(userRole));
+}

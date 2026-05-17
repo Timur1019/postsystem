@@ -1,0 +1,64 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: pos-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 80MB
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/pos_db}
+    username: ${DB_USERNAME:pos_user}
+    password: ${DB_PASSWORD:pos_password}
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        default_batch_fetch_size: 32
+        jdbc:
+          time_zone: UTC
+
+app:
+  cors:
+    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
+  cache:
+    window-months: 2
+    refresh-cron: "0 0 1 * * *"
+    zone-id: Asia/Tashkent
+    loader-threads: 8
+    top-products-limit: 100
+    sales-ledger:
+      enabled: true
+      load-chunks: 8
+  orders:
+    upload-dir: ${ORDERS_UPLOAD_DIR:uploads/orders}
+  jwt:
+    secret: ${JWT_SECRET:change-me-use-at-least-32-chars-for-hs256!!}
+    expiration-ms: 86400000
+  tasnif:
+    enabled: true
+    base-url: https://tasnif.soliq.uz/api/cl-api
+    connect-timeout-ms: 5000
+    read-timeout-ms: 10000
+    default-lang: uz
+    default-type: 2
+    search-type: 1
+
+logging:
+  file:
+    path: ${LOG_PATH:logs}
+    name: ${LOG_FILE:logs/pos-backend.log}
+  level:
+    root: INFO
+    com.pos: INFO

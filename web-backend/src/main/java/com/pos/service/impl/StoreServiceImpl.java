@@ -1,0 +1,152 @@
+package com.pos.service.impl;
+
+import com.pos.dto.shared.PageResponse;
+import com.pos.dto.store.CreateStoreRequest;
+import com.pos.dto.store.StoreResponse;
+import com.pos.dto.store.UpdateStoreRequest;
+import com.pos.entity.Company;
+import com.pos.entity.Store;
+import com.pos.entity.User;
+import com.pos.exception.BadRequestException;
+import com.pos.exception.ResourceNotFoundException;
+import com.pos.mapper.StoreMapper;
+import com.pos.repository.StoreRepository;
+import com.pos.repository.spec.StoreSpecifications;
+import com.pos.service.StoreService;
+import com.pos.service.support.TenantAccessSupport;
+import com.pos.util.LogUtil;
+import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class StoreServiceImpl implements StoreService {
+
+    private final StoreRepository storeRepository;
+    private final StoreMapper storeMapper;
+    private final TenantAccessSupport tenantAccess;
+
+    @Override
+    @Cacheable(value = "stores", key = "'all'")
+    public List<StoreResponse> listStores() {
+        User actor = tenantAccess.currentUser();
+        if (tenantAccess.isSuperAdmin()) {
+            return storeRepository.findAll(Sort.by("name").ascending()).stream().map(storeMapper::toResponse).toList();
+        }
+        if (actor.getCompany() != null) {
+            return storeRepository.findByCompanyIdOrderByNameAsc(actor.getCompany().getId())
+                .stream().map(storeMapper::toResponse).toList();
+        }
+        if (!actor.getStores().isEmpty()) {
+            return actor.getStores().stream().map(storeMapper::toResponse).toList();
+        }
+        return storeRepository.findAll(Sort.by("name").ascending()).stream().map(storeMapper::toResponse).toList();
+    }
+
+    @Override
+    public PageResponse<StoreResponse> listManaged(String search, Integer companyId, Pageable pageable) {
+        Integer scopedCompanyId = resolveListCompanyId(companyId);
+        Pageable sorted = PageRequest.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            pageable.getSort().isSorted() ? pageable.getSort() : Sort.by("name").ascending()
+        );
+        Page<Store> page = storeRepository.findAll(
+            StoreSpecifications.filter(search, scopedCompanyId),
+            sorted
+        );
+        return PageResponse.from(page.map(storeMapper::toResponse));
+    }
+
+    @Override
+    public StoreResponse getById(Integer id) {
+        Store store = requireStore(id);
+        tenantAccess.assertCanAccessStore(store);
+        return storeMapper.toResponse(store);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "stores", allEntries = true)
+    public StoreResponse create(CreateStoreRequest request) {
+        Integer companyId = tenantAccess.resolveCompanyIdForCreate(request.companyId());
+        Company company = tenantAccess.requireCompany(companyId);
+        tenantAccess.assertCanAccessCompany(companyId);
+
+        Store store = Store.builder()
+            .name(request.name().trim())
+            .code(trimOrNull(request.code()))
+            .address(trimOrNull(request.address()))
+            .phone(trimOrNull(request.phone()))
+            .company(company)
+            .active(request.active() == null || request.active())
+            .build();
+        Store saved = storeRepository.save(store);
+        LogUtil.info(StoreServiceImpl.class, "Store created: id={}, name={}", saved.getId(), saved.getName());
+        return storeMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "stores", allEntries = true)
+    public StoreResponse update(Integer id, UpdateStoreRequest request) {
+        Store store = requireStore(id);
+        tenantAccess.assertCanAccessStore(store);
+
+        if (request.name() != null) store.setName(request.name().trim());
+        if (request.code() != null) store.setCode(trimOrNull(request.code()));
+        if (request.address() != null) store.setAddress(trimOrNull(request.address()));
+        if (request.phone() != null) store.setPhone(trimOrNull(request.phone()));
+        if (request.active() != null) store.setActive(request.active());
+        if (request.companyId() != null && tenantAccess.isSuperAdmin()) {
+            store.setCompany(tenantAccess.requireCompany(request.companyId()));
+        }
+
+        LogUtil.info(StoreServiceImpl.class, "Store updated: id={}", id);
+        return storeMapper.toResponse(storeRepository.save(store));
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "stores", allEntries = true)
+    public StoreResponse toggleActive(Integer id) {
+        Store store = requireStore(id);
+        tenantAccess.assertCanAccessStore(store);
+        store.setActive(!store.isActive());
+        Store saved = storeRepository.save(store);
+        LogUtil.info(StoreServiceImpl.class, "Store active toggled: id={}, active={}", id, saved.isActive());
+        return storeMapper.toResponse(saved);
+    }
+
+    private Integer resolveListCompanyId(Integer companyId) {
+        if (tenantAccess.isSuperAdmin()) {
+            return companyId;
+        }
+        User actor = tenantAccess.currentUser();
+        if (actor.getCompany() == null) {
+            throw new BadRequestException("Your account is not linked to a company");
+        }
+        return actor.getCompany().getId();
+    }
+
+    private Store requireStore(Integer id) {
+        return storeRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
+    }
+
+    private static String trimOrNull(String value) {
+        if (!StringUtils.hasText(value)) return null;
+        return value.trim();
+    }
+}

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<StackPane xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.pos.desktop.controller.LoginController"
+           styleClass="root-pane">
+
+    <VBox alignment="CENTER" spacing="0" maxWidth="360" style="-fx-padding: 40;">
+
+        <!-- Logo / header -->
+        <VBox alignment="CENTER" spacing="8" style="-fx-padding: 0 0 32 0;">
+            <Label text="🛒" style="-fx-font-size: 40;"/>
+            <Label text="RetailPOS" styleClass="title-label"/>
+            <Label text="Desktop Edition" styleClass="subtitle-label"/>
+        </VBox>
+
+        <!-- Login card -->
+        <VBox styleClass="card" spacing="16">
+
+            <VBox spacing="6">
+                <Label text="Username" styleClass="field-label"/>
+                <TextField fx:id="usernameField" promptText="e.g. admin"
+                           styleClass="text-field-input" onAction="#handleLogin"/>
+            </VBox>
+
+            <VBox spacing="6">
+                <Label text="Password" styleClass="field-label"/>
+                <PasswordField fx:id="passwordField" promptText="••••••••"
+                               styleClass="text-field-input" onAction="#handleLogin"/>
+            </VBox>
+
+            <Label fx:id="errorLabel" styleClass="error-label" visible="false"
+                   wrapText="true" maxWidth="Infinity"/>
+
+            <Button fx:id="loginButton" text="Sign In" onAction="#handleLogin"
+                    styleClass="btn-primary" maxWidth="Infinity"/>
+        </VBox>
+
+        <Label text="RetailPOS Desktop v1.0"
+               styleClass="footer-label"
+               style="-fx-padding: 24 0 0 0;"/>
+    </VBox>
+</StackPane>

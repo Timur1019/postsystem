@@ -1,0 +1,84 @@
+/* cash-register-details modal */
+.cr-details-modal {
+  width: 100%;
+  max-width: 42rem;
+}
+
+.cr-details-modal__section {
+  border-bottom: 1px solid rgb(226 232 240);
+  padding: 1.25rem 1.5rem;
+}
+
+.dark .cr-details-modal__section {
+  border-color: rgb(51 65 85);
+}
+
+.cr-details-modal__section:last-of-type {
+  border-bottom: none;
+}
+
+.cr-details-modal__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 2rem;
+}
+
+@media (max-width: 520px) {
+  .cr-details-modal__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cr-details-modal__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cr-details-modal__label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: rgb(100 116 139);
+  flex-shrink: 0;
+}
+
+.dark .cr-details-modal__label {
+  color: rgb(148 163 184);
+}
+
+.cr-details-modal__value {
+  text-align: right;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(15 23 42);
+  word-break: break-word;
+}
+
+.dark .cr-details-modal__value {
+  color: rgb(248 250 252);
+}
+
+.cr-details-modal__value--address {
+  max-width: 16rem;
+}
+
+.cr-details-modal__status-active {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(16 185 129);
+}
+
+.cr-details-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid rgb(226 232 240);
+  padding: 1rem 1.5rem;
+}
+
+.dark .cr-details-modal__footer {
+  border-color: rgb(51 65 85);
+}

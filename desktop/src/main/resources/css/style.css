@@ -1,0 +1,252 @@
+/* ============================================================
+   RetailPOS Desktop — Dark Theme
+   ============================================================ */
+
+/* ---- Root / Base ---- */
+.root-pane {
+    -fx-background-color: #0f172a;
+    -fx-font-family: "Segoe UI", "San Francisco", "Helvetica Neue", sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: #e2e8f0;
+}
+
+/* ---- Top bar ---- */
+.topbar {
+    -fx-background-color: #1e293b;
+    -fx-border-color: #334155;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 12 16 12 16;
+}
+.brand-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}
+.topbar-user {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 13px;
+}
+
+/* ---- Cards ---- */
+.card {
+    -fx-background-color: #1e293b;
+    -fx-border-color: #334155;
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 20;
+}
+
+/* ---- Typography ---- */
+.title-label {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}
+.subtitle-label {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 13px;
+}
+.section-heading {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f1f5f9;
+}
+.field-label {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 12px;
+}
+.footer-label {
+    -fx-text-fill: #475569;
+    -fx-font-size: 11px;
+}
+.error-label {
+    -fx-text-fill: #f87171;
+    -fx-font-size: 12px;
+    -fx-background-color: #450a0a;
+    -fx-border-color: #7f1d1d;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 8 12;
+}
+.status-label {
+    -fx-text-fill: #10b981;
+    -fx-font-size: 11px;
+}
+.placeholder-label {
+    -fx-text-fill: #475569;
+    -fx-font-size: 13px;
+}
+.change-label {
+    -fx-text-fill: #10b981;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+/* ---- Inputs ---- */
+.text-field-input {
+    -fx-background-color: #0f172a;
+    -fx-border-color: #334155;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: #f1f5f9;
+    -fx-prompt-text-fill: #475569;
+    -fx-padding: 8 12;
+    -fx-font-size: 13px;
+}
+.text-field-input:focused {
+    -fx-border-color: #10b981;
+    -fx-effect: dropshadow(gaussian, rgba(16,185,129,0.3), 6, 0, 0, 0);
+}
+.combo-input {
+    -fx-background-color: #0f172a;
+    -fx-border-color: #334155;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: #f1f5f9;
+}
+.combo-input .list-cell {
+    -fx-background-color: #1e293b;
+    -fx-text-fill: #f1f5f9;
+}
+
+/* ---- Buttons ---- */
+.btn-primary {
+    -fx-background-color: #10b981;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 10 20;
+    -fx-cursor: hand;
+    -fx-font-size: 13px;
+}
+.btn-primary:hover {
+    -fx-background-color: #059669;
+}
+.btn-primary:pressed {
+    -fx-background-color: #047857;
+}
+.btn-primary:disabled {
+    -fx-opacity: 0.5;
+}
+.btn-large {
+    -fx-font-size: 15px;
+    -fx-padding: 14 20;
+}
+.btn-ghost {
+    -fx-background-color: #1e293b;
+    -fx-border-color: #334155;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: #94a3b8;
+    -fx-padding: 8 14;
+    -fx-cursor: hand;
+}
+.btn-ghost:hover {
+    -fx-background-color: #334155;
+    -fx-text-fill: #f1f5f9;
+}
+.btn-danger {
+    -fx-background-color: #1e293b;
+    -fx-border-color: #ef4444;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: #f87171;
+    -fx-padding: 8 14;
+    -fx-cursor: hand;
+}
+.btn-danger:hover {
+    -fx-background-color: #450a0a;
+}
+
+/* ---- Tables ---- */
+.cart-table {
+    -fx-background-color: #0f172a;
+    -fx-border-color: #334155;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+.cart-table .column-header {
+    -fx-background-color: #1e293b;
+    -fx-border-color: transparent;
+}
+.cart-table .column-header .label {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 11px;
+}
+.cart-table .table-row-cell {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #1e293b transparent;
+    -fx-text-fill: #e2e8f0;
+}
+.cart-table .table-row-cell:selected {
+    -fx-background-color: #1d4ed8;
+}
+.cart-table .table-row-cell:hover {
+    -fx-background-color: #1e293b;
+}
+
+/* ---- List views ---- */
+.product-list {
+    -fx-background-color: #0f172a;
+    -fx-border-color: #334155;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+.product-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #e2e8f0;
+    -fx-padding: 8 12;
+    -fx-border-color: transparent transparent #1e293b transparent;
+}
+.product-list .list-cell:selected {
+    -fx-background-color: #1d4ed8;
+}
+.product-list .list-cell:hover {
+    -fx-background-color: #1e293b;
+}
+
+/* ---- Totals box ---- */
+.totals-box {
+    -fx-background-color: #1e293b;
+    -fx-border-color: #334155;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 12;
+}
+.totals-label {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 13px;
+}
+.totals-value {
+    -fx-text-fill: #e2e8f0;
+    -fx-font-size: 13px;
+}
+.totals-total-label {
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+}
+.totals-total-value {
+    -fx-text-fill: #10b981;
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+}
+
+/* ---- Scroll pane ---- */
+.product-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+}
+.product-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+/* ---- Separator ---- */
+.separator .line {
+    -fx-border-color: #334155;
+}

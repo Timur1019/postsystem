@@ -1,0 +1,59 @@
+{
+  "name": "masterpiece-pos-cashier-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Desktop shell for Aurent cashier (same UI as web)",
+  "main": "electron/main.cjs",
+  "author": "Aurent",
+  "scripts": {
+    "start": "electron .",
+    "dev": "POS_EMBEDDED=1 electron .",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.aurent.pos.cashier",
+    "productName": "Aurent Cashier",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "config.default.json",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "config.default.json",
+        "to": "config.default.json"
+      },
+      {
+        "from": "web-dist",
+        "to": "web-dist",
+        "filter": ["**/*"]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": ["dmg"]
+    },
+    "win": {
+      "target": ["nsis"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Aurent Cashier"
+    }
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "http-proxy-middleware": "^3.0.3"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  }
+}

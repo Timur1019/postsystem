@@ -1,0 +1,102 @@
+/* cash-register-config modal */
+.crc-modal__pick-list {
+  max-height: 9rem;
+  overflow-y: auto;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(226 232 240);
+  padding: 0.5rem;
+}
+
+.dark .crc-modal__pick-list {
+  border-color: rgb(51 65 85);
+}
+
+.crc-modal__pick-row {
+  display: flex;
+  cursor: pointer;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.35rem 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: rgb(30 41 59);
+}
+
+.dark .crc-modal__pick-row {
+  color: rgb(226 232 240);
+}
+
+.crc-modal__pick-row:hover {
+  background: rgb(236 253 245);
+  border-radius: 0.25rem;
+}
+
+.dark .crc-modal__pick-row:hover {
+  background: rgb(6 78 59 / 0.25);
+}
+
+.crc-modal__categories-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 480px) {
+  .crc-modal__categories-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.crc-modal__category-panel {
+  display: flex;
+  min-height: 7.5rem;
+  flex-direction: column;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(226 232 240);
+  padding: 0.5rem;
+}
+
+.dark .crc-modal__category-panel {
+  border-color: rgb(51 65 85);
+}
+
+.crc-modal__category-panel-title {
+  margin-bottom: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgb(100 116 139);
+}
+
+.crc-modal__category-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.crc-modal__category-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.crc-modal__category-item--add:hover {
+  background: rgb(236 253 245);
+}
+
+.dark .crc-modal__category-item--add:hover {
+  background: rgb(6 78 59 / 0.25);
+}
+
+.crc-modal__empty {
+  font-size: 0.8125rem;
+  color: rgb(148 163 184);
+}

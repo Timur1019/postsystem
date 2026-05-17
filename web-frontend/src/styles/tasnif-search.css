@@ -1,0 +1,153 @@
+.tasnif-search {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(16 185 129 / 0.35);
+  background: rgb(236 253 245 / 0.6);
+  padding: 1rem;
+}
+
+.dark .tasnif-search {
+  border-color: rgb(16 185 129 / 0.25);
+  background: rgb(6 78 59 / 0.2);
+}
+
+.tasnif-search__row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tasnif-search__input {
+  flex: 1;
+}
+
+.tasnif-search__btn {
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  background: rgb(5 150 105);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.tasnif-search__btn:hover:not(:disabled) {
+  background: rgb(4 120 87);
+}
+
+.tasnif-search__btn:disabled {
+  opacity: 0.5;
+}
+
+.tasnif-search__hint {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: rgb(100 116 139);
+}
+
+.dark .tasnif-search__hint {
+  color: rgb(148 163 184);
+}
+
+.tasnif-search__results {
+  margin-top: 0.75rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(226 232 240);
+  background: #fff;
+}
+
+.dark .tasnif-search__results {
+  border-color: rgb(51 65 85);
+  background: rgb(15 23 42);
+}
+
+.tasnif-search__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid rgb(241 245 249);
+  transition: background 0.12s;
+}
+
+.tasnif-search__item:last-child {
+  border-bottom: none;
+}
+
+.tasnif-search__item:hover {
+  background: rgb(240 253 244);
+}
+
+.dark .tasnif-search__item {
+  border-bottom-color: rgb(30 41 59);
+}
+
+.dark .tasnif-search__item:hover {
+  background: rgb(6 78 59 / 0.35);
+}
+
+.tasnif-search__item-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgb(15 23 42);
+  line-height: 1.35;
+}
+
+.dark .tasnif-search__item-name {
+  color: rgb(248 250 252);
+}
+
+.tasnif-search__item-meta {
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  color: rgb(100 116 139);
+}
+
+.tasnif-package-modal__list {
+  max-height: 18rem;
+  overflow-y: auto;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.5rem;
+}
+
+.dark .tasnif-package-modal__list {
+  border-color: rgb(51 65 85);
+}
+
+.tasnif-package-modal__option {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgb(241 245 249);
+  transition: background 0.12s;
+}
+
+.tasnif-package-modal__option:last-child {
+  border-bottom: none;
+}
+
+.tasnif-package-modal__option:hover {
+  background: rgb(240 253 244);
+}
+
+.dark .tasnif-package-modal__option:hover {
+  background: rgb(6 78 59 / 0.35);
+}
+
+.tasnif-package-modal__code {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgb(15 23 42);
+}
+
+.dark .tasnif-package-modal__code {
+  color: #fff;
+}
+
+.tasnif-package-modal__unit {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: rgb(100 116 139);
+}

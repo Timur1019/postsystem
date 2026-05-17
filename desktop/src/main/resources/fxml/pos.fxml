@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pos.desktop.controller.PosController"
+            styleClass="root-pane" prefWidth="1200" prefHeight="750">
+
+    <!-- TOP BAR -->
+    <top>
+        <HBox styleClass="topbar" alignment="CENTER_LEFT" spacing="12">
+            <Label text="🛒 RetailPOS" styleClass="brand-label"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="cashierLabel" styleClass="topbar-user"/>
+            <Button text="Logout" styleClass="btn-ghost" onAction="#handleLogout"/>
+        </HBox>
+    </top>
+
+    <!-- MAIN CONTENT -->
+    <center>
+        <HBox spacing="12" style="-fx-padding: 12;">
+
+            <!-- LEFT: Product search + grid -->
+            <VBox HBox.hgrow="ALWAYS" spacing="10">
+                <!-- Search row -->
+                <HBox spacing="8">
+                    <TextField fx:id="searchField" promptText="Search products (name, SKU)…"
+                               styleClass="text-field-input" HBox.hgrow="ALWAYS"
+                               onAction="#onSearchEnter"/>
+                    <TextField fx:id="barcodeField" promptText="Scan barcode…"
+                               styleClass="text-field-input" prefWidth="180"/>
+                </HBox>
+
+                <!-- Product list (scrollable) -->
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="product-scroll">
+                    <ListView fx:id="productListView" styleClass="product-list" prefHeight="550"/>
+                </ScrollPane>
+            </VBox>
+
+            <!-- DIVIDER -->
+            <Separator orientation="VERTICAL"/>
+
+            <!-- RIGHT: Cart -->
+            <VBox prefWidth="340" spacing="10">
+                <Label text="Cart" styleClass="section-heading"/>
+
+                <!-- Cart table -->
+                <TableView fx:id="cartTable" VBox.vgrow="ALWAYS" styleClass="cart-table">
+                    <columns>
+                        <TableColumn fx:id="colName"  text="Item"    prefWidth="140"/>
+                        <TableColumn fx:id="colPrice" text="Price"   prefWidth="80"/>
+                        <TableColumn fx:id="colQty"   text="Qty"     prefWidth="40"/>
+                        <TableColumn fx:id="colTotal" text="Total"   prefWidth="80"/>
+                    </columns>
+                    <placeholder><Label text="Cart is empty" styleClass="placeholder-label"/></placeholder>
+                </TableView>
+
+                <!-- Cart action buttons -->
+                <HBox spacing="8">
+                    <Button text="Remove" onAction="#removeCartItem"
+                            styleClass="btn-danger" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Button text="Clear" onAction="#clearCart"
+                            styleClass="btn-ghost" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                </HBox>
+
+                <!-- Totals -->
+                <VBox styleClass="totals-box" spacing="6">
+                    <HBox>
+                        <Label text="Subtotal" styleClass="totals-label"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="labelSubtotal" text="KES 0.00" styleClass="totals-value"/>
+                    </HBox>
+                    <HBox>
+                        <Label text="VAT" styleClass="totals-label"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="labelTax" text="KES 0.00" styleClass="totals-value"/>
+                    </HBox>
+                    <Separator/>
+                    <HBox>
+                        <Label text="TOTAL" styleClass="totals-total-label"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="labelTotal" text="KES 0.00" styleClass="totals-total-value"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Payment -->
+                <VBox spacing="6">
+                    <Label text="Payment Method" styleClass="field-label"/>
+                    <ComboBox fx:id="paymentMethodCombo" maxWidth="Infinity"
+                              styleClass="combo-input"/>
+
+                    <Label text="Amount Tendered (KES)" styleClass="field-label"/>
+                    <TextField fx:id="tenderedField" promptText="0.00"
+                               styleClass="text-field-input"/>
+
+                    <HBox>
+                        <Label text="Change:" styleClass="totals-label"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="labelChange" text="KES 0.00" styleClass="change-label"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Checkout -->
+                <Button fx:id="btnCheckout" text="✓ Complete Sale" onAction="#handleCheckout"
+                        styleClass="btn-primary btn-large" maxWidth="Infinity"/>
+
+                <!-- Status bar -->
+                <Label fx:id="statusLabel" text="Ready" styleClass="status-label" wrapText="true"/>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>

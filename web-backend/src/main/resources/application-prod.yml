@@ -1,0 +1,14 @@
+# Продакшен: только консоль (Docker/K8s собирают stdout), без лишнего шума
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: WARN
+    com.pos: INFO

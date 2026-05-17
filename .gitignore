@@ -1,0 +1,93 @@
+# =========================
+# 🔐 ENV & SECRETS
+# =========================
+.env
+.env.*
+*.key
+*.pem
+*.crt
+
+# Локальные переопределения (секреты — только в .env)
+**/application-local.yml
+**/application-local.properties
+
+# =========================
+# 📦 NODE (React Frontend)
+# =========================
+node_modules/
+uploads/
+desktop-cashier/node_modules/
+desktop-cashier/web-dist/
+desktop-cashier/release/
+dist/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# ☕ JAVA (Backend + Desktop)
+# =========================
+target/
+build/
+out/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven wrapper (optional)
+.mvn/wrapper/maven-wrapper.jar
+
+# =========================
+# 🗄️ DATABASE FILES
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# Local desktop app data (if inside project)
+.retailpos/
+
+# =========================
+# 🧠 IDE / EDITOR
+# =========================
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# =========================
+# 🧾 LOGS & TEMP FILES
+# =========================
+logs/
+*.log
+*.tmp
+*.swp
+
+# =========================
+# 🧪 TEST / COVERAGE
+# =========================
+coverage/
+*.lcov
+
+# =========================
+# 🖥️ OS FILES
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# ⚙️ MISC
+# =========================
+*.pid
+*.seed
+*.pid.lock
+
+
+.env.production
+.env.local

@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: masterpiece-pos-db
+    environment:
+      POSTGRES_DB: pos_db
+      POSTGRES_USER: pos_user
+      POSTGRES_PASSWORD: pos_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - pos_pg_data:/var/lib/postgresql/data
+      - ./web-backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_customer_orders.sql:/docker-entrypoint-initdb.d/02-customer_orders.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_cash_register_configs.sql:/docker-entrypoint-initdb.d/03-cash_register_configs.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_companies_stores_users.sql:/docker-entrypoint-initdb.d/04-companies_stores_users.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_sales_store.sql:/docker-entrypoint-initdb.d/05-sales_store.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_z_reports_from_sales.sql:/docker-entrypoint-initdb.d/06-z_reports_from_sales.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_cashier_shifts.sql:/docker-entrypoint-initdb.d/07-cashier_shifts.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pos_user -d pos_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./web-backend
+      dockerfile: Dockerfile
+    container_name: masterpiece-pos-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/pos_db
+      DB_USERNAME: pos_user
+      DB_PASSWORD: pos_password
+      JWT_SECRET: change-me-use-at-least-32-chars-for-hs256!!
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./web-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api/v1
+    container_name: masterpiece-pos-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  pos_pg_data:

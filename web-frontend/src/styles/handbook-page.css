@@ -1,0 +1,199 @@
+.handbook-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-height: min(100%, calc(100vh - 7rem));
+}
+
+.handbook-page__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.handbook-page__header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  background: rgb(209 250 229);
+  color: rgb(6 95 70);
+  flex-shrink: 0;
+}
+
+.dark .handbook-page__header-icon {
+  background: rgb(6 78 59 / 0.45);
+  color: rgb(110 231 183);
+}
+
+.handbook-page__title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: rgb(15 23 42);
+}
+
+.dark .handbook-page__title {
+  color: rgb(248 250 252);
+}
+
+.handbook-page__intro {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgb(100 116 139);
+}
+
+.dark .handbook-page__intro {
+  color: rgb(148 163 184);
+}
+
+.handbook-page__grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.handbook-page__nav {
+  overflow-y: auto;
+  max-height: calc(100vh - 11rem);
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(248 250 252);
+}
+
+.dark .handbook-page__nav {
+  border-color: rgb(51 65 85);
+  background: rgb(15 23 42);
+}
+
+.handbook-page__nav-group {
+  margin-bottom: 0.75rem;
+}
+
+.handbook-page__nav-group:last-child {
+  margin-bottom: 0;
+}
+
+.handbook-page__group-label {
+  padding: 0.35rem 0.5rem 0.2rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(100 116 139);
+}
+
+.handbook-page__nav-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  margin-bottom: 0.15rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgb(51 65 85);
+  transition: background 0.12s, color 0.12s;
+}
+
+.handbook-page__nav-btn:hover {
+  background: rgb(226 232 240);
+}
+
+.handbook-page__nav-btn--active {
+  background: rgb(209 250 229);
+  color: rgb(6 95 70);
+  font-weight: 600;
+}
+
+.dark .handbook-page__nav-btn {
+  color: rgb(203 213 225);
+}
+
+.dark .handbook-page__nav-btn:hover {
+  background: rgb(51 65 85);
+}
+
+.dark .handbook-page__nav-btn--active {
+  background: rgb(6 78 59 / 0.5);
+  color: rgb(110 231 183);
+}
+
+.handbook-page__content {
+  overflow-y: auto;
+  max-height: calc(100vh - 11rem);
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.06);
+}
+
+.dark .handbook-page__content {
+  border-color: rgb(51 65 85);
+  background: rgb(15 23 42);
+  box-shadow: none;
+}
+
+.handbook-page__content h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: rgb(15 23 42);
+}
+
+.dark .handbook-page__content h2 {
+  color: rgb(248 250 252);
+}
+
+.handbook-page__summary {
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: rgb(71 85 105);
+}
+
+.dark .handbook-page__summary {
+  color: rgb(148 163 184);
+}
+
+.handbook-page__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: rgb(51 65 85);
+}
+
+.dark .handbook-page__list {
+  color: rgb(203 213 225);
+}
+
+.handbook-page__list li {
+  margin-bottom: 0.5rem;
+}
+
+.handbook-page__list li:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .handbook-page__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .handbook-page__nav {
+    max-height: 220px;
+  }
+
+  .handbook-page__content {
+    max-height: none;
+  }
+}
