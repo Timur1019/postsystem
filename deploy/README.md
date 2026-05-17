@@ -61,16 +61,36 @@ curl -s http://localhost:8080/api/v1/actuator/health
 
 В браузере: `http://IP_СЕРВЕРА/` — вход `admin` / `password` (смените после первого входа).
 
-## 5. Копирование с Mac (разработка)
+## 5. Деплой через Git (рекомендуется)
+
+Подробно: [GIT-WORKFLOW.md](GIT-WORKFLOW.md)
+
+**Один раз** (если уже есть папка после rsync):
 
 ```bash
-chmod +x deploy/sync-to-server.sh deploy/deploy.sh deploy/ubuntu-prepare.sh
+cd /opt/aurent-pos
+bash deploy/git-bootstrap.sh
+```
+
+**Каждое обновление** после merge в `main` на GitHub:
+
+```bash
+cd /opt/aurent-pos
+bash deploy/git-update.sh
+```
+
+На Mac: ветка → PR → merge → `git push`. На сервере — только `git-update.sh`.
+
+## 6. Rsync (запасной вариант)
+
+```bash
+chmod +x deploy/sync-to-server.sh
 ./deploy/sync-to-server.sh root@ВАШ_IP
 ```
 
-Затем на сервере: `nano .env` → `bash deploy/deploy.sh`.
+Затем на сервере: `bash deploy/deploy.sh`.
 
-## 6. Касса (Aurent Cashier)
+## 7. Касса (Aurent Cashier)
 
 На ПК кассира в настройках приложения:
 
@@ -78,7 +98,7 @@ chmod +x deploy/sync-to-server.sh deploy/deploy.sh deploy/ubuntu-prepare.sh
 - **Порт** — `8080`
 - Проверка: `http://IP:8080/api/v1/actuator/health`
 
-## 7. Полезные команды
+## 8. Полезные команды
 
 ```bash
 docker compose -f docker-compose.prod.yml ps
@@ -90,11 +110,10 @@ docker compose -f docker-compose.prod.yml down
 Обновление версии:
 
 ```bash
-git pull   # или повторный rsync
-bash deploy/deploy.sh
+bash deploy/git-update.sh
 ```
 
-## 8. SSL (по желанию)
+## 9. SSL (по желанию)
 
 См. `deploy/nginx-host.conf.example` и Certbot для домена.
 

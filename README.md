@@ -41,10 +41,19 @@ API: `http://localhost:8080/api/v1`
 
 ## Production (Ubuntu + Docker)
 
+**Деплой через Git** (после merge в `main`):
+
 ```bash
-cp .env.example .env
-nano .env                    # POSTGRES_PASSWORD, JWT_SECRET (≥32 символов)
-bash deploy/prod-check.sh
+# на сервере
+cd /opt/aurent-pos
+bash deploy/git-update.sh
+```
+
+Первый раз: [deploy/GIT-WORKFLOW.md](deploy/GIT-WORKFLOW.md)
+
+```bash
+bash deploy/git-bootstrap.sh   # привязать к GitHub
+bash deploy/setup-env.sh
 bash deploy/deploy.sh
 ```
 

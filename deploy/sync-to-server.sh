@@ -16,6 +16,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 echo "==> Rsync -> ${TARGET}:${REMOTE_DIR}"
 rsync -avz --delete \
   --exclude '.git' \
+  --exclude '.idea' \
+  --exclude '.vscode' \
+  --exclude '.DS_Store' \
   --exclude 'node_modules' \
   --exclude 'target' \
   --exclude 'dist' \
