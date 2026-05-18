@@ -100,10 +100,12 @@ public class SaleServiceImpl implements SaleService {
 
             BigDecimal lineDiscount = itemReq.discount() != null ? itemReq.discount() : BigDecimal.ZERO;
             BigDecimal unitPrice = cashierSaleSupport.resolveUnitPrice(product, store.getId());
-            BigDecimal taxableAmt = unitPrice.multiply(BigDecimal.valueOf(itemReq.quantity())).subtract(lineDiscount);
+            // Цена продажи включает НДС — извлекаем налог из суммы строки, не начисляем сверху
+            BigDecimal lineGross = unitPrice.multiply(BigDecimal.valueOf(itemReq.quantity())).subtract(lineDiscount);
             BigDecimal rate = product.getTaxRate() != null ? product.getTaxRate() : new BigDecimal("12");
-            BigDecimal taxAmt = taxableAmt.multiply(rate.divide(BigDecimal.valueOf(100), 8, RoundingMode.HALF_UP));
-            BigDecimal lineTotal = taxableAmt.add(taxAmt);
+            BigDecimal taxAmt = extractVatFromInclusive(lineGross, rate);
+            BigDecimal netLine = lineGross.subtract(taxAmt);
+            BigDecimal lineTotal = lineGross;
 
             SaleItem saleItem = SaleItem.builder()
                 .product(product)
@@ -117,7 +119,7 @@ public class SaleServiceImpl implements SaleService {
 
             items.add(saleItem);
 
-            subtotal = subtotal.add(unitPrice.multiply(BigDecimal.valueOf(itemReq.quantity())));
+            subtotal = subtotal.add(netLine);
             taxTotal = taxTotal.add(taxAmt);
             discountTotal = discountTotal.add(lineDiscount);
 
@@ -131,14 +133,16 @@ public class SaleServiceImpl implements SaleService {
                 .build());
         }
 
-        BigDecimal total = subtotal.add(taxTotal).subtract(discountTotal).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal tendered = req.amountTendered() != null ? req.amountTendered() : total;
-        BigDecimal change = tendered.subtract(total).max(BigDecimal.ZERO);
+        BigDecimal total = subtotal.add(taxTotal).setScale(2, RoundingMode.HALF_UP);
 
         Sale.ReceiptType receiptType = parseReceiptType(req.receiptType());
         Sale.CardType cardType = parseCardType(req.cardType());
         Sale.PaymentMethod paymentMethod = Sale.PaymentMethod.valueOf(req.paymentMethod());
+        PaymentAmounts amounts = resolvePaymentAmounts(paymentMethod, total, req);
         if (paymentMethod == Sale.PaymentMethod.CARD && cardType == null) {
+            cardType = Sale.CardType.PERSONAL;
+        }
+        if (amounts.card().signum() > 0 && cardType == null) {
             cardType = Sale.CardType.PERSONAL;
         }
 
@@ -153,10 +157,12 @@ public class SaleServiceImpl implements SaleService {
             .discountTotal(discountTotal.setScale(2, RoundingMode.HALF_UP))
             .totalAmount(total)
             .paymentMethod(paymentMethod)
+            .cashAmount(amounts.cash())
+            .cardAmount(amounts.card())
             .receiptType(receiptType)
             .cardType(cardType)
-            .amountTendered(tendered.setScale(2, RoundingMode.HALF_UP))
-            .changeGiven(change.setScale(2, RoundingMode.HALF_UP))
+            .amountTendered(amounts.tendered())
+            .changeGiven(amounts.change())
             .status(Sale.SaleStatus.COMPLETED)
             .notes(req.notes())
             .build();
@@ -197,6 +203,20 @@ public class SaleServiceImpl implements SaleService {
         if (!sale.getCashier().getId().equals(actor.getId())) {
             throw new BadRequestException("Access denied");
         }
+    }
+
+    private void assertCanVoidSale(Sale sale) {
+        User actor = currentUserProvider.requireCurrentUser();
+        if (currentUserProvider.isSuperAdmin(actor) || currentUserProvider.isTenantAdmin(actor)) {
+            return;
+        }
+        if ("MANAGER".equals(actor.getRole().getName())) {
+            return;
+        }
+        if ("CASHIER".equals(actor.getRole().getName()) && sale.getCashier().getId().equals(actor.getId())) {
+            return;
+        }
+        throw new BadRequestException("Нет прав на возврат этого чека");
     }
 
     @Override
@@ -270,8 +290,20 @@ public class SaleServiceImpl implements SaleService {
     }
 
     @Override
-    public PageResponse<SaleResponse> getSalesByCashier(String username, Pageable pageable) {
-        Page<Sale> page = saleRepository.findByCashier_Username(username, pageable);
+    public PageResponse<SaleResponse> getSalesByCashier(
+        String username,
+        UUID shiftId,
+        UUID excludeShiftId,
+        Pageable pageable
+    ) {
+        Page<Sale> page;
+        if (shiftId != null) {
+            page = saleRepository.findByCashierUsernameAndShiftId(username, shiftId, pageable);
+        } else if (excludeShiftId != null) {
+            page = saleRepository.findByCashierUsernameExcludingShiftId(username, excludeShiftId, pageable);
+        } else {
+            page = saleRepository.findByCashier_Username(username, pageable);
+        }
         return PageResponse.from(page.map(saleMapper::toSummaryResponse));
     }
 
@@ -280,6 +312,8 @@ public class SaleServiceImpl implements SaleService {
     public SaleResponse voidSale(UUID id, String reason) {
         Sale sale = saleRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Sale not found"));
+
+        assertCanVoidSale(sale);
 
         if (sale.getStatus() == Sale.SaleStatus.VOIDED) {
             throw new BadRequestException("Sale already voided");
@@ -308,6 +342,78 @@ public class SaleServiceImpl implements SaleService {
         salesLedgerCacheService.onSaleChanged(saved);
         LogUtil.info(SaleServiceImpl.class, "Sale voided: id={}, receipt={}", saved.getId(), saved.getReceiptNumber());
         return toResponse(saved);
+    }
+
+    private record PaymentAmounts(
+        BigDecimal cash,
+        BigDecimal card,
+        BigDecimal tendered,
+        BigDecimal change
+    ) {}
+
+    private PaymentAmounts resolvePaymentAmounts(
+        Sale.PaymentMethod paymentMethod,
+        BigDecimal total,
+        CreateSaleRequest req
+    ) {
+        return switch (paymentMethod) {
+            case CASH -> {
+                BigDecimal cash = scale(total);
+                BigDecimal tendered = scale(req.amountTendered() != null ? req.amountTendered() : total);
+                if (tendered.compareTo(cash) < 0) {
+                    throw new BadRequestException("Получено наличными меньше суммы оплаты");
+                }
+                yield new PaymentAmounts(cash, BigDecimal.ZERO, tendered, tendered.subtract(cash).max(BigDecimal.ZERO));
+            }
+            case CARD, MPESA -> {
+                BigDecimal card = scale(total);
+                yield new PaymentAmounts(BigDecimal.ZERO, card, card, BigDecimal.ZERO);
+            }
+            case MIXED -> resolveMixedPayment(total, req);
+        };
+    }
+
+    private PaymentAmounts resolveMixedPayment(BigDecimal total, CreateSaleRequest req) {
+        if (req.cashAmount() == null) {
+            throw new BadRequestException("Укажите сумму наличными для смешанной оплаты");
+        }
+        BigDecimal cash = scale(req.cashAmount());
+        if (cash.signum() < 0) {
+            throw new BadRequestException("Суммы оплаты не могут быть отрицательными");
+        }
+        if (cash.compareTo(total) > 0) {
+            throw new BadRequestException("Наличная часть не может превышать сумму к оплате");
+        }
+        BigDecimal card = scale(total.subtract(cash));
+        if (cash.signum() == 0 && card.signum() == 0) {
+            throw new BadRequestException("Укажите хотя бы одну сумму оплаты");
+        }
+        BigDecimal tendered = cash.signum() > 0
+            ? scale(req.amountTendered() != null ? req.amountTendered() : cash)
+            : BigDecimal.ZERO;
+        if (cash.signum() > 0 && tendered.compareTo(cash) < 0) {
+            throw new BadRequestException("Получено наличными меньше наличной части");
+        }
+        BigDecimal change = cash.signum() > 0 ? tendered.subtract(cash).max(BigDecimal.ZERO) : BigDecimal.ZERO;
+        return new PaymentAmounts(cash, card, tendered, change);
+    }
+
+    private static BigDecimal scale(BigDecimal value) {
+        return value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /** НДС внутри суммы: amount × rate / (100 + rate) */
+    private static BigDecimal extractVatFromInclusive(BigDecimal inclusiveAmount, BigDecimal ratePercent) {
+        if (inclusiveAmount == null || inclusiveAmount.signum() <= 0) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal rate = ratePercent != null ? ratePercent : BigDecimal.ZERO;
+        if (rate.signum() <= 0) {
+            return BigDecimal.ZERO;
+        }
+        return inclusiveAmount
+            .multiply(rate)
+            .divide(rate.add(BigDecimal.valueOf(100)), 8, RoundingMode.HALF_UP);
     }
 
     private static Sale.ReceiptType parseReceiptType(String raw) {

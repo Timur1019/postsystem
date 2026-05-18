@@ -108,7 +108,9 @@ for f in \
   db/migration_manual_companies_stores_users.sql \
   db/migration_manual_sales_store.sql \
   db/migration_manual_z_reports_from_sales.sql \
-  db/migration_manual_cashier_shifts.sql
+  db/migration_manual_cashier_shifts.sql \
+  db/migration_manual_product_discount.sql \
+  db/migration_manual_sale_payment_split.sql
 do
   if [[ -f "web-backend/src/main/resources/$f" ]]; then
     ok "$f"

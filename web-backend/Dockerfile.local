@@ -1,0 +1,6 @@
+# Локальная пересборка без pull с Docker Hub (использует уже собранный JAR)
+FROM aurent-pos-backend:latest
+USER root
+COPY docker-build/app.jar /app/app.jar
+RUN chown pos:pos /app/app.jar
+USER pos

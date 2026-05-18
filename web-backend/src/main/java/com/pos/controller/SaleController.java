@@ -3,6 +3,7 @@ package com.pos.controller;
 import com.pos.dto.sale.CreateSaleRequest;
 import com.pos.dto.sale.SaleResponse;
 import com.pos.dto.shared.PageResponse;
+import com.pos.exception.BadRequestException;
 import com.pos.service.SaleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -94,7 +95,7 @@ public class SaleController {
     }
 
     @PostMapping("/{id}/void")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CASHIER')")
     public ResponseEntity<SaleResponse> voidSale(
         @PathVariable UUID id,
         @RequestParam(required = false) String reason
@@ -105,8 +106,15 @@ public class SaleController {
     @GetMapping("/my-sales")
     public ResponseEntity<PageResponse<SaleResponse>> mySales(
         @AuthenticationPrincipal UserDetails currentUser,
-        @PageableDefault(size = 20) Pageable pageable
+        @RequestParam(required = false) UUID shiftId,
+        @RequestParam(required = false) UUID excludeShiftId,
+        @PageableDefault(size = 50) Pageable pageable
     ) {
-        return ResponseEntity.ok(saleService.getSalesByCashier(currentUser.getUsername(), pageable));
+        if (shiftId != null && excludeShiftId != null) {
+            throw new BadRequestException("Use either shiftId or excludeShiftId, not both");
+        }
+        return ResponseEntity.ok(
+            saleService.getSalesByCashier(currentUser.getUsername(), shiftId, excludeShiftId, pageable)
+        );
     }
 }

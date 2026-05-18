@@ -1,0 +1,10 @@
+# Порядок применения SQL-миграций на production (deploy/migrate-db.sh)
+# Добавляйте сюда новые файлы из web-backend/src/main/resources/db/
+migration_manual_customer_orders.sql
+migration_manual_cash_register_configs.sql
+migration_manual_companies_stores_users.sql
+migration_manual_sales_store.sql
+migration_manual_z_reports_from_sales.sql
+migration_manual_cashier_shifts.sql
+migration_manual_product_discount.sql
+migration_manual_sale_payment_split.sql

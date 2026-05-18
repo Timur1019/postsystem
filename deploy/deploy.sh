@@ -28,8 +28,16 @@ if [[ "${POSTGRES_PASSWORD:-}" == *"CHANGE_ME"* ]]; then
   exit 1
 fi
 
-echo "==> Сборка и запуск ($COMPOSE_FILE)..."
+echo "==> Сборка образов ($COMPOSE_FILE)..."
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build --pull
+
+echo "==> Запуск PostgreSQL..."
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d postgres
+
+echo "==> SQL-миграции..."
+bash deploy/migrate-db.sh
+
+echo "==> Запуск backend и frontend..."
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
 
 echo ""

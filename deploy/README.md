@@ -52,6 +52,16 @@ bash deploy/prod-check.sh
 bash deploy/deploy.sh
 ```
 
+Скрипт сам поднимает Postgres, применяет **новые** миграции из списка `deploy/migrations-prod.txt` (учёт в `app_schema_migrations`), затем запускает backend и frontend. Ручной `psql` для этих миграций не нужен.
+
+Новую миграцию добавьте в `web-backend/src/main/resources/db/` и пропишите имя файла в `deploy/migrations-prod.txt`.
+
+Только миграции (БД уже запущена):
+
+```bash
+bash deploy/migrate-db.sh
+```
+
 Проверка:
 
 ```bash
@@ -63,7 +73,7 @@ curl -s http://localhost:8080/api/v1/actuator/health
 
 ## 5. Деплой через Git (рекомендуется)
 
-Подробно: [GIT-WORKFLOW.md](GIT-WORKFLOW.md)
+`.env` на сервере **не в Git** — при `git pull` не перезаписывается.
 
 **Один раз** (если уже есть папка после rsync):
 
@@ -72,14 +82,26 @@ cd /opt/aurent-pos
 bash deploy/git-bootstrap.sh
 ```
 
-**Каждое обновление** после merge в `main` на GitHub:
+Или чистый клон:
+
+```bash
+git clone https://github.com/Timur1019/postsystem.git /opt/aurent-pos
+cd /opt/aurent-pos
+bash deploy/ubuntu-prepare.sh
+bash deploy/setup-env.sh
+bash deploy/deploy.sh
+```
+
+**Каждое обновление** после merge в `main`:
 
 ```bash
 cd /opt/aurent-pos
-bash deploy/git-update.sh
+bash deploy/git-update.sh   # git pull + migrate-db + docker rebuild
 ```
 
 На Mac: ветка → PR → merge → `git push`. На сервере — только `git-update.sh`.
+
+Приватный репозиторий: на сервере SSH-ключ для GitHub, затем `git clone git@github.com:USER/postsystem.git /opt/aurent-pos`.
 
 ## 6. Rsync (запасной вариант)
 
@@ -113,7 +135,23 @@ docker compose -f docker-compose.prod.yml down
 bash deploy/git-update.sh
 ```
 
-## 9. SSL (по желанию)
+## 9. Подключение к БД (DataGrip / DBeaver)
+
+На сервере Postgres слушает только внутри Docker. С Mac — SSH-туннель:
+
+```bash
+ssh -L 5433:127.0.0.1:5432 user@IP_СЕРВЕРА
+```
+
+В IDE: Host `localhost`, Port `5433`, Database `pos_db`, User `pos_user`, пароль из `.env` (`POSTGRES_PASSWORD`).
+
+На сервере напрямую:
+
+```bash
+docker compose -f docker-compose.prod.yml exec -it postgres psql -U pos_user -d pos_db
+```
+
+## 10. SSL (по желанию)
 
 См. `deploy/nginx-host.conf.example` и Certbot для домена.
 

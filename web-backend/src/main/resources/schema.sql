@@ -62,6 +62,7 @@ CREATE TABLE products (
     category_id         INT REFERENCES categories(id) ON DELETE SET NULL,
     cost_price          NUMERIC(18, 2) NOT NULL DEFAULT 0,
     selling_price       NUMERIC(18, 2) NOT NULL,
+    default_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0,
     tax_rate            NUMERIC(5, 2) DEFAULT 0,
     stock_quantity      INT NOT NULL DEFAULT 0,
     low_stock_alert     INT DEFAULT 10,
@@ -302,6 +303,8 @@ CREATE TABLE sales (
     receipt_type    VARCHAR(20) DEFAULT 'SALE',
     card_type       VARCHAR(20),
     cashier_shift_id UUID REFERENCES cashier_shifts(id),
+    cash_amount     NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    card_amount     NUMERIC(18, 2) NOT NULL DEFAULT 0,
     amount_tendered NUMERIC(18, 2),
     change_given    NUMERIC(18, 2) DEFAULT 0,
     status          VARCHAR(20) DEFAULT 'COMPLETED', -- COMPLETED, REFUNDED, VOIDED
@@ -401,6 +404,18 @@ AND NOT EXISTS (SELECT 1 FROM users u WHERE u.username = 'admin');
 
 INSERT INTO user_stores (user_id, store_id)
 SELECT u.id, 1 FROM users u WHERE u.username = 'admin'
+AND NOT EXISTS (SELECT 1 FROM user_stores us WHERE us.user_id = u.id AND us.store_id = 1);
+
+-- Demo cashier: username `kassir`, password `password`
+INSERT INTO users (username, email, password, full_name, first_name, last_name, role_id, company_id)
+SELECT 'kassir', 'kassir@store.com',
+       '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+       'Кассир', 'Кассир', 'Демо', r.id, 1
+FROM roles r WHERE r.name = 'CASHIER'
+AND NOT EXISTS (SELECT 1 FROM users u WHERE u.username = 'kassir');
+
+INSERT INTO user_stores (user_id, store_id)
+SELECT u.id, 1 FROM users u WHERE u.username = 'kassir'
 AND NOT EXISTS (SELECT 1 FROM user_stores us WHERE us.user_id = u.id AND us.store_id = 1);
 
 INSERT INTO users (username, email, password, full_name, first_name, last_name, role_id)

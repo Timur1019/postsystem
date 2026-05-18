@@ -6,12 +6,13 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { ScanLine, Store, Clock } from 'lucide-react';
 import { categoryApi, productApi, saleApi, cashierShiftApi } from '../../services/api';
-import { useCartStore } from '../../store/cartStore';
+import { useCartStore, lineDiscountAmount } from '../../store/cartStore';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import PosOrderPanel from '../../components/cashier/PosOrderPanel';
 import PosCatalogPanel from '../../components/cashier/PosCatalogPanel';
 import PosPaymentFlow from '../../components/cashier/PosPaymentFlow';
+import PosReturnModal from '../../components/cashier/PosReturnModal';
 import CashierShiftModal from '../../components/cashier/CashierShiftModal';
 import '../../styles/pos.css';
 
@@ -30,13 +31,18 @@ export default function PosPage() {
   const [selectedLineId, setSelectedLineId] = useState(null);
   const [payOpen, setPayOpen] = useState(false);
   const [shiftOpen, setShiftOpen] = useState(false);
+  const [returnOpen, setReturnOpen] = useState(false);
 
   const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
+  const updateUnitPrice = useCartStore((s) => s.updateUnitPrice);
+  const updateLineSubtotal = useCartStore((s) => s.updateLineSubtotal);
+  const updateDiscountPercent = useCartStore((s) => s.updateDiscountPercent);
   const removeItem = useCartStore((s) => s.removeItem);
   const clearCart = useCartStore((s) => s.clearCart);
   const getTotal = useCartStore((s) => s.getTotal);
+  const getDiscountTotal = useCartStore((s) => s.getDiscountTotal);
   const itemCount = useCartStore((s) => s.itemCount);
 
   const { data: shift, isError: shiftError } = useQuery({
@@ -55,6 +61,14 @@ export default function PosPage() {
   useEffect(() => {
     if (storeId) barcodeRef.current?.focus();
   }, [storeId]);
+
+  useEffect(() => {
+    if (!returnOpen && !payOpen && !shiftOpen && storeId) {
+      const t = setTimeout(() => barcodeRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [returnOpen, payOpen, shiftOpen, storeId]);
 
   const { data: categories = [], isPending: categoriesLoading } = useQuery({
     queryKey: ['pos-categories'],
@@ -103,6 +117,7 @@ export default function PosPage() {
         name: product.name,
         sku: product.sku,
         sellingPrice: Number(product.sellingPrice),
+        defaultDiscountPercent: Number(product.defaultDiscountPercent ?? 0),
         taxRate: Number(product.taxRate ?? 12),
         stockQuantity: product.stockQuantity,
       });
@@ -114,7 +129,7 @@ export default function PosPage() {
   const resolveBarcode = useCallback(
     async (code) => {
       const trimmed = code.trim();
-      if (!trimmed || !storeId || scanningRef.current || payOpen) return;
+      if (!trimmed || !storeId || scanningRef.current || payOpen || returnOpen) return;
       scanningRef.current = true;
       try {
         const res = await productApi.getByBarcode(trimmed, storeId);
@@ -128,15 +143,33 @@ export default function PosPage() {
         barcodeRef.current?.focus();
       }
     },
-    [storeId, addProductToCart, payOpen, t]
+    [storeId, addProductToCart, payOpen, returnOpen, t]
   );
 
   useBarcodeScanner({
-    enabled: !!storeId && !payOpen && !shiftOpen,
+    enabled: !!storeId && !payOpen && !shiftOpen && !returnOpen,
     barcodeInputRef: barcodeRef,
     onScan: resolveBarcode,
     alwaysCapture: true,
   });
+
+  const handleBarcodeKeyDown = (e) => {
+    if (e.key === 'Enter' && barcode.trim()) {
+      e.preventDefault();
+      resolveBarcode(barcode);
+    }
+  };
+
+  const handleSearchEnter = useCallback(() => {
+    if (!searchActive || products.length === 0) return;
+    const q = search.trim().toLowerCase();
+    const exact =
+      products.find((p) => p.barcode?.toLowerCase() === q) ||
+      products.find((p) => p.sku?.toLowerCase() === q) ||
+      products.find((p) => p.name?.toLowerCase() === q);
+    addProductToCart(exact ?? products[0]);
+    setSearch('');
+  }, [searchActive, products, search, addProductToCart]);
 
   const checkoutMutation = useMutation({
     mutationFn: (payment) =>
@@ -145,11 +178,13 @@ export default function PosPage() {
         paymentMethod: payment.paymentMethod,
         receiptType: payment.receiptType,
         cardType: payment.cardType,
+        cashAmount: payment.cashAmount,
+        cardAmount: payment.cardAmount,
         amountTendered: payment.amountTendered,
         items: items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
-          discount: i.discount || 0,
+          discount: lineDiscountAmount(i),
         })),
       }),
     onSuccess: (res) => {
@@ -158,6 +193,8 @@ export default function PosPage() {
       setSelectedLineId(null);
       qc.invalidateQueries({ queryKey: ['pos-products'] });
       qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
+      qc.invalidateQueries({ queryKey: ['my-sales'] });
+      qc.invalidateQueries({ queryKey: ['sales-ledger'] });
       toast.success(t('pos.saleSuccess'));
       navigate(`/receipt/${res.data.receiptNumber}`);
     },
@@ -171,6 +208,7 @@ export default function PosPage() {
   };
 
   const total = getTotal();
+  const discountTotal = getDiscountTotal();
   const storeBlocked = noAssignment || multipleAssignment;
   const categoryName = categories.find((c) => c.id === selectedCategoryId)?.name ?? '';
 
@@ -200,6 +238,7 @@ export default function PosPage() {
             ref={barcodeRef}
             value={barcode}
             onChange={(e) => setBarcode(e.target.value)}
+            onKeyDown={handleBarcodeKeyDown}
             disabled={!storeId}
             placeholder={t('pos.barcodePh')}
             autoComplete="off"
@@ -218,10 +257,16 @@ export default function PosPage() {
             items={items}
             selectedLineId={selectedLineId}
             onSelectLine={setSelectedLineId}
-            onUpdateQty={handleQtyDelta}
+            onQtyDelta={handleQtyDelta}
+            onSetQuantity={updateQuantity}
+            onUpdatePrice={updateUnitPrice}
+            onUpdateLineSubtotal={updateLineSubtotal}
+            onUpdateDiscountPercent={updateDiscountPercent}
             onRemove={removeItem}
             onClear={clearCart}
+            onReturn={() => setReturnOpen(true)}
             total={total}
+            discountTotal={discountTotal}
             itemCount={itemCount}
             onCheckout={() => setPayOpen(true)}
             checkoutDisabled={items.length === 0 || checkoutMutation.isPending || shift?.status !== 'OPEN'}
@@ -229,6 +274,7 @@ export default function PosPage() {
           <PosCatalogPanel
             search={search}
             onSearchChange={setSearch}
+            onSearchEnter={handleSearchEnter}
             categories={categories}
             categoriesLoading={categoriesLoading}
             selectedCategoryId={selectedCategoryId}
@@ -251,8 +297,19 @@ export default function PosPage() {
         open={payOpen}
         onClose={() => setPayOpen(false)}
         total={total}
+        discountTotal={discountTotal}
         isPending={checkoutMutation.isPending}
         onConfirm={(payment) => checkoutMutation.mutate(payment)}
+      />
+
+      <PosReturnModal
+        open={returnOpen}
+        onClose={() => setReturnOpen(false)}
+        onSuccess={() => {
+          qc.invalidateQueries({ queryKey: ['sales-ledger'] });
+          qc.invalidateQueries({ queryKey: ['my-sales'] });
+          qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
+        }}
       />
 
       <CashierShiftModal

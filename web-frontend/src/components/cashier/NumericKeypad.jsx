@@ -17,13 +17,21 @@ export function appendKeypadDigit(current, digit) {
   return next.length > 12 ? current : next;
 }
 
+const toAmountString = (amount) => {
+  const n = Number(amount);
+  const rounded = Math.round(n * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
+};
+
 export default function NumericKeypad({
   value,
   onChange,
   exactAmount,
+  quickActions,
   disabled = false,
 }) {
   const { t } = useTranslation();
+  const hasQuickRow = quickActions && quickActions.length > 0;
 
   const press = (digit) => {
     if (disabled) return;
@@ -42,13 +50,33 @@ export default function NumericKeypad({
 
   const setExact = () => {
     if (disabled || exactAmount == null) return;
-    onChange(String(Math.round(exactAmount)));
+    onChange(toAmountString(exactAmount));
+  };
+
+  const setQuick = (amount) => {
+    if (disabled || amount == null) return;
+    onChange(toAmountString(amount));
   };
 
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
   return (
     <div className="pos-keypad">
+      {hasQuickRow && (
+        <div className="pos-keypad__quick">
+          {quickActions.map((action) => (
+            <button
+              key={action.label}
+              type="button"
+              className="pos-keypad__quick-btn"
+              disabled={disabled}
+              onClick={() => setQuick(action.amount)}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="pos-keypad__grid">
         {keys.map((digit) => (
           <button
@@ -61,14 +89,25 @@ export default function NumericKeypad({
             {digit}
           </button>
         ))}
-        <button
-          type="button"
-          className="pos-keypad__key pos-keypad__key--action"
-          disabled={disabled}
-          onClick={setExact}
-        >
-          {t('pos.keypadExact')}
-        </button>
+        {!hasQuickRow ? (
+          <button
+            type="button"
+            className="pos-keypad__key pos-keypad__key--action"
+            disabled={disabled}
+            onClick={setExact}
+          >
+            {t('pos.keypadExact')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="pos-keypad__key pos-keypad__key--action"
+            disabled={disabled}
+            onClick={clear}
+          >
+            {t('pos.keypadClear')}
+          </button>
+        )}
         <button
           type="button"
           className="pos-keypad__key"
@@ -87,11 +126,12 @@ export default function NumericKeypad({
           <Delete size={22} strokeWidth={2} />
         </button>
       </div>
-      <button type="button" className="pos-keypad__clear" disabled={disabled} onClick={clear}>
-        <Eraser size={16} strokeWidth={2} />
-        {t('pos.keypadClear')}
-      </button>
+      {!hasQuickRow && (
+        <button type="button" className="pos-keypad__clear" disabled={disabled} onClick={clear}>
+          <Eraser size={16} strokeWidth={2} />
+          {t('pos.keypadClear')}
+        </button>
+      )}
     </div>
   );
 }
-

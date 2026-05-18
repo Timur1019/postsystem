@@ -67,6 +67,21 @@ public enum ExcelTemplate {
         null
     ),
 
+    RETURNS_JOURNAL(
+        "Журнал возвратов",
+        List.of(
+            col("created_at", "Дата и время"),
+            col("fiscal_module_id", "ID фискального модуля"),
+            col("total_amount", "Сумма"),
+            col("positions_count", "Позиций в чеке"),
+            col("store_name", "Магазин"),
+            col("cashier_name", "Кассир"),
+            col("reason", "Причина"),
+            col("status", "Статус")
+        ),
+        null
+    ),
+
     Z_REPORT_SALES_LINES(
         "Продажи Z-отчёта",
         List.of(

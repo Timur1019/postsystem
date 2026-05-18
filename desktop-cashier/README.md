@@ -20,12 +20,25 @@ SERVER_HOST=111.88.132.126 SERVER_PORT=8080 ./scripts/build-cashier.sh
 
 ## Windows .exe
 
-Собирается **только на ПК с Windows 10/11** (64-bit):
+Собирается **только на ПК с Windows 10/11** (64-bit).
 
-```powershell
+**Проще всего** — двойной щелчок или в cmd:
+
+```cmd
+cd C:\Users\user\postsystem
+scripts\build-cashier-windows.bat
+```
+
+Если ошибка `Cannot create symbolic link` при сборке:
+
+1. **Параметры Windows** → Конфиденциальность → **Для разработчиков** → включить **Режим разработчика**
+2. Или запустить **cmd от имени администратора**
+3. Перед сборкой:
+
+```cmd
+set CSC_IDENTITY_AUTO_DISCOVERY=false
+rmdir /s /q "%LOCALAPPDATA%\electron-builder\Cache\winCodeSign"
 cd desktop-cashier
-npm install
-# сначала web-dist (см. build-cashier.sh)
 npm run dist:win
 ```
 

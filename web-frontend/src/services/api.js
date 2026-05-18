@@ -30,12 +30,21 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ---- Response interceptor: handle 401 ----
+// ---- Response interceptor: handle 401 / 403 (stale token, deleted user) ----
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config;
-    if (error.response?.status === 401 && !original._retry) {
+    const status = error.response?.status;
+    if (status === 403 && !original._retry) {
+      const { logout } = useAuthStore.getState();
+      logout();
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
+    }
+    if (status === 401 && !original._retry) {
       original._retry = true;
       const { token, logout, setToken } = useAuthStore.getState();
       const jwtParts = typeof token === 'string' ? token.split('.').length : 0;
@@ -168,7 +177,10 @@ export const saleApi = {
   getAll:     (params) => api.get('/sales', { params }),
   exportLines:(params) => api.get('/sales/export', { params, responseType: 'blob' }),
   getById:    (id)     => api.get(`/sales/${id}`),
-  getReceipt: (num)    => api.get(`/sales/receipt/${num}`),
+  getReceipt: (num) =>
+    api.get(`/sales/receipt/${encodeURIComponent(String(num).trim())}`),
+  getByReceipt: (num) =>
+    api.get(`/sales/receipt/${encodeURIComponent(String(num).trim())}`),
   voidSale:   (id, reason) =>
     api.post(`/sales/${id}/void`, null, { params: { reason } }),
   mySales:    (params) => api.get('/sales/my-sales', { params }),
@@ -184,6 +196,10 @@ export const cashierShiftApi = {
 
 export const returnApi = {
   getAll: (params) => api.get('/returns', { params }),
+  getById: (id) => api.get(`/returns/${id}`),
+  updateReason: (id, data) => api.patch(`/returns/${id}`, data),
+  delete: (id) => api.delete(`/returns/${id}`),
+  exportExcel: (params) => api.get('/returns/export', { params, responseType: 'blob' }),
 };
 
 export const reportApi = {

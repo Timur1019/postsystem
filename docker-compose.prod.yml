@@ -21,6 +21,11 @@ services:
       - ./web-backend/src/main/resources/db/migration_manual_sales_store.sql:/docker-entrypoint-initdb.d/05-sales_store.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_z_reports_from_sales.sql:/docker-entrypoint-initdb.d/06-z_reports_from_sales.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_cashier_shifts.sql:/docker-entrypoint-initdb.d/07-cashier_shifts.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_product_discount.sql:/docker-entrypoint-initdb.d/08-product_discount.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_sale_payment_split.sql:/docker-entrypoint-initdb.d/09-sale_payment_split.sql:ro
+    ports:
+      # Только localhost сервера — для DBeaver/DataGrip через SSH (не в интернет)
+      - '127.0.0.1:5432:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-pos_user} -d ${POSTGRES_DB:-pos_db}']
       interval: 10s

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { X, FileText, Printer, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cashierShiftApi } from '../../services/api';
+import PosModalPortal from './PosModalPortal';
 
 const fmt = (n) =>
   new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n ?? 0);
@@ -75,14 +76,14 @@ export default function CashierShiftModal({ open, onClose, storeId, shift, onShi
     }
   }, [open]);
 
-  if (!open || !shift) return null;
-
-  const isOpen = shift.status === 'OPEN';
+  const isOpen = shift?.status === 'OPEN';
   const busy = xMutation.isPending || zMutation.isPending || closeMutation.isPending;
 
+  if (!shift) return null;
+
   return (
-    <div className="pos-pay-overlay">
-      <div className="pos-pay-modal pos-pay-modal--wide">
+    <PosModalPortal open={open} onClose={onClose}>
+      <div className="pos-pay-modal pos-pay-modal--wide" onMouseDown={(e) => e.stopPropagation()}>
         <button type="button" className="pos-pay-modal__close" onClick={onClose}>
           <X size={20} />
         </button>
@@ -132,6 +133,6 @@ export default function CashierShiftModal({ open, onClose, storeId, shift, onShi
         <ReportBlock report={xReport} t={t} />
         <ReportBlock report={zReport} t={t} />
       </div>
-    </div>
+    </PosModalPortal>
   );
 }

@@ -8,6 +8,7 @@ const fmt = (n) =>
 export default function PosCatalogPanel({
   search,
   onSearchChange,
+  onSearchEnter,
   categories,
   categoriesLoading,
   selectedCategoryId,
@@ -29,6 +30,12 @@ export default function PosCatalogPanel({
         <input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              onSearchEnter?.();
+            }
+          }}
           placeholder={t('pos.searchProducts')}
           className="pos-search flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
@@ -93,6 +100,11 @@ export default function PosCatalogPanel({
                   <button key={p.id} type="button" onClick={() => onAddProduct(p)} className="pos-product-card">
                     <p className="line-clamp-2 text-sm font-medium text-slate-900 dark:text-white">{p.name}</p>
                     <p className="mt-2 font-bold text-emerald-600">{fmt(p.sellingPrice)}</p>
+                    {Number(p.defaultDiscountPercent) > 0 && (
+                      <p className="text-xs font-medium text-amber-600">
+                        {t('pos.catalogDiscount', { pct: p.defaultDiscountPercent })}
+                      </p>
+                    )}
                     <p className="text-xs text-slate-400">
                       {t('pos.stock')}: {p.stockQuantity}
                     </p>

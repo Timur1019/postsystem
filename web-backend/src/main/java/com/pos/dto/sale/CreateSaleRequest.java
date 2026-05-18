@@ -12,6 +12,10 @@ public record CreateSaleRequest(
     @NotEmpty @Valid List<SaleItemRequest> items,
     @NotBlank String paymentMethod,
     Integer storeId,
+    /** Доля наличными (для MIXED). */
+    BigDecimal cashAmount,
+    /** Доля картой (для MIXED; можно не передавать — остаток от total). */
+    BigDecimal cardAmount,
     BigDecimal amountTendered,
     String notes,
     UUID customerId,

@@ -1,7 +1,7 @@
 // src/pages/SalesLedgerPage.jsx
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Search, Download, Filter, MoreVertical, Banknote, CreditCard, Smartphone, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -33,6 +33,7 @@ function PaymentIcon({ method }) {
 
 export default function SalesLedgerPage() {
   const { t } = useTranslation();
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize] = useState(14);
@@ -84,6 +85,16 @@ export default function SalesLedgerPage() {
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['sales-ledger', queryParams],
     queryFn: () => saleApi.getAll(queryParams).then((r) => r.data),
+  });
+
+  const voidMutation = useMutation({
+    mutationFn: ({ id, reason }) => saleApi.voidSale(id, reason),
+    onSuccess: () => {
+      toast.success(t('salesLedger.voidSaleSuccess'));
+      qc.invalidateQueries({ queryKey: ['sales-ledger'] });
+      setRowMenu(null);
+    },
+    onError: (e) => toast.error(e.response?.data?.message ?? t('salesLedger.voidSaleFailed')),
   });
 
   const rows = data?.content ?? [];
@@ -304,7 +315,17 @@ export default function SalesLedgerPage() {
                     <td className="px-3 py-2 text-right font-semibold text-slate-900 dark:text-white">
                       {fmtMoney(row.totalAmount)}
                     </td>
-                    <td className="px-3 py-2 text-right text-slate-400">—</td>
+                    <td className="px-3 py-2 text-right">
+                      {Number(row.returnAmount) > 0 ||
+                      row.status === 'VOIDED' ||
+                      row.status === 'REFUNDED' ? (
+                        <span className="font-medium text-red-600 dark:text-red-400">
+                          {fmtMoney(row.returnAmount ?? row.totalAmount)}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
                     <td className="px-2 py-2 text-right">
                       <button
                         type="button"
@@ -448,6 +469,19 @@ export default function SalesLedgerPage() {
               >
                 {t('salesLedger.openReceipt')}
               </Link>
+              {rowMenu.row.status !== 'VOIDED' && (
+                <button
+                  type="button"
+                  className="block w-full px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  onClick={() => {
+                    const reason = window.prompt(t('pos.returnReason'), t('pos.returnDefaultReason'));
+                    if (reason == null) return;
+                    voidMutation.mutate({ id: rowMenu.row.id, reason });
+                  }}
+                >
+                  {t('salesLedger.voidSale')}
+                </button>
+              )}
             </div>
           </>,
           document.body

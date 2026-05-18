@@ -68,6 +68,14 @@ public class Sale {
     @JoinColumn(name = "cashier_shift_id")
     private CashierShift cashierShift;
 
+    @Column(name = "cash_amount", precision = 18, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal cashAmount = BigDecimal.ZERO;
+
+    @Column(name = "card_amount", precision = 18, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal cardAmount = BigDecimal.ZERO;
+
     @Column(name = "amount_tendered", precision = 18, scale = 2)
     private BigDecimal amountTendered;
 

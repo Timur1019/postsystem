@@ -1,12 +1,15 @@
 // src/pages/ReturnsPage.jsx
 import { useMemo, useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, Filter, Info, Printer } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Search, Filter, Info, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import toast from 'react-hot-toast';
 import { returnApi, storeApi } from '../services/api';
 import ReturnsFiltersDrawer from '../components/reports/ReturnsFiltersDrawer';
+import TableRowActionsMenu from '../components/shared/TableRowActionsMenu';
+import ReturnDetailModal from '../components/reports/ReturnDetailModal';
+import ReturnReasonModal from '../components/reports/ReturnReasonModal';
 
 const fmtMoney = (n) =>
   new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
@@ -18,15 +21,6 @@ const defaultFilters = {
   dateTo: '',
 };
 
-function escapeHtml(s) {
-  if (s == null || s === '') return '';
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 export default function ReturnsPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
@@ -35,6 +29,12 @@ export default function ReturnsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
   const [applied, setApplied] = useState(defaultFilters);
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [detailId, setDetailId] = useState(null);
+  const [detailReason, setDetailReason] = useState('');
+  const [editRow, setEditRow] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const qc = useQueryClient();
 
   const { data: stores = [] } = useQuery({
     queryKey: ['stores'],
@@ -49,14 +49,47 @@ export default function ReturnsPage() {
       from: applied.dateFrom || undefined,
       to: applied.dateTo || undefined,
       cashierName: applied.cashierName.trim() || undefined,
+      storeId: applied.storeId === '' ? undefined : Number(applied.storeId),
     }),
     [search, page, pageSize, applied]
+  );
+
+  const exportParams = useMemo(
+    () => ({
+      fiscalSearch: search.trim() || undefined,
+      from: applied.dateFrom || undefined,
+      to: applied.dateTo || undefined,
+      cashierName: applied.cashierName.trim() || undefined,
+      storeId: applied.storeId === '' ? undefined : Number(applied.storeId),
+    }),
+    [search, applied]
   );
 
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['returns', queryParams],
     queryFn: () => returnApi.getAll(queryParams).then((r) => r.data),
     placeholderData: { content: [], totalPages: 0, totalElements: 0 },
+  });
+
+
+  const updateReasonMutation = useMutation({
+    mutationFn: ({ id, reason }) => returnApi.updateReason(id, { reason }),
+    onSuccess: () => {
+      toast.success(t('returnsModule.updateReasonSuccess'));
+      qc.invalidateQueries({ queryKey: ['returns'] });
+      setEditRow(null);
+    },
+    onError: (e) => toast.error(e.response?.data?.message ?? t('returnsModule.updateReasonFailed')),
+  });
+
+  const cancelReturnMutation = useMutation({
+    mutationFn: (id) => returnApi.delete(id),
+    onSuccess: () => {
+      toast.success(t('returnsModule.cancelReturnSuccess'));
+      qc.invalidateQueries({ queryKey: ['returns'] });
+      setMenuOpenId(null);
+    },
+    onError: (e) => toast.error(e.response?.data?.message ?? t('returnsModule.cancelReturnFailed')),
   });
 
   const rows = data?.content ?? [];
@@ -73,48 +106,29 @@ export default function ReturnsPage() {
     []
   );
 
-  const printReport = useCallback(() => {
-    const title = t('returnsModule.printTitle');
-    const win = window.open('', '_blank', 'noopener,noreferrer');
-    if (!win) {
-      toast.error(t('returnsModule.printBlocked'));
-      return;
+  const handleExportExcel = useCallback(async () => {
+    setExporting(true);
+    try {
+      const res = await returnApi.exportExcel(exportParams);
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const suffix = applied.dateFrom && applied.dateTo
+        ? `${applied.dateFrom}_${applied.dateTo}`
+        : new Date().toISOString().slice(0, 10);
+      a.download = `returns_report_${suffix}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t('returnsModule.exportDone'));
+    } catch (e) {
+      toast.error(e?.response?.data?.message ?? t('returnsModule.exportFailed'));
+    } finally {
+      setExporting(false);
     }
-    const headers = [
-      t('returnsModule.colDate'),
-      t('returnsModule.colFiscal'),
-      t('returnsModule.colAmount'),
-      t('returnsModule.colPositions'),
-      t('returnsModule.colStore'),
-    ];
-    const headRow = headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('');
-    const bodyRows = rows
-      .map(
-        (row) => `<tr>
-      <td>${escapeHtml(fmtAt(row.createdAt))}</td>
-      <td class="mono">${escapeHtml(row.fiscalModuleId)}</td>
-      <td class="num">${escapeHtml(fmtMoney(row.totalAmount))}</td>
-      <td class="num">${escapeHtml(String(row.positionsCount ?? 0))}</td>
-      <td>${escapeHtml(row.storeName ?? '—')}</td>
-    </tr>`
-      )
-      .join('');
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${escapeHtml(title)}</title>
-<style>
-  body{font-family:system-ui,-apple-system,sans-serif;padding:20px;color:#111;}
-  h1{font-size:18px;margin:0 0 16px;}
-  table{border-collapse:collapse;width:100%;font-size:12px;}
-  th,td{border:1px solid #ccc;padding:8px;}
-  th{background:#f4f4f5;text-align:left;}
-  td.num,th:nth-child(3),th:nth-child(4){text-align:right;}
-  td.mono{font-family:ui-monospace,monospace;font-size:11px;}
-</style></head><body>
-<h1>${escapeHtml(title)}</h1>
-<table><thead><tr>${headRow}</tr></thead><tbody>${bodyRows}</tbody></table>
-<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},300);});<\/script>
-</body></html>`);
-    win.document.close();
-  }, [rows, t, fmtAt]);
+  }, [exportParams, applied.dateFrom, applied.dateTo, t]);
 
   const loading = isPending;
   const showEmptyHint = !loading && !isError && rows.length === 0;
@@ -132,12 +146,12 @@ export default function ReturnsPage() {
         <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t('returnsModule.title')}</h1>
         <button
           type="button"
-          onClick={printReport}
-          disabled={rows.length === 0}
+          onClick={handleExportExcel}
+          disabled={exporting}
           className="flex shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
         >
-          <Printer size={16} />
-          {t('returnsModule.print')}
+          <Download size={16} />
+          {exporting ? t('returnsModule.exporting') : t('returnsModule.downloadExcel')}
         </button>
       </div>
 
@@ -174,18 +188,20 @@ export default function ReturnsPage() {
                 <th className="px-4 py-3 text-right">{t('returnsModule.colAmount')}</th>
                 <th className="px-4 py-3 text-right">{t('returnsModule.colPositions')}</th>
                 <th className="px-4 py-3">{t('returnsModule.colStore')}</th>
+                <th className="px-4 py-3">{t('returnsModule.colReason')}</th>
+                <th className="px-4 py-3 text-right">{t('returnsModule.colActions')}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
                     {t('common.loading')}
                   </td>
                 </tr>
               ) : showEmptyHint ? (
                 <tr>
-                  <td colSpan={5} className="p-0">
+                  <td colSpan={7} className="p-0">
                     <div className="m-4 flex items-start gap-3 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-900/40 dark:bg-sky-950/30 dark:text-sky-200">
                       <Info className="mt-0.5 shrink-0 text-sky-600 dark:text-sky-400" size={20} />
                       <p>{t('returnsModule.emptyHint')}</p>
@@ -193,10 +209,10 @@ export default function ReturnsPage() {
                   </td>
                 </tr>
               ) : (
-                rows.map((row, idx) => (
+                rows.map((row) => (
                   <tr
-                    key={`${row.fiscalModuleId}-${idx}`}
-                    className="border-b border-slate-100 dark:border-slate-800"
+                    key={row.id}
+                    className="border-b border-slate-100 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40"
                   >
                     <td className="px-4 py-3 text-slate-800 dark:text-slate-200">{fmtAt(row.createdAt)}</td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-700 dark:text-slate-300">
@@ -206,7 +222,41 @@ export default function ReturnsPage() {
                       {fmtMoney(row.totalAmount)}
                     </td>
                     <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">{row.positionsCount}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{row.storeName}</td>
+                    <td className="px-4 py-3 text-slate-800 dark:text-slate-200">{row.storeName ?? '—'}</td>
+                    <td className="max-w-[200px] truncate px-4 py-3 text-slate-700 dark:text-slate-300" title={row.reason || ''}>
+                      {row.reason?.trim() ? row.reason : '—'}
+                    </td>
+                    <td className="px-2 py-3 text-right">
+                      <TableRowActionsMenu
+                        open={menuOpenId === row.id}
+                        onOpenChange={(open) => setMenuOpenId(open ? row.id : null)}
+                        actions={[
+                          {
+                            label: t('returnsModule.viewInfo'),
+                            onClick: () => {
+                              setDetailId(row.id);
+                              setDetailReason(row.reason ?? '');
+                            },
+                          },
+                          {
+                            label: t('returnsModule.editReason'),
+                            onClick: () => setEditRow(row),
+                          },
+                          ...(row.status === 'VOIDED'
+                            ? [
+                                {
+                                  label: t('returnsModule.cancelReturn'),
+                                  danger: true,
+                                  onClick: () => {
+                                    if (!window.confirm(t('returnsModule.deleteConfirm'))) return;
+                                    cancelReturnMutation.mutate(row.id);
+                                  },
+                                },
+                              ]
+                            : []),
+                        ]}
+                      />
+                    </td>
                   </tr>
                 ))
               )}
@@ -258,6 +308,24 @@ export default function ReturnsPage() {
           setPage(0);
           setFiltersOpen(false);
         }}
+      />
+
+      <ReturnDetailModal
+        open={!!detailId}
+        returnId={detailId}
+        reasonPreview={detailReason}
+        onClose={() => {
+          setDetailId(null);
+          setDetailReason('');
+        }}
+      />
+
+      <ReturnReasonModal
+        open={!!editRow}
+        initialReason={editRow?.reason}
+        saving={updateReasonMutation.isPending}
+        onClose={() => setEditRow(null)}
+        onSave={(reason) => updateReasonMutation.mutate({ id: editRow.id, reason })}
       />
     </div>
   );

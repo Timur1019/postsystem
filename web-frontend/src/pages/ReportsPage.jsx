@@ -52,9 +52,19 @@ export default function ReportsPage() {
   };
 
   const summaryCards = [
-    { icon: DollarSign, labelKey: 'totalRevenue',   value: fmt(report?.totalRevenue),        color: 'emerald' },
-    { icon: TrendingUp, labelKey: 'transactions',    value: report?.transactionCount ?? '—',  color: 'blue'    },
-    { icon: Package,    labelKey: 'itemsSold',      value: report?.totalItemsSold ?? '—',    color: 'amber'   },
+    { icon: DollarSign, labelKey: 'totalRevenue', value: fmt(report?.totalRevenue), color: 'emerald' },
+    {
+      icon: TrendingUp,
+      labelKey: 'transactions',
+      value: report != null ? report.transactionCount : '—',
+      color: 'blue',
+    },
+    {
+      icon: Package,
+      labelKey: 'itemsSold',
+      value: report != null ? report.totalItemsSold : '—',
+      color: 'amber',
+    },
     { icon: DollarSign, labelKey: 'avgTxn', value: fmt(report?.averageTransactionValue), color: 'purple' },
   ];
 

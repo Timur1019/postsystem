@@ -14,6 +14,7 @@ public record ProductResponse(
     String categoryName,
     BigDecimal costPrice,
     BigDecimal sellingPrice,
+    BigDecimal defaultDiscountPercent,
     BigDecimal taxRate,
     int stockQuantity,
     /** Суммарно списано со склада (продажи, корректировки в минус) по журналу движений. */

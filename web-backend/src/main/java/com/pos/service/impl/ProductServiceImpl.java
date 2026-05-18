@@ -47,6 +47,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -218,10 +219,23 @@ public class ProductServiceImpl extends AbstractProductCatalogSupport implements
             ));
     }
 
+    private static BigDecimal normalizeDiscountPercent(BigDecimal value) {
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+        if (value.compareTo(BigDecimal.ZERO) < 0) {
+            return BigDecimal.ZERO;
+        }
+        if (value.compareTo(new BigDecimal("100")) > 0) {
+            return new BigDecimal("100");
+        }
+        return value.setScale(2, RoundingMode.HALF_UP);
+    }
+
     private static ProductResponse withStockDispatched(ProductResponse r, int stockDispatched) {
         return new ProductResponse(
             r.id(), r.sku(), r.name(), r.description(), r.categoryId(), r.categoryName(),
-            r.costPrice(), r.sellingPrice(), r.taxRate(), r.stockQuantity(), stockDispatched,
+            r.costPrice(), r.sellingPrice(), r.defaultDiscountPercent(), r.taxRate(), r.stockQuantity(), stockDispatched,
             r.lowStockAlert(), r.lowStock(),
             r.barcode(), r.barcodes(), r.imageUrl(), r.active(), r.createdAt(), r.externalProductId(),
             r.ikpu(), r.ikpuStatus(), r.unitOfMeasure(), r.unitMeasureCode(), r.packageCode(),
@@ -233,7 +247,7 @@ public class ProductServiceImpl extends AbstractProductCatalogSupport implements
     private static ProductResponse withSellingPrice(ProductResponse r, BigDecimal sellingPrice) {
         return new ProductResponse(
             r.id(), r.sku(), r.name(), r.description(), r.categoryId(), r.categoryName(),
-            r.costPrice(), sellingPrice, r.taxRate(), r.stockQuantity(), r.stockDispatched(),
+            r.costPrice(), sellingPrice, r.defaultDiscountPercent(), r.taxRate(), r.stockQuantity(), r.stockDispatched(),
             r.lowStockAlert(), r.lowStock(),
             r.barcode(), r.barcodes(), r.imageUrl(), r.active(), r.createdAt(), r.externalProductId(),
             r.ikpu(), r.ikpuStatus(), r.unitOfMeasure(), r.unitMeasureCode(), r.packageCode(),
@@ -265,6 +279,7 @@ public class ProductServiceImpl extends AbstractProductCatalogSupport implements
             .category(category)
             .costPrice(req.costPrice())
             .sellingPrice(req.sellingPrice())
+            .defaultDiscountPercent(normalizeDiscountPercent(req.defaultDiscountPercent()))
             .taxRate(req.taxRate())
             .stockQuantity(req.initialStock() != null ? req.initialStock() : 0)
             .lowStockAlert(req.lowStockAlert() != null ? req.lowStockAlert() : 10)
@@ -308,6 +323,9 @@ public class ProductServiceImpl extends AbstractProductCatalogSupport implements
         }
         if (req.sellingPrice() != null) {
             product.setSellingPrice(req.sellingPrice());
+        }
+        if (req.defaultDiscountPercent() != null) {
+            product.setDefaultDiscountPercent(normalizeDiscountPercent(req.defaultDiscountPercent()));
         }
         if (req.costPrice() != null) {
             product.setCostPrice(req.costPrice());

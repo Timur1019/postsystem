@@ -231,6 +231,7 @@ public class ProductImportServiceImpl implements ProductImportService {
             categoryId,
             costPrice,
             sellingPrice,
+            BigDecimal.ZERO,
             taxRate,
             initialStock,
             10,

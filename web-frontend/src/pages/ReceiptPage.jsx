@@ -18,6 +18,7 @@ const PAYMENT_I18N = {
   CASH: 'sales.paymentCash',
   CARD: 'sales.paymentCard',
   MPESA: 'sales.paymentMpesa',
+  MIXED: 'salesLedger.filters.mixed',
 };
 
 export default function ReceiptPage() {
@@ -192,8 +193,24 @@ export default function ReceiptPage() {
           </div>
           <div className="flex justify-between text-gray-500">
             <span>{t('receipt.payment', { method: paymentMethodLabel(sale.paymentMethod) })}</span>
-            <span>{fmt(sale.amountTendered)}</span>
+            <span>
+              {sale.paymentMethod === 'MIXED'
+                ? `${fmt(sale.cashAmount)} + ${fmt(sale.cardAmount)}`
+                : fmt(sale.amountTendered)}
+            </span>
           </div>
+          {sale.paymentMethod === 'MIXED' && (
+            <>
+              <div className="flex justify-between text-gray-500 text-sm">
+                <span>{t('pos.mixedCashPart')}</span>
+                <span>{fmt(sale.cashAmount)}</span>
+              </div>
+              <div className="flex justify-between text-gray-500 text-sm">
+                <span>{t('pos.mixedCardPart')}</span>
+                <span>{fmt(sale.cardAmount)}</span>
+              </div>
+            </>
+          )}
           {sale.changeGiven > 0 && (
             <div className="flex justify-between text-emerald-700 font-semibold">
               <span>{t('receipt.change')}</span>

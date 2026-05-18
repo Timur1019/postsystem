@@ -79,23 +79,61 @@ public interface SaleRepository extends JpaRepository<Sale, UUID> {
         Pageable pageable
     );
 
-    @Query("""
+    @Query(
+        value = """
         SELECT s FROM Sale s
+        LEFT JOIN FETCH s.store
+        LEFT JOIN FETCH s.cashier
         WHERE s.status IN :returnStatuses
         AND s.createdAt >= :start AND s.createdAt < :end
         AND (:cashierName IS NULL OR :cashierName = '' OR LOWER(s.cashier.fullName) LIKE LOWER(CONCAT('%', :cashierName, '%')))
         AND (:fiscal IS NULL OR :fiscal = '' OR LOWER(s.receiptNumber) LIKE LOWER(CONCAT('%', :fiscal, '%')))
-        """)
+        AND (:storeId IS NULL OR (s.store IS NOT NULL AND s.store.id = :storeId))
+        """,
+        countQuery = """
+        SELECT COUNT(s) FROM Sale s
+        WHERE s.status IN :returnStatuses
+        AND s.createdAt >= :start AND s.createdAt < :end
+        AND (:cashierName IS NULL OR :cashierName = '' OR LOWER(s.cashier.fullName) LIKE LOWER(CONCAT('%', :cashierName, '%')))
+        AND (:fiscal IS NULL OR :fiscal = '' OR LOWER(s.receiptNumber) LIKE LOWER(CONCAT('%', :fiscal, '%')))
+        AND (:storeId IS NULL OR (s.store IS NOT NULL AND s.store.id = :storeId))
+        """
+    )
     Page<Sale> searchReturns(
         @Param("returnStatuses") List<Sale.SaleStatus> returnStatuses,
         @Param("start") Instant start,
         @Param("end") Instant end,
         @Param("cashierName") String cashierName,
         @Param("fiscal") String fiscal,
+        @Param("storeId") Integer storeId,
         Pageable pageable
     );
 
     Page<Sale> findByCashier_Username(String username, Pageable pageable);
+
+    @Query("""
+        SELECT s FROM Sale s
+        WHERE s.cashier.username = :username
+        AND s.cashierShift.id = :shiftId
+        ORDER BY s.createdAt DESC
+        """)
+    Page<Sale> findByCashierUsernameAndShiftId(
+        @Param("username") String username,
+        @Param("shiftId") UUID shiftId,
+        Pageable pageable
+    );
+
+    @Query("""
+        SELECT s FROM Sale s
+        WHERE s.cashier.username = :username
+        AND (s.cashierShift IS NULL OR s.cashierShift.id <> :shiftId)
+        ORDER BY s.createdAt DESC
+        """)
+    Page<Sale> findByCashierUsernameExcludingShiftId(
+        @Param("username") String username,
+        @Param("shiftId") UUID shiftId,
+        Pageable pageable
+    );
 
     @Query("""
         SELECT COALESCE(SUM(s.totalAmount), 0)
@@ -165,8 +203,8 @@ public interface SaleRepository extends JpaRepository<Sale, UUID> {
                COALESCE(SUM(total_amount), 0),
                COALESCE(SUM(tax_total), 0),
                COALESCE(SUM(discount_total), 0),
-               COALESCE(SUM(CASE WHEN payment_method = 'CASH' THEN total_amount ELSE 0 END), 0),
-               COALESCE(SUM(CASE WHEN payment_method = 'CARD' THEN total_amount ELSE 0 END), 0)
+               COALESCE(SUM(cash_amount), 0),
+               COALESCE(SUM(card_amount), 0)
         FROM sales
         WHERE cashier_id = :cashierId
           AND store_id = :storeId
@@ -186,8 +224,8 @@ public interface SaleRepository extends JpaRepository<Sale, UUID> {
                COALESCE(SUM(total_amount), 0),
                COALESCE(SUM(tax_total), 0),
                COALESCE(SUM(discount_total), 0),
-               COALESCE(SUM(CASE WHEN payment_method = 'CASH' THEN total_amount ELSE 0 END), 0),
-               COALESCE(SUM(CASE WHEN payment_method = 'CARD' THEN total_amount ELSE 0 END), 0),
+               COALESCE(SUM(cash_amount), 0),
+               COALESCE(SUM(card_amount), 0),
                MIN(receipt_number),
                MAX(receipt_number)
         FROM sales
@@ -199,8 +237,8 @@ public interface SaleRepository extends JpaRepository<Sale, UUID> {
     @Query(value = """
         SELECT COUNT(*),
                COALESCE(SUM(tax_total), 0),
-               COALESCE(SUM(CASE WHEN payment_method = 'CASH' THEN total_amount ELSE 0 END), 0),
-               COALESCE(SUM(CASE WHEN payment_method = 'CARD' THEN total_amount ELSE 0 END), 0)
+               COALESCE(SUM(cash_amount), 0),
+               COALESCE(SUM(card_amount), 0)
         FROM sales
         WHERE cashier_shift_id = :shiftId
           AND status IN ('REFUNDED', 'VOIDED')

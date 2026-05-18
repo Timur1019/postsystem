@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -157,13 +158,17 @@ public class ReportServiceImpl implements ReportService {
 
     private SalesReportResponse loadSalesReportFromDb(LocalDate from, LocalDate to) {
         ZoneId z = zone();
+        var rangeStart = from.atStartOfDay(z).toInstant();
+        var rangeEnd = to.plusDays(1).atStartOfDay(z).toInstant();
+        var status = Sale.SaleStatus.COMPLETED;
+
         BigDecimal totalRevenue = BigDecimal.ZERO;
         List<DailyPoint> breakdown = new ArrayList<>();
 
         for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
             var start = d.atStartOfDay(z).toInstant();
             var end = d.plusDays(1).atStartOfDay(z).toInstant();
-            BigDecimal rev = saleRepository.sumTotalBetween(start, end, Sale.SaleStatus.COMPLETED);
+            BigDecimal rev = saleRepository.sumTotalBetween(start, end, status);
             if (rev == null) {
                 rev = BigDecimal.ZERO;
             }
@@ -171,8 +176,14 @@ public class ReportServiceImpl implements ReportService {
             breakdown.add(new DailyPoint(d.toString(), rev));
         }
 
+        long transactions = saleRepository.countSalesBetween(rangeStart, rangeEnd, status);
+        long itemsSold = saleItemRepository.sumQuantitySoldBetween(rangeStart, rangeEnd, status);
+        BigDecimal avg = transactions > 0
+            ? totalRevenue.divide(BigDecimal.valueOf(transactions), 2, RoundingMode.HALF_UP)
+            : BigDecimal.ZERO;
+
         LogUtil.debug(ReportServiceImpl.class, "Sales report loaded from DB for {} .. {}", from, to);
-        return new SalesReportResponse(totalRevenue, breakdown);
+        return new SalesReportResponse(totalRevenue, transactions, itemsSold, avg, breakdown);
     }
 
     private List<TopProductRow> loadTopProductsFromDb(int limit, LocalDate from, LocalDate to) {

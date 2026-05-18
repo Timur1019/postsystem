@@ -7,6 +7,7 @@ import com.pos.dto.report.DailySummaryResponse;
 import com.pos.dto.report.SalesReportResponse;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,14 +30,33 @@ public final class ReportAnalyticsReadSupport {
         Map<LocalDate, DailySalesAggregate> daily = snapshot.dailyByDate();
         List<DailyPoint> breakdown = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
+        long transactions = 0L;
+        long itemsSold = 0L;
 
         for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
             DailySalesAggregate agg = daily.get(d);
             BigDecimal rev = agg != null ? agg.revenue() : BigDecimal.ZERO;
+            if (agg != null) {
+                transactions += agg.transactionCount();
+                itemsSold += agg.itemsSold();
+            }
             total = total.add(rev);
             breakdown.add(new DailyPoint(d.toString(), rev));
         }
 
-        return new SalesReportResponse(total, breakdown);
+        return new SalesReportResponse(
+            total,
+            transactions,
+            itemsSold,
+            averageValue(total, transactions),
+            breakdown
+        );
+    }
+
+    private static BigDecimal averageValue(BigDecimal total, long transactions) {
+        if (transactions <= 0) {
+            return BigDecimal.ZERO;
+        }
+        return total.divide(BigDecimal.valueOf(transactions), 2, RoundingMode.HALF_UP);
     }
 }

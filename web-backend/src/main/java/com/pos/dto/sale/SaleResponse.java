@@ -18,7 +18,11 @@ public record SaleResponse(
     BigDecimal taxTotal,
     BigDecimal discountTotal,
     BigDecimal totalAmount,
+    /** Сумма возврата (для VOIDED / REFUNDED — равна сумме чека). */
+    BigDecimal returnAmount,
     String paymentMethod,
+    BigDecimal cashAmount,
+    BigDecimal cardAmount,
     String receiptType,
     BigDecimal amountTendered,
     BigDecimal changeGiven,

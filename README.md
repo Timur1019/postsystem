@@ -49,10 +49,10 @@ cd /opt/aurent-pos
 bash deploy/git-update.sh
 ```
 
-Первый раз: [deploy/GIT-WORKFLOW.md](deploy/GIT-WORKFLOW.md)
+Первый раз на сервере:
 
 ```bash
-bash deploy/git-bootstrap.sh   # привязать к GitHub
+bash deploy/git-bootstrap.sh   # или git clone + ubuntu-prepare
 bash deploy/setup-env.sh
 bash deploy/deploy.sh
 ```

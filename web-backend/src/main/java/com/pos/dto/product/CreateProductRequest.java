@@ -15,6 +15,7 @@ public record CreateProductRequest(
     Integer categoryId,
     @NotNull @DecimalMin("0") BigDecimal costPrice,
     @NotNull @DecimalMin("0.01") BigDecimal sellingPrice,
+    @DecimalMin("0") BigDecimal defaultDiscountPercent,
     @NotNull BigDecimal taxRate,
     Integer initialStock,
     Integer lowStockAlert,

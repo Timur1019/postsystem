@@ -45,7 +45,12 @@ public interface SaleService {
         String storeIdStr
     );
 
-    PageResponse<SaleResponse> getSalesByCashier(String username, Pageable pageable);
+    PageResponse<SaleResponse> getSalesByCashier(
+        String username,
+        java.util.UUID shiftId,
+        java.util.UUID excludeShiftId,
+        Pageable pageable
+    );
 
     SaleResponse voidSale(UUID id, String reason);
 }

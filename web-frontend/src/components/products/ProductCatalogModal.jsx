@@ -56,6 +56,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
           .transform((v) => (v === '' || v == null ? null : v)),
         costPrice: z.coerce.number().min(0, t('validation.costPrice')),
         sellingPrice: z.coerce.number().min(0.01, t('validation.sellingPrice')),
+        defaultDiscountPercent: z.coerce.number().min(0).max(100).optional(),
         taxRate: z.coerce.number().min(0).max(100),
         initialStock: z.coerce.number().min(0).optional(),
         lowStockAlert: z.coerce.number().min(0).optional(),
@@ -104,6 +105,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       categoryId: full.categoryId != null ? full.categoryId : '',
       costPrice: full.costPrice,
       sellingPrice: full.sellingPrice,
+      defaultDiscountPercent: full.defaultDiscountPercent ?? 0,
       taxRate: full.taxRate ?? 0,
       lowStockAlert: full.lowStockAlert ?? 10,
       ...(!isEdit ? { initialStock: full.stockQuantity ?? 0 } : {}),
@@ -154,6 +156,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       categoryId: values.categoryId || null,
       costPrice: values.costPrice,
       sellingPrice: values.sellingPrice,
+      defaultDiscountPercent: values.defaultDiscountPercent ?? 0,
       taxRate: values.taxRate,
       lowStockAlert: values.lowStockAlert,
       barcode: values.barcode || undefined,
@@ -383,6 +386,16 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
               </Field>
               <Field label={t('productModal.price')} error={errors.sellingPrice?.message}>
                 <input {...register('sellingPrice', { valueAsNumber: true })} type="number" step="0.01" className={inputCls} />
+              </Field>
+              <Field label={t('productCatalog.defaultDiscount')} error={errors.defaultDiscountPercent?.message}>
+                <input
+                  {...register('defaultDiscountPercent', { valueAsNumber: true })}
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  className={inputCls}
+                />
               </Field>
               <Field label={t('productModal.lowStock')} error={errors.lowStockAlert?.message}>
                 <input {...register('lowStockAlert', { valueAsNumber: true })} type="number" className={inputCls} />

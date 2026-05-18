@@ -38,6 +38,10 @@ public class Product {
     @Column(name = "selling_price", nullable = false, precision = 18, scale = 2)
     private BigDecimal sellingPrice;
 
+    /** Скидка по умолчанию в кассе, %. */
+    @Column(name = "default_discount_percent", precision = 5, scale = 2, nullable = false)
+    private BigDecimal defaultDiscountPercent = BigDecimal.ZERO;
+
     /** НДС по умолчанию 12 % (Узбекистан / типовой режим). */
     @Column(name = "tax_rate", precision = 5, scale = 2)
     private BigDecimal taxRate = new BigDecimal("12");

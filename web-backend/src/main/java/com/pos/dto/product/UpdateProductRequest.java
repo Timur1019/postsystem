@@ -9,6 +9,7 @@ public record UpdateProductRequest(
     String name,
     String description,
     BigDecimal sellingPrice,
+    BigDecimal defaultDiscountPercent,
     BigDecimal costPrice,
     BigDecimal taxRate,
     Integer lowStockAlert,
