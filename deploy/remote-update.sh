@@ -42,13 +42,9 @@ if ! grep -q '^VITE_SUPPORT_TELEGRAM_BOT=' .env 2>/dev/null; then
 fi
 
 git fetch origin
-git checkout main
-
-if ! git pull --ff-only origin main; then
-  echo "==> Сброс локальных правок до origin/main"
-  git reset --hard origin/main
-  git clean -fd
-fi
+git checkout -f main
+git reset --hard origin/main
+git clean -fd
 
 COMMIT="\$(git rev-parse --short HEAD)"
 echo "==> Код на сервере: \$COMMIT"

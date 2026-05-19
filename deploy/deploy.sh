@@ -37,8 +37,32 @@ docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d postgres
 echo "==> SQL-миграции..."
 bash deploy/migrate-db.sh
 
-echo "==> Запуск backend и frontend..."
-docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
+echo "==> Запуск backend..."
+if ! docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --no-deps backend; then
+  echo "==> Ошибка запуска backend. Последние логи:"
+  docker compose -f "$COMPOSE_FILE" logs --tail=120 backend || true
+  exit 1
+fi
+
+echo "==> Ожидание health backend (до ~3 мин)..."
+backend_ok=0
+for _ in $(seq 1 36); do
+  if docker compose -f "$COMPOSE_FILE" exec -T backend \
+    curl -fsS http://127.0.0.1:8080/api/v1/actuator/health 2>/dev/null | grep -q UP; then
+    backend_ok=1
+    break
+  fi
+  sleep 5
+done
+
+if [[ "$backend_ok" != "1" ]]; then
+  echo "==> Backend не поднялся. Логи:"
+  docker compose -f "$COMPOSE_FILE" logs --tail=150 backend || true
+  exit 1
+fi
+
+echo "==> Запуск frontend..."
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d frontend
 
 echo ""
 echo "==> Статус контейнеров:"
