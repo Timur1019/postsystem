@@ -19,11 +19,17 @@ source "$ENV_FILE"
 set +a
 
 PG_USER="${POSTGRES_USER:-pos_user}"
+PG_DB="${POSTGRES_DB:-pos_db}"
 
 echo "==> Обновление пароля PostgreSQL для пользователя $PG_USER"
+# Внутри контейнера локальный вход без пароля (trust)
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
-  psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+  psql -U "$PG_USER" -d postgres -v ON_ERROR_STOP=1 \
   -c "ALTER USER \"${PG_USER}\" WITH PASSWORD '${POSTGRES_PASSWORD}';"
 
-echo "==> Проверка..."
-bash deploy/verify-db.sh
+echo "==> Проверка входа с паролем из .env..."
+PGPASSWORD="$POSTGRES_PASSWORD" docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T \
+  -e PGPASSWORD="$POSTGRES_PASSWORD" postgres \
+  psql -U "$PG_USER" -d "$PG_DB" -c 'SELECT 1 AS ok;'
+
+echo "OK: пароль синхронизирован"

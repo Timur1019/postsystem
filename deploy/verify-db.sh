@@ -22,7 +22,8 @@ PG_USER="${POSTGRES_USER:-pos_user}"
 PG_DB="${POSTGRES_DB:-pos_db}"
 
 echo "==> Проверка входа в PostgreSQL (пользователь $PG_USER)..."
-if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T postgres \
+if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T \
+  -e PGPASSWORD="$POSTGRES_PASSWORD" postgres \
   psql -U "$PG_USER" -d "$PG_DB" -c 'SELECT 1 AS ok;' >/dev/null 2>&1; then
   echo "OK: пароль из .env подходит к БД"
   exit 0
@@ -35,7 +36,6 @@ echo "Исправление (подставит пароль из .env в Postg
 echo ""
 echo "  cd $ROOT"
 echo "  set -a && source .env && set +a"
-echo "  docker compose -f $COMPOSE_FILE --env-file $ENV_FILE exec -T postgres \\"
-echo "    psql -U postgres -d postgres -c \"ALTER USER $PG_USER WITH PASSWORD '\$POSTGRES_PASSWORD';\""
+echo "  bash deploy/sync-db-password.sh"
 echo ""
 exit 1
