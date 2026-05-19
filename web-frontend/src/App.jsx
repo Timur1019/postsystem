@@ -14,6 +14,8 @@ import ReturnsPage       from './pages/ReturnsPage';
 import StockProductsPage from './pages/StockProductsPage';
 import SuppliersPage     from './pages/SuppliersPage';
 import UsersPage         from './pages/UsersPage';
+import UsersPrinterSettingsPage from './pages/UsersPrinterSettingsPage';
+import UsersBrandingSettingsPage from './pages/UsersBrandingSettingsPage';
 import StoresPage        from './pages/StoresPage';
 import ReceiptPage       from './pages/ReceiptPage';
 import CashRegistersListPage from './pages/CashRegistersListPage';
@@ -32,6 +34,7 @@ import CashierLayout     from './components/layout/CashierLayout';
 import PosPage           from './pages/cashier/PosPage';
 import CashierMySalesPage from './pages/cashier/CashierMySalesPage';
 import HandbookPage from './pages/HandbookPage';
+import SupportPage from './pages/SupportPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -101,6 +104,7 @@ export default function App() {
             <Route path="sales" element={<CashierMySalesPage />} />
             <Route path="handbook" element={<HandbookPage scope="cashier" />} />
             <Route path="handbook/:moduleId" element={<HandbookPage scope="cashier" />} />
+            <Route path="support" element={<SupportPage />} />
           </Route>
 
           <Route path="/platform" element={
@@ -152,11 +156,19 @@ export default function App() {
             <Route path="stores" element={
               <ProtectedRoute requiredRole="ADMIN"><StoresPage /></ProtectedRoute>
             } />
-            <Route path="users" element={
+            <Route path="users/list" element={
               <ProtectedRoute requiredRole="ADMIN"><UsersPage /></ProtectedRoute>
             } />
+            <Route path="users/printer-settings" element={
+              <ProtectedRoute requiredRole="ADMIN"><UsersPrinterSettingsPage /></ProtectedRoute>
+            } />
+            <Route path="users/branding-settings" element={
+              <ProtectedRoute requiredRole="ADMIN"><UsersBrandingSettingsPage /></ProtectedRoute>
+            } />
+            <Route path="users" element={<Navigate to="/users/list" replace />} />
             <Route path="handbook" element={<HandbookPage scope="admin" />} />
             <Route path="handbook/:moduleId" element={<HandbookPage scope="admin" />} />
+            <Route path="support" element={<SupportPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

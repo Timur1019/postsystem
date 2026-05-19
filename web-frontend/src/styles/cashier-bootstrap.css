@@ -330,6 +330,15 @@
   border-bottom: 1px solid var(--pos-border) !important;
 }
 
+.cashier-topbar--pos {
+  min-height: 44px;
+}
+
+.cashier-topbar__pos-title {
+  font-size: 1rem;
+  color: var(--pos-text);
+}
+
 /* ── Регистратор ── */
 .cashier-register {
   flex: 1;
@@ -434,25 +443,43 @@
 
 .pos-order-panel__actions {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.pos-order-panel__link {
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: 0.8rem;
+.pos-order-panel__btn {
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 0.8125rem;
   font-weight: 600;
+  line-height: 1.2;
   cursor: pointer;
-  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
-.pos-order-panel__link--warn {
-  color: #b45309;
+.pos-order-panel__btn--warn {
+  color: #92400e;
+  background: #fff7ed;
+  border-color: #fdba74;
 }
 
-.pos-order-panel__link--danger {
-  color: var(--pos-danger);
+.pos-order-panel__btn--warn:hover {
+  background: #ffedd5;
+  border-color: #fb923c;
+}
+
+.pos-order-panel__btn--clear {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.pos-order-panel__btn--clear:hover {
+  background: #fee2e2;
+  border-color: #f87171;
 }
 
 .pos-order-panel__list {
@@ -785,6 +812,8 @@
 
 /* Низ чека: подытоги + ИТОГО + «К оплате» */
 .pos-order-panel__checkout {
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
   margin-top: auto;
   background: #fff;
@@ -828,27 +857,27 @@
 .pos-order-panel__grand {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
   gap: 12px;
   margin: 0;
-  padding: 14px 18px;
-  background: var(--pos-green);
-  color: #fff;
+  padding: 10px 18px 12px;
+  background: #fff;
+  color: var(--pos-text);
 }
 
 .pos-order-panel__grand span:first-child {
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgb(255 255 255 / 0.95);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #111827;
 }
 
 .pos-order-panel__grand span:last-child {
   font-size: 1.35rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: #fff;
+  color: var(--pos-green);
 }
 
 .pos-checkout-btn {
@@ -860,15 +889,21 @@
   max-width: 100%;
   box-sizing: border-box;
   margin: 0;
-  padding: 16px 18px;
+  padding: 14px 18px;
   border: none;
   border-radius: 0;
+  border-top: 1px solid rgb(0 104 71 / 0.12);
   background: #7a9e8c;
   color: #fff;
   font-size: 1rem;
   font-weight: 700;
+  line-height: 1.25;
   cursor: pointer;
   transition: background 0.15s;
+}
+
+.pos-checkout-btn span {
+  white-space: nowrap;
 }
 
 .pos-checkout-btn:not(:disabled) {
@@ -888,12 +923,15 @@
 .cashier-app .pos-pay-panel {
   display: flex;
   flex-direction: column;
+  gap: 10px;
   min-height: 0;
   height: 100%;
-  background: var(--pos-surface);
-  border: 1px solid var(--pos-border);
-  border-radius: var(--pos-radius-lg);
+  padding: 10px;
+  background: #eef1f4;
+  border: none;
+  border-radius: 0;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 /* Состав заказа (чек + ИТОГО) */
@@ -1037,10 +1075,11 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin: 0 -16px;
+  margin: 0;
   padding: 14px 16px;
-  background: #0d5c3f;
+  background: var(--pos-green);
   color: #fff;
+  border-radius: 0 0 11px 11px;
 }
 
 .pos-order-composition__grand span {
@@ -1060,13 +1099,29 @@
 }
 
 .cashier-app .pos-pay-panel__composition {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
-  max-height: min(44%, 360px);
-  padding: 14px 14px 10px;
-  border-bottom: 1px solid var(--pos-border);
-  background: #f4f6f5;
+  max-height: min(42%, 340px);
+  padding: 0;
+  border: none;
+  background: transparent;
   overflow: hidden;
+}
+
+.cashier-app .pos-pay-panel__composition .pos-order-composition {
+  width: 100%;
+  height: 100%;
+}
+
+.cashier-app .pos-pay-panel__composition .pos-order-composition__head {
+  margin-bottom: 8px;
+}
+
+.cashier-app .pos-pay-panel__composition .pos-order-composition__card {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgb(15 23 42 / 0.08);
 }
 
 .cashier-app .pos-pay-panel__order {
@@ -1271,6 +1326,11 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  background: #fff;
+  border: 1px solid var(--pos-border);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgb(15 23 42 / 0.06);
+  overflow: hidden;
 }
 
 .cashier-app .pos-pay-panel__step-head {
@@ -1319,6 +1379,8 @@
 }
 
 .cashier-app .pos-pay-panel__scroll {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -1328,6 +1390,8 @@
 .cashier-app .pos-pay-panel__step {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: min-content;
   gap: 12px;
 }
 
@@ -1337,7 +1401,8 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  margin-top: 4px;
+  margin-top: auto;
+  flex-shrink: 0;
   padding: 13px 16px;
   border: none;
   border-radius: var(--pos-radius);
@@ -1383,12 +1448,52 @@
 }
 
 .cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type {
+  display: flex;
   flex-direction: row;
+  align-items: center;
   justify-content: flex-start;
   gap: 12px;
-  min-height: auto;
+  min-height: 52px;
   padding: 12px 14px;
   font-size: 0.875rem;
+  border-radius: 12px;
+}
+
+.cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type.is-active .pos-pay-receipt-type__icon-wrap {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type__label {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-weight: 600;
+}
+
+.cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type__check {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--pos-green);
+}
+
+.cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type.is-active {
+  border-color: var(--pos-green);
+  border-width: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgb(0 104 71 / 0.08);
 }
 
 .cashier-app .pos-pay-method-card--row {
@@ -1435,11 +1540,30 @@
 }
 
 .cashier-app .pos-pay-card-type--row {
+  display: flex;
   flex-direction: row;
+  align-items: center;
   justify-content: flex-start;
   gap: 12px;
-  min-height: auto;
+  min-height: 52px;
   padding: 12px 14px;
+  border: 1px solid #e8ecea;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.cashier-app .pos-pay-card-type--row:hover:not(:disabled) {
+  border-color: var(--pos-green);
+  background: var(--pos-green-soft);
+}
+
+.cashier-app .pos-pay-card-types--stack {
+  gap: 10px;
 }
 
 .cashier-app .pos-pay-panel .pos-pay-amount-box__value {
@@ -1520,8 +1644,9 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-  height: 40px;
-  padding: 0 6px 0 12px;
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
   background: #f3f4f6;
   border: 1px solid var(--pos-border);
   border-radius: 999px;
@@ -1580,26 +1705,28 @@
 
 .pos-category-nav__pill {
   flex-shrink: 0;
-  border: 1px solid var(--pos-border);
+  border: 1px solid #dbe4ee;
   border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.75rem;
+  padding: 8px 16px;
+  font-size: 0.8125rem;
   font-weight: 600;
-  background: var(--pos-surface);
-  color: var(--pos-text);
+  background: #eef2f7;
+  color: #334155;
   cursor: pointer;
   white-space: nowrap;
-  transition: border-color 0.12s, background 0.12s, color 0.12s;
+  transition: border-color 0.12s, background 0.12s, color 0.12s, box-shadow 0.12s;
 }
 
 .pos-category-nav__pill:hover:not(.is-active) {
-  border-color: #cbd5e1;
+  border-color: #c5d0dc;
+  background: #e4eaf2;
 }
 
 .pos-category-nav__pill.is-active {
   border-color: var(--pos-green);
   background: var(--pos-green);
   color: #fff;
+  box-shadow: 0 1px 4px rgb(0 104 71 / 0.25);
 }
 
 /* Сетка товаров */
@@ -2363,7 +2490,41 @@
 
 /* Наличные — панель ввода */
 .pos-pay-cash-panel {
-  max-width: 480px;
+  width: 100%;
+  max-width: none;
+}
+
+.cashier-app .pos-pay-panel .pos-pay-cash-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cashier-app .pos-pay-panel .pos-pay-cash__due {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--pos-green-soft);
+  text-align: center;
+}
+
+.cashier-app .pos-pay-panel .pos-pay-cash__due-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pos-muted);
+}
+
+.cashier-app .pos-pay-panel .pos-pay-cash__due-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--pos-green);
+  font-variant-numeric: tabular-nums;
 }
 
 .pos-pay-card-type-hint {
@@ -2558,5 +2719,262 @@
   background: #d1e7dd;
   color: #0a3622;
   font-size: 0.875rem;
+}
+
+/* Статистика текущей смены */
+.cashier-sales-shift-stats {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgb(0 104 71 / 0.2);
+  background: linear-gradient(135deg, #e8f5ef 0%, #f8fffb 55%, #fff 100%);
+  box-shadow: 0 1px 4px rgb(15 23 42 / 0.06);
+}
+
+.cashier-sales-shift-stats__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--pos-green, #006847);
+  color: #fff;
+}
+
+.cashier-sales-shift-stats__title {
+  margin: 0 0 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--pos-text, #111827);
+}
+
+.cashier-sales-shift-stats__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+.cashier-sales-shift-stats__label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+.cashier-sales-shift-stats__value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--pos-text, #111827);
+}
+
+.cashier-sales-shift-stats__value--sum {
+  color: var(--pos-green, #006847);
+  font-weight: 800;
+}
+
+/* Карточка таблицы */
+.cashier-sales-card {
+  border-radius: 12px;
+  border: 1px solid var(--pos-border, #e5e7eb);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 0.06);
+  overflow: hidden;
+}
+
+.cashier-sales-card__table {
+  overflow-x: auto;
+}
+
+.cashier-sales-table-wrap {
+  overflow-x: auto;
+}
+
+.cashier-sales-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8125rem;
+}
+
+.cashier-sales-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 12px;
+  background: #f3f4f6;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.cashier-sales-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.cashier-sales-table__row {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.cashier-sales-table__row:hover {
+  background: #f8faf9;
+}
+
+.cashier-sales-table__row:nth-child(even) {
+  background: #fafbfc;
+}
+
+.cashier-sales-table__row:nth-child(even):hover {
+  background: #f3f7f5;
+}
+
+.cashier-sales-table__empty {
+  text-align: center;
+  color: #9ca3af;
+  padding: 2.5rem 1rem !important;
+}
+
+.cashier-sales-table__receipt {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  color: #111827;
+}
+
+.cashier-sales-table__date {
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.cashier-sales-table__amount {
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--pos-green, #006847);
+}
+
+.cashier-sales-table__col-num {
+  text-align: right;
+}
+
+.cashier-sales-table__return {
+  border: none;
+  background: transparent;
+  color: #d97706;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cashier-sales-table__return:hover:not(:disabled) {
+  background: #fff7ed;
+}
+
+.cashier-sales-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cashier-sales-pill--cash {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.cashier-sales-pill--card {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.cashier-sales-pill--mixed {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.cashier-sales-pill--mpesa {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.cashier-sales-badge--completed {
+  background: #e8f5ef;
+  color: #006847;
+}
+
+.cashier-sales-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cashier-sales-pagination__info {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.cashier-sales-pagination__sep {
+  margin: 0 6px;
+}
+
+.cashier-sales-pagination__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cashier-sales-pagination__btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.cashier-sales-pagination__btn:hover:not(:disabled) {
+  border-color: var(--pos-green, #006847);
+  color: var(--pos-green, #006847);
+}
+
+.cashier-sales-pagination__btn.is-active {
+  background: var(--pos-green, #006847);
+  border-color: var(--pos-green, #006847);
+  color: #fff;
+}
+
+.cashier-sales-pagination__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 767px) {
+  .cashier-sales-shift-stats__grid {
+    grid-template-columns: 1fr;
+  }
 }
 

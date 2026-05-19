@@ -1,25 +1,28 @@
 // src/components/cashier/PosCatalogPanel.jsx
-import { Search, ScanLine } from 'lucide-react';
+import { forwardRef } from 'react';
+import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 
 export const ALL_CATEGORY_ID = 'all';
 
-export default function PosCatalogPanel({
-  search,
-  onSearchChange,
-  onSearchEnter,
-  scanDisabled = false,
-  onBarcodeFocus,
-  categories,
-  categoriesLoading,
-  selectedCategoryId,
-  onSelectCategory,
-  searchActive,
-  products,
-  productsLoading,
-  onAddProduct,
-}) {
+const PosCatalogPanel = forwardRef(function PosCatalogPanel(
+  {
+    search,
+    onSearchChange,
+    onSearchEnter,
+    scanDisabled = false,
+    categories,
+    categoriesLoading,
+    selectedCategoryId,
+    onSelectCategory,
+    searchActive,
+    products,
+    productsLoading,
+    onAddProduct,
+  },
+  searchInputRef
+) {
   const { t } = useTranslation();
 
   const pillClass = (active) => `pos-category-nav__pill${active ? ' is-active' : ''}`;
@@ -30,6 +33,7 @@ export default function PosCatalogPanel({
         <div className="pos-search-bar__field">
           <Search size={20} className="pos-search-bar__icon" aria-hidden />
           <input
+            ref={searchInputRef}
             type="search"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -44,16 +48,6 @@ export default function PosCatalogPanel({
             autoComplete="off"
             className="pos-search-bar__input"
           />
-          <button
-            type="button"
-            className="pos-search-bar__scan"
-            onClick={onBarcodeFocus}
-            disabled={scanDisabled}
-            title={t('pos.barcodePh')}
-            aria-label={t('pos.barcodePh')}
-          >
-            <ScanLine size={20} strokeWidth={1.75} />
-          </button>
         </div>
       </header>
 
@@ -103,4 +97,6 @@ export default function PosCatalogPanel({
       </div>
     </section>
   );
-}
+});
+
+export default PosCatalogPanel;

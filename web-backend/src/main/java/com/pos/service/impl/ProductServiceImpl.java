@@ -294,6 +294,7 @@ public class ProductServiceImpl extends AbstractProductCatalogSupport implements
             .packageCode(req.packageCode())
             .soldIndividually(req.soldIndividually() == null || req.soldIndividually())
             .markedProduct(Boolean.TRUE.equals(req.markedProduct()))
+            .storageLocation(StringUtils.hasText(req.storageLocation()) ? req.storageLocation().trim() : null)
             .ownerType(StringUtils.hasText(req.ownerType()) ? req.ownerType() : "OWN")
             .commissionTin(req.commissionTin())
             .commissionPinfl(req.commissionPinfl())

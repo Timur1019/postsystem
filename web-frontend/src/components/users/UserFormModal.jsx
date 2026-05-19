@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { X, Loader } from 'lucide-react';
 import { companyApi, storeApi, userApi } from '../../services/api';
+import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
   focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white`;
@@ -57,6 +58,7 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
 
   const selectedRole = watch('role');
   const isCashierRole = selectedRole === 'CASHIER';
+  const fieldOn = useTenantDisplayStore((s) => s.isUserFormFieldOn);
 
   const { data: companies = [] } = useQuery({
     queryKey: ['companies-all'],
@@ -169,6 +171,11 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
 
   const onSubmit = (data) => {
     const role = data.role;
+    const username = data.username?.trim() ?? '';
+    const firstName = fieldOn('firstName') ? data.firstName?.trim() : username;
+    const lastName = fieldOn('lastName') ? data.lastName?.trim() : '—';
+    const patronymic = fieldOn('patronymic') ? data.patronymic?.trim() || null : null;
+    const email = fieldOn('email') ? data.email.trim() : `${username}@local.pos`;
     let selectedStoreIds = Array.from(storeIds).map(Number).filter((n) => !Number.isNaN(n));
 
     if (role === 'CASHIER') {
@@ -188,10 +195,10 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
         return;
       }
       const payload = {
-        firstName: data.firstName?.trim(),
-        lastName: data.lastName?.trim(),
-        patronymic: data.patronymic?.trim() || null,
-        email: data.email.trim(),
+        firstName,
+        lastName,
+        patronymic,
+        email,
         role,
         companyId: isPlatform && companyId ? Number(companyId) : undefined,
         storeIds: selectedStoreIds,
@@ -204,11 +211,11 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
     }
 
     saveUser({
-      firstName: data.firstName?.trim(),
-      lastName: data.lastName?.trim(),
-      patronymic: data.patronymic?.trim() || null,
-      username: data.username.trim(),
-      email: data.email.trim(),
+      firstName,
+      lastName,
+      patronymic,
+      username,
+      email,
       password: data.password,
       role,
       companyId: isPlatform && companyId ? Number(companyId) : undefined,
@@ -229,10 +236,10 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
   }
 
   const fioFields = [
-    { name: 'lastName', label: t('users.lastName') },
-    { name: 'firstName', label: t('users.firstName') },
-    { name: 'patronymic', label: t('users.patronymic') },
-  ];
+    { name: 'lastName', label: t('users.lastName'), key: 'lastName' },
+    { name: 'firstName', label: t('users.firstName'), key: 'firstName' },
+    { name: 'patronymic', label: t('users.patronymic'), key: 'patronymic' },
+  ].filter((f) => fieldOn(f.key));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -262,10 +269,13 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
               className={`${inputCls} ${isEdit ? 'cursor-not-allowed opacity-70' : ''}`}
             />
           </div>
-          <div>
-            <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{t('users.email')} *</label>
-            <input type="email" {...register('email', { required: true })} className={inputCls} />
-          </div>
+          {fieldOn('email') ? (
+            <div>
+              <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{t('users.email')} *</label>
+              <input type="email" {...register('email', { required: true })} className={inputCls} />
+            </div>
+          ) : null}
+          {(fieldOn('password') || !isEdit) ? (
           <div>
             <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
               {t('users.password')}
@@ -285,6 +295,7 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
               <p className="mt-1 text-xs text-red-400">{t('users.passwordMinLength')}</p>
             )}
           </div>
+          ) : null}
           {isPlatform && (
             <div>
               <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{t('users.colCompany')} *</label>
@@ -306,6 +317,7 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
               </select>
             </div>
           )}
+          {fieldOn('role') ? (
           <div>
             <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{t('users.role')}</label>
             <select {...register('role')} className={inputCls}>
@@ -319,6 +331,8 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
               )}
             </select>
           </div>
+          ) : null}
+          {fieldOn('stores') ? (
           <div>
             <label className="mb-2 block text-xs font-medium text-slate-500 dark:text-slate-400">{t('users.colStores')}</label>
             {isCashierRole && (
@@ -345,6 +359,7 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
               )}
             </div>
           </div>
+          ) : null}
           <div className="flex gap-3">
             <button
               type="button"

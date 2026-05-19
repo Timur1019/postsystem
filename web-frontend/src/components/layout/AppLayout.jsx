@@ -21,16 +21,20 @@ import {
   FileText,
   ArrowRightLeft,
   SlidersHorizontal,
+  Printer,
+  UserCog,
   Truck,
   ClipboardList,
   Store,
   BookOpen,
+  Headphones,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import LanguageSwitcher from '../shared/LanguageSwitcher';
-import { APP_NAME } from '../../config/brand';
+import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
+import BrandMark from '../shared/BrandMark';
 
 const GOODS_ROUTES = ['/products', '/categories'];
 
@@ -63,16 +67,21 @@ const REGISTER_CHILDREN = [
   { to: '/cash-registers/config', key: 'registersConfig', icon: SlidersHorizontal },
 ];
 
+const USER_ROUTES = ['/users/list', '/users/printer-settings', '/users/branding-settings'];
+
+const USER_CHILDREN = [
+  { to: '/users/list', key: 'usersList', icon: List },
+  { to: '/users/printer-settings', key: 'usersPrinterSettings', icon: Printer },
+  { to: '/users/branding-settings', key: 'usersBrandingSettings', icon: UserCog },
+];
+
 const REPORT_CHILDREN = [
   { to: '/reports/sales', key: 'reportsSales', icon: Receipt },
   { to: '/reports/returns', key: 'reportsReturns', icon: RotateCcw },
   { to: '/reports/analytics', key: 'reportsAnalytics', icon: BarChart2 },
 ];
 
-const REST_NAV = [
-  { to: '/stores', icon: Store, key: 'stores', roles: ['ADMIN'] },
-  { to: '/users', icon: Users, key: 'users', roles: ['ADMIN'] },
-];
+const REST_NAV = [{ to: '/stores', icon: Store, key: 'stores', roles: ['ADMIN'] }];
 
 export default function AppLayout() {
   const { t } = useTranslation();
@@ -84,15 +93,18 @@ export default function AppLayout() {
   const [stockOpen, setStockOpen] = useState(true);
   const [reportsOpen, setReportsOpen] = useState(true);
   const [registersOpen, setRegistersOpen] = useState(true);
+  const [usersOpen, setUsersOpen] = useState(true);
   const [ordersOpen, setOrdersOpen] = useState(true);
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
 
   useEffect(() => {
     if (GOODS_ROUTES.includes(location.pathname)) setGoodsOpen(true);
     if (STOCK_ROUTES.includes(location.pathname)) setStockOpen(true);
     if (REPORT_ROUTES.includes(location.pathname)) setReportsOpen(true);
     if (REGISTER_ROUTES.includes(location.pathname)) setRegistersOpen(true);
+    if (USER_ROUTES.includes(location.pathname)) setUsersOpen(true);
     if (ORDER_ROUTES.includes(location.pathname)) setOrdersOpen(true);
   }, [location.pathname]);
 
@@ -119,11 +131,13 @@ export default function AppLayout() {
   const showRegisters = ['ADMIN', 'MANAGER'].includes(user?.role);
   const showOrders = ['ADMIN', 'MANAGER'].includes(user?.role);
   const showReports = ['ADMIN', 'MANAGER'].includes(user?.role);
+  const showUsers = user?.role === 'ADMIN';
   const roleLabel = user?.role ? t(`roles.${user.role}`, user.role) : '';
   const inGoodsSection = GOODS_ROUTES.includes(location.pathname);
   const inStockSection = STOCK_ROUTES.includes(location.pathname);
   const inReportsSection = REPORT_ROUTES.includes(location.pathname);
   const inRegistersSection = REGISTER_ROUTES.includes(location.pathname);
+  const inUsersSection = USER_ROUTES.includes(location.pathname);
   const inOrdersSection = ORDER_ROUTES.includes(location.pathname);
   const inHandbookSection = location.pathname.startsWith('/handbook');
 
@@ -151,10 +165,10 @@ export default function AppLayout() {
       >
         <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-4 dark:border-emerald-900/60">
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500">
-            <ShoppingCart size={16} className="text-white" />
+            <BrandMark size={16} iconClassName="text-white" />
           </div>
           {sidebarNavExpanded && (
-            <span className="truncate text-lg font-bold text-slate-900 dark:text-white">{APP_NAME}</span>
+            <span className="truncate text-lg font-bold text-slate-900 dark:text-white">{displayAppName()}</span>
           )}
         </div>
 
@@ -172,6 +186,11 @@ export default function AppLayout() {
           >
             <BookOpen size={18} className="flex-shrink-0" />
             {sidebarNavExpanded && t('nav.handbook')}
+          </NavLink>
+
+          <NavLink to="/support" className={topLinkClass}>
+            <Headphones size={18} className="flex-shrink-0" />
+            {sidebarNavExpanded && t('nav.support')}
           </NavLink>
 
           {sidebarNavExpanded ? (
@@ -419,6 +438,59 @@ export default function AppLayout() {
             ) : (
               <div className="space-y-1 pt-1">
                 {REPORT_CHILDREN.map(({ to, key, icon: Icon }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    title={t(`nav.${key}`)}
+                    className={({ isActive }) =>
+                      `flex items-center justify-center rounded-lg px-3 py-2.5 transition-colors ${
+                        isActive
+                          ? 'bg-emerald-200 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-300'
+                          : 'text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-emerald-900/40'
+                      }`
+                    }
+                  >
+                    <Icon size={18} />
+                  </NavLink>
+                ))}
+              </div>
+            ))}
+
+          {showUsers &&
+            (sidebarNavExpanded ? (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setUsersOpen((o) => !o)}
+                  className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                    inUsersSection
+                      ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-white'
+                      : 'text-slate-700 hover:bg-slate-200/80 dark:text-slate-200 dark:hover:bg-emerald-900/30'
+                  }`}
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <Users size={18} className="flex-shrink-0 opacity-90" />
+                    <span className="truncate">{t('nav.usersGroup')}</span>
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`flex-shrink-0 opacity-80 transition-transform dark:opacity-70 ${usersOpen ? '' : '-rotate-90'}`}
+                  />
+                </button>
+                {usersOpen && (
+                  <div className="ml-4 mt-1 space-y-0.5 border-l border-slate-300 pl-1 dark:border-emerald-800/50">
+                    {USER_CHILDREN.map(({ to, key, icon: Icon }) => (
+                      <NavLink key={to} to={to} className={subLinkClass}>
+                        <Icon size={16} className="flex-shrink-0 opacity-80" />
+                        {t(`nav.${key}`)}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-1 pt-1">
+                {USER_CHILDREN.map(({ to, key, icon: Icon }) => (
                   <NavLink
                     key={to}
                     to={to}

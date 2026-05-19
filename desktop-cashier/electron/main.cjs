@@ -257,6 +257,26 @@ ipcMain.handle('print-receipt', async (event, receiptNumber) => {
   return { ok: true };
 });
 
+ipcMain.handle('print-current-page', async (event) => {
+  const wc = event.sender;
+  if (!wc || wc.isDestroyed()) {
+    throw new Error('Окно печати недоступно');
+  }
+  return new Promise((resolve, reject) => {
+    wc.print(
+      {
+        silent: true,
+        printBackground: true,
+        margins: { marginType: 'none' },
+      },
+      (success, failureReason) => {
+        if (success) resolve({ ok: true });
+        else reject(new Error(failureReason || 'Печать отменена'));
+      }
+    );
+  });
+});
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1366,

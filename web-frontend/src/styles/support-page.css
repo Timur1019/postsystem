@@ -1,0 +1,222 @@
+.support-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 52rem;
+}
+
+.support-page__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.support-page__header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  background: rgb(219 234 254);
+  color: rgb(29 78 216);
+  flex-shrink: 0;
+}
+
+.dark .support-page__header-icon {
+  background: rgb(30 58 138 / 0.45);
+  color: rgb(147 197 253);
+}
+
+.support-page__title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: rgb(15 23 42);
+}
+
+.dark .support-page__title {
+  color: rgb(248 250 252);
+}
+
+.support-page__intro {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgb(100 116 139);
+}
+
+.dark .support-page__intro {
+  color: rgb(148 163 184);
+}
+
+.support-page__empty {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  background: rgb(254 243 199);
+  color: rgb(146 64 14);
+  font-size: 0.875rem;
+}
+
+.dark .support-page__empty {
+  background: rgb(120 53 15 / 0.35);
+  color: rgb(253 230 138);
+}
+
+.support-page__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.support-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255);
+}
+
+.dark .support-card {
+  border-color: rgb(51 65 85);
+  background: rgb(30 41 59);
+}
+
+.support-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+}
+
+.support-card__icon--phone {
+  background: rgb(209 250 229);
+  color: rgb(6 95 70);
+}
+
+.support-card__icon--telegram {
+  background: rgb(224 242 254);
+  color: rgb(2 132 199);
+}
+
+.dark .support-card__icon--phone {
+  background: rgb(6 78 59 / 0.45);
+  color: rgb(110 231 183);
+}
+
+.dark .support-card__icon--telegram {
+  background: rgb(12 74 110 / 0.45);
+  color: rgb(125 211 252);
+}
+
+.support-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.support-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgb(15 23 42);
+}
+
+.dark .support-card__title {
+  color: rgb(248 250 252);
+}
+
+.support-card__hint {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: rgb(100 116 139);
+}
+
+.dark .support-card__hint {
+  color: rgb(148 163 184);
+}
+
+.support-card__link,
+.support-card__value {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgb(5 150 105);
+}
+
+.support-card__link:hover {
+  text-decoration: underline;
+}
+
+.support-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.support-card__btn--telegram {
+  background: rgb(14 165 233);
+  color: rgb(255 255 255);
+}
+
+.support-card__btn--telegram:hover {
+  background: rgb(2 132 199);
+  color: rgb(255 255 255);
+}
+
+.support-card__bot-name {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: rgb(100 116 139);
+}
+
+.support-page__steps {
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  background: rgb(248 250 252);
+  border: 1px solid rgb(226 232 240);
+}
+
+.dark .support-page__steps {
+  background: rgb(15 23 42 / 0.6);
+  border-color: rgb(51 65 85);
+}
+
+.support-page__steps-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(51 65 85);
+}
+
+.dark .support-page__steps-title {
+  color: rgb(226 232 240);
+}
+
+.support-page__steps-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: rgb(71 85 105);
+}
+
+.dark .support-page__steps-list {
+  color: rgb(148 163 184);
+}
+
+/* Касса: карточки на всю ширину */
+.cashier-main .support-page {
+  max-width: none;
+}

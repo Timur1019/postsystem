@@ -33,10 +33,10 @@ function removeThermalPageRule() {
 }
 
 /**
- * Adds class(es) on <html> for the duration of one print job (for @media print rules).
- * @param {string | string[]} className — один класс или массив (напр. чек + модалка)
+ * Подготовка DOM/CSS для термопечати без вызова диалога.
+ * @returns {() => void} cleanup
  */
-export function printWithHtmlClass(className) {
+export function prepareThermalPrint(className) {
   const classes = (Array.isArray(className) ? className : [className]).filter(Boolean);
   const state = usePrintSettingsStore.getState();
   syncPrintCssVars(state);
@@ -44,15 +44,26 @@ export function printWithHtmlClass(className) {
   if (useThermalPage) {
     injectThermalPageRule(state);
   }
+  classes.forEach((c) => document.documentElement.classList.add(c));
 
-  const done = () => {
+  return () => {
     classes.forEach((c) => document.documentElement.classList.remove(c));
-    window.removeEventListener('afterprint', done);
     if (useThermalPage) {
       removeThermalPageRule();
     }
   };
+}
+
+/**
+ * Adds class(es) on <html> for the duration of one print job (for @media print rules).
+ * @param {string | string[]} className — один класс или массив (напр. чек + модалка)
+ */
+export function printWithHtmlClass(className) {
+  const cleanup = prepareThermalPrint(className);
+  const done = () => {
+    cleanup();
+    window.removeEventListener('afterprint', done);
+  };
   window.addEventListener('afterprint', done);
-  classes.forEach((c) => document.documentElement.classList.add(c));
   requestAnimationFrame(() => window.print());
 }

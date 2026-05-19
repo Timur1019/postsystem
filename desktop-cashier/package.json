@@ -7,6 +7,7 @@
   "author": "Aurent",
   "scripts": {
     "start": "electron .",
+    "start:dev": "POS_REMOTE_UI=1 POS_CASHIER_URL=http://localhost:5173 electron .",
     "dev": "POS_EMBEDDED=1 electron .",
     "dist": "electron-builder --config electron-builder.config.cjs",
     "dist:mac": "electron-builder --mac --config electron-builder.config.cjs",

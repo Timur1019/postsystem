@@ -5,12 +5,13 @@ import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { ShoppingCart, Eye, EyeOff, Loader } from 'lucide-react';
+import { Eye, EyeOff, Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import LanguageSwitcher from '../components/shared/LanguageSwitcher';
-import { APP_NAME } from '../config/brand';
+import { useTenantDisplayStore } from '../store/tenantDisplayStore';
+import BrandMark from '../components/shared/BrandMark';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -21,6 +22,7 @@ export default function LoginPage() {
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
 
   useEffect(() => {
     if (!hasHydrated || !token) return;
@@ -59,7 +61,7 @@ export default function LoginPage() {
     } catch (err) {
       const apiMsg = err.response?.data?.message;
       if (!err.response) {
-        toast.error(t('login.networkError'));
+        toast.error(t('login.networkError'), { id: 'login-network-error' });
       } else if (apiMsg) {
         toast.error(apiMsg === 'Invalid username or password' ? t('login.badCredentials') : apiMsg);
       } else {
@@ -79,9 +81,9 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="mb-7 text-center">
           <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500">
-            <ShoppingCart size={32} className="text-white" strokeWidth={2} />
+            <BrandMark size={32} iconClassName="text-white" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{APP_NAME}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{displayAppName()}</h1>
           <p className="mt-1.5 text-base text-slate-600">{t('login.subtitle')}</p>
         </div>
 

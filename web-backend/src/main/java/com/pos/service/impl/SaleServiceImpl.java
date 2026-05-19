@@ -20,6 +20,7 @@ import com.pos.repository.CashierShiftRepository;
 import com.pos.repository.CustomerRepository;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.SaleRepository;
+import com.pos.repository.spec.SaleSpecifications;
 import com.pos.repository.StockMovementRepository;
 import com.pos.mapper.SaleMapper;
 import com.pos.repository.UserRepository;
@@ -308,15 +309,17 @@ public class SaleServiceImpl implements SaleService {
         Instant dateFrom = from != null ? from.atStartOfDay(zone).toInstant() : null;
         Instant dateTo = to != null ? to.plusDays(1).atStartOfDay(zone).toInstant() : null;
 
-        Page<Sale> page = saleRepository.searchCashierSales(
-            username,
-            shiftId,
-            excludeShiftId,
-            receipt,
-            paymentMethod,
-            status,
-            dateFrom,
-            dateTo,
+        Page<Sale> page = saleRepository.findAll(
+            SaleSpecifications.cashierSalesFilter(
+                username,
+                shiftId,
+                excludeShiftId,
+                receipt,
+                paymentMethod,
+                status,
+                dateFrom,
+                dateTo
+            ),
             pageable
         );
         return PageResponse.from(page.map(saleMapper::toSummaryResponse));
@@ -419,7 +422,12 @@ public class SaleServiceImpl implements SaleService {
             throw new BadRequestException("Суммы оплаты не могут быть отрицательными");
         }
         if (cash.compareTo(total) > 0) {
-            throw new BadRequestException("Наличная часть не может превышать сумму к оплате");
+            BigDecimal over = cash.subtract(total);
+            // Допуск на расхождение округления фронта и сервера (копейки)
+            if (over.compareTo(new BigDecimal("0.05")) > 0) {
+                throw new BadRequestException("Наличная часть не может превышать сумму к оплате");
+            }
+            cash = total;
         }
         BigDecimal card = scale(total.subtract(cash));
         if (cash.signum() == 0 && card.signum() == 0) {

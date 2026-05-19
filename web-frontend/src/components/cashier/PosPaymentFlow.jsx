@@ -17,8 +17,7 @@ import {
 import NumericKeypad, { formatKeypadAmount } from './NumericKeypad';
 import PosOrderComposition from './PosOrderComposition';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
-
-const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+import { clampPayAmount, exceedsPayAmount, round2 } from '../../utils/taxAmounts';
 
 const amountStr = (n) => {
   const v = round2(n);
@@ -130,7 +129,7 @@ export default function PosPaymentFlow({
   };
 
   const cashPartNum = round2(cashPortion);
-  const cashExceeds = cashPartNum > toPay + 0.001;
+  const cashExceeds = exceedsPayAmount(cashPartNum, toPay);
   const cardRemainder = round2(Math.max(0, toPay - cashPartNum));
   const mixedDistributed = round2(Math.min(cashPartNum, toPay));
   const mixedPercent = toPay > 0 ? Math.min(100, Math.round((mixedDistributed / toPay) * 100)) : 0;
@@ -142,14 +141,11 @@ export default function PosPaymentFlow({
         return;
       }
       const num = round2(next);
-      if (num > toPay) {
-        setCashPortion(amountStr(toPay));
-        toast.error(t('pos.mixedCashExceeds'), { id: 'mixed-cash-exceed' });
-        return;
-      }
-      setCashPortion(next);
+      const max = round2(toPay);
+      const clamped = clampPayAmount(num, max);
+      setCashPortion(amountStr(clamped));
     },
-    [toPay, t]
+    [toPay]
   );
 
   const mixedQuickActions = [
@@ -158,13 +154,14 @@ export default function PosPaymentFlow({
   ];
 
   const submitMixed = (type) => {
-    if (cashExceeds || isPending) return;
+    if (isPending) return;
+    const cash = clampPayAmount(cashPartNum, toPay);
     onConfirm({
       paymentMethod: 'MIXED',
       receiptType,
       cardType: cardRemainder > 0.001 ? type : null,
-      cashAmount: cashPartNum,
-      amountTendered: cashPartNum,
+      cashAmount: cash,
+      amountTendered: cash,
     });
   };
 
@@ -253,17 +250,23 @@ export default function PosPaymentFlow({
           {step === 'receipt' && (
             <div className="pos-pay-panel__step">
               <div className="pos-pay-receipt-types pos-pay-receipt-types--stack">
-                {RECEIPT_TYPES.map(({ id, icon: Icon }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className={`pos-pay-receipt-type${receiptType === id ? ' is-active' : ''}`}
-                    onClick={() => setReceiptType(id)}
-                  >
-                    <Icon size={22} strokeWidth={1.5} />
-                    <span>{t(`pos.receiptType.${id}`)}</span>
-                  </button>
-                ))}
+                {RECEIPT_TYPES.map(({ id, icon: Icon }) => {
+                  const active = receiptType === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`pos-pay-receipt-type${active ? ' is-active' : ''}`}
+                      onClick={() => setReceiptType(id)}
+                    >
+                      <span className="pos-pay-receipt-type__icon-wrap">
+                        <Icon size={22} strokeWidth={1.5} />
+                      </span>
+                      <span className="pos-pay-receipt-type__label">{t(`pos.receiptType.${id}`)}</span>
+                      {active ? <Check size={20} strokeWidth={2.5} className="pos-pay-receipt-type__check" /> : null}
+                    </button>
+                  );
+                })}
               </div>
               <button type="button" className="pos-pay-panel__primary" onClick={() => setStep('method')}>
                 {t('pos.continuePay')}

@@ -60,6 +60,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
         taxRate: z.coerce.number().min(0).max(100),
         initialStock: z.coerce.number().min(0).optional(),
         lowStockAlert: z.coerce.number().min(0).optional(),
+        storageLocation: z.string().optional(),
         barcode: z.string().optional(),
         externalProductId: z.string().optional(),
         ikpu: z.string().optional(),
@@ -88,6 +89,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       taxRate: 0,
       lowStockAlert: 10,
       initialStock: 0,
+      storageLocation: '',
       soldIndividually: true,
       markedProduct: false,
       active: true,
@@ -108,7 +110,8 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       defaultDiscountPercent: full.defaultDiscountPercent ?? 0,
       taxRate: full.taxRate ?? 0,
       lowStockAlert: full.lowStockAlert ?? 10,
-      ...(!isEdit ? { initialStock: full.stockQuantity ?? 0 } : {}),
+      initialStock: full.stockQuantity ?? 0,
+      storageLocation: full.storageLocation ?? '',
       barcode: full.barcode ?? '',
       externalProductId: full.externalProductId ?? '',
       ikpu: full.ikpu ?? '',
@@ -134,8 +137,20 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
   }, [full, reset, isEdit]);
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (payload) =>
-      isEdit ? productApi.update(product.id, payload) : productApi.create(payload),
+    mutationFn: async ({ payload, stockDelta }) => {
+      const res = isEdit
+        ? await productApi.update(product.id, payload)
+        : await productApi.create(payload);
+      if (isEdit && stockDelta !== 0) {
+        await productApi.adjustStock(
+          product.id,
+          stockDelta,
+          'ADJUSTMENT',
+          t('productCatalog.stockEditNote')
+        );
+      }
+      return res;
+    },
     onSuccess: () => {
       toast.success(isEdit ? t('productModal.updated') : t('productModal.created'));
       onSaved();
@@ -159,6 +174,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       defaultDiscountPercent: values.defaultDiscountPercent ?? 0,
       taxRate: values.taxRate,
       lowStockAlert: values.lowStockAlert,
+      storageLocation: values.storageLocation?.trim() || null,
       barcode: values.barcode || undefined,
       externalProductId: values.externalProductId || undefined,
       ikpu: values.ikpu || undefined,
@@ -174,16 +190,25 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       additionalBarcodes,
     };
 
+    const stockQty = values.initialStock ?? 0;
+
     if (isEdit) {
+      const previousStock = full?.stockQuantity ?? 0;
       mutate({
-        ...base,
-        active: values.active,
+        payload: {
+          ...base,
+          active: values.active,
+        },
+        stockDelta: stockQty - previousStock,
       });
     } else {
       mutate({
-        sku: values.sku,
-        initialStock: values.initialStock,
-        ...base,
+        payload: {
+          sku: values.sku,
+          initialStock: stockQty,
+          ...base,
+        },
+        stockDelta: 0,
       });
     }
   };
@@ -400,12 +425,17 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
               <Field label={t('productModal.lowStock')} error={errors.lowStockAlert?.message}>
                 <input {...register('lowStockAlert', { valueAsNumber: true })} type="number" className={inputCls} />
               </Field>
-            </div>
-            {!isEdit && (
               <Field label={t('productModal.initialStock')} error={errors.initialStock?.message}>
-                <input {...register('initialStock', { valueAsNumber: true })} type="number" className={inputCls} />
+                <input {...register('initialStock', { valueAsNumber: true })} type="number" min="0" className={inputCls} />
               </Field>
-            )}
+              <Field label={t('stockModule.modal.location')} error={errors.storageLocation?.message}>
+                <input
+                  {...register('storageLocation')}
+                  className={inputCls}
+                  placeholder={t('stockModule.modal.locationPh')}
+                />
+              </Field>
+            </div>
             <Field label={t('productModal.description')} error={errors.description?.message}>
               <textarea {...register('description')} rows={2} className={`${inputCls} resize-none`} />
             </Field>

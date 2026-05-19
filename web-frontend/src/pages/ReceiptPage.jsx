@@ -2,11 +2,12 @@
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { saleApi } from '../services/api';
 import { ArrowLeft, Printer, Settings2 } from 'lucide-react';
 import { POS_RECEIPT_PRINT_EVENT } from '../utils/printWithHtmlClass';
 import { printReceiptDialog } from '../utils/printReceipt';
+import toast from 'react-hot-toast';
 import ThermalPrintSettingsPanel from '../components/receipt/ThermalPrintSettingsPanel';
 import FiscalReceiptBody from '../components/receipt/FiscalReceiptBody';
 import { useAuthStore } from '../store/authStore';
@@ -32,11 +33,21 @@ export default function ReceiptPage() {
     queryFn: () => saleApi.getReceipt(receiptNumber).then((r) => r.data),
   });
 
+  const runPrint = useCallback(async () => {
+    try {
+      const mode = await printReceiptDialog(receiptNumber);
+      if (mode === 'silent') {
+        toast.success(t('receipt.printSent'), { id: 'receipt-print' });
+      }
+    } catch (e) {
+      toast.error(e?.message ?? t('receipt.printFailed'), { id: 'receipt-print' });
+    }
+  }, [receiptNumber, t]);
+
   useEffect(() => {
-    const runPrint = () => printReceiptDialog();
     window.addEventListener(POS_RECEIPT_PRINT_EVENT, runPrint);
     return () => window.removeEventListener(POS_RECEIPT_PRINT_EVENT, runPrint);
-  }, []);
+  }, [runPrint]);
 
   useEffect(() => {
     if (!sale) return undefined;
@@ -50,10 +61,10 @@ export default function ReceiptPage() {
     if (!autoPrint || autoPrintedRef.current) return undefined;
     autoPrintedRef.current = true;
     const timer = window.setTimeout(() => {
-      printReceiptDialog();
+      runPrint();
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [sale, autoPrint, silentJob]);
+  }, [sale, autoPrint, silentJob, runPrint]);
 
   const backTarget = fromCashier ? '/cashier/pos' : '/dashboard';
 
@@ -100,7 +111,7 @@ export default function ReceiptPage() {
           </button>
           <button
             type="button"
-            onClick={() => printReceiptDialog()}
+            onClick={() => runPrint()}
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
           >
             <Printer size={16} />

@@ -29,6 +29,7 @@ public record CreateProductRequest(
     String packageCode,
     Boolean soldIndividually,
     Boolean markedProduct,
+    String storageLocation,
     String ownerType,
     String commissionTin,
     String commissionPinfl,

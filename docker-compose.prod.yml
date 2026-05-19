@@ -73,6 +73,8 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: /api/v1
+        VITE_SUPPORT_PHONE: ${VITE_SUPPORT_PHONE:-}
+        VITE_SUPPORT_TELEGRAM_BOT: ${VITE_SUPPORT_TELEGRAM_BOT:-}
     container_name: aurent-pos-frontend
     restart: unless-stopped
     depends_on:

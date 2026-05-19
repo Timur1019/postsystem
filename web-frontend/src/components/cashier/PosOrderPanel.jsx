@@ -58,12 +58,12 @@ export default function PosOrderPanel({
         </h2>
         <div className="pos-order-panel__actions">
           {onReturn && (
-            <button type="button" className="pos-order-panel__link pos-order-panel__link--warn" onClick={onReturn}>
+            <button type="button" className="pos-order-panel__btn pos-order-panel__btn--warn" onClick={onReturn}>
               {t('pos.return')}
             </button>
           )}
           {items.length > 0 && (
-            <button type="button" className="pos-order-panel__link pos-order-panel__link--danger" onClick={onClear}>
+            <button type="button" className="pos-order-panel__btn pos-order-panel__btn--clear" onClick={onClear}>
               {t('pos.clearCart')}
             </button>
           )}

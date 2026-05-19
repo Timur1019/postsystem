@@ -248,6 +248,7 @@ public class ProductImportServiceImpl implements ProductImportService {
             null,
             null,
             null,
+            null,
             storePrices,
             null
         );

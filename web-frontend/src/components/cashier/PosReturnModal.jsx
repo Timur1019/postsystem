@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { X, Loader, Search } from 'lucide-react';
+import { X, Loader, Search, RotateCcw, Receipt, CheckCircle2 } from 'lucide-react';
 import { saleApi } from '../../services/api';
 import PosModalPortal from './PosModalPortal';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -25,6 +25,21 @@ function parseLookupError(err, t) {
     return t('pos.returnNotFound');
   }
   return msg || t('pos.returnNotFound');
+}
+
+function paymentLabel(method, t) {
+  switch (method) {
+    case 'CASH':
+      return t('pos.payCash');
+    case 'CARD':
+      return t('pos.payCard');
+    case 'MIXED':
+      return t('pos.payMixed');
+    case 'MPESA':
+      return 'M-Pesa';
+    default:
+      return method || '—';
+  }
 }
 
 export default function PosReturnModal({ open, onClose, onSuccess }) {
@@ -88,81 +103,137 @@ export default function PosReturnModal({ open, onClose, onSuccess }) {
 
   return (
     <PosModalPortal open={open} onClose={handleClose}>
-      <div className="pos-return-modal" onMouseDown={(e) => e.stopPropagation()}>
-        <button type="button" className="pos-pay-modal__close" onClick={handleClose} aria-label={t('common.close')}>
-          <X size={20} />
-        </button>
-        <h2 className="pos-pay-modal__title">{t('pos.returnTitle')}</h2>
-        <p className="pos-return-modal__hint">{t('pos.returnHint')}</p>
-
-        <label className="pos-return-modal__label">{t('pos.returnReceipt')}</label>
-        <div className="pos-return-modal__search">
-          <input
-            value={receipt}
-            onChange={(e) => setReceipt(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && lookup()}
-            placeholder={t('pos.returnReceiptPh')}
-            className="pos-return-modal__input"
-            autoFocus
-            spellCheck={false}
-            autoComplete="off"
-          />
+      <div className="pos-return-modal" onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+        <header className="pos-return-modal__header">
+          <div className="pos-return-modal__header-icon" aria-hidden>
+            <RotateCcw size={22} strokeWidth={2} />
+          </div>
+          <div className="pos-return-modal__header-text">
+            <h2 className="pos-return-modal__title">{t('pos.returnTitle')}</h2>
+            <p className="pos-return-modal__hint">{t('pos.returnHint')}</p>
+          </div>
           <button
             type="button"
-            className="pos-return-modal__find"
-            onClick={lookup}
-            disabled={lookupPending || !receipt.trim()}
+            className="pos-return-modal__close"
+            onClick={handleClose}
+            aria-label={t('common.close')}
           >
-            {lookupPending ? <Loader size={16} className="animate-spin" /> : <Search size={16} />}
-            {t('pos.returnFind')}
+            <X size={20} />
           </button>
+        </header>
+
+        <div className="pos-return-modal__body">
+          <section className="pos-return-modal__section">
+            <label className="pos-return-modal__label" htmlFor="pos-return-receipt">
+              {t('pos.returnReceipt')}
+            </label>
+            <div className="pos-return-modal__search">
+              <div className="pos-return-modal__input-wrap">
+                <Receipt size={18} className="pos-return-modal__input-icon" aria-hidden />
+                <input
+                  id="pos-return-receipt"
+                  value={receipt}
+                  onChange={(e) => setReceipt(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && lookup()}
+                  placeholder={t('pos.returnReceiptPh')}
+                  className="pos-return-modal__input"
+                  autoFocus
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+              </div>
+              <button
+                type="button"
+                className="pos-return-modal__find"
+                onClick={lookup}
+                disabled={lookupPending || !receipt.trim()}
+              >
+                {lookupPending ? (
+                  <Loader size={18} className="pos-return-modal__spin" />
+                ) : (
+                  <Search size={18} />
+                )}
+                <span>{t('pos.returnFind')}</span>
+              </button>
+            </div>
+          </section>
+
+          {sale ? (
+            <section className="pos-return-modal__preview" aria-live="polite">
+              <div className="pos-return-modal__preview-head">
+                <span className="pos-return-modal__preview-badge">
+                  <CheckCircle2 size={14} aria-hidden />
+                  {t('pos.returnFoundLabel')}
+                </span>
+                <span className="pos-return-modal__preview-receipt">{sale.receiptNumber}</span>
+              </div>
+              <p className="pos-return-modal__preview-total">
+                {fmt(sale.totalAmount)}
+                <span className="pos-return-modal__preview-currency">сум</span>
+              </p>
+              <div className="pos-return-modal__preview-meta">
+                <span>{sale.cashierName ?? '—'}</span>
+                <span className="pos-return-modal__preview-dot" aria-hidden>
+                  ·
+                </span>
+                <span>{paymentLabel(sale.paymentMethod, t)}</span>
+              </div>
+              <ul className="pos-return-modal__lines">
+                {(sale.items ?? []).length === 0 ? (
+                  <li className="pos-return-modal__lines-empty">{t('pos.cartEmpty')}</li>
+                ) : (
+                  (sale.items ?? []).map((line) => (
+                    <li key={line.id ?? `${line.productName}-${line.quantity}`}>
+                      <span className="pos-return-modal__line-name">{line.productName}</span>
+                      <span className="pos-return-modal__line-qty">
+                        ×{line.quantity}
+                      </span>
+                      <span className="pos-return-modal__line-sum">{fmt(line.lineTotal)}</span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
+          ) : (
+            <div className="pos-return-modal__placeholder">
+              <Receipt size={28} strokeWidth={1.5} aria-hidden />
+              <p>{t('pos.returnSearchPrompt')}</p>
+            </div>
+          )}
+
+          <section className="pos-return-modal__section">
+            <label className="pos-return-modal__label" htmlFor="pos-return-reason">
+              {t('pos.returnReason')}
+            </label>
+            <textarea
+              id="pos-return-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+              className="pos-return-modal__textarea"
+              placeholder={t('pos.returnReasonPh')}
+            />
+          </section>
         </div>
 
-        {sale && (
-          <div className="pos-return-modal__preview">
-            <div className="pos-return-modal__preview-head">
-              <span className="pos-return-modal__preview-badge">{t('pos.returnFoundLabel')}</span>
-              <span className="font-mono text-xs text-slate-500">{sale.receiptNumber}</span>
-            </div>
-            <p className="pos-return-modal__preview-total">{fmt(sale.totalAmount)} сум</p>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              {sale.cashierName ?? '—'} · {sale.paymentMethod}
-            </p>
-            <ul className="pos-return-modal__lines">
-              {(sale.items ?? []).length === 0 ? (
-                <li className="text-slate-400">{t('pos.cartEmpty')}</li>
-              ) : (
-                (sale.items ?? []).map((line) => (
-                  <li key={line.id ?? `${line.productName}-${line.quantity}`}>
-                    <span>{line.productName}</span>
-                    <span>
-                      × {line.quantity} — {fmt(line.lineTotal)}
-                    </span>
-                  </li>
-                ))
-              )}
-            </ul>
-          </div>
-        )}
-
-        <label className="pos-return-modal__label">{t('pos.returnReason')}</label>
-        <textarea
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          rows={2}
-          className="pos-return-modal__textarea"
-          placeholder={t('pos.returnReasonPh')}
-        />
-
-        <button
-          type="button"
-          className="pos-pay-submit"
-          disabled={!sale || voidMutation.isPending}
-          onClick={() => voidMutation.mutate()}
-        >
-          {voidMutation.isPending ? <Loader size={18} className="animate-spin" /> : null}
-          {t('pos.returnConfirm')}
-        </button>
+        <footer className="pos-return-modal__footer">
+          <button type="button" className="pos-return-modal__cancel" onClick={handleClose}>
+            {t('common.cancel')}
+          </button>
+          <button
+            type="button"
+            className="pos-return-modal__submit"
+            disabled={!sale || voidMutation.isPending}
+            onClick={() => voidMutation.mutate()}
+          >
+            {voidMutation.isPending ? (
+              <Loader size={18} className="pos-return-modal__spin" />
+            ) : (
+              <RotateCcw size={18} />
+            )}
+            <span>{t('pos.returnConfirm')}</span>
+          </button>
+        </footer>
       </div>
     </PosModalPortal>
   );

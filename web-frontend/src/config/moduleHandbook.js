@@ -16,7 +16,9 @@ const ROUTE_MAP = [
   { test: (p) => p.startsWith('/reports/returns'), id: 'reportsReturns' },
   { test: (p) => p.startsWith('/reports/analytics'), id: 'reportsAnalytics' },
   { test: (p) => p.startsWith('/stores'), id: 'stores' },
-  { test: (p) => p.startsWith('/users'), id: 'users' },
+  { test: (p) => p.startsWith('/users/printer-settings'), id: 'usersPrinterSettings' },
+  { test: (p) => p.startsWith('/users/branding-settings'), id: 'usersBrandingSettings' },
+  { test: (p) => p.startsWith('/users'), id: 'usersList' },
   { test: (p) => p.startsWith('/checkout'), id: 'checkout' },
 ];
 
@@ -40,7 +42,9 @@ export const ADMIN_MODULE_IDS = [
   { id: 'reportsReturns', group: 'reports', roles: ['ADMIN', 'MANAGER'] },
   { id: 'reportsAnalytics', group: 'reports', roles: ['ADMIN', 'MANAGER'] },
   { id: 'stores', group: 'settings', roles: ['ADMIN'] },
-  { id: 'users', group: 'settings', roles: ['ADMIN'] },
+  { id: 'usersList', group: 'settings', roles: ['ADMIN'] },
+  { id: 'usersPrinterSettings', group: 'settings', roles: ['ADMIN'] },
+  { id: 'usersBrandingSettings', group: 'settings', roles: ['ADMIN'] },
   { id: 'checkout', group: 'main', roles: ['ADMIN', 'MANAGER'] },
 ];
 

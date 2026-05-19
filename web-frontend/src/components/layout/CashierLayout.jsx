@@ -1,15 +1,16 @@
 // src/components/layout/CashierLayout.jsx
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ShoppingCart, Receipt, LogOut, BookOpen, Clock, Store, Menu, PanelLeftClose } from 'lucide-react';
+import { ShoppingCart, Receipt, LogOut, BookOpen, Clock, Store, Menu, PanelLeftClose, Headphones } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { CashierShiftModalProvider, useCashierShiftModal } from '../../contexts/CashierShiftModalContext';
 import CashierShiftModal from '../cashier/CashierShiftModal';
 import LanguageSwitcher from '../shared/LanguageSwitcher';
-import { APP_NAME } from '../../config/brand';
+import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
+import BrandMark from '../shared/BrandMark';
 import { cashierShiftApi } from '../../services/api';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../styles/cashier-modals.css';
@@ -50,6 +51,9 @@ function CashierLayoutShell() {
   const { storeId, storeName, storeLoading } = useCashierStore();
   const { open, openShift, closeShift } = useCashierShiftModal();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isPosRoute = location.pathname.startsWith('/cashier/pos');
+  const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
 
   const { data: shift } = useQuery({
     queryKey: ['cashier-shift', storeId],
@@ -83,7 +87,7 @@ function CashierLayoutShell() {
     <div className={`cashier-app d-flex bg-light${sidebarOpen ? '' : ' cashier-app--sidebar-collapsed'}`}>
       <aside className={sidebarClass}>
         <div className="cashier-sidebar__head">
-          <p className="cashier-sidebar__brand">{APP_NAME}</p>
+          <p className="cashier-sidebar__brand">{displayAppName()}</p>
           {storeId ? (
             <div className="cashier-sidebar__store" title={storeName || undefined}>
               <Store size={20} className="cashier-sidebar__store-icon" aria-hidden />
@@ -122,6 +126,10 @@ function CashierLayoutShell() {
             <BookOpen size={20} strokeWidth={2} className="cashier-sidebar__nav-icon" />
             {sidebarNavExpanded ? <span className="cashier-sidebar__label">{t('nav.handbook')}</span> : null}
           </NavLink>
+          <NavLink to="/cashier/support" className={navLinkClass} title={t('nav.support')}>
+            <Headphones size={20} strokeWidth={2} className="cashier-sidebar__nav-icon" />
+            {sidebarNavExpanded ? <span className="cashier-sidebar__label">{t('nav.support')}</span> : null}
+          </NavLink>
         </nav>
 
         <div className="cashier-sidebar__foot">
@@ -147,7 +155,11 @@ function CashierLayoutShell() {
       </aside>
 
       <div className="d-flex flex-column flex-grow-1 min-vw-0 min-h-0">
-        <header className="cashier-topbar border-bottom bg-white px-3 py-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <header
+          className={`cashier-topbar border-bottom bg-white px-3 py-2 d-flex flex-wrap align-items-center justify-content-between gap-2${
+            isPosRoute ? ' cashier-topbar--pos' : ''
+          }`}
+        >
           <div className="d-flex align-items-center gap-2 min-w-0">
             <button
               type="button"
@@ -157,21 +169,28 @@ function CashierLayoutShell() {
             >
               {sidebarOpen ? <PanelLeftClose size={20} /> : <Menu size={20} />}
             </button>
-            <div className="d-md-none min-w-0">
-              <p className="fw-semibold mb-0">{APP_NAME}</p>
-              <p className="text-muted small mb-0">{displayName(user)}</p>
-              {storeName ? (
-                <p className="text-success small mb-0 text-truncate">{storeName}</p>
-              ) : null}
-            </div>
-            <div className="d-none d-md-block min-w-0">
-              {!sidebarOpen ? (
-                <p className="cashier-topbar__app-name mb-0 fw-bold">{APP_NAME}</p>
-              ) : null}
-              <p className={`mb-0 fw-medium${!sidebarOpen ? ' text-muted small' : ''}`}>
-                {displayName(user)}
-              </p>
-            </div>
+            {!isPosRoute && (
+              <>
+                <div className="d-md-none min-w-0">
+                  <p className="fw-semibold mb-0">{displayAppName()}</p>
+                  <p className="text-muted small mb-0">{displayName(user)}</p>
+                  {storeName ? (
+                    <p className="text-success small mb-0 text-truncate">{storeName}</p>
+                  ) : null}
+                </div>
+                <div className="d-none d-md-block min-w-0">
+                  {!sidebarOpen ? (
+                    <p className="cashier-topbar__app-name mb-0 fw-bold">{displayAppName()}</p>
+                  ) : null}
+                  <p className={`mb-0 fw-medium${!sidebarOpen ? ' text-muted small' : ''}`}>
+                    {displayName(user)}
+                  </p>
+                </div>
+              </>
+            )}
+            {isPosRoute && (
+              <p className="cashier-topbar__pos-title mb-0 fw-semibold d-none d-md-block">{t('pos.navSale')}</p>
+            )}
           </div>
 
           <div className="d-flex flex-wrap align-items-center gap-2">

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { printReceiptAfterSale } from '../../utils/printReceipt';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
+import { clampPayAmount, round2 } from '../../utils/taxAmounts';
 import { categoryApi, productApi, saleApi, cashierShiftApi } from '../../services/api';
 import { useCartStore, lineDiscountAmount, lineSubtotal } from '../../store/cartStore';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
@@ -22,11 +23,10 @@ export default function PosPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const barcodeRef = useRef(null);
+  const searchInputRef = useRef(null);
   const scanningRef = useRef(false);
   const { storeId, noAssignment, multipleAssignment } = useCashierStore();
   const [search, setSearch] = useState('');
-  const [barcode, setBarcode] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(ALL_CATEGORY_ID);
   const [selectedLineId, setSelectedLineId] = useState(null);
   const [payOpen, setPayOpen] = useState(false);
@@ -59,12 +59,12 @@ export default function PosPage() {
   }, [shiftError, t]);
 
   useEffect(() => {
-    if (storeId) barcodeRef.current?.focus();
+    if (storeId) searchInputRef.current?.focus();
   }, [storeId]);
 
   useEffect(() => {
     if (!returnOpen && !payOpen && storeId) {
-      const timer = setTimeout(() => barcodeRef.current?.focus(), 50);
+      const timer = setTimeout(() => searchInputRef.current?.focus(), 50);
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -136,10 +136,10 @@ export default function PosPage() {
     [addItem, shift, t]
   );
 
-  const resolveBarcode = useCallback(
-    async (code) => {
+  const tryAddByBarcode = useCallback(
+    async (code, { silent = false } = {}) => {
       const trimmed = code.trim();
-      if (!trimmed || !storeId || scanningRef.current || payOpen || returnOpen) return;
+      if (!trimmed || !storeId || scanningRef.current || payOpen || returnOpen) return false;
       scanningRef.current = true;
       try {
         const res = await productApi.getByBarcode(trimmed, storeId);
@@ -152,12 +152,14 @@ export default function PosPage() {
           }),
           { duration: 2200 }
         );
-        setBarcode('');
+        setSearch('');
+        return true;
       } catch (e) {
-        toast.error(e.response?.data?.message ?? t('pos.barcodeNotFound'));
+        if (!silent) toast.error(e.response?.data?.message ?? t('pos.barcodeNotFound'));
+        return false;
       } finally {
         scanningRef.current = false;
-        barcodeRef.current?.focus();
+        searchInputRef.current?.focus();
       }
     },
     [storeId, addProductToCart, payOpen, returnOpen, t]
@@ -165,28 +167,27 @@ export default function PosPage() {
 
   useBarcodeScanner({
     enabled: !!storeId && !payOpen && !shiftModalOpen && !returnOpen,
-    barcodeInputRef: barcodeRef,
-    onScan: resolveBarcode,
+    barcodeInputRef: searchInputRef,
+    onScan: (code) => tryAddByBarcode(code),
     alwaysCapture: true,
   });
 
-  const handleBarcodeKeyDown = (e) => {
-    if (e.key === 'Enter' && barcode.trim()) {
-      e.preventDefault();
-      resolveBarcode(barcode);
+  const handleSearchEnter = useCallback(async () => {
+    const q = search.trim();
+    if (!q) return;
+    if (await tryAddByBarcode(q, { silent: true })) return;
+    if (products.length === 0) {
+      toast.error(t('pos.barcodeNotFound'));
+      return;
     }
-  };
-
-  const handleSearchEnter = useCallback(() => {
-    if (!searchActive || products.length === 0) return;
-    const q = search.trim().toLowerCase();
+    const lower = q.toLowerCase();
     const exact =
-      products.find((p) => p.barcode?.toLowerCase() === q) ||
-      products.find((p) => p.sku?.toLowerCase() === q) ||
-      products.find((p) => p.name?.toLowerCase() === q);
+      products.find((p) => p.barcode?.toLowerCase() === lower) ||
+      products.find((p) => p.sku?.toLowerCase() === lower) ||
+      products.find((p) => p.name?.toLowerCase() === lower);
     addProductToCart(exact ?? products[0]);
     setSearch('');
-  }, [searchActive, products, search, addProductToCart]);
+  }, [search, products, tryAddByBarcode, addProductToCart, t]);
 
   const checkoutMutation = useMutation({
     mutationFn: (payment) =>
@@ -235,12 +236,10 @@ export default function PosPage() {
 
   const handleConfirmPayment = (payment) => {
     if (checkoutMutation.isPending) return;
-    if (
-      payment.paymentMethod === 'MIXED' &&
-      payment.cashAmount != null &&
-      Number(payment.cashAmount) > total + 0.001
-    ) {
-      toast.error(t('pos.mixedCashExceeds'), { id: 'mixed-cash-exceed' });
+    const payTotal = round2(total);
+    if (payment.paymentMethod === 'MIXED' && payment.cashAmount != null) {
+      const cash = clampPayAmount(payment.cashAmount, payTotal);
+      checkoutMutation.mutate({ ...payment, cashAmount: cash, amountTendered: cash });
       return;
     }
     checkoutMutation.mutate(payment);
@@ -257,19 +256,6 @@ export default function PosPage() {
   const storeBlocked = noAssignment || multipleAssignment;
   return (
     <div className="cashier-register d-flex flex-column flex-grow-1 min-h-0">
-      <input
-        ref={barcodeRef}
-        type="text"
-        value={barcode}
-        onChange={(e) => setBarcode(e.target.value)}
-        onKeyDown={handleBarcodeKeyDown}
-        disabled={!storeId}
-        autoComplete="off"
-        tabIndex={-1}
-        aria-hidden
-        className="pos-barcode-hidden"
-      />
-
       {storeBlocked ? (
         <div className="alert alert-warning mb-0">
           {noAssignment ? t('pos.noStoreAssigned') : t('pos.multipleStoresAssigned')}
@@ -279,11 +265,11 @@ export default function PosPage() {
       ) : (
         <div className="cashier-register__split">
             <PosCatalogPanel
+              ref={searchInputRef}
               search={search}
               onSearchChange={setSearch}
               onSearchEnter={handleSearchEnter}
               scanDisabled={!storeId}
-              onBarcodeFocus={() => barcodeRef.current?.focus()}
               categories={categories}
               categoriesLoading={categoriesLoading}
               selectedCategoryId={selectedCategoryId}
