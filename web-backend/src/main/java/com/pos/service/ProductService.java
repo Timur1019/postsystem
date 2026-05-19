@@ -59,6 +59,8 @@ public interface ProductService {
 
     int bulkUpdateTaxRate(BulkTaxRateRequest req);
 
+    int bulkDeactivateProducts(List<UUID> productIds);
+
     List<ProductResponse> getLowStockProducts();
 
     List<ProductExportPreviewRow> previewProductsExport(String storeIdsParam, BigDecimal markupPercent);

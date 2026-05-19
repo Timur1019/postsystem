@@ -11,6 +11,8 @@ export const useAuthStore = create(
 
       setAuth: (token, user) => set({ token, user }),
       setToken: (token) => set({ token }),
+      patchUser: (partial) =>
+        set((state) => (state.user ? { user: { ...state.user, ...partial } } : {})),
       setHasHydrated: (value) => set({ _hasHydrated: value }),
 
       logout: () => set({ token: null, user: null }),

@@ -1,0 +1,62 @@
+import { format, parseISO } from 'date-fns';
+import { useTranslation } from 'react-i18next';
+import { fmtMoney } from '../../utils/formatMoney';
+import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
+
+const fmtAt = (iso) => {
+  if (!iso) return '—';
+  try {
+    const d = typeof iso === 'string' ? parseISO(iso) : new Date(iso);
+    return format(d, 'dd.MM.yyyy HH:mm');
+  } catch {
+    return '—';
+  }
+};
+
+function Row({ label, value, bold = false }) {
+  return (
+    <div className={`receipt-row${bold ? ' receipt-row--bold' : ''}`}>
+      <span className="receipt-meta-label">{label}</span>
+      <span className="receipt-row__value">{value}</span>
+    </div>
+  );
+}
+
+export default function ShiftReportPrintBody({ report }) {
+  const { t } = useTranslation();
+  const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
+
+  if (!report) return null;
+
+  const title = report.reportType === 'X' ? t('pos.xReport') : t('pos.zReport');
+  const currency = t('fiscalReceipt.currency');
+
+  return (
+    <>
+      <header className="receipt-section border-b border-dashed border-black pb-3 text-center">
+        <p className="receipt-title">{displayAppName()}</p>
+        <p className="receipt-subtitle mt-1 font-bold uppercase">{title}</p>
+        <p className="receipt-subtitle mt-1">{report.storeName}</p>
+        <p className="receipt-secondary">{report.cashierName}</p>
+      </header>
+
+      <section className="receipt-section mt-2 space-y-0.5">
+        <Row label={t('zReports.openedAt')} value={fmtAt(report.openedAt)} />
+        <Row label={t('pos.reportAt')} value={fmtAt(report.reportAt)} />
+      </section>
+
+      <div className="receipt-divider my-2 border-t border-dashed border-black" />
+
+      <section className="receipt-section space-y-0.5">
+        <Row label={t('pos.shiftSales')} value={String(report.saleCount)} />
+        <Row label={t('pos.shiftTotal')} value={`${fmtMoney(report.totalAmount)} ${currency}`} bold />
+        <Row label={t('pos.shiftCash')} value={`${fmtMoney(report.cashAmount)} ${currency}`} />
+        <Row label={t('pos.shiftCard')} value={`${fmtMoney(report.cardAmount)} ${currency}`} />
+        <Row label={t('pos.shiftVat')} value={`${fmtMoney(report.vatAmount)} ${currency}`} />
+        {Number(report.discountTotal) > 0 ? (
+          <Row label={t('pos.summaryDiscount')} value={`${fmtMoney(report.discountTotal)} ${currency}`} />
+        ) : null}
+      </section>
+    </>
+  );
+}

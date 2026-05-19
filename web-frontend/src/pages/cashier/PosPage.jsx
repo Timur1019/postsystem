@@ -7,7 +7,9 @@ import toast from 'react-hot-toast';
 import { printReceiptAfterSale } from '../../utils/printReceipt';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import { clampPayAmount, round2 } from '../../utils/taxAmounts';
-import { categoryApi, productApi, saleApi, cashierShiftApi } from '../../services/api';
+import { resolveProductUnitPrice } from '../../utils/productPrice';
+import { categoryApi, productApi, saleApi } from '../../services/api';
+import { useCashierShift, useOpenCashierShift } from '../../hooks/useCashierShift';
 import { useCartStore, lineDiscountAmount, lineSubtotal } from '../../store/cartStore';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 import { useCashierStore } from '../../hooks/useCashierStore';
@@ -16,6 +18,7 @@ import PosCatalogPanel, { ALL_CATEGORY_ID } from '../../components/cashier/PosCa
 import PosPaymentFlow from '../../components/cashier/PosPaymentFlow';
 import PosReturnModal from '../../components/cashier/PosReturnModal';
 import { useCashierShiftModal } from '../../contexts/CashierShiftModalContext';
+import { DoorOpen } from 'lucide-react';
 
 const PRODUCT_PAGE_SIZE = 120;
 
@@ -31,7 +34,7 @@ export default function PosPage() {
   const [selectedLineId, setSelectedLineId] = useState(null);
   const [payOpen, setPayOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
-  const { open: shiftModalOpen } = useCashierShiftModal();
+  const { open: shiftModalOpen, openShift: openShiftModal } = useCashierShiftModal();
 
   const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
@@ -45,18 +48,9 @@ export default function PosPage() {
   const getDiscountTotal = useCartStore((s) => s.getDiscountTotal);
   const itemCount = useCartStore((s) => s.itemCount);
 
-  const { data: shift, isError: shiftError } = useQuery({
-    queryKey: ['cashier-shift', storeId],
-    queryFn: () => cashierShiftApi.current(storeId).then((r) => r.data),
-    enabled: !!storeId,
-    retry: 1,
-  });
-
-  useEffect(() => {
-    if (shiftError) {
-      toast.error(t('pos.shiftOpenFailed'));
-    }
-  }, [shiftError, t]);
+  const { data: shift } = useCashierShift(storeId);
+  const openShiftMutation = useOpenCashierShift(storeId);
+  const shiftIsOpen = shift?.status === 'OPEN';
 
   useEffect(() => {
     if (storeId) searchInputRef.current?.focus();
@@ -102,7 +96,7 @@ export default function PosPage() {
 
   const addProductToCart = useCallback(
     (product) => {
-      if (!shift || shift.status !== 'OPEN') {
+      if (!shiftIsOpen) {
         toast.error(t('pos.shiftRequired'));
         return;
       }
@@ -119,7 +113,7 @@ export default function PosPage() {
         name: product.name,
         sku: product.sku,
         costPrice: Number(product.costPrice ?? 0),
-        sellingPrice: Number(product.sellingPrice),
+        sellingPrice: resolveProductUnitPrice(product, storeId),
         defaultDiscountPercent: Number(product.defaultDiscountPercent ?? 0),
         taxRate: Number(product.taxRate ?? 12),
         stockQuantity: product.stockQuantity,
@@ -133,7 +127,7 @@ export default function PosPage() {
       }
       setSelectedLineId(product.id);
     },
-    [addItem, shift, t]
+    [addItem, shiftIsOpen, storeId, t]
   );
 
   const tryAddByBarcode = useCallback(
@@ -144,14 +138,6 @@ export default function PosPage() {
       try {
         const res = await productApi.getByBarcode(trimmed, storeId);
         addProductToCart(res.data);
-        const line = useCartStore.getState().items.find((i) => i.productId === res.data.id);
-        toast.success(
-          t('pos.itemAdded', {
-            name: res.data.name,
-            sum: line ? fmt(lineSubtotal(line)) : fmt(res.data.sellingPrice),
-          }),
-          { duration: 2200 }
-        );
         setSearch('');
         return true;
       } catch (e) {
@@ -239,7 +225,13 @@ export default function PosPage() {
     const payTotal = round2(total);
     if (payment.paymentMethod === 'MIXED' && payment.cashAmount != null) {
       const cash = clampPayAmount(payment.cashAmount, payTotal);
-      checkoutMutation.mutate({ ...payment, cashAmount: cash, amountTendered: cash });
+      const card = round2(Math.max(0, payTotal - cash));
+      checkoutMutation.mutate({
+        ...payment,
+        cashAmount: cash,
+        cardAmount: card,
+        amountTendered: payment.amountTendered ?? cash,
+      });
       return;
     }
     checkoutMutation.mutate(payment);
@@ -263,7 +255,32 @@ export default function PosPage() {
       ) : !storeId ? (
         <div className="alert alert-secondary mb-0">{t('common.loading')}</div>
       ) : (
-        <div className="cashier-register__split">
+        <>
+          {!shiftIsOpen ? (
+            <div className="pos-shift-closed-banner mb-2 flex-shrink-0" role="status">
+              <span className="pos-shift-closed-banner__text">{t('pos.shiftRequired')}</span>
+              <div className="pos-shift-closed-banner__actions">
+                <button
+                  type="button"
+                  className="btn btn-success btn-sm d-inline-flex align-items-center gap-1"
+                  disabled={openShiftMutation.isPending}
+                  onClick={() =>
+                    openShiftMutation.mutate(undefined, {
+                      onSuccess: () => toast.success(t('pos.shiftOpenedSuccess')),
+                      onError: (e) => toast.error(e.response?.data?.message ?? t('pos.shiftOpenFailed')),
+                    })
+                  }
+                >
+                  <DoorOpen size={16} aria-hidden />
+                  {t('pos.openShift')}
+                </button>
+                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={openShiftModal}>
+                  {t('pos.navShift')}
+                </button>
+              </div>
+            </div>
+          ) : null}
+          <div className="cashier-register__split">
             <PosCatalogPanel
               ref={searchInputRef}
               search={search}
@@ -297,7 +314,7 @@ export default function PosPage() {
                 total={total}
                 discountTotal={discountTotal}
                 onCheckout={() => setPayOpen(true)}
-                checkoutDisabled={items.length === 0 || checkoutMutation.isPending || shift?.status !== 'OPEN'}
+                checkoutDisabled={items.length === 0 || checkoutMutation.isPending || !shiftIsOpen}
               />
               <PosPaymentFlow
                 open={payOpen}
@@ -309,7 +326,8 @@ export default function PosPage() {
                 onConfirm={handleConfirmPayment}
               />
             </div>
-        </div>
+          </div>
+        </>
       )}
 
       <PosReturnModal

@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Minus, Plus, Trash2, Percent, Banknote } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { lineCostTotal, lineDiscountAmount, lineSubtotal } from '../../store/cartStore';
-import { fmtMoney as fmt } from '../../utils/formatMoney';
+import { lineDiscountAmount, lineSubtotal } from '../../store/cartStore';
+import { fmtMoney as fmt, fmtMoneyCompact as fmtCompact } from '../../utils/formatMoney';
 
 export default function PosOrderPanel({
   items,
@@ -33,7 +33,6 @@ export default function PosOrderPanel({
   }, [selectedLineId, items]);
 
   const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
-  const costTotal = items.reduce((s, i) => s + lineCostTotal(i), 0);
   const discountPct =
     items.length > 0
       ? Math.round(
@@ -77,7 +76,6 @@ export default function PosOrderPanel({
           <div className="pos-cart-table">
             <div className="pos-cart-table__head" role="row">
               <span className="pos-cart-table__col pos-cart-table__col--name">{t('pos.colName')}</span>
-              <span className="pos-cart-table__col pos-cart-table__col--cost">{t('pos.colCost')}</span>
               <span className="pos-cart-table__col pos-cart-table__col--price">{t('pos.colPrice')}</span>
               <span className="pos-cart-table__col pos-cart-table__col--qty">{t('pos.colQty')}</span>
               <span className="pos-cart-table__col pos-cart-table__col--sum">{t('pos.colSum')}</span>
@@ -86,7 +84,6 @@ export default function PosOrderPanel({
               {items.map((item) => {
                 const active = selectedLineId === item.productId;
                 const lineSum = lineSubtotal(item);
-                const lineCost = lineCostTotal(item);
                 return (
                   <li
                     key={item.productId}
@@ -103,13 +100,6 @@ export default function PosOrderPanel({
                         {item.name}
                       </span>
                       {item.sku ? <span className="pos-cart-table__sku">{item.sku}</span> : null}
-                    </div>
-
-                    <div className="pos-cart-table__col pos-cart-table__col--cost">
-                      <span className="pos-cart-table__cost">{fmt(lineCost)}</span>
-                      <span className="pos-cart-table__cost-unit">
-                        {fmt(item.costPrice ?? 0)} × {item.quantity}
-                      </span>
                     </div>
 
                     <div className="pos-cart-table__col pos-cart-table__col--price">
@@ -138,7 +128,7 @@ export default function PosOrderPanel({
                             setPriceDraft(String(item.unitPrice));
                           }}
                         >
-                          {fmt(item.unitPrice)}
+                          <span title={fmt(item.unitPrice)}>{fmtCompact(item.unitPrice)}</span>
                         </button>
                       )}
                     </div>
@@ -156,7 +146,9 @@ export default function PosOrderPanel({
                     </div>
 
                     <div className="pos-cart-table__col pos-cart-table__col--sum">
-                      <span className="pos-cart-table__sum">{fmt(lineSum)}</span>
+                      <span className="pos-cart-table__money pos-cart-table__sum" title={fmt(lineSum)}>
+                        {fmtCompact(lineSum)}
+                      </span>
                     </div>
 
                     {lineDiscountAmount(item) > 0 && (
@@ -226,30 +218,26 @@ export default function PosOrderPanel({
 
         <div className="pos-order-panel__checkout">
           <div className="pos-order-panel__foot">
-            <div className="pos-order-panel__row pos-order-panel__row--cost">
-            <span>{t('pos.totalCost')}</span>
-            <span>{fmt(costTotal)}</span>
-          </div>
           <div className="pos-order-panel__row">
             <span>{t('pos.subtotal')}</span>
-            <span>{fmt(subtotal)}</span>
+            <span title={fmt(subtotal)}>{fmtCompact(subtotal)}</span>
           </div>
           <div className="pos-order-panel__row pos-order-panel__row--disc">
             <span>
               {t('pos.discount')}
               {discountPct > 0 ? ` ${discountPct}%` : ''}
             </span>
-            <span>−{fmt(discountTotal)}</span>
+            <span title={fmt(discountTotal)}>−{fmtCompact(discountTotal)}</span>
             </div>
           </div>
           <div className="pos-order-panel__grand">
             <span>{t('pos.grandTotal')}</span>
-            <span>{fmt(total)}</span>
+            <span className="pos-order-panel__grand-sum" title={fmt(total)}>{fmtCompact(total)}</span>
           </div>
           <button type="button" className="pos-checkout-btn" disabled={checkoutDisabled} onClick={onCheckout}>
             <Banknote size={22} strokeWidth={1.75} />
             <span>
-              {t('pos.toPayment')} — {fmt(total)}
+              {t('pos.toPayment')} — <span title={fmt(total)}>{fmtCompact(total)}</span>
             </span>
           </button>
         </div>

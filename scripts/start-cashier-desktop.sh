@@ -16,4 +16,5 @@ cd "$ROOT/desktop-cashier"
 if [ ! -d node_modules ]; then
   npm install
 fi
-npm start
+# UI с Vite (последние изменения без пересборки web-dist)
+POS_REMOTE_UI=1 POS_CASHIER_URL=http://localhost:5173 npm start

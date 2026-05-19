@@ -87,6 +87,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
     resolver: zodResolver(schema),
     defaultValues: {
       taxRate: 0,
+      defaultDiscountPercent: 0,
       lowStockAlert: 10,
       initialStock: 0,
       storageLocation: '',

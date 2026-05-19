@@ -9,7 +9,12 @@ export const PRINT_THERMAL_CLASS = 'print-thermal-only';
 /** Доп. класс: печать из модалки журнала (скрывает #root). */
 export const PRINT_THERMAL_MODAL_CLASS = 'print-thermal-modal';
 
-const THERMAL_PRINT_CLASSES = new Set([PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS, 'print-z-report-only']);
+const THERMAL_PRINT_CLASSES = new Set([
+  PRINT_THERMAL_CLASS,
+  PRINT_THERMAL_MODAL_CLASS,
+  'print-z-report-only',
+  'print-shift-report-only',
+]);
 const JOB_PAGE_STYLE_ID = 'pos-print-job-page';
 
 /**

@@ -99,6 +99,7 @@ export const productApi = {
   deactivate: (id)     => api.delete(`/products/${id}`),
   getLowStock:()       => api.get('/products/low-stock'),
   bulkTaxRate:(body)   => api.patch('/products/bulk/tax-rate', body),
+  bulkDeactivate: (body) => api.patch('/products/bulk/deactivate', body),
   importTemplate: () =>
     api.get('/products/import/template', { responseType: 'blob' }),
   importPreview: (formData, source = 'CATALOG') =>
@@ -143,9 +144,19 @@ export const companyApi = {
   delete: (id) => api.delete(`/companies/${id}`),
 };
 
+export const platformModuleAccessApi = {
+  catalog: () => api.get('/platform/module-access/catalog'),
+  listUsers: (companyId) => api.get('/platform/module-access/users', { params: { companyId } }),
+  getUser: (userId) => api.get(`/platform/module-access/users/${userId}`),
+  updateUser: (userId, body) => api.put(`/platform/module-access/users/${userId}`, body),
+  resetUser: (userId) => api.delete(`/platform/module-access/users/${userId}`),
+};
+
 export const cashRegisterApi = {
   getAll: (params) => api.get('/cash-registers', { params }),
   getTransfers: (params) => api.get('/cash-registers/transfers', { params }),
+  exportTransfers: (params) =>
+    api.get('/cash-registers/transfers/export', { params, responseType: 'blob' }),
   getEquipmentSerials: () => api.get('/cash-registers/equipment-serials'),
   getById: (id) => api.get(`/cash-registers/${id}`),
   toggleStatus: (id) => api.patch(`/cash-registers/${id}/toggle-status`),

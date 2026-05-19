@@ -12,6 +12,7 @@ import StockAdjustModal from '../components/products/StockAdjustModal';
 import ProductsToolbar from '../components/products/ProductsToolbar';
 import ProductFiltersDrawer from '../components/products/ProductFiltersDrawer';
 import ProductBulkVatModal from '../components/products/ProductBulkVatModal';
+import ProductBulkDeleteModal from '../components/products/ProductBulkDeleteModal';
 import ProductImportModal from '../components/products/ProductImportModal';
 import ProductExportModal from '../components/products/ProductExportModal';
 import WarehouseReceiveModal from '../components/stock/WarehouseReceiveModal';
@@ -48,6 +49,7 @@ export default function ProductsPage() {
   const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [bulkVatOpen, setBulkVatOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   /** Row actions menu: portal + fixed coords so overflow on table does not clip the dropdown. */
@@ -160,7 +162,13 @@ export default function ProductsPage() {
             }
             setBulkVatOpen(true);
           }}
-          onDeleteAll={() => toast(t('products.toolbar.deleteAllSoon'))}
+          onDeleteAll={() => {
+            if (selectedIds.size === 0) {
+              toast.error(t('products.bulkDelete.noneSelected'));
+              return;
+            }
+            setBulkDeleteOpen(true);
+          }}
           onOpenFilters={() => setFiltersOpen(true)}
         />
       </div>
@@ -365,9 +373,20 @@ export default function ProductsPage() {
           }}
         />
       )}
+      {bulkDeleteOpen && (
+        <ProductBulkDeleteModal
+          productIds={selectedIds}
+          onClose={() => setBulkDeleteOpen(false)}
+          onDone={() => {
+            setBulkDeleteOpen(false);
+            setSelectedIds(new Set());
+          }}
+        />
+      )}
       {importOpen && (
         <ProductImportModal
           categories={categories}
+          stores={stores}
           onClose={() => {
             setImportOpen(false);
             invalidateProductCaches(qc);

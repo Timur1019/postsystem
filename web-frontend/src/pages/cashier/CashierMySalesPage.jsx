@@ -6,7 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { Clock, Filter, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { cashierShiftApi, saleApi } from '../../services/api';
+import { saleApi } from '../../services/api';
+import { useCashierShift } from '../../hooks/useCashierShift';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 
@@ -397,12 +398,7 @@ export default function CashierMySalesPage() {
     [filters.paymentMethod, filters.status, filters.from, filters.to, debouncedReceipt]
   );
   const filtering = filters.receiptNumber !== debouncedReceipt;
-  const { data: shift, isPending: shiftLoading } = useQuery({
-    queryKey: ['cashier-shift', storeId],
-    queryFn: () => cashierShiftApi.current(storeId).then((r) => r.data),
-    enabled: !!storeId,
-    retry: 1,
-  });
+  const { data: shift, isPending: shiftLoading } = useCashierShift(storeId);
 
   const shiftId = shift?.id;
 

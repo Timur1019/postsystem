@@ -1,5 +1,5 @@
 // src/components/cashier/PosCatalogPanel.jsx
-import { forwardRef } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -24,6 +24,16 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
   searchInputRef
 ) {
   const { t } = useTranslation();
+  const [narrowSearch, setNarrowSearch] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const mq = window.matchMedia('(max-width: 520px)');
+    const sync = () => setNarrowSearch(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
 
   const pillClass = (active) => `pos-category-nav__pill${active ? ' is-active' : ''}`;
 
@@ -44,7 +54,7 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
               }
             }}
             disabled={scanDisabled}
-            placeholder={t('pos.searchProductsPh')}
+            placeholder={t(narrowSearch ? 'pos.searchProductsPhShort' : 'pos.searchProductsPh')}
             autoComplete="off"
             className="pos-search-bar__input"
           />

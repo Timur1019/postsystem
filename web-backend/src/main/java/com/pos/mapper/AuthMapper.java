@@ -6,6 +6,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import java.util.List;
 import java.util.UUID;
 
 @Mapper(config = PosMapperConfig.class, uses = UserMapper.class)
@@ -22,7 +23,9 @@ public interface AuthMapper {
     @Mapping(target = "role", source = "user.role.name")
     @Mapping(target = "companyId", source = "user.company.id")
     @Mapping(target = "storeIds", source = "user.stores", qualifiedByName = "storeIds")
-    AuthResponse toResponse(User user, String token);
+    @Mapping(target = "allowedModules", source = "allowedModules")
+    @Mapping(target = "moduleAccessCustom", source = "moduleAccessCustom")
+    AuthResponse toResponse(User user, String token, List<String> allowedModules, boolean moduleAccessCustom);
 
     @Named("uuidToString")
     default String uuidToString(UUID id) {

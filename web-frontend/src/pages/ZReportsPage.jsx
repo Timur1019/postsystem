@@ -1,5 +1,5 @@
 // src/pages/ZReportsPage.jsx
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Filter, MoreVertical, Download } from 'lucide-react';
@@ -8,7 +8,7 @@ import { format, parseISO } from 'date-fns';
 import toast from 'react-hot-toast';
 import { zReportApi, storeApi } from '../services/api';
 import ZReportFiltersDrawer from '../components/z-reports/ZReportFiltersDrawer';
-import ZReportPrintModal from '../components/z-reports/ZReportPrintModal';
+import ZReportAutoPrint from '../components/z-reports/ZReportAutoPrint';
 
 import { fmtMoney } from '../utils/formatMoney';
 
@@ -42,6 +42,7 @@ export default function ZReportsPage() {
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [rowMenu, setRowMenu] = useState(null);
   const [printZId, setPrintZId] = useState(null);
+  const closeZPrint = useCallback(() => setPrintZId(null), []);
   const selectAllRef = useRef(null);
 
   const { data: stores = [] } = useQuery({
@@ -451,7 +452,7 @@ export default function ZReportsPage() {
         )}
 
       {printZId
-        ? createPortal(<ZReportPrintModal zReportId={printZId} onClose={() => setPrintZId(null)} />, document.body)
+        ? createPortal(<ZReportAutoPrint zReportId={printZId} onClose={closeZPrint} />, document.body)
         : null}
     </div>
   );

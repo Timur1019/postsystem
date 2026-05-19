@@ -1,6 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { APP_NAME } from '../config/brand';
+import {
+  syncReceiptDisplayCssVars,
+  RECEIPT_LOGO_HEIGHT_DEFAULT_MM,
+  RECEIPT_LOGO_HEIGHT_MIN_MM,
+  RECEIPT_LOGO_HEIGHT_MAX_MM,
+} from '../utils/syncReceiptDisplayCssVars';
+
+export {
+  RECEIPT_LOGO_HEIGHT_DEFAULT_MM,
+  RECEIPT_LOGO_HEIGHT_MIN_MM,
+  RECEIPT_LOGO_HEIGHT_MAX_MM,
+} from '../utils/syncReceiptDisplayCssVars';
 
 /** Поля фискального чека (вкл./выкл. в настройках принтера). */
 export const RECEIPT_FIELD_DEFS = [
@@ -46,6 +58,7 @@ export const useTenantDisplayStore = create(
       systemAppName: '',
 
       receiptLogoDataUrl: null,
+      receiptLogoMaxHeightMm: RECEIPT_LOGO_HEIGHT_DEFAULT_MM,
       receiptCompanyName: '',
       receiptCompanyAddress: '',
       receiptStir: '',
@@ -58,6 +71,14 @@ export const useTenantDisplayStore = create(
 
       setReceiptLogo: (dataUrl) => set({ receiptLogoDataUrl: dataUrl || null }),
       clearReceiptLogo: () => set({ receiptLogoDataUrl: null }),
+      setReceiptLogoMaxHeightMm: (mm) => {
+        const n = Number(mm);
+        const clamped = Number.isFinite(n)
+          ? Math.min(RECEIPT_LOGO_HEIGHT_MAX_MM, Math.max(RECEIPT_LOGO_HEIGHT_MIN_MM, n))
+          : RECEIPT_LOGO_HEIGHT_DEFAULT_MM;
+        set({ receiptLogoMaxHeightMm: clamped });
+        queueMicrotask(() => syncReceiptDisplayCssVars(get()));
+      },
       setReceiptCompanyName: (v) => set({ receiptCompanyName: String(v ?? '').trim() }),
       setReceiptCompanyAddress: (v) => set({ receiptCompanyAddress: String(v ?? '').trim() }),
       setReceiptStir: (v) => set({ receiptStir: String(v ?? '').trim() }),
@@ -84,17 +105,32 @@ export const useTenantDisplayStore = create(
     }),
     {
       name: 'pos-tenant-display',
-      version: 1,
+      version: 2,
+      migrate: (persisted, version) => {
+        if (!persisted) return persisted;
+        if (version < 2) {
+          return { ...persisted, receiptLogoMaxHeightMm: RECEIPT_LOGO_HEIGHT_DEFAULT_MM };
+        }
+        return persisted;
+      },
       partialize: (s) => ({
         systemLogoDataUrl: s.systemLogoDataUrl,
         systemAppName: s.systemAppName,
         receiptLogoDataUrl: s.receiptLogoDataUrl,
+        receiptLogoMaxHeightMm: s.receiptLogoMaxHeightMm,
         receiptCompanyName: s.receiptCompanyName,
         receiptCompanyAddress: s.receiptCompanyAddress,
         receiptStir: s.receiptStir,
         receiptFields: s.receiptFields,
         userFormFields: s.userFormFields,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) syncReceiptDisplayCssVars(state);
+      },
     }
   )
 );
+
+useTenantDisplayStore.subscribe(() => {
+  syncReceiptDisplayCssVars(useTenantDisplayStore.getState());
+});

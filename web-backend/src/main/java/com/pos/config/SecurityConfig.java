@@ -46,6 +46,7 @@ public class SecurityConfig {
                 .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
                 .requestMatchers(PUBLIC_PATHS).permitAll()
                 .requestMatchers("/companies/**").hasRole("SUPER_ADMIN")
+                .requestMatchers("/platform/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/users/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/reports/**").hasAnyRole("ADMIN", "MANAGER")
                 .requestMatchers("/returns/**").hasAnyRole("ADMIN", "MANAGER")

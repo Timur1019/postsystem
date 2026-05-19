@@ -51,11 +51,15 @@ function loadConfig() {
   const useRemoteUi =
     fromEnv.useRemoteUi === true ||
     fileConfig.useRemoteUi === true ||
-    (Boolean(fromEnv.cashierUrl || fileConfig.cashierUrl) &&
+    (!hasEmbeddedDist &&
+      Boolean(fromEnv.cashierUrl || fileConfig.cashierUrl) &&
       !String(fromEnv.cashierUrl || fileConfig.cashierUrl).includes('127.0.0.1'));
 
+  /** Встроенный UI из web-dist; API — на сервер (backendOrigin). */
   const useEmbedded =
-    !useRemoteUi && hasEmbeddedDist && process.env.POS_EMBEDDED === '1';
+    hasEmbeddedDist &&
+    !useRemoteUi &&
+    (process.env.POS_EMBEDDED === '1' || process.env.POS_FORCE_REMOTE_UI !== '1');
 
   const embeddedPort = Number(fileConfig.embeddedPort || DEFAULTS.embeddedPort);
   const backendOrigin = (fromEnv.backendOrigin || fileConfig.backendOrigin || DEFAULTS.backendOrigin).replace(

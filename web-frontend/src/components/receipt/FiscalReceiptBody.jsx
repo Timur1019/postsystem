@@ -19,9 +19,9 @@ const PAYMENT_I18N = {
 
 function Row({ label, value, bold = false }) {
   return (
-    <div className={`receipt-row flex justify-between gap-x-2 gap-y-0.5${bold ? ' receipt-row--bold' : ''}`}>
-      <span className="receipt-meta-label min-w-0 flex-[1_1_45%]">{label}</span>
-      <span className="min-w-0 flex-[1_1_50%] text-right break-all">{value}</span>
+    <div className={`receipt-row${bold ? ' receipt-row--bold' : ''}`}>
+      <span className="receipt-meta-label">{label}</span>
+      <span className="receipt-row__value">{value}</span>
     </div>
   );
 }
@@ -111,11 +111,7 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
       {showHeader ? (
         <header className="receipt-section border-b border-dashed border-black pb-3 text-center">
           {isOn('logo') && receiptLogoDataUrl ? (
-            <img
-              src={receiptLogoDataUrl}
-              alt=""
-              className="mx-auto mb-2 max-h-16 max-w-full object-contain"
-            />
+            <img src={receiptLogoDataUrl} alt="" className="receipt-logo mx-auto mb-2" />
           ) : null}
           {isOn('companyName') ? (
             <p className="receipt-title break-words">{companyName}</p>
@@ -172,40 +168,27 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
         <>
           <ReceiptDivider />
           <section className="receipt-section min-w-0">
-            <div className="receipt-items-header mb-1.5 grid grid-cols-12 gap-1">
-              <span className="col-span-6 min-w-0 receipt-meta-label">{t('receipt.item')}</span>
-              <span className="col-span-2 min-w-0 text-center receipt-meta-label">{t('receipt.qty')}</span>
-              <span className="col-span-4 min-w-0 text-right receipt-meta-label">{t('receipt.lineTotal')}</span>
+            <div className="receipt-items-table__head receipt-meta-label">
+              <span>{t('receipt.item')}</span>
+              <span>{t('receipt.qtyShort')}</span>
+              <span>{t('receipt.lineTotalShort')}</span>
             </div>
 
-            <div className="space-y-2.5">
-              {(sale.items ?? []).map((item, idx) => {
-                const rate = item.taxRatePercent != null ? Number(item.taxRatePercent) : 12;
-                const taxAmt = item.taxAmount != null ? Number(item.taxAmount) : 0;
-                return (
-                  <div key={idx} className="border-b border-dotted border-black pb-2 last:border-0">
-                    <div className="grid grid-cols-12 gap-1">
-                      <span className="col-span-6 min-w-0 break-words">{item.productName}</span>
-                      <span className="col-span-2 min-w-0 text-center">{fmtQty(item.quantity)}</span>
-                      <span className="col-span-4 min-w-0 text-right">{fmtMoney(item.lineTotal)}</span>
+            <div className="receipt-items-table space-y-2.5">
+              {(sale.items ?? []).map((item, idx) => (
+                  <div key={idx} className="receipt-items-table__item border-b border-dotted border-black pb-2 last:border-0">
+                    <div className="receipt-items-table__row">
+                      <span className="receipt-items-table__name">{item.productName}</span>
+                      <span className="receipt-items-table__qty">{fmtQty(item.quantity)}</span>
+                      <span className="receipt-items-table__sum">{fmtMoney(item.lineTotal)}</span>
                     </div>
-                    {isOn('itemVatLine') && taxAmt > 0 ? (
-                      <p className="mt-0.5 receipt-secondary">
-                        {t('fiscalReceipt.vatLineShort', { rate: rate.toFixed(0) })} ({fmtMoney(taxAmt)})
-                      </p>
-                    ) : isOn('itemVatLine') && rate === 0 ? (
-                      <p className="mt-0.5 receipt-secondary">
-                        {t('fiscalReceipt.vatLineShort', { rate: '0' })} ({fmtMoney(0)})
-                      </p>
-                    ) : null}
                     {isOn('itemIkpu') && item.ikpu ? (
                       <p className="break-all receipt-secondary">
                         {t('receipt.ikpuLine')}: {item.ikpu}
                       </p>
                     ) : null}
                   </div>
-                );
-              })}
+              ))}
             </div>
           </section>
         </>
@@ -271,9 +254,9 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
             <Row label={t('fiscalReceipt.virtualRegister')} value={virtualRegister} />
             <Row label={t('fiscalReceipt.fmNumber')} value={fmNumber} />
             <Row label={t('fiscalReceipt.fiscalReceiptNo')} value={`№${sale.receiptNumber}`} />
-            <div className="receipt-row flex justify-between gap-2">
-              <span className="receipt-meta-label min-w-0 shrink-0">{t('fiscalReceipt.fiscalSign')}</span>
-              <span className="receipt-fiscal-sign min-w-0 break-all text-right">{fiscalSign}</span>
+            <div className="receipt-row">
+              <span className="receipt-meta-label">{t('fiscalReceipt.fiscalSign')}</span>
+              <span className="receipt-fiscal-sign receipt-row__value">{fiscalSign}</span>
             </div>
           </section>
         </>

@@ -485,6 +485,7 @@
 .pos-order-panel__list {
   flex: 1;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -494,13 +495,15 @@
 .pos-cart-table {
   --pos-cart-cols: var(
     --cashier-cart-cols,
-    minmax(0, 2.2fr) minmax(0, 1.1fr) minmax(0, 0.95fr) minmax(5.5rem, 0.8fr) minmax(0, 1.05fr)
+    minmax(0, 1.65fr) minmax(0, 0.85fr) minmax(4.75rem, 0.72fr) minmax(0, 0.95fr)
   );
   display: flex;
   flex-direction: column;
   min-height: 0;
   flex: 1;
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .pos-cart-table__head,
@@ -544,6 +547,7 @@
 .pos-cart-table__row {
   border-bottom: 1px solid var(--pos-border);
   cursor: pointer;
+  align-items: stretch;
 }
 
 .pos-cart-table__row:hover,
@@ -571,6 +575,8 @@
 .pos-cart-table__col--sum {
   align-items: flex-end;
   text-align: right;
+  padding-left: 6px;
+  padding-right: 8px;
 }
 
 .pos-cart-table__col--qty {
@@ -600,41 +606,54 @@
 }
 
 .pos-cart-table__name {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   font-weight: 600;
   font-size: 0.8125rem;
   line-height: 1.25;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .pos-cart-table__sku {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
   margin-top: 2px;
   font-size: 0.6875rem;
   color: var(--pos-muted);
   overflow: hidden;
+  word-break: break-all;
+  white-space: normal;
+}
+
+.pos-cart-table__money {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-align: right;
 }
 
 .pos-cart-table__cost {
-  width: 100%;
   font-weight: 600;
-  font-size: 0.8125rem;
+  font-size: clamp(0.6875rem, 2.8cqi, 0.8125rem);
   color: var(--pos-text);
-  white-space: nowrap;
-  text-align: right;
 }
 
 .pos-cart-table__cost-unit {
-  width: 100%;
   margin-top: 2px;
-  font-size: 0.6875rem;
+  font-size: clamp(0.625rem, 2.2cqi, 0.6875rem);
+  font-weight: 500;
   color: var(--pos-muted);
-  white-space: nowrap;
-  text-align: right;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .pos-order-panel__row--cost {
@@ -644,13 +663,16 @@
 
 .pos-cart-table__price-btn {
   width: 100%;
+  max-width: 100%;
   border: none;
   background: none;
   padding: 0;
-  font-size: 0.8125rem;
+  font-size: clamp(0.6875rem, 2.8cqi, 0.8125rem);
   font-weight: 600;
   color: var(--pos-text);
   text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -671,12 +693,9 @@
 }
 
 .pos-cart-table__sum {
-  width: 100%;
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: clamp(0.75rem, 3cqi, 0.875rem);
   color: var(--pos-green);
-  white-space: nowrap;
-  text-align: right;
 }
 
 .pos-cart-table__disc {
@@ -841,11 +860,15 @@
 }
 
 .pos-order-panel__row span:last-child {
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-width: 0;
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pos-order-panel__row--disc,
@@ -873,11 +896,18 @@
   color: #111827;
 }
 
-.pos-order-panel__grand span:last-child {
-  font-size: 1.35rem;
+.pos-order-panel__grand span:last-child,
+.pos-order-panel__grand-sum {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: clamp(1.05rem, 4cqi, 1.35rem);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--pos-green);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pos-checkout-btn {
@@ -1756,10 +1786,12 @@
 
 .pos-product-card {
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   min-height: 72px;
-  padding: 10px 12px 30px;
+  height: 100%;
+  padding: 10px 12px 28px;
   text-align: left;
   border: 1px solid var(--pos-border);
   border-radius: var(--pos-radius);
@@ -1774,18 +1806,27 @@
 }
 
 .pos-product-card__name {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  flex: 1 1 auto;
   font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.25;
   color: var(--pos-text);
+  word-break: break-word;
 }
 
 .pos-product-card__code {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
   margin-top: 2px;
   font-size: 0.6875rem;
   color: var(--pos-muted);
+  word-break: break-all;
 }
 
 .pos-product-card__price {
@@ -2706,6 +2747,32 @@
 .cashier-sales-badge--refunded {
   background: #fff3bf;
   color: #e67700;
+}
+
+.pos-shift-closed-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #f5c2c7;
+  background: #f8d7da;
+  color: #842029;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.pos-shift-closed-banner__text {
+  flex: 1 1 12rem;
+}
+
+.pos-shift-closed-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .cashier-sales-shift-banner {

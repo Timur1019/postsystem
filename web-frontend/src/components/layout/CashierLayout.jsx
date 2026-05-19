@@ -1,7 +1,6 @@
 // src/components/layout/CashierLayout.jsx
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { ShoppingCart, Receipt, LogOut, BookOpen, Clock, Store, Menu, PanelLeftClose, Headphones } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
@@ -11,7 +10,7 @@ import CashierShiftModal from '../cashier/CashierShiftModal';
 import LanguageSwitcher from '../shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 import BrandMark from '../shared/BrandMark';
-import { cashierShiftApi } from '../../services/api';
+import { useCashierShift } from '../../hooks/useCashierShift';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../styles/cashier-modals.css';
 import '../../styles/cashier-bootstrap.css';
@@ -53,14 +52,18 @@ function CashierLayoutShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const isPosRoute = location.pathname.startsWith('/cashier/pos');
+
+  /** На кассовом мониторе (~1024px) — больше места каталогу и чеку */
+  useEffect(() => {
+    if (!isPosRoute) return;
+    if (typeof window === 'undefined') return;
+    if (window.innerWidth > 1280) return;
+    setSidebarOpen(false);
+    setSidebarNavExpanded(false);
+  }, [isPosRoute]);
   const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
 
-  const { data: shift } = useQuery({
-    queryKey: ['cashier-shift', storeId],
-    queryFn: () => cashierShiftApi.current(storeId).then((r) => r.data),
-    enabled: !!storeId,
-    retry: 1,
-  });
+  const { data: shift } = useCashierShift(storeId);
 
   const navLinkClass = ({ isActive }) =>
     `nav-link d-flex align-items-center gap-2 ${isActive ? 'active' : ''}`;
@@ -84,7 +87,11 @@ function CashierLayoutShell() {
   const sidebarClass = `cashier-sidebar d-none d-md-flex flex-column${sidebarOpen ? '' : ' is-collapsed'}`;
 
   return (
-    <div className={`cashier-app d-flex bg-light${sidebarOpen ? '' : ' cashier-app--sidebar-collapsed'}`}>
+    <div
+      className={`cashier-app d-flex bg-light${sidebarOpen ? '' : ' cashier-app--sidebar-collapsed'}${
+        isPosRoute ? ' cashier-app--pos-screen' : ''
+      }`}
+    >
       <aside className={sidebarClass}>
         <div className="cashier-sidebar__head">
           <p className="cashier-sidebar__brand">{displayAppName()}</p>
@@ -116,7 +123,7 @@ function CashierLayoutShell() {
             type="button"
             className="nav-link cashier-sidebar__nav-btn"
             onClick={openShift}
-            disabled={!storeId || !shift}
+            disabled={!storeId}
             title={t('pos.navShift')}
           >
             <Clock size={20} strokeWidth={2} className="cashier-sidebar__nav-icon" />
@@ -205,7 +212,7 @@ function CashierLayoutShell() {
                 type="button"
                 className="nav-link py-1 px-2 small"
                 onClick={openShift}
-                disabled={!storeId || !shift}
+                disabled={!storeId}
               >
                 {t('pos.navShift')}
               </button>
@@ -222,7 +229,14 @@ function CashierLayoutShell() {
         </main>
       </div>
 
-      <CashierShiftModal open={open} onClose={closeShift} storeId={storeId} shift={shift} />
+      <CashierShiftModal
+        open={open}
+        onClose={closeShift}
+        storeId={storeId}
+        storeName={storeName}
+        cashierName={displayName(user)}
+        shift={shift}
+      />
     </div>
   );
 }

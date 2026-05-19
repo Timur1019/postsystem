@@ -3,6 +3,7 @@ package com.pos.util;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -36,6 +37,22 @@ public final class ProductImportParseUtil {
     public static String cell(Map<String, String> row, String key) {
         String v = row.get(key.toLowerCase(Locale.ROOT));
         return v == null ? "" : v.trim();
+    }
+
+    /**
+     * НДС в процентах (0–100). Значения &gt; 100 часто попадают из счёт-фактуры как сумма НДС, а не %.
+     */
+    public static BigDecimal normalizeTaxRatePercent(BigDecimal value) {
+        if (value == null) {
+            return new BigDecimal("12");
+        }
+        if (value.compareTo(BigDecimal.ZERO) < 0) {
+            return BigDecimal.ZERO;
+        }
+        if (value.compareTo(new BigDecimal("100")) > 0) {
+            return new BigDecimal("12");
+        }
+        return value.setScale(2, RoundingMode.HALF_UP);
     }
 
     public static Optional<BigDecimal> parseDecimalOpt(String raw) {

@@ -35,25 +35,26 @@ import { useAuthStore } from '../../store/authStore';
 import LanguageSwitcher from '../shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 import BrandMark from '../shared/BrandMark';
+import { useModuleAccess } from '../../hooks/useModuleAccess';
 
 const GOODS_ROUTES = ['/products', '/categories'];
 
 const GOODS_CHILDREN = [
-  { to: '/products', key: 'productsList', icon: Package },
-  { to: '/categories', key: 'categories', icon: Tags },
+  { to: '/products', key: 'productsList', icon: Package, moduleId: 'products' },
+  { to: '/categories', key: 'categories', icon: Tags, moduleId: 'categories' },
 ];
 
 const STOCK_ROUTES = ['/stock/products', '/stock/suppliers'];
 
 const STOCK_CHILDREN = [
-  { to: '/stock/products', key: 'stockProducts', icon: Package },
-  { to: '/stock/suppliers', key: 'stockSuppliers', icon: Building2 },
+  { to: '/stock/products', key: 'stockProducts', icon: Package, moduleId: 'stockProducts' },
+  { to: '/stock/suppliers', key: 'stockSuppliers', icon: Building2, moduleId: 'stockSuppliers' },
 ];
 
 const ORDER_ROUTES = ['/orders/list'];
 
 const ORDER_CHILDREN = [
-  { to: '/orders/list', key: 'ordersList', icon: ClipboardList },
+  { to: '/orders/list', key: 'ordersList', icon: ClipboardList, moduleId: 'ordersList' },
 ];
 
 const REPORT_ROUTES = ['/reports/sales', '/reports/returns', '/reports/analytics'];
@@ -61,27 +62,27 @@ const REPORT_ROUTES = ['/reports/sales', '/reports/returns', '/reports/analytics
 const REGISTER_ROUTES = ['/cash-registers/list', '/cash-registers/z-reports', '/cash-registers/transfer', '/cash-registers/config'];
 
 const REGISTER_CHILDREN = [
-  { to: '/cash-registers/list', key: 'registersList', icon: List },
-  { to: '/cash-registers/z-reports', key: 'registersZReports', icon: FileText },
-  { to: '/cash-registers/transfer', key: 'registersTransfer', icon: ArrowRightLeft },
-  { to: '/cash-registers/config', key: 'registersConfig', icon: SlidersHorizontal },
+  { to: '/cash-registers/list', key: 'registersList', icon: List, moduleId: 'registersList' },
+  { to: '/cash-registers/z-reports', key: 'registersZReports', icon: FileText, moduleId: 'registersZReports' },
+  { to: '/cash-registers/transfer', key: 'registersTransfer', icon: ArrowRightLeft, moduleId: 'registersTransfer' },
+  { to: '/cash-registers/config', key: 'registersConfig', icon: SlidersHorizontal, moduleId: 'registersConfig' },
 ];
 
 const USER_ROUTES = ['/users/list', '/users/printer-settings', '/users/branding-settings'];
 
 const USER_CHILDREN = [
-  { to: '/users/list', key: 'usersList', icon: List },
-  { to: '/users/printer-settings', key: 'usersPrinterSettings', icon: Printer },
-  { to: '/users/branding-settings', key: 'usersBrandingSettings', icon: UserCog },
+  { to: '/users/list', key: 'usersList', icon: List, moduleId: 'usersList' },
+  { to: '/users/printer-settings', key: 'usersPrinterSettings', icon: Printer, moduleId: 'usersPrinterSettings' },
+  { to: '/users/branding-settings', key: 'usersBrandingSettings', icon: UserCog, moduleId: 'usersBrandingSettings' },
 ];
 
 const REPORT_CHILDREN = [
-  { to: '/reports/sales', key: 'reportsSales', icon: Receipt },
-  { to: '/reports/returns', key: 'reportsReturns', icon: RotateCcw },
-  { to: '/reports/analytics', key: 'reportsAnalytics', icon: BarChart2 },
+  { to: '/reports/sales', key: 'reportsSales', icon: Receipt, moduleId: 'reportsSales' },
+  { to: '/reports/returns', key: 'reportsReturns', icon: RotateCcw, moduleId: 'reportsReturns' },
+  { to: '/reports/analytics', key: 'reportsAnalytics', icon: BarChart2, moduleId: 'reportsAnalytics' },
 ];
 
-const REST_NAV = [{ to: '/stores', icon: Store, key: 'stores', roles: ['ADMIN'] }];
+const REST_NAV = [{ to: '/stores', icon: Store, key: 'stores', roles: ['ADMIN'], moduleId: 'stores' }];
 
 export default function AppLayout() {
   const { t } = useTranslation();
@@ -100,8 +101,17 @@ export default function AppLayout() {
   const [usersOpen, setUsersOpen] = useState(true);
   const [ordersOpen, setOrdersOpen] = useState(true);
   const { user, logout } = useAuthStore();
+  const { hasModule, hasAnyModule } = useModuleAccess();
   const navigate = useNavigate();
   const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
+
+  const filterByModule = (items) => items.filter((item) => !item.moduleId || hasModule(item.moduleId));
+  const goodsNav = filterByModule(GOODS_CHILDREN);
+  const stockNav = filterByModule(STOCK_CHILDREN);
+  const ordersNav = filterByModule(ORDER_CHILDREN);
+  const registersNav = filterByModule(REGISTER_CHILDREN);
+  const reportsNav = filterByModule(REPORT_CHILDREN);
+  const usersNav = filterByModule(USER_CHILDREN);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
@@ -159,11 +169,16 @@ export default function AppLayout() {
     setSidebarNavExpanded(sidebarOpen);
   };
 
-  const visibleRest = REST_NAV.filter((item) => !item.roles || item.roles.includes(user?.role));
-  const showRegisters = ['ADMIN', 'MANAGER'].includes(user?.role);
-  const showOrders = ['ADMIN', 'MANAGER'].includes(user?.role);
-  const showReports = ['ADMIN', 'MANAGER'].includes(user?.role);
-  const showUsers = user?.role === 'ADMIN';
+  const visibleRest = REST_NAV.filter(
+    (item) => (!item.roles || item.roles.includes(user?.role)) && (!item.moduleId || hasModule(item.moduleId))
+  );
+  const showGoods = goodsNav.length > 0;
+  const showStock = stockNav.length > 0;
+  const showRegisters = registersNav.length > 0;
+  const showOrders = ordersNav.length > 0;
+  const showReports = reportsNav.length > 0;
+  const showUsers = usersNav.length > 0;
+  const showDashboard = hasModule('dashboard');
   const roleLabel = user?.role ? t(`roles.${user.role}`, user.role) : '';
   const inGoodsSection = GOODS_ROUTES.includes(location.pathname);
   const inStockSection = STOCK_ROUTES.includes(location.pathname);
@@ -214,10 +229,12 @@ export default function AppLayout() {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
-          <NavLink to="/dashboard" end className={topLinkClass}>
-            <LayoutDashboard size={18} className="flex-shrink-0" />
-            {navLabelsVisible && t('nav.dashboard')}
-          </NavLink>
+          {showDashboard ? (
+            <NavLink to="/dashboard" end className={topLinkClass}>
+              <LayoutDashboard size={18} className="flex-shrink-0" />
+              {navLabelsVisible && t('nav.dashboard')}
+            </NavLink>
+          ) : null}
 
           <NavLink
             to="/handbook/dashboard"
@@ -234,7 +251,7 @@ export default function AppLayout() {
             {navLabelsVisible && t('nav.support')}
           </NavLink>
 
-          {navLabelsVisible ? (
+          {showGoods && navLabelsVisible ? (
             <div className="pt-1">
               <button
                 type="button"
@@ -256,7 +273,7 @@ export default function AppLayout() {
               </button>
               {goodsOpen && (
                 <div className="ml-4 mt-1 space-y-0.5 border-l border-slate-300 pl-1 dark:border-emerald-800/50">
-                  {GOODS_CHILDREN.map(({ to, key, icon: Icon }) => (
+                  {goodsNav.map(({ to, key, icon: Icon }) => (
                     <NavLink key={to} to={to} className={subLinkClass}>
                       <Icon size={16} className="flex-shrink-0 opacity-80" />
                       {t(`nav.${key}`)}
@@ -265,9 +282,9 @@ export default function AppLayout() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : showGoods ? (
             <div className="space-y-1 pt-1">
-              {GOODS_CHILDREN.map(({ to, key, icon: Icon }) => (
+              {goodsNav.map(({ to, key, icon: Icon }) => (
                 <NavLink
                   key={to}
                   to={to}
@@ -284,9 +301,9 @@ export default function AppLayout() {
                 </NavLink>
               ))}
             </div>
-          )}
+          ) : null}
 
-          {navLabelsVisible ? (
+          {showStock && navLabelsVisible ? (
             <div className="pt-1">
               <button
                 type="button"
@@ -308,7 +325,7 @@ export default function AppLayout() {
               </button>
               {stockOpen && (
                 <div className="ml-4 mt-1 space-y-0.5 border-l border-slate-300 pl-1 dark:border-emerald-800/50">
-                  {STOCK_CHILDREN.map(({ to, key, icon: Icon }) => (
+                  {stockNav.map(({ to, key, icon: Icon }) => (
                     <NavLink key={to} to={to} className={subLinkClass}>
                       <Icon size={16} className="flex-shrink-0 opacity-80" />
                       {t(`nav.${key}`)}
@@ -317,9 +334,9 @@ export default function AppLayout() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : showStock ? (
             <div className="space-y-1 pt-1">
-              {STOCK_CHILDREN.map(({ to, key, icon: Icon }) => (
+              {stockNav.map(({ to, key, icon: Icon }) => (
                 <NavLink
                   key={to}
                   to={to}
@@ -336,7 +353,7 @@ export default function AppLayout() {
                 </NavLink>
               ))}
             </div>
-          )}
+          ) : null}
 
           {showOrders &&
             (navLabelsVisible ? (
@@ -361,7 +378,7 @@ export default function AppLayout() {
                 </button>
                 {ordersOpen && (
                   <div className="ml-4 mt-1 space-y-0.5 border-l border-slate-300 pl-1 dark:border-emerald-800/50">
-                    {ORDER_CHILDREN.map(({ to, key, icon: Icon }) => (
+                    {ordersNav.map(({ to, key, icon: Icon }) => (
                       <NavLink key={to} to={to} className={subLinkClass}>
                         <Icon size={16} className="flex-shrink-0 opacity-80" />
                         {t(`nav.${key}`)}
@@ -372,7 +389,7 @@ export default function AppLayout() {
               </div>
             ) : (
               <div className="space-y-1 pt-1">
-                {ORDER_CHILDREN.map(({ to, key, icon: Icon }) => (
+                {ordersNav.map(({ to, key, icon: Icon }) => (
                   <NavLink
                     key={to}
                     to={to}
@@ -414,7 +431,7 @@ export default function AppLayout() {
                 </button>
                 {registersOpen && (
                   <div className="ml-4 mt-1 space-y-0.5 border-l border-slate-300 pl-1 dark:border-emerald-800/50">
-                    {REGISTER_CHILDREN.map(({ to, key, icon: Icon }) => (
+                    {registersNav.map(({ to, key, icon: Icon }) => (
                       <NavLink key={to} to={to} className={subLinkClass}>
                         <Icon size={16} className="flex-shrink-0 opacity-80" />
                         {t(`nav.${key}`)}
@@ -425,7 +442,7 @@ export default function AppLayout() {
               </div>
             ) : (
               <div className="space-y-1 pt-1">
-                {REGISTER_CHILDREN.map(({ to, key, icon: Icon }) => (
+                {registersNav.map(({ to, key, icon: Icon }) => (
                   <NavLink
                     key={to}
                     to={to}
@@ -467,7 +484,7 @@ export default function AppLayout() {
                 </button>
                 {reportsOpen && (
                   <div className="ml-4 mt-1 space-y-0.5 border-l border-slate-300 pl-1 dark:border-emerald-800/50">
-                    {REPORT_CHILDREN.map(({ to, key, icon: Icon }) => (
+                    {reportsNav.map(({ to, key, icon: Icon }) => (
                       <NavLink key={to} to={to} className={subLinkClass}>
                         <Icon size={16} className="flex-shrink-0 opacity-80" />
                         {t(`nav.${key}`)}
@@ -478,7 +495,7 @@ export default function AppLayout() {
               </div>
             ) : (
               <div className="space-y-1 pt-1">
-                {REPORT_CHILDREN.map(({ to, key, icon: Icon }) => (
+                {reportsNav.map(({ to, key, icon: Icon }) => (
                   <NavLink
                     key={to}
                     to={to}
@@ -520,7 +537,7 @@ export default function AppLayout() {
                 </button>
                 {usersOpen && (
                   <div className="ml-4 mt-1 space-y-0.5 border-l border-slate-300 pl-1 dark:border-emerald-800/50">
-                    {USER_CHILDREN.map(({ to, key, icon: Icon }) => (
+                    {usersNav.map(({ to, key, icon: Icon }) => (
                       <NavLink key={to} to={to} className={subLinkClass}>
                         <Icon size={16} className="flex-shrink-0 opacity-80" />
                         {t(`nav.${key}`)}
@@ -531,7 +548,7 @@ export default function AppLayout() {
               </div>
             ) : (
               <div className="space-y-1 pt-1">
-                {USER_CHILDREN.map(({ to, key, icon: Icon }) => (
+                {usersNav.map(({ to, key, icon: Icon }) => (
                   <NavLink
                     key={to}
                     to={to}

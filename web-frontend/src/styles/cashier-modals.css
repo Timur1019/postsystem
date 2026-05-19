@@ -1254,6 +1254,27 @@
   color: rgb(4 120 87);
 }
 
+.pos-shift-action--primary {
+  border-color: var(--bs-success);
+  background: rgba(25, 135, 84, 0.08);
+  color: var(--bs-success);
+  font-weight: 600;
+}
+
+.pos-shift-action--primary:hover:not(:disabled) {
+  background: rgba(25, 135, 84, 0.15);
+}
+
+.shift-report-print-host {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 72mm;
+  max-width: 72mm;
+  pointer-events: none;
+  opacity: 0;
+}
+
 .pos-shift-action--danger {
   border-color: rgb(254 202 202);
   color: rgb(185 28 28);

@@ -8,10 +8,10 @@
   --cashier-font: 14px;
   --cashier-gap: clamp(8px, 1vw, 14px);
   --cashier-pad: clamp(8px, 1.2vw, 16px);
-  /* Ширина колонки чека (справа) */
-  --cashier-left-w: clamp(570px, 44vw, 730px);
-  --cashier-receipt-w: clamp(570px, 44vw, 730px);
-  --cashier-cart-cols: minmax(0, 2.2fr) minmax(0, 1.1fr) minmax(0, 0.95fr) minmax(5.5rem, 0.8fr) minmax(0, 1.05fr);
+  /* Ширина колонки чека (справа) — без жёсткого min 570px, чтобы каталог не сжимался */
+  --cashier-left-w: clamp(340px, 42vw, 680px);
+  --cashier-receipt-w: clamp(340px, 42vw, 680px);
+  --cashier-cart-cols: minmax(0, 1.65fr) minmax(0, 0.85fr) minmax(4.75rem, 0.72fr) minmax(0, 0.95fr);
   --cashier-sidebar-w: clamp(212px, 15vw, 248px);
   --cashier-sidebar-w-collapsed: 64px;
 
@@ -57,18 +57,19 @@
   min-width: 0;
 }
 
-/* Чек: горизонтальный скролл таблицы, если очень узко */
-@container order-panel (max-width: 420px) {
-  .cashier-app {
-    --cashier-cart-cols: minmax(100px, 1.6fr) minmax(4.5rem, 1fr) minmax(4rem, 0.9fr) minmax(5rem, 0.75fr) minmax(4.5rem, 1fr);
+@container order-panel (max-width: 520px) {
+  .pos-cart-table {
+    --pos-cart-cols: minmax(0, 1fr) minmax(3.5rem, 0.75fr) minmax(5rem, 0.7fr) minmax(4.25rem, 0.9fr);
   }
+}
 
+@container order-panel (max-width: 420px) {
   .pos-order-panel__list {
-    overflow-x: auto;
+    overflow-x: hidden;
   }
 
   .pos-cart-table {
-    min-width: 100%;
+    width: 100%;
   }
 }
 
@@ -81,6 +82,7 @@
 .pos-product-grid {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 118px), 1fr));
   gap: 8px;
+  align-items: stretch;
 }
 
 @container pos-catalog (min-width: 420px) {
@@ -158,13 +160,14 @@
 }
 
 .cashier-app .pos-product-card {
-  min-height: 72px;
-  padding: 10px 12px 30px;
+  min-height: 76px;
+  padding: 10px 12px 28px;
 }
 
 .cashier-app .pos-product-card__name {
   font-size: 0.8125rem;
-  line-height: 1.25;
+  line-height: 1.2;
+  -webkit-line-clamp: 2;
 }
 
 .cashier-app .pos-product-card__code {
@@ -206,13 +209,8 @@
   }
 
   .cashier-register__receipt {
-    order: 1;
     min-height: clamp(220px, 40dvh, 440px);
     max-height: min(52dvh, 480px);
-  }
-
-  .cashier-register__split > .pos-catalog-panel {
-    order: 2;
   }
 
   .cashier-app {
@@ -240,6 +238,11 @@
 
 /* Телефон */
 @media (max-width: 767px) {
+  .cashier-app {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .cashier-topbar {
     min-height: auto;
     padding-top: 10px !important;
@@ -247,18 +250,35 @@
   }
 
   .cashier-topbar .nav {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 2px;
   }
 
+  .cashier-topbar .nav .nav-link {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* Сначала каталог, чек ниже — удобнее на телефоне */
   .cashier-register__split {
-    grid-template-rows: minmax(clamp(200px, 36dvh, 320px), auto) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(clamp(180px, 32dvh, 300px), auto);
     gap: 10px;
   }
 
   .cashier-register__receipt {
-    min-height: clamp(200px, 36dvh, 320px);
-    max-height: min(48dvh, 400px);
+    order: 2;
+    min-height: clamp(180px, 32dvh, 300px);
+    max-height: min(42dvh, 360px);
+  }
+
+  .cashier-register__split > .pos-catalog-panel {
+    order: 1;
+    min-height: 0;
   }
 
   .pos-order-panel__head,
@@ -298,10 +318,97 @@
   }
 }
 
-/* Низкий экран (ноутбук / маленькое окно) */
-@media (max-height: 700px) and (min-width: 1024px) {
+/* Узкий телефон / эмулятор ~320–520px */
+@media (max-width: 520px) {
+  .cashier-app {
+    --cashier-pad: 6px;
+    --cashier-gap: 8px;
+  }
+
+  .cashier-app main.flex-grow-1 {
+    padding: 6px !important;
+  }
+
+  .cashier-topbar {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .cashier-topbar > .d-flex:last-child {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .cashier-register__split {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 590px);
+    grid-template-rows: minmax(0, 1fr) minmax(150px, 28dvh);
+  }
+
+  .cashier-register__receipt {
+    min-height: 150px;
+    max-height: min(34dvh, 280px);
+  }
+
+  .cashier-app .pos-catalog-panel__head,
+  .cashier-app .pos-category-nav,
+  .cashier-app .pos-catalog-panel__body {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .cashier-app .pos-search-bar__field {
+    height: 38px;
+    padding: 0 10px 0 12px;
+  }
+
+  .cashier-app .pos-search-bar__input {
+    font-size: 0.8125rem;
+  }
+
+  .cashier-app .pos-category-nav__pill {
+    padding: 6px 10px;
+    font-size: 0.6875rem;
+  }
+
+  .cashier-app .pos-product-card__name {
+    -webkit-line-clamp: 4;
+    font-size: 0.875rem;
+  }
+
+  .pos-product-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Низкий экран кассы (768px и меньше по высоте) */
+@media (max-height: 800px) and (min-width: 1024px) {
+  .cashier-app {
+    --cashier-pad: 8px;
+    --cashier-gap: 8px;
+  }
+
+  .cashier-app .cashier-topbar--pos {
+    min-height: 38px;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .cashier-app .pos-order-panel__head,
+  .cashier-app .pos-catalog-panel__head {
+    padding-top: 10px;
+    padding-bottom: 8px;
+  }
+
+  .cashier-app .pos-order-panel__bottom {
+    padding-bottom: 8px;
+  }
+
+  .cashier-app .pos-checkout-btn {
+    min-height: 44px;
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
 
   .cashier-app .pos-pay-panel__order {
@@ -313,21 +420,110 @@
 @media (min-width: 1400px) {
   .cashier-app {
     --cashier-left-w: clamp(610px, 40vw, 750px);
-    --cashier-cart-cols: minmax(0, 2.2fr) minmax(0, 1.15fr) minmax(0, 1fr) minmax(5.75rem, 0.85fr) minmax(0, 1.1fr);
+    --cashier-cart-cols: minmax(0, 2.2fr) minmax(0, 1fr) minmax(5.75rem, 0.85fr) minmax(0, 1.1fr);
   }
 }
 
 @media (min-width: 1920px) {
   .cashier-app {
     --cashier-left-w: 750px;
-    --cashier-cart-cols: minmax(0, 2.3fr) minmax(0, 1.2fr) minmax(0, 1.05fr) minmax(6rem, 0.85fr) minmax(0, 1.15fr);
+    --cashier-cart-cols: minmax(0, 2.3fr) minmax(0, 1.05fr) minmax(6rem, 0.85fr) minmax(0, 1.15fr);
   }
 }
 
-/* Средние экраны */
+/* Кассовый терминал 1024×768 и похожие (ширина) */
+@media (min-width: 1024px) and (max-width: 1366px) {
+  .cashier-app.cashier-app--pos-screen {
+    --cashier-sidebar-w: 188px;
+    --cashier-gap: 8px;
+    --cashier-pad: 8px;
+    --cashier-receipt-w: minmax(0, 0.92fr);
+    --cashier-left-w: minmax(0, 0.92fr);
+    --cashier-cart-cols: minmax(0, 2.5fr) minmax(3.5rem, 0.72fr) minmax(5rem, 0.68fr) minmax(4.25rem, 0.92fr);
+  }
+
+  .cashier-app.cashier-app--pos-screen .cashier-register__split {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  }
+
+  .cashier-app.cashier-app--pos-screen .pos-product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  }
+
+  .cashier-app.cashier-app--pos-screen .pos-product-card {
+    min-height: 84px;
+  }
+
+  .cashier-app.cashier-app--pos-screen .pos-order-panel__head {
+    padding: 10px 12px;
+  }
+
+  .cashier-app.cashier-app--pos-screen .pos-cart-table__col {
+    padding: 6px 8px;
+  }
+
+  .cashier-app.cashier-app--pos-screen .pos-cart-table__head .pos-cart-table__col {
+    padding: 6px 8px;
+    font-size: 0.625rem;
+  }
+
+  .cashier-app.cashier-app--pos-screen .pos-order-panel__grand span:last-child {
+    font-size: 1.35rem;
+  }
+
+  .cashier-app.cashier-app--pos-screen .cashier-topbar__pos-title {
+    display: none !important;
+  }
+
+  .cashier-app.cashier-app--pos-screen .pos-category-nav__pill {
+    padding: 5px 10px;
+    font-size: 0.6875rem;
+  }
+}
+
+/* Узкий каталог (~телефон): одна колонка, карточка на всю ширину */
+@container pos-catalog (max-width: 540px) {
+  .pos-product-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .pos-product-card {
+    min-height: auto;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    column-gap: 12px;
+    row-gap: 4px;
+  }
+
+  .pos-product-card__name {
+    grid-column: 1 / -1;
+    -webkit-line-clamp: 4;
+  }
+
+  .pos-product-card__code {
+    grid-column: 1;
+    -webkit-line-clamp: 2;
+    margin-top: 0;
+  }
+
+  .pos-product-card__price {
+    position: static;
+    grid-column: 2;
+    grid-row: 2;
+    align-self: end;
+    text-align: right;
+    white-space: nowrap;
+  }
+}
+
+/* Средние экраны (широкий но не ultrawide) */
 @media (min-width: 1024px) and (max-width: 1279px) {
-  .cashier-app {
-    --cashier-left-w: clamp(550px, 42vw, 650px);
+  .cashier-app:not(.cashier-app--pos-screen) {
+    --cashier-left-w: clamp(380px, 40vw, 560px);
+    --cashier-receipt-w: clamp(380px, 40vw, 560px);
   }
 }
 

@@ -7,12 +7,18 @@ import './index.css';
 import './styles/admin-responsive.css';
 import { syncRootTheme } from './store/themeStore';
 import { usePrintSettingsStore } from './store/printSettingsStore';
+import { useTenantDisplayStore } from './store/tenantDisplayStore';
 import { syncPrintCssVars } from './utils/syncPrintCssVars';
+import { syncReceiptDisplayCssVars } from './utils/syncReceiptDisplayCssVars';
 
 syncRootTheme();
 syncPrintCssVars(usePrintSettingsStore.getState());
+syncReceiptDisplayCssVars(useTenantDisplayStore.getState());
 usePrintSettingsStore.persist.onFinishHydration(() => {
   syncPrintCssVars(usePrintSettingsStore.getState());
+});
+useTenantDisplayStore.persist.onFinishHydration(() => {
+  syncReceiptDisplayCssVars(useTenantDisplayStore.getState());
 });
 
 ReactDOM.createRoot(document.getElementById('root')).render(

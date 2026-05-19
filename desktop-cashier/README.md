@@ -30,12 +30,22 @@ INCLUDE_WEB_DIST=1 ./scripts/build-cashier.sh
 
 Собирается **только на ПК с Windows 10/11** (64-bit).
 
+По умолчанию в установщик **вкладывается актуальный фронт** (`INCLUDE_WEB_DIST=1`): интерфейс из программы, API — на сервер из мастера настройки.
+
 ```cmd
 cd C:\Users\user\postsystem
 scripts\build-cashier-windows.bat
 ```
 
-Файл: `release/Aurent-Cashier-Setup-1.0.0-x64.exe`
+Тонкий клиент (UI только с сервера, без встройки фронта):
+
+```cmd
+set INCLUDE_WEB_DIST=0
+scripts\build-cashier-windows.bat
+```
+
+Файл: `desktop-cashier\release\Aurent-Cashier-Setup-1.0.0-x64.exe`  
+или portable: `dist\Aurent-Cashier-Windows-portable.zip`
 
 | ОС | Поддержка |
 |----|-----------|

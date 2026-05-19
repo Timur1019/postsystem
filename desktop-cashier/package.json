@@ -6,7 +6,7 @@
   "main": "electron/main.cjs",
   "author": "Aurent",
   "scripts": {
-    "start": "electron .",
+    "start": "POS_REMOTE_UI=1 POS_CASHIER_URL=http://localhost:5173 electron .",
     "start:dev": "POS_REMOTE_UI=1 POS_CASHIER_URL=http://localhost:5173 electron .",
     "dev": "POS_EMBEDDED=1 electron .",
     "dist": "electron-builder --config electron-builder.config.cjs",
@@ -43,6 +43,8 @@
       "allowToChangeInstallationDirectory": true,
       "allowElevation": true,
       "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
       "shortcutName": "Aurent Cashier",
       "unicode": true,
       "installerLanguages": ["ru_RU", "en_US"],

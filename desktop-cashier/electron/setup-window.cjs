@@ -2,6 +2,7 @@ const { BrowserWindow, ipcMain } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
+const { resolveWebDist } = require('./embedded-server.cjs');
 
 const DEFAULT_WEB_PORT = process.env.POS_WEB_PORT || '80';
 const DEFAULT_API_PORT = process.env.POS_API_PORT || '8080';
@@ -48,11 +49,32 @@ function buildSetupHtml(current) {
   const host = current?.host || defaults.host;
   const apiPort = current?.apiPort ?? defaults.apiPort;
   const webPort = current?.webPort ?? defaults.webPort;
+  const hasEmbedded = Boolean(resolveWebDist());
+  const intro = hasEmbedded
+    ? 'Укажите адрес магазина (как сказал администратор). Обычно это IP или имя сервера — ничего сложного настраивать не нужно.'
+    : 'Укажите адрес сервера магазина. Интерфейс загрузится из сети — после обновления на сервере нажмите «Вид → Обновить».';
+  const hint = hasEmbedded
+    ? 'Если не подключается — спросите администратора, открыт ли на сервере порт ' + apiPort + '.'
+    : 'Касса откроет сайт http://адрес:' + webPort + '/ — нужен интернет и порт ' + webPort + '.';
+  const portFields = hasEmbedded
+    ? `<label for="apiPort">Порт (оставьте ${apiPort}, если не сказали иное)</label>
+    <input id="apiPort" name="apiPort" type="number" placeholder="8080" value="${apiPort}" required />
+    <input type="hidden" id="webPort" value="80" />`
+    : `<div class="row">
+      <div>
+        <label for="webPort">Порт сайта</label>
+        <input id="webPort" name="webPort" type="number" placeholder="80" value="${webPort}" required />
+      </div>
+      <div>
+        <label for="apiPort">Порт API</label>
+        <input id="apiPort" name="apiPort" type="number" placeholder="8080" value="${apiPort}" required />
+      </div>
+    </div>`;
   return `data:text/html;charset=utf-8,${encodeURIComponent(`<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>Aurent — подключение к серверу</title>
+  <title>Aurent — первый запуск</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -77,29 +99,21 @@ function buildSetupHtml(current) {
   </style>
 </head>
 <body>
-  <h1>Подключение к серверу Aurent</h1>
-  <p>Интерфейс кассы загружается с сервера. После обновления на сервере нажмите «Вид → Обновить» в кассе — переустановка не нужна.</p>
+  <h1>Добро пожаловать в Aurent Касса</h1>
+  <p>${intro}</p>
   <form id="f">
-    <label for="host">Адрес сервера</label>
-    <input id="host" name="host" placeholder="192.168.1.50 или pos.myshop.uz" value="${host}" required />
-    <div class="row">
-      <div>
-        <label for="webPort">Порт веб-интерфейса</label>
-        <input id="webPort" name="webPort" type="number" placeholder="80" value="${webPort}" required />
-      </div>
-      <div>
-        <label for="apiPort">Порт API (резерв)</label>
-        <input id="apiPort" name="apiPort" type="number" placeholder="8080" value="${apiPort}" required />
-      </div>
-    </div>
-    <button type="submit">Сохранить и подключиться</button>
+    <label for="host">Адрес сервера (IP или домен)</label>
+    <input id="host" name="host" placeholder="например 192.168.1.50" value="${host}" required autocomplete="off" />
+    ${portFields}
+    <button type="submit">Продолжить</button>
   </form>
-  <p class="hint">Касса откроет http://адрес:${webPort}/ — API через тот же сервер (/api). На файрволе нужен порт ${webPort}.</p>
+  <p class="hint">${hint}</p>
   <script>
     document.getElementById('f').addEventListener('submit', (e) => {
       e.preventDefault();
       const host = document.getElementById('host').value.trim();
-      const webPort = document.getElementById('webPort').value.trim() || '80';
+      const webEl = document.getElementById('webPort');
+      const webPort = webEl ? (webEl.value.trim() || '80') : '80';
       const apiPort = document.getElementById('apiPort').value.trim() || '8080';
       window.setupApi.save({ host, webPort, apiPort });
     });
@@ -136,16 +150,28 @@ function saveConfig({ host, webPort, apiPort }) {
   const { host: h } = normalizeHostPort(host, apiPort);
   const web = String(webPort || DEFAULT_WEB_PORT).trim() || DEFAULT_WEB_PORT;
   const api = String(apiPort || DEFAULT_API_PORT).trim() || DEFAULT_API_PORT;
-  const cashierUrl = `http://${h}:${web}`;
   const backendOrigin = `http://${h}:${api}`;
-  const payload = {
-    useRemoteUi: true,
-    cashierUrl,
-    backendOrigin,
-    webPort: web,
-    apiPort: api,
-    apiHealthUrl: `${cashierUrl}/api/v1/actuator/health`,
-  };
+  const hasEmbedded = Boolean(resolveWebDist());
+  const embeddedPort = 5199;
+
+  const payload = hasEmbedded
+    ? {
+        useRemoteUi: false,
+        cashierUrl: `http://127.0.0.1:${embeddedPort}`,
+        backendOrigin,
+        webPort: web,
+        apiPort: api,
+        embeddedPort,
+        apiHealthUrl: `${backendOrigin}/api/v1/actuator/health`,
+      }
+    : {
+        useRemoteUi: true,
+        cashierUrl: `http://${h}:${web}`,
+        backendOrigin,
+        webPort: web,
+        apiPort: api,
+        apiHealthUrl: `http://${h}:${web}/api/v1/actuator/health`,
+      };
   fs.mkdirSync(path.dirname(configPath()), { recursive: true });
   fs.writeFileSync(configPath(), JSON.stringify(payload, null, 2), 'utf8');
   return payload;

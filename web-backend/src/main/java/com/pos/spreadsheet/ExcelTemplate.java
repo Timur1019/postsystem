@@ -82,6 +82,28 @@ public enum ExcelTemplate {
         null
     ),
 
+    CASH_TRANSFER_JOURNAL(
+        "Передача кассы",
+        List.of(
+            col("store_name", "Магазин"),
+            col("register_number", "№ кассы"),
+            col("opened_at", "Дата открытия"),
+            col("closed_at", "Дата закрытия"),
+            col("cashier_name", "Кассир"),
+            col("sales_count", "Продаж, шт."),
+            col("total_amount", "Итого"),
+            col("payment_cash", "Наличные"),
+            col("payment_card", "Карта"),
+            col("payment_non_cash", "Безнал"),
+            col("returns_count", "Возвратов, шт."),
+            col("returns_total", "Сумма возвратов"),
+            col("returns_cash", "Возврат наличными"),
+            col("returns_card", "Возврат картой"),
+            col("returns_non_cash", "Безнал. возврат")
+        ),
+        null
+    ),
+
     Z_REPORT_SALES_LINES(
         "Продажи Z-отчёта",
         List.of(

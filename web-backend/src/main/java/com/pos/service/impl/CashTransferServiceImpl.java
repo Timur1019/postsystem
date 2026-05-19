@@ -23,6 +23,7 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -47,16 +48,35 @@ public class CashTransferServiceImpl implements CashTransferService {
         Instant toInst = toEndOfDay(closedTo);
         Specification<ZReport> spec = CashTransferSpecifications.filter(storeSearch, registerNumber, fromInst, toInst);
         Page<ZReport> page = zReportRepository.findAll(spec, pageable);
+        return PageResponse.from(page.map(z -> cashTransferMapper.toRowResponse(z, registerLookupFor(page.getContent()))));
+    }
 
-        List<Integer> storeIds = page.getContent().stream()
+    @Override
+    public List<CashTransferRowResponse> listAll(
+        String storeSearch,
+        Integer registerNumber,
+        LocalDate closedFrom,
+        LocalDate closedTo
+    ) {
+        Instant fromInst = toStartOfDay(closedFrom);
+        Instant toInst = toEndOfDay(closedTo);
+        Specification<ZReport> spec = CashTransferSpecifications.filter(storeSearch, registerNumber, fromInst, toInst);
+        List<ZReport> all = zReportRepository.findAll(spec);
+        Map<String, Integer> registerLookup = registerLookupFor(all);
+        return all.stream()
+            .map(z -> cashTransferMapper.toRowResponse(z, registerLookup))
+            .collect(Collectors.toList());
+    }
+
+    private Map<String, Integer> registerLookupFor(List<ZReport> reports) {
+        List<Integer> storeIds = reports.stream()
             .map(z -> z.getStore().getId())
             .distinct()
             .toList();
-        Map<String, Integer> registerLookup = storeIds.isEmpty()
-            ? Map.of()
-            : buildRegisterLookup(cashRegisterRepository.findByStore_IdIn(storeIds));
-
-        return PageResponse.from(page.map(z -> cashTransferMapper.toRowResponse(z, registerLookup)));
+        if (storeIds.isEmpty()) {
+            return Map.of();
+        }
+        return buildRegisterLookup(cashRegisterRepository.findByStore_IdIn(storeIds));
     }
 
     private static Map<String, Integer> buildRegisterLookup(List<CashRegister> registers) {

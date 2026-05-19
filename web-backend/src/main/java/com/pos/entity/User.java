@@ -66,6 +66,10 @@ public class User implements UserDetails {
     @Column(name = "is_active")
     private boolean isActive = true;
 
+    /** true — доступ к модулям из user_module_access, иначе по роли */
+    @Column(name = "module_access_custom")
+    private boolean moduleAccessCustom = false;
+
     @Column(name = "created_at")
     private Instant createdAt;
 

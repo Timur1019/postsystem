@@ -11,12 +11,14 @@ public record ProductImportConfirmRequest(
     String source,
     Boolean skipDuplicates,
     Integer defaultCategoryId,
+    Integer defaultStoreId,
     @Valid List<ImportRowConfirm> rows
 ) {
     public record ImportRowConfirm(
         int rowNum,
         @DecimalMin("0.01") BigDecimal sellingPrice,
-        Integer categoryId
+        Integer categoryId,
+        Integer storeId
     ) {
     }
 }

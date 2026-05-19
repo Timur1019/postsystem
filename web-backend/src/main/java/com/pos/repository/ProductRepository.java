@@ -21,13 +21,25 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     Optional<Product> findBySku(String sku);
 
+    boolean existsBySkuAndIsActiveTrue(String sku);
+
+    Optional<Product> findBySkuAndIsActiveTrue(String sku);
+
     boolean existsByNameIgnoreCase(String name);
 
     Optional<Product> findByNameIgnoreCase(String name);
 
+    boolean existsByNameIgnoreCaseAndIsActiveTrue(String name);
+
+    Optional<Product> findByNameIgnoreCaseAndIsActiveTrue(String name);
+
     boolean existsByIkpu(String ikpu);
 
     Optional<Product> findByIkpu(String ikpu);
+
+    boolean existsByIkpuAndIsActiveTrue(String ikpu);
+
+    Optional<Product> findByIkpuAndIsActiveTrue(String ikpu);
 
     Optional<Product> findByBarcode(String barcode);
 

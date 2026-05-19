@@ -66,8 +66,11 @@ export function resolveHandbookModuleId(pathname) {
   return hit?.id ?? 'dashboard';
 }
 
-export function modulesForScope(scope, userRole) {
+export function modulesForScope(scope, userRole, allowedModules) {
   const list = scope === 'cashier' ? CASHIER_MODULE_IDS : ADMIN_MODULE_IDS;
+  if (Array.isArray(allowedModules) && allowedModules.length > 0) {
+    return list.filter((m) => allowedModules.includes(m.id));
+  }
   if (!userRole) return list;
   return list.filter((m) => m.roles.includes(userRole));
 }

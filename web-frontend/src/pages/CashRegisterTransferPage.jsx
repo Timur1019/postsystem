@@ -1,8 +1,9 @@
 // src/pages/CashRegisterTransferPage.jsx
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { cashRegisterApi } from '../services/api';
 import CashTransferFiltersDrawer from '../components/cash-registers/CashTransferFiltersDrawer';
@@ -34,6 +35,7 @@ export default function CashRegisterTransferPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
   const [applied, setApplied] = useState(defaultFilters);
+  const [exporting, setExporting] = useState(false);
 
   const queryParams = useMemo(() => {
     const reg = applied.registerNumber.trim();
@@ -47,6 +49,16 @@ export default function CashRegisterTransferPage() {
     };
   }, [search, page, pageSize, applied]);
 
+  const exportParams = useMemo(() => {
+    const reg = applied.registerNumber.trim();
+    return {
+      search: search.trim() || undefined,
+      registerNumber: reg ? Number(reg) : undefined,
+      closedFrom: applied.closedFrom || undefined,
+      closedTo: applied.closedTo || undefined,
+    };
+  }, [search, applied]);
+
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['cash-registers-transfers', queryParams],
     queryFn: () => cashRegisterApi.getTransfers(queryParams).then((r) => r.data),
@@ -59,6 +71,31 @@ export default function CashRegisterTransferPage() {
 
   const fromN = total === 0 ? 0 : page * pageSize + 1;
   const toN = Math.min((page + 1) * pageSize, total);
+
+  const handleExportExcel = useCallback(async () => {
+    setExporting(true);
+    try {
+      const res = await cashRegisterApi.exportTransfers(exportParams);
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const suffix =
+        applied.closedFrom && applied.closedTo
+          ? `${applied.closedFrom}_${applied.closedTo}`
+          : new Date().toISOString().slice(0, 10);
+      a.download = `cash_transfer_${suffix}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t('cashRegisters.transferExportDone'));
+    } catch (e) {
+      toast.error(e?.response?.data?.message ?? t('cashRegisters.transferExportFailed'));
+    } finally {
+      setExporting(false);
+    }
+  }, [exportParams, applied.closedFrom, applied.closedTo, t]);
 
   const pageButtons = useMemo(() => {
     if (totalPages <= 1) return [];
@@ -80,7 +117,18 @@ export default function CashRegisterTransferPage() {
         </div>
       )}
 
-      <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t('cashRegisters.transferTitle')}</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t('cashRegisters.transferTitle')}</h1>
+        <button
+          type="button"
+          onClick={handleExportExcel}
+          disabled={exporting}
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+        >
+          <Download size={16} />
+          {exporting ? t('cashRegisters.transferExporting') : t('cashRegisters.transferExport')}
+        </button>
+      </div>
 
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
         <p className="font-semibold">{t('cashRegisters.transferHintTitle')}</p>

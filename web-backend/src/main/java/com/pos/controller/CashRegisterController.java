@@ -6,6 +6,8 @@ import com.pos.dto.cashregister.CashTransferRowResponse;
 import com.pos.dto.shared.PageResponse;
 import com.pos.service.CashRegisterService;
 import com.pos.service.CashTransferService;
+import com.pos.service.export.CashTransferExportService;
+import com.pos.spreadsheet.SpreadsheetDownloadSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -29,11 +31,29 @@ public class CashRegisterController {
 
     private final CashRegisterService cashRegisterService;
     private final CashTransferService cashTransferService;
+    private final CashTransferExportService cashTransferExportService;
 
     @GetMapping("/equipment-serials")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<List<String>> listEquipmentSerials() {
         return ResponseEntity.ok(cashRegisterService.listDistinctEquipmentSerials());
+    }
+
+    @GetMapping("/transfers/export")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<byte[]> exportTransfers(
+        @RequestParam(required = false) String search,
+        @RequestParam(required = false) Integer registerNumber,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate closedFrom,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate closedTo
+    ) {
+        byte[] body = cashTransferExportService.exportTransfersExcel(
+            search,
+            registerNumber,
+            closedFrom,
+            closedTo
+        );
+        return SpreadsheetDownloadSupport.attachment(body, "cash_transfer_export.xlsx");
     }
 
     @GetMapping("/transfers")

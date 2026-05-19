@@ -43,8 +43,9 @@ public final class ProductImportSupport {
             ? ProductImportParseUtil.cell(row, "ikpu").trim()
             : null;
 
-        BigDecimal taxRate = ProductImportParseUtil.parseDecimalOpt(ProductImportParseUtil.cell(row, "tax_rate_percent_nds"))
-            .orElse(new BigDecimal("12"));
+        BigDecimal taxRate = ProductImportParseUtil.normalizeTaxRatePercent(
+            ProductImportParseUtil.parseDecimalOpt(ProductImportParseUtil.cell(row, "tax_rate_percent_nds")).orElse(null)
+        );
         int qty = ProductImportParseUtil.parseIntOpt(ProductImportParseUtil.cell(row, "stock_quantity")).orElse(0);
         String unit = ProductImportParseUtil.cell(row, "unit_of_measure");
 
@@ -85,15 +86,16 @@ public final class ProductImportSupport {
         );
     }
 
+    /** Только активные товары — удалённые (деактивированные) можно импортировать снова. */
     private static Optional<Product> findExisting(ProductRepository repo, String sku, String name, String ikpu) {
-        if (repo.existsBySku(sku)) {
-            return repo.findBySku(sku);
+        if (repo.existsBySkuAndIsActiveTrue(sku)) {
+            return repo.findBySkuAndIsActiveTrue(sku);
         }
-        if (StringUtils.hasText(ikpu) && repo.existsByIkpu(ikpu)) {
-            return repo.findByIkpu(ikpu);
+        if (StringUtils.hasText(ikpu) && repo.existsByIkpuAndIsActiveTrue(ikpu)) {
+            return repo.findByIkpuAndIsActiveTrue(ikpu);
         }
-        if (repo.existsByNameIgnoreCase(name)) {
-            return repo.findByNameIgnoreCase(name);
+        if (repo.existsByNameIgnoreCaseAndIsActiveTrue(name)) {
+            return repo.findByNameIgnoreCaseAndIsActiveTrue(name);
         }
         return Optional.empty();
     }

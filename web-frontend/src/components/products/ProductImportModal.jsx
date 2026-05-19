@@ -70,12 +70,13 @@ function buildEditableRows(rows, markupPercent) {
     map[r.rowNum] = {
       importPrice: applyMarkup(base, markupPercent),
       categoryId: '',
+      storeId: '',
     };
   });
   return map;
 }
 
-export default function ProductImportModal({ categories = [], onClose }) {
+export default function ProductImportModal({ categories = [], stores = [], onClose }) {
   const { t } = useTranslation();
   const [mode, setMode] = useState('AS_FILE');
   const [source, setSource] = useState('UZ_INVOICE');
@@ -85,6 +86,7 @@ export default function ProductImportModal({ categories = [], onClose }) {
   const [pendingFile, setPendingFile] = useState(null);
   const [markupPercent, setMarkupPercent] = useState(10);
   const [defaultCategoryId, setDefaultCategoryId] = useState('');
+  const [defaultStoreId, setDefaultStoreId] = useState('');
   const [editable, setEditable] = useState({});
   const fileRef = useRef(null);
 
@@ -166,8 +168,30 @@ export default function ProductImportModal({ categories = [], onClose }) {
     });
   };
 
+  const setRowStore = (rowNum, storeId) => {
+    setEditable((prev) => ({
+      ...prev,
+      [rowNum]: { ...prev[rowNum], storeId },
+    }));
+  };
+
+  const applyDefaultStoreToAll = () => {
+    if (!defaultStoreId) return;
+    setEditable((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((key) => {
+        next[key] = { ...next[key], storeId: defaultStoreId };
+      });
+      return next;
+    });
+  };
+
   const runImport = async () => {
     if (!pendingFile) return;
+    if (canImport && !defaultStoreId) {
+      toast.error(t('products.import.storeRequired'));
+      return;
+    }
     setImporting(true);
     const fd = new FormData();
     fd.append('file', pendingFile);
@@ -179,6 +203,8 @@ export default function ProductImportModal({ categories = [], onClose }) {
         const payload = { rowNum: r.rowNum, sellingPrice: Number(ed.importPrice) };
         const catId = ed.categoryId || defaultCategoryId;
         if (catId) payload.categoryId = Number(catId);
+        const storeId = ed.storeId || defaultStoreId;
+        if (storeId) payload.storeId = Number(storeId);
         return payload;
       });
 
@@ -187,6 +213,7 @@ export default function ProductImportModal({ categories = [], onClose }) {
       source,
       skipDuplicates: true,
       defaultCategoryId: defaultCategoryId ? Number(defaultCategoryId) : null,
+      defaultStoreId: defaultStoreId ? Number(defaultStoreId) : null,
       rows: rowOverrides,
     };
 
@@ -245,9 +272,14 @@ export default function ProductImportModal({ categories = [], onClose }) {
               setDefaultCategoryId={setDefaultCategoryId}
               applyDefaultCategoryToAll={applyDefaultCategoryToAll}
               categories={categories}
+              defaultStoreId={defaultStoreId}
+              setDefaultStoreId={setDefaultStoreId}
+              applyDefaultStoreToAll={applyDefaultStoreToAll}
+              stores={stores}
               editable={editable}
               setRowPrice={setRowPrice}
               setRowCategory={setRowCategory}
+              setRowStore={setRowStore}
               formatMoney={formatMoney}
               statusBadge={statusBadge}
               inputCls={inputCls}
@@ -357,9 +389,14 @@ function PreviewStep({
   setDefaultCategoryId,
   applyDefaultCategoryToAll,
   categories,
+  defaultStoreId,
+  setDefaultStoreId,
+  applyDefaultStoreToAll,
+  stores,
   editable,
   setRowPrice,
   setRowCategory,
+  setRowStore,
   formatMoney,
   statusBadge,
   inputCls,
@@ -382,8 +419,9 @@ function PreviewStep({
       </div>
       <p className="text-xs text-slate-500">{t('products.import.duplicateHint')}</p>
       <p className="text-xs text-slate-500">{t('products.import.priceHint')}</p>
+      <p className="text-xs text-slate-500">{t('products.import.storeHint')}</p>
 
-      <div className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50 md:grid-cols-2">
+      <div className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50 md:grid-cols-3">
         <div>
           <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-400">
             {t('products.import.markupLabel')}
@@ -443,6 +481,34 @@ function PreviewStep({
             </button>
           </div>
         </div>
+
+        <div>
+          <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+            {t('products.import.defaultStore')}
+          </p>
+          <div className="flex gap-2">
+            <select
+              value={defaultStoreId}
+              onChange={(e) => setDefaultStoreId(e.target.value)}
+              className={inputCls}
+            >
+              <option value="">{t('products.import.noStore')}</option>
+              {stores.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={applyDefaultStoreToAll}
+              disabled={!defaultStoreId}
+              className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-white disabled:opacity-50 dark:border-slate-600 dark:text-slate-300"
+            >
+              {t('products.import.applyStoreAll')}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
@@ -455,6 +521,7 @@ function PreviewStep({
                 <th className="px-2 py-2 text-right">{t('products.import.colFilePrice')}</th>
                 <th className="px-2 py-2 text-right">{t('products.import.colImportPrice')}</th>
                 <th className="px-2 py-2">{t('products.import.colCategory')}</th>
+                <th className="px-2 py-2">{t('products.import.colStore')}</th>
                 <th className="px-2 py-2">{t('products.import.colStatus')}</th>
               </tr>
             </thead>
@@ -504,6 +571,24 @@ function PreviewStep({
                           {categories.map((c) => (
                             <option key={c.id} value={c.id}>
                               {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className="px-2 py-2">
+                      {isNew && ed ? (
+                        <select
+                          value={ed.storeId ?? ''}
+                          onChange={(e) => setRowStore(r.rowNum, e.target.value)}
+                          className="min-w-[8rem] rounded border border-slate-300 px-1 py-1 text-xs dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                        >
+                          <option value="">{t('products.import.noStore')}</option>
+                          {stores.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
                             </option>
                           ))}
                         </select>

@@ -114,6 +114,10 @@ public class ProductImportServiceImpl implements ProductImportService {
 
         Map<Integer, ProductImportConfirmRequest.ImportRowConfirm> overrides = buildOverrideMap(opts);
         Integer defaultCategoryId = resolveCategoryId(opts.defaultCategoryId(), "Общая категория для импорта");
+        Integer defaultStoreId = resolveStoreId(opts.defaultStoreId(), "Общий магазин для импорта");
+        if (pushToAllStores && defaultStoreId == null) {
+            throw new BadRequestException("Выберите магазин для импорта в выбранный магазин(ы)");
+        }
 
         List<String> errors = new ArrayList<>();
         int created = 0;
@@ -149,7 +153,7 @@ public class ProductImportServiceImpl implements ProductImportService {
 
             ProductImportConfirmRequest.ImportRowConfirm rowOpts = overrides.get(row.rowNum());
             try {
-                createFromPreview(row, rowOpts, defaultCategoryId, pushToAllStores, activeStores);
+                createFromPreview(row, rowOpts, defaultCategoryId, defaultStoreId, pushToAllStores, activeStores);
                 created++;
             } catch (BadRequestException | ResourceNotFoundException ex) {
                 errors.add("Строка " + row.rowNum() + ": " + ex.getMessage());
@@ -164,7 +168,7 @@ public class ProductImportServiceImpl implements ProductImportService {
     }
 
     private static ProductImportConfirmRequest defaultOptions() {
-        return new ProductImportConfirmRequest("AS_FILE", "CATALOG", true, null, List.of());
+        return new ProductImportConfirmRequest("AS_FILE", "CATALOG", true, null, null, List.of());
     }
 
     private static Map<Integer, ProductImportConfirmRequest.ImportRowConfirm> buildOverrideMap(
@@ -190,10 +194,23 @@ public class ProductImportServiceImpl implements ProductImportService {
         return categoryId;
     }
 
+    private Integer resolveStoreId(Integer storeId, String context) {
+        if (storeId == null) {
+            return null;
+        }
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new BadRequestException(context + ": магазин не найден"));
+        if (!store.isActive()) {
+            throw new BadRequestException(context + ": магазин неактивен");
+        }
+        return storeId;
+    }
+
     private void createFromPreview(
         ProductImportPreviewRow row,
         ProductImportConfirmRequest.ImportRowConfirm rowOpts,
         Integer defaultCategoryId,
+        Integer defaultStoreId,
         boolean pushToAllStores,
         List<Store> activeStores
     ) {
@@ -212,13 +229,20 @@ public class ProductImportServiceImpl implements ProductImportService {
         }
 
         BigDecimal costPrice = BigDecimal.ZERO;
-        BigDecimal taxRate = row.taxRatePercent() != null ? row.taxRatePercent() : new BigDecimal("12");
+        BigDecimal taxRate = ProductImportParseUtil.normalizeTaxRatePercent(row.taxRatePercent());
         int initialStock = Math.max(0, row.quantity());
 
         String unit = StringUtils.hasText(row.unitOfMeasure()) ? row.unitOfMeasure().trim() : "dona";
 
+        Integer storeId = defaultStoreId;
+        if (rowOpts != null && rowOpts.storeId() != null) {
+            storeId = resolveStoreId(rowOpts.storeId(), "Строка " + row.rowNum());
+        }
+
         List<ProductStorePriceRequest> storePrices = null;
-        if (pushToAllStores && !activeStores.isEmpty()) {
+        if (storeId != null) {
+            storePrices = List.of(new ProductStorePriceRequest(storeId, sellingPrice));
+        } else if (pushToAllStores && !activeStores.isEmpty()) {
             storePrices = activeStores.stream()
                 .map(s -> new ProductStorePriceRequest(s.getId(), sellingPrice))
                 .toList();

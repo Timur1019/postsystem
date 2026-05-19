@@ -44,9 +44,11 @@ public final class UzInvoiceProductRowMapper {
             return null;
         }
 
-        BigDecimal vat = ProductImportParseUtil.parseDecimalOpt(
-            vatRaw != null ? vatRaw.replace("%", "").trim() : ""
-        ).orElse(new BigDecimal("12"));
+        BigDecimal vat = ProductImportParseUtil.normalizeTaxRatePercent(
+            ProductImportParseUtil.parseDecimalOpt(
+                vatRaw != null ? vatRaw.replace("%", "").trim() : ""
+            ).orElse(null)
+        );
 
         String sku = StringUtils.hasText(ikpu) ? "IKPU-" + ikpu : "INV-" + rowNum;
 

@@ -6,7 +6,8 @@ cd /d "%~dp0.."
 set SERVER_HOST=111.88.132.126
 set SERVER_WEB_PORT=80
 set SERVER_API_PORT=8080
-set INCLUDE_WEB_DIST=0
+rem 1 = встроить актуальный фронт в .exe (рекомендуется); 0 = только оболочка, UI с сервера :80
+set INCLUDE_WEB_DIST=1
 set CSC_IDENTITY_AUTO_DISCOVERY=false
 set WIN_CSC_LINK=
 set CSC_LINK=
@@ -69,9 +70,17 @@ goto :end
 
 :success
 cd ..
+if not exist "dist\Aurent-Cashier-Desktop-1.0.0\windows" mkdir "dist\Aurent-Cashier-Desktop-1.0.0\windows"
+copy /Y "installer\ДЛЯ-КАССИРА.txt" "dist\Aurent-Cashier-Desktop-1.0.0\" >nul
+copy /Y "installer\Настройка-сервера-Windows.bat" "dist\Aurent-Cashier-Desktop-1.0.0\" >nul
+copy /Y "desktop-cashier\release\*.exe" "dist\Aurent-Cashier-Desktop-1.0.0\windows\" >nul 2>nul
 echo.
 echo Готово (установщик):
 echo   desktop-cashier\release\Aurent-Cashier-Setup-1.0.0-x64.exe
+echo.
+echo Для кассира положите в одну папку:
+echo   - *Setup*.exe
+echo   - ДЛЯ-КАССИРА.txt
 goto :end
 
 :symlink_help

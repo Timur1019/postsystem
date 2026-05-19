@@ -1,5 +1,6 @@
 package com.pos.controller;
 
+import com.pos.dto.product.BulkProductIdsRequest;
 import com.pos.dto.product.BulkTaxRateRequest;
 import com.pos.dto.product.CreateProductRequest;
 import com.pos.dto.product.ProductExportPreviewRow;
@@ -136,6 +137,13 @@ public class ProductController {
     public ResponseEntity<ApiResponse> bulkTaxRate(@Valid @RequestBody BulkTaxRateRequest request) {
         int n = productService.bulkUpdateTaxRate(request);
         return ResponseEntity.ok(ApiResponse.success("Updated tax for " + n + " products"));
+    }
+
+    @PatchMapping("/bulk/deactivate")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<ApiResponse> bulkDeactivate(@Valid @RequestBody BulkProductIdsRequest request) {
+        int n = productService.bulkDeactivateProducts(request.productIds());
+        return ResponseEntity.ok(ApiResponse.success("Deactivated " + n + " products"));
     }
 
     @GetMapping(value = "/import/template")

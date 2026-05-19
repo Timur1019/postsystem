@@ -12,6 +12,7 @@ import com.pos.repository.UserRepository;
 import com.pos.security.JwtService;
 import com.pos.service.AuditService;
 import com.pos.service.AuthService;
+import com.pos.service.ModuleAccessService;
 import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,6 +32,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authManager;
     private final AuditService auditService;
     private final AuthMapper authMapper;
+    private final ModuleAccessService moduleAccessService;
 
     @Override
     @Transactional
@@ -95,6 +97,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private AuthResponse buildResponse(User user, String token) {
-        return authMapper.toResponse(user, token);
+        return authMapper.toResponse(
+            user,
+            token,
+            moduleAccessService.resolveAllowedModuleIds(user),
+            user.isModuleAccessCustom()
+        );
     }
 }

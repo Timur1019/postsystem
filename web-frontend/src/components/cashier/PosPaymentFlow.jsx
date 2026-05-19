@@ -154,19 +154,26 @@ export default function PosPaymentFlow({
   ];
 
   const submitMixed = (type) => {
-    if (isPending) return;
+    if (isPending || cashExceeds) return;
     const cash = clampPayAmount(cashPartNum, toPay);
+    const card = round2(Math.max(0, toPay - cash));
+    if (cash <= 0 && card <= 0) return;
     onConfirm({
       paymentMethod: 'MIXED',
       receiptType,
-      cardType: cardRemainder > 0.001 ? type : null,
+      cardType: card > 0.001 ? type : null,
       cashAmount: cash,
+      cardAmount: card,
       amountTendered: cash,
     });
   };
 
   const proceedFromMixedCash = () => {
-    if (cashExceeds || isPending) return;
+    if (isPending || cashExceeds) return;
+    if (cashPartNum <= 0 && toPay > 0) {
+      toast.error(t('pos.mixedCashRequired'));
+      return;
+    }
     if (cardRemainder > 0.001) setStep('mixedCard');
     else submitMixed(null);
   };

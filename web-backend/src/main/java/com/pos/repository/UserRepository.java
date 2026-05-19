@@ -25,4 +25,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.role LEFT JOIN FETCH u.company LEFT JOIN FETCH u.stores WHERE u.username = :username")
     java.util.Optional<User> findByUsernameWithDetails(@Param("username") String username);
+
+    @Query("""
+        SELECT DISTINCT u FROM User u
+        JOIN FETCH u.role
+        JOIN FETCH u.company c
+        WHERE c.id = :companyId AND u.role.name <> 'SUPER_ADMIN'
+        ORDER BY u.fullName
+        """)
+    List<User> findByCompanyIdWithDetails(@Param("companyId") Integer companyId);
 }

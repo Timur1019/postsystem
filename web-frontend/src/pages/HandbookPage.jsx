@@ -14,11 +14,12 @@ export default function HandbookPage({ scope = 'admin' }) {
   const { moduleId } = useParams();
   const navigate = useNavigate();
   const userRole = useAuthStore((s) => s.user?.role);
+  const allowedModules = useAuthStore((s) => s.user?.allowedModules);
   const basePath = scope === 'cashier' ? '/cashier/handbook' : '/handbook';
 
   const visibleModules = useMemo(
-    () => modulesForScope(scope, userRole),
-    [scope, userRole]
+    () => modulesForScope(scope, userRole, allowedModules),
+    [scope, userRole, allowedModules]
   );
 
   const activeId = visibleModules.some((m) => m.id === moduleId)
