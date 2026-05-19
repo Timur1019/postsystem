@@ -57,7 +57,8 @@
     "support": "Поддержка",
     "logout": "Выход",
     "collapseMenu": "Свернуть меню",
-    "expandMenu": "Развернуть меню"
+    "expandMenu": "Развернуть меню",
+    "closeMenu": "Закрыть меню"
   },
   "theme": {
     "switchToDay": "Переключить на дневную тему",

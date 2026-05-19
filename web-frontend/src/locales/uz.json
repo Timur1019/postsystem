@@ -57,7 +57,8 @@
     "support": "Qo'llab-quvvatlash",
     "logout": "Chiqish",
     "collapseMenu": "Menyuni yig‘ish",
-    "expandMenu": "Menyuni ochish"
+    "expandMenu": "Menyuni ochish",
+    "closeMenu": "Menyuni yopish"
   },
   "theme": {
     "switchToDay": "Kunduzgi mavzuga o‘tish",

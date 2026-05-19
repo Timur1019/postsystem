@@ -87,6 +87,10 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
+  );
   /** Полное меню — после анимации ширины, чтобы не тормозить открытие */
   const [sidebarNavExpanded, setSidebarNavExpanded] = useState(true);
   const [goodsOpen, setGoodsOpen] = useState(true);
@@ -98,6 +102,27 @@ export default function AppLayout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const syncViewport = () => {
+      const desktop = mq.matches;
+      setIsDesktop(desktop);
+      if (desktop) {
+        setMobileNavOpen(false);
+      } else {
+        setSidebarOpen(false);
+        setSidebarNavExpanded(true);
+      }
+    };
+    syncViewport();
+    mq.addEventListener('change', syncViewport);
+    return () => mq.removeEventListener('change', syncViewport);
+  }, []);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (GOODS_ROUTES.includes(location.pathname)) setGoodsOpen(true);
@@ -113,7 +138,14 @@ export default function AppLayout() {
     navigate('/login');
   };
 
+  const navLabelsVisible = isDesktop ? sidebarNavExpanded : true;
+
   const toggleSidebar = () => {
+    if (!isDesktop) {
+      setMobileNavOpen((open) => !open);
+      setSidebarNavExpanded(true);
+      return;
+    }
     if (sidebarOpen) {
       setSidebarNavExpanded(false);
       setSidebarOpen(false);
@@ -156,18 +188,27 @@ export default function AppLayout() {
     }`;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-100 text-slate-900 print:!bg-white print:!text-black print:min-h-0 dark:bg-slate-950 dark:text-slate-100">
+    <div className="admin-shell flex overflow-hidden bg-slate-100 text-slate-900 print:!bg-white print:!text-black print:min-h-0 dark:bg-slate-950 dark:text-slate-100">
+      {mobileNavOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-30 bg-slate-900/50 print:hidden lg:hidden"
+          aria-label={t('nav.closeMenu')}
+          onClick={() => setMobileNavOpen(false)}
+        />
+      ) : null}
+
       <aside
         onTransitionEnd={onSidebarTransitionEnd}
-        className={`print:hidden flex shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-slate-50 transition-[width] duration-200 ease-out dark:border-emerald-900/70 dark:bg-emerald-950 ${
-          sidebarOpen ? 'w-60' : 'w-16'
-        }`}
+        className={`print:hidden fixed inset-y-0 left-0 z-40 flex max-w-[min(100vw,20rem)] flex-col overflow-hidden border-r border-slate-200 bg-slate-50 shadow-xl transition-[transform,width] duration-200 ease-out dark:border-emerald-900/70 dark:bg-emerald-950 lg:static lg:z-auto lg:max-w-none lg:shadow-none ${
+          mobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        } ${sidebarOpen ? 'w-[min(100vw,20rem)] lg:w-60' : 'w-[min(100vw,20rem)] lg:w-16'}`}
       >
         <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-4 dark:border-emerald-900/60">
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500">
             <BrandMark size={16} iconClassName="text-white" />
           </div>
-          {sidebarNavExpanded && (
+          {navLabelsVisible && (
             <span className="truncate text-lg font-bold text-slate-900 dark:text-white">{displayAppName()}</span>
           )}
         </div>
@@ -175,7 +216,7 @@ export default function AppLayout() {
         <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
           <NavLink to="/dashboard" end className={topLinkClass}>
             <LayoutDashboard size={18} className="flex-shrink-0" />
-            {sidebarNavExpanded && t('nav.dashboard')}
+            {navLabelsVisible && t('nav.dashboard')}
           </NavLink>
 
           <NavLink
@@ -185,15 +226,15 @@ export default function AppLayout() {
             }
           >
             <BookOpen size={18} className="flex-shrink-0" />
-            {sidebarNavExpanded && t('nav.handbook')}
+            {navLabelsVisible && t('nav.handbook')}
           </NavLink>
 
           <NavLink to="/support" className={topLinkClass}>
             <Headphones size={18} className="flex-shrink-0" />
-            {sidebarNavExpanded && t('nav.support')}
+            {navLabelsVisible && t('nav.support')}
           </NavLink>
 
-          {sidebarNavExpanded ? (
+          {navLabelsVisible ? (
             <div className="pt-1">
               <button
                 type="button"
@@ -245,7 +286,7 @@ export default function AppLayout() {
             </div>
           )}
 
-          {sidebarNavExpanded ? (
+          {navLabelsVisible ? (
             <div className="pt-1">
               <button
                 type="button"
@@ -298,7 +339,7 @@ export default function AppLayout() {
           )}
 
           {showOrders &&
-            (sidebarNavExpanded ? (
+            (navLabelsVisible ? (
               <div className="pt-1">
                 <button
                   type="button"
@@ -351,7 +392,7 @@ export default function AppLayout() {
             ))}
 
           {showRegisters &&
-            (sidebarNavExpanded ? (
+            (navLabelsVisible ? (
               <div className="pt-1">
                 <button
                   type="button"
@@ -404,7 +445,7 @@ export default function AppLayout() {
             ))}
 
           {showReports &&
-            (sidebarNavExpanded ? (
+            (navLabelsVisible ? (
               <div className="pt-1">
                 <button
                   type="button"
@@ -457,7 +498,7 @@ export default function AppLayout() {
             ))}
 
           {showUsers &&
-            (sidebarNavExpanded ? (
+            (navLabelsVisible ? (
               <div className="pt-1">
                 <button
                   type="button"
@@ -512,7 +553,7 @@ export default function AppLayout() {
           {visibleRest.map(({ to, icon: Icon, key }) => (
             <NavLink key={to} to={to} className={topLinkClass}>
               <Icon size={18} className="flex-shrink-0" />
-              {sidebarNavExpanded && t(`nav.${key}`)}
+              {navLabelsVisible && t(`nav.${key}`)}
             </NavLink>
           ))}
         </nav>
@@ -524,22 +565,29 @@ export default function AppLayout() {
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-600 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-slate-300 dark:hover:bg-red-950/40 dark:hover:text-red-300"
           >
             <LogOut size={18} className="flex-shrink-0" />
-            {sidebarNavExpanded && t('nav.logout')}
+            {navLabelsVisible && t('nav.logout')}
           </button>
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="print:hidden flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 dark:border-slate-800 dark:bg-slate-900">
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-          >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="print:hidden flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 sm:h-16 sm:px-4 md:px-6 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="shrink-0 rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              aria-label={mobileNavOpen || sidebarOpen ? t('nav.closeMenu') : t('nav.expandMenu')}
+            >
+              {isDesktop ? (sidebarOpen ? <X size={20} /> : <Menu size={20} />) : <Menu size={20} />}
+            </button>
+            <div className="min-w-0 lg:hidden">
+              <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{displayAppName()}</p>
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user?.fullName}</p>
+            </div>
+          </div>
 
-          <div className="flex items-center gap-3 md:gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3 md:gap-4">
             <LanguageSwitcher />
             <div className="flex items-center gap-2 text-sm">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 font-bold text-white">
@@ -553,7 +601,7 @@ export default function AppLayout() {
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto bg-slate-100 p-6 print:!bg-white print:p-4 dark:bg-slate-950">
+        <main className="admin-main min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-slate-100 p-3 sm:p-4 md:p-6 print:!bg-white print:p-4 dark:bg-slate-950">
           <Outlet />
         </main>
       </div>
