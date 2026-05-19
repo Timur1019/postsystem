@@ -45,6 +45,12 @@
 .cashier-register__split > .pos-catalog-panel {
   grid-column: 1;
   grid-row: 1;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  align-self: stretch;
 }
 
 .cashier-register__split > .cashier-register__receipt {
