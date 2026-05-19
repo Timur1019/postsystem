@@ -29,7 +29,11 @@ echo "==> git checkout $BRANCH"
 git checkout "$BRANCH"
 
 echo "==> git pull --ff-only $REMOTE $BRANCH"
-git pull --ff-only "$REMOTE" "$BRANCH"
+if ! git pull --ff-only "$REMOTE" "$BRANCH"; then
+  echo "==> Локальные правки мешают pull — сброс до $REMOTE/$BRANCH (.env не в git, сохранится)"
+  git reset --hard "$REMOTE/$BRANCH"
+  git clean -fd
+fi
 
 COMMIT="$(git rev-parse --short HEAD)"
 echo "==> Код обновлён до $COMMIT"
