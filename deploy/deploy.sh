@@ -37,6 +37,11 @@ docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d postgres
 echo "==> SQL-миграции..."
 bash deploy/migrate-db.sh
 
+echo "==> Проверка пароля БД..."
+if ! bash deploy/verify-db.sh; then
+  exit 1
+fi
+
 echo "==> Запуск backend..."
 if ! docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --no-deps backend; then
   echo "==> Ошибка запуска backend. Последние логи:"

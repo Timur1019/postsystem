@@ -1,4 +1,11 @@
 # Продакшен: только консоль (Docker/K8s собирают stdout), без лишнего шума
+spring:
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  datasource:
+    hikari:
+      connection-timeout: 30000
+
 management:
   endpoints:
     web:
