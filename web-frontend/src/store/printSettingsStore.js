@@ -3,15 +3,17 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { syncPrintCssVars } from '../utils/syncPrintCssVars';
 
-/** Значения по умолчанию под ленту 80 мм */
+/**
+ * Касса / фискальный чек 80 мм: шире и чётче для термопринтера.
+ */
 export const PRINT_SETTINGS_DEFAULTS = {
   paperWidthMm: 80,
-  contentWidthMm: 72,
-  pageMarginMm: 2,
-  padHorizontalMm: 2,
-  padVerticalMm: 3,
-  fontSizePx: 10,
-  lineHeight: 1.35,
+  contentWidthMm: 78,
+  pageMarginMm: 0,
+  padHorizontalMm: 0,
+  padVerticalMm: 2,
+  fontSizePx: 13,
+  lineHeight: 1.5,
 };
 
 function clamp(n, min, max) {
@@ -30,12 +32,12 @@ export const usePrintSettingsStore = create(
         if (preset === '58') {
           set({
             paperWidthMm: 58,
-            contentWidthMm: 48,
-            pageMarginMm: 2,
-            padHorizontalMm: 1.5,
-            padVerticalMm: 2.5,
-            fontSizePx: 9,
-            lineHeight: 1.35,
+            contentWidthMm: 56,
+            pageMarginMm: 0,
+            padHorizontalMm: 0,
+            padVerticalMm: 1,
+            fontSizePx: 11,
+            lineHeight: 1.4,
           });
         } else {
           set({ ...PRINT_SETTINGS_DEFAULTS });
@@ -64,7 +66,7 @@ export const usePrintSettingsStore = create(
         queueMicrotask(() => syncPrintCssVars(get()));
       },
       setFontSizePx: (v) => {
-        set({ fontSizePx: clamp(v, 7, 16) });
+        set({ fontSizePx: clamp(v, 8, 18) });
         queueMicrotask(() => syncPrintCssVars(get()));
       },
       setLineHeight: (v) => {
@@ -79,6 +81,23 @@ export const usePrintSettingsStore = create(
     }),
     {
       name: 'pos-print-settings',
+      version: 4,
+      migrate: (persisted, version) => {
+        if (!persisted) return persisted;
+        const paper = Number(persisted.paperWidthMm) || 80;
+        if (version < 4) {
+          return {
+            ...persisted,
+            pageMarginMm: 0,
+            padHorizontalMm: 0,
+            padVerticalMm: 2,
+            contentWidthMm: paper <= 58 ? 56 : 78,
+            fontSizePx: paper <= 58 ? 11 : 13,
+            lineHeight: 1.5,
+          };
+        }
+        return persisted;
+      },
       partialize: (s) => ({
         paperWidthMm: s.paperWidthMm,
         contentWidthMm: s.contentWidthMm,

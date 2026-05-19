@@ -6,14 +6,15 @@ export function syncPrintCssVars(state) {
   const root = document.documentElement;
 
   const paper = Number(s.paperWidthMm) || 80;
-  const content = Number(s.contentWidthMm) || 72;
-  const pageM = Number(s.pageMarginMm) ?? 2;
-  const padX = Number(s.padHorizontalMm) ?? 2;
-  const padY = Number(s.padVerticalMm) ?? 3;
-  const fontPx = Number(s.fontSizePx) || 10;
-  const lh = Number(s.lineHeight) || 1.35;
+  const content = Number(s.contentWidthMm) || 78;
+  const pageM = Number(s.pageMarginMm) ?? 0;
+  const padX = Number(s.padHorizontalMm) ?? 0;
+  const padY = Number(s.padVerticalMm) ?? 1;
+  const fontPx = Number(s.fontSizePx) || 13;
+  const lh = Number(s.lineHeight) || 1.5;
 
   root.style.setProperty('--print-paper-w-mm', String(paper));
+  root.style.setProperty('--print-paper-w', `${paper}mm`);
   root.style.setProperty('--print-content-w', `${content}mm`);
   root.style.setProperty('--print-page-margin-mm', `${pageM}mm`);
   root.style.setProperty('--print-pad-x', `${padX}mm`);

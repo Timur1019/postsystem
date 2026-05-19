@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, shell, Menu } = require('electron');
+const { app, BrowserWindow, dialog, shell, Menu, ipcMain } = require('electron');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -20,17 +20,8 @@ function hasUserServerConfig() {
 }
 
 async function configureServerInteractive() {
-  const saved = await showSetupWindow(config);
-  config.backendOrigin = saved.backendOrigin;
-  config.apiHealthUrl = saved.apiHealthUrl;
-  if (config.useEmbedded) {
-    await stopEmbeddedUi();
-    const url = await startEmbeddedUi({
-      port: config.embeddedPort,
-      backendOrigin: config.backendOrigin,
-    });
-    config.cashierUrl = url.replace(/\/$/, '');
-  }
+  await showSetupWindow(config);
+  config = loadConfig();
   return config;
 }
 
@@ -87,7 +78,7 @@ function httpOk(url) {
       resolve(res.statusCode >= 200 && res.statusCode < 400);
     });
     req.on('error', () => resolve(false));
-    req.setTimeout(3000, () => {
+    req.setTimeout(5000, () => {
       req.destroy();
       resolve(false);
     });
@@ -112,44 +103,159 @@ async function waitForServices() {
 
   const frontendOk = await httpOk(`${config.cashierUrl}/`);
   if (!frontendOk) {
+    const hint = config.useRemoteUi
+      ? `Проверьте, что на сервере запущен веб (порт ${config.webPort || '80'}) и файрвол его пропускает.`
+      : '';
     return {
       ok: false,
-      message: `Интерфейс кассы недоступен:\n${config.cashierUrl}`,
+      message: `Интерфейс кассы недоступен:\n${config.cashierUrl}\n\n${hint}`.trim(),
     };
   }
 
-  // API через встроенный прокси (так же ходит форма входа)
-  const apiViaProxy = config.useEmbedded
+  const apiHealthUrl = config.useRemoteUi
     ? `${config.cashierUrl}/api/v1/actuator/health`
-    : config.apiHealthUrl;
+    : config.useEmbedded
+      ? `${config.cashierUrl}/api/v1/actuator/health`
+      : config.apiHealthUrl;
 
-  let apiOk = await httpOk(apiViaProxy);
-  if (!apiOk && config.useEmbedded) {
+  let apiOk = await httpOk(apiHealthUrl);
+  if (!apiOk && !config.useRemoteUi) {
     apiOk = await httpOk(config.apiHealthUrl);
   }
   if (!apiOk) {
     try {
       await configureServerInteractive();
-      apiOk = await httpOk(config.apiHealthUrl);
+      config = loadConfig();
+      const retryUrl = config.useRemoteUi
+        ? `${config.cashierUrl}/api/v1/actuator/health`
+        : config.apiHealthUrl;
+      apiOk = await httpOk(retryUrl);
     } catch {
       apiOk = false;
     }
   }
 
   if (!apiOk) {
+    const healthLine = config.useRemoteUi
+      ? `${config.cashierUrl}/api/v1/actuator/health`
+      : config.apiHealthUrl;
     return {
       ok: false,
       message:
-        `Сервер Aurent не отвечает:\n${config.apiHealthUrl}\n\n` +
+        `Сервер Aurent не отвечает:\n${healthLine}\n\n` +
         'Проверьте:\n' +
-        '• сервер запущен и доступен в сети\n' +
-        '• IP/порт указаны верно\n' +
-        '• файрвол пропускает порт API (обычно 8080)',
+        '• сервер запущен (bash deploy/git-update.sh)\n' +
+        '• IP и порты указаны верно\n' +
+        (config.useRemoteUi
+          ? `• файрвол пропускает порт веб-интерфейса (обычно ${config.webPort || '80'})`
+          : '• файрвол пропускает порт API (обычно 8080)'),
     };
   }
 
   return { ok: true };
 }
+
+function waitForReceiptReady(webContents, timeoutMs = 12000) {
+  return webContents.executeJavaScript(`
+    new Promise((resolve) => {
+      if (window.__posReceiptReady) {
+        resolve(true);
+        return;
+      }
+      const done = () => {
+        window.removeEventListener('pos-receipt-ready', done);
+        resolve(true);
+      };
+      window.addEventListener('pos-receipt-ready', done, { once: true });
+      setTimeout(() => resolve(false), ${timeoutMs});
+    })
+  `);
+}
+
+function printReceiptInHiddenWindow(receiptNumber) {
+  const encoded = encodeURIComponent(String(receiptNumber).trim());
+  const url = `${config.cashierUrl}/receipt/${encoded}?silent=1`;
+
+  const printWin = new BrowserWindow({
+    show: false,
+    width: 640,
+    height: 1200,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(__dirname, 'preload.cjs'),
+    },
+  });
+  printWin.webContents.setZoomFactor(1);
+
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      if (!printWin.isDestroyed()) {
+        printWin.close();
+      }
+    };
+
+    printWin.webContents.on('did-fail-load', () => {
+      cleanup();
+      reject(new Error('Не удалось загрузить чек для печати'));
+    });
+
+    printWin
+      .loadURL(url)
+      .then(() => waitForReceiptReady(printWin.webContents))
+      .then(() => new Promise((r) => setTimeout(r, 400)))
+      .then(() =>
+        printWin.webContents.executeJavaScript(`
+          (() => {
+            document.documentElement.classList.add('print-receipt-only');
+            const paper = getComputedStyle(document.documentElement).getPropertyValue('--print-paper-w-mm').trim() || '80';
+            const margin = getComputedStyle(document.documentElement).getPropertyValue('--print-page-margin-mm').trim() || '0';
+            let el = document.getElementById('pos-print-job-page');
+            if (!el) {
+              el = document.createElement('style');
+              el.id = 'pos-print-job-page';
+              document.head.appendChild(el);
+            }
+            el.textContent = '@page { size: ' + paper + 'mm auto; margin: ' + margin + '; }';
+            return true;
+          })()
+        `)
+      )
+      .then(
+        () =>
+          new Promise((res, rej) => {
+            printWin.webContents.print(
+              {
+                silent: true,
+                printBackground: true,
+                margins: { marginType: 'none' },
+              },
+              (success, failureReason) => {
+                cleanup();
+                if (success) res();
+                else rej(new Error(failureReason || 'Печать отменена'));
+              }
+            );
+          })
+      )
+      .then(resolve)
+      .catch((err) => {
+        cleanup();
+        reject(err);
+      });
+  });
+}
+
+ipcMain.handle('print-receipt', async (event, receiptNumber) => {
+  if (!receiptNumber || !config?.cashierUrl) {
+    throw new Error('Некорректный номер чека');
+  }
+  if (!isAllowedLocation(`${config.cashierUrl}/receipt/${receiptNumber}`)) {
+    throw new Error('Недопустимый URL чека');
+  }
+  await printReceiptInHiddenWindow(receiptNumber);
+  return { ok: true };
+});
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -194,7 +300,6 @@ app.whenReady().then(async () => {
   if (!hasUserServerConfig()) {
     try {
       await configureServerInteractive();
-      config = loadConfig();
     } catch {
       app.quit();
       return;
@@ -213,8 +318,12 @@ app.whenReady().then(async () => {
       cancelId: 1,
     });
     if (retry === 0) {
-      config = loadConfig();
-      check = await waitForServices();
+      try {
+        await configureServerInteractive();
+        check = await waitForServices();
+      } catch {
+        check = { ok: false, message: check.message };
+      }
     }
     if (!check.ok) {
       dialog.showErrorBox('Aurent — Касса', check.message);

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#020617" />
+    <script>
+      (function () {
+        try {
+          var r = localStorage.getItem('pos-theme');
+          var dark = true;
+          if (r) {
+            var j = JSON.parse(r);
+            if (j && j.state && j.state.mode === 'light') dark = false;
+          }
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <title>Aurent</title>
+    <script type="module" crossorigin src="/assets/index-CUNYs8Bb.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-C1XnNEw7.js">
+    <link rel="modulepreload" crossorigin href="/assets/query-CgRy7uB2.js">
+    <link rel="modulepreload" crossorigin href="/assets/forms-DLgNyRqS.js">
+    <link rel="modulepreload" crossorigin href="/assets/charts-Djfbn_nE.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-DJNu8IJZ.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

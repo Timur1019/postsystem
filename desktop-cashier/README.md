@@ -1,8 +1,10 @@
 # Aurent Cashier (Desktop)
 
-Приложение кассира. Подключается к API на сервере (`:8080`), интерфейс встроен в установщик.
+Приложение-касса (Electron). **Интерфейс загружается с сервера** (`http://IP:80/`) — тот же фронт, что в Docker. API идёт через nginx (`/api` на том же порту).
 
-## Сборка установщика (на Mac разработчика)
+После `bash deploy/git-update.sh` на сервере кассирам достаточно **«Вид → Обновить»** (или перезапустить приложение). Переустановка `.dmg`/`.exe` не нужна, пока не меняется сама оболочка Electron.
+
+## Сборка установщика
 
 ```bash
 cd /Users/timur/Desktop/postsystem
@@ -13,59 +15,54 @@ chmod +x scripts/build-cashier.sh
 Другой сервер:
 
 ```bash
-SERVER_HOST=111.88.132.126 SERVER_PORT=8080 ./scripts/build-cashier.sh
+SERVER_HOST=111.88.132.126 SERVER_WEB_PORT=80 ./scripts/build-cashier.sh
 ```
 
-Результат: `dist/Aurent-Cashier-Desktop-1.0.0.zip` — раздать кассирам.
+Встроенный UI в установщик (только dev/офлайн):
+
+```bash
+INCLUDE_WEB_DIST=1 ./scripts/build-cashier.sh
+```
+
+Результат: `dist/Aurent-Cashier-Desktop-1.0.0.zip`.
 
 ## Windows .exe
 
 Собирается **только на ПК с Windows 10/11** (64-bit).
-
-**Проще всего** — двойной щелчок или в cmd:
 
 ```cmd
 cd C:\Users\user\postsystem
 scripts\build-cashier-windows.bat
 ```
 
-Если ошибка `Cannot create symbolic link` при сборке:
-
-1. **Параметры Windows** → Конфиденциальность → **Для разработчиков** → включить **Режим разработчика**
-2. Или запустить **cmd от имени администратора**
-3. Перед сборкой:
-
-```cmd
-set CSC_IDENTITY_AUTO_DISCOVERY=false
-rmdir /s /q "%LOCALAPPDATA%\electron-builder\Cache\winCodeSign"
-cd desktop-cashier
-npm run dist:win
-```
-
 Файл: `release/Aurent-Cashier-Setup-1.0.0-x64.exe`
-
-### Совместимость ОС
 
 | ОС | Поддержка |
 |----|-----------|
 | Windows 11 x64 | Да |
 | Windows 10 x64 | Да |
-| Windows 7 / 8 | **Нет** (Electron 28 требует Win10+) |
+| Windows 7 / 8 | **Нет** — касса в браузере: `http://IP_СЕРВЕРА/` |
 
-На Windows 7 — касса через браузер: `http://IP_СЕРВЕРА/`
-
-## Разработка
+## Разработка (встроенный web-dist)
 
 ```bash
-cd desktop-cashier
-npm install
-# сначала web-dist:
-cd ../web-frontend && npm run build && cp -R dist ../desktop-cashier/web-dist
+cd web-frontend && npm run build && cp -R dist ../desktop-cashier/web-dist
 cd ../desktop-cashier
-POS_EMBEDDED=1 npm start
+npm install
+POS_EMBEDDED=1 npm run dev
 ```
+
+Без `POS_EMBEDDED=1` приложение ожидает удалённый сервер (как в проде).
+
+## Настройка на кассе
+
+При первом запуске: IP сервера, порт веб-интерфейса (**80**), порт API (8080, резерв).
+
+Проверка с ПК кассира:
+
+- `http://IP/api/v1/actuator/health` (через порт 80)
+- `http://IP/login`
 
 ## Сервер
 
-- Health: `http://111.88.132.126:8080/api/v1/actuator/health`
-- Веб-админка: `http://111.88.132.126/`
+На файрволе сервера должен быть открыт **порт 80** (не только 8080). См. `deploy/README.md`.

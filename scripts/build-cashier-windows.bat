@@ -4,7 +4,9 @@ setlocal
 cd /d "%~dp0.."
 
 set SERVER_HOST=111.88.132.126
-set SERVER_PORT=8080
+set SERVER_WEB_PORT=80
+set SERVER_API_PORT=8080
+set INCLUDE_WEB_DIST=0
 set CSC_IDENTITY_AUTO_DISCOVERY=false
 set WIN_CSC_LINK=
 set CSC_LINK=
@@ -14,24 +16,28 @@ echo   Aurent Cashier - сборка для Windows
 echo ============================================
 echo.
 
-echo ==^> 1/4 Frontend...
-cd web-frontend
-call npm.cmd install
-if errorlevel 1 goto :error
-set VITE_API_URL=/api/v1
-call npm.cmd run build
-if errorlevel 1 goto :error
-cd ..
+if "%INCLUDE_WEB_DIST%"=="1" (
+  echo ==^> 1/4 Frontend ^(web-dist^)...
+  cd web-frontend
+  call npm.cmd install
+  if errorlevel 1 goto :error
+  set VITE_API_URL=/api/v1
+  call npm.cmd run build
+  if errorlevel 1 goto :error
+  cd ..
+  if exist desktop-cashier\web-dist rmdir /s /q desktop-cashier\web-dist
+  xcopy /E /I /Q web-frontend\dist desktop-cashier\web-dist
+) else (
+  echo ==^> Пропуск web-dist - UI с http://%SERVER_HOST%:%SERVER_WEB_PORT%/
+  if exist desktop-cashier\web-dist rmdir /s /q desktop-cashier\web-dist
+)
 
-echo ==^> 2/4 web-dist...
-if exist desktop-cashier\web-dist rmdir /s /q desktop-cashier\web-dist
-xcopy /E /I /Q web-frontend\dist desktop-cashier\web-dist
-
-echo ==^> 3/4 server.default.json...
+echo ==^> server.default.json...
 (
 echo {
 echo   "host": "%SERVER_HOST%",
-echo   "port": "%SERVER_PORT%"
+echo   "webPort": "%SERVER_WEB_PORT%",
+echo   "apiPort": "%SERVER_API_PORT%"
 echo }
 ) > desktop-cashier\server.default.json
 

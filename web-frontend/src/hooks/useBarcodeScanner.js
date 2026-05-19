@@ -12,6 +12,18 @@ function isTypingTarget(el) {
   return Boolean(el.isContentEditable);
 }
 
+function clearInputElement(el) {
+  if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
+  const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+  if (setter) {
+    setter.call(el, '');
+  } else {
+    el.value = '';
+  }
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 /**
  * @param {Object} opts
  * @param {boolean} opts.enabled
@@ -54,14 +66,21 @@ export function useBarcodeScanner({ enabled, onScan, barcodeInputRef, alwaysCapt
       const target = e.target;
       const onDedicatedBarcode =
         barcodeInputRef?.current && target === barcodeInputRef.current;
+      const onOtherTypingField =
+        alwaysCapture && isTypingTarget(target) && !onDedicatedBarcode;
 
       if (!alwaysCapture && isTypingTarget(target) && !onDedicatedBarcode) {
         return;
       }
 
+      const now = Date.now();
+      const wedgeActive = Boolean(lastCharAt && now - lastCharAt <= INTER_CHAR_MS);
+
       if (e.key === 'Enter') {
         if (buffer.length >= MIN_CODE_LENGTH) {
           e.preventDefault();
+          e.stopPropagation();
+          if (onOtherTypingField) clearInputElement(target);
           flush();
         } else {
           clearBuffer();
@@ -71,15 +90,36 @@ export function useBarcodeScanner({ enabled, onScan, barcodeInputRef, alwaysCapt
 
       if (e.key.length !== 1) return;
 
-      const now = Date.now();
       if (lastCharAt && now - lastCharAt > INTER_CHAR_MS) {
         buffer = '';
       }
+
+      const absorbWedge = onOtherTypingField && (buffer.length > 0 || wedgeActive);
+      if (absorbWedge) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (buffer.length === 0 && target instanceof HTMLInputElement) {
+          const leaked = target.value;
+          if (leaked) buffer = leaked;
+          clearInputElement(target);
+        }
+      }
+
       lastCharAt = now;
       buffer += e.key;
 
       if (resetTimer) clearTimeout(resetTimer);
-      resetTimer = setTimeout(clearBuffer, BUFFER_RESET_MS);
+      resetTimer = setTimeout(() => {
+        if (buffer.length >= MIN_CODE_LENGTH) {
+          const input = barcodeInputRef?.current;
+          if (input instanceof HTMLInputElement && input.value) {
+            clearInputElement(input);
+          }
+          flush();
+        } else {
+          clearBuffer();
+        }
+      }, BUFFER_RESET_MS);
     };
 
     document.addEventListener('keydown', onKeyDown, true);

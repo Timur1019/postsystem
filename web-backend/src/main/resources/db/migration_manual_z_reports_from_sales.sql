@@ -3,6 +3,19 @@
 
 UPDATE sales SET store_id = 1 WHERE store_id IS NULL;
 
+-- На обновлённых БД смены уже ссылаются на z_reports — снимаем FK перед пересборкой.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'cashier_shifts'
+  ) THEN
+    UPDATE cashier_shifts
+    SET z_report_id = NULL
+    WHERE z_report_id IN (SELECT id FROM z_reports WHERE store_id = 1);
+  END IF;
+END $$;
+
 DELETE FROM z_reports WHERE store_id = 1;
 
 INSERT INTO z_reports (

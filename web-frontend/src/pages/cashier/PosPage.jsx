@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { printReceiptAfterSale } from '../../utils/printReceipt';
 import { ScanLine, Store, Clock } from 'lucide-react';
 import { categoryApi, productApi, saleApi, cashierShiftApi } from '../../services/api';
 import { useCartStore, lineDiscountAmount } from '../../store/cartStore';
@@ -187,7 +188,7 @@ export default function PosPage() {
           discount: lineDiscountAmount(i),
         })),
       }),
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       clearCart();
       setPayOpen(false);
       setSelectedLineId(null);
@@ -195,8 +196,20 @@ export default function PosPage() {
       qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
       qc.invalidateQueries({ queryKey: ['my-sales'] });
       qc.invalidateQueries({ queryKey: ['sales-ledger'] });
+      const receiptNum = res.data.receiptNumber;
+      try {
+        const mode = await printReceiptAfterSale(receiptNum);
+        if (mode === 'silent') {
+          toast.success(t('pos.saleSuccess'));
+          return;
+        }
+      } catch (e) {
+        toast.error(e?.message ?? t('pos.printFailed'));
+      }
       toast.success(t('pos.saleSuccess'));
-      navigate(`/receipt/${res.data.receiptNumber}`);
+      navigate(`/receipt/${receiptNum}`, {
+        state: { autoPrint: true, fromCashier: true },
+      });
     },
     onError: (e) => toast.error(e.response?.data?.message ?? t('pos.saleFailed')),
   });

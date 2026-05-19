@@ -7,6 +7,8 @@ const DEFAULTS = {
   cashierUrl: 'http://127.0.0.1:5199',
   apiHealthUrl: 'http://localhost:8080/api/v1/actuator/health',
   backendOrigin: 'http://localhost:8080',
+  webPort: '80',
+  apiPort: '8080',
   embeddedPort: 5199,
 };
 
@@ -26,6 +28,7 @@ function loadConfig() {
     cashierUrl: process.env.POS_CASHIER_URL,
     apiHealthUrl: process.env.POS_API_HEALTH_URL,
     backendOrigin: process.env.POS_BACKEND_URL,
+    useRemoteUi: process.env.POS_REMOTE_UI === '1' ? true : undefined,
   };
 
   const candidates = [];
@@ -45,7 +48,14 @@ function loadConfig() {
   }
 
   const hasEmbeddedDist = Boolean(resolveWebDist());
-  const useEmbedded = hasEmbeddedDist && (app.isPackaged || process.env.POS_EMBEDDED === '1');
+  const useRemoteUi =
+    fromEnv.useRemoteUi === true ||
+    fileConfig.useRemoteUi === true ||
+    (Boolean(fromEnv.cashierUrl || fileConfig.cashierUrl) &&
+      !String(fromEnv.cashierUrl || fileConfig.cashierUrl).includes('127.0.0.1'));
+
+  const useEmbedded =
+    !useRemoteUi && hasEmbeddedDist && process.env.POS_EMBEDDED === '1';
 
   const embeddedPort = Number(fileConfig.embeddedPort || DEFAULTS.embeddedPort);
   const backendOrigin = (fromEnv.backendOrigin || fileConfig.backendOrigin || DEFAULTS.backendOrigin).replace(
@@ -59,12 +69,22 @@ function loadConfig() {
   }
   cashierUrl = cashierUrl.replace(/\/$/, '');
 
+  let apiHealthUrl = fromEnv.apiHealthUrl || fileConfig.apiHealthUrl;
+  if (!apiHealthUrl) {
+    apiHealthUrl = useRemoteUi
+      ? `${cashierUrl}/api/v1/actuator/health`
+      : DEFAULTS.apiHealthUrl;
+  }
+
   return {
     cashierUrl,
-    apiHealthUrl: fromEnv.apiHealthUrl || fileConfig.apiHealthUrl || DEFAULTS.apiHealthUrl,
+    apiHealthUrl,
     backendOrigin,
     embeddedPort,
     useEmbedded,
+    useRemoteUi,
+    webPort: String(fileConfig.webPort || DEFAULTS.webPort),
+    apiPort: String(fileConfig.apiPort || DEFAULTS.apiPort),
   };
 }
 

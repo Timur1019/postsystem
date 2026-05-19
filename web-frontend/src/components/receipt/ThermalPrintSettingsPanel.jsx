@@ -126,8 +126,8 @@ export default function ThermalPrintSettingsPanel({ compact = false }) {
           <input
             id="ps-font"
             type="number"
-            min={7}
-            max={16}
+            min={8}
+            max={18}
             step={1}
             className={fieldClass}
             value={fontSizePx}

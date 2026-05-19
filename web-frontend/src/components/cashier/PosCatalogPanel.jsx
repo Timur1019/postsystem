@@ -1,5 +1,5 @@
 // src/components/cashier/PosCatalogPanel.jsx
-import { LayoutGrid, Search } from 'lucide-react';
+import { LayoutGrid, ScanLine } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const fmt = (n) =>
@@ -7,8 +7,10 @@ const fmt = (n) =>
 
 export default function PosCatalogPanel({
   search,
+  scanInputRef,
   onSearchChange,
   onSearchEnter,
+  scanDisabled = false,
   categories,
   categoriesLoading,
   selectedCategoryId,
@@ -25,19 +27,24 @@ export default function PosCatalogPanel({
 
   return (
     <section className="pos-catalog-panel">
-      <div className="pos-search-row">
-        <Search size={16} className="pos-search-row__icon" aria-hidden />
+      <div className="pos-search-row pos-search-row--scan">
+        <ScanLine size={16} className="pos-search-row__icon text-emerald-600" aria-hidden />
         <input
+          ref={scanInputRef}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
+              if (e.defaultPrevented) return;
               e.preventDefault();
               onSearchEnter?.();
             }
           }}
-          placeholder={t('pos.searchProducts')}
-          className="pos-search flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          disabled={scanDisabled}
+          placeholder={t('pos.barcodePh')}
+          autoComplete="off"
+          autoFocus
+          className="pos-search flex-1 rounded-lg border border-emerald-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-emerald-900 dark:bg-slate-900 dark:text-white"
         />
       </div>
 

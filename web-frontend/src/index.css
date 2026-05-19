@@ -16,6 +16,100 @@
   ::-webkit-scrollbar-thumb:hover { @apply bg-slate-500 dark:bg-slate-600; }
 }
 
+.receipt-page {
+  overflow-x: hidden;
+}
+.receipt-page__paper {
+  width: var(--print-paper-w, 80mm);
+  max-width: var(--print-paper-w, 80mm);
+}
+.receipt-page__card {
+  overflow: hidden;
+  width: 100%;
+}
+.receipt-page--silent {
+  width: var(--print-paper-w, 80mm);
+}
+#receipt-print-area,
+#receipt-print-area *,
+.receipt-print-root,
+.receipt-print-root * {
+  color: #000 !important;
+  opacity: 1 !important;
+  font-weight: 700 !important;
+  -webkit-font-smoothing: auto !important;
+  -moz-osx-font-smoothing: auto !important;
+}
+html.dark #receipt-print-area,
+html.dark #receipt-print-area *,
+html.dark .receipt-print-root,
+html.dark .receipt-print-root * {
+  color: #000 !important;
+  opacity: 1 !important;
+  font-weight: 700 !important;
+}
+.receipt-page__card {
+  background: #fff !important;
+  color: #000 !important;
+}
+html.dark .receipt-page__card {
+  background: #fff !important;
+  color: #000 !important;
+}
+.receipt-print-root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: var(--print-pad-y, 1mm) var(--print-pad-x, 0mm);
+  font-family: 'Courier New', 'Liberation Mono', 'Consolas', 'Monaco', monospace;
+  font-size: var(--print-font-px, 13px);
+  line-height: var(--print-line-height, 1.5);
+  font-weight: 700;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: geometricPrecision;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.receipt-print-root .receipt-title {
+  font-size: 1.15em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.receipt-print-root .receipt-subtitle {
+  font-size: 0.95em;
+}
+.receipt-print-root .receipt-meta-label,
+.receipt-print-root .receipt-items-header span {
+  color: #000 !important;
+  font-weight: 700 !important;
+}
+.receipt-print-root .receipt-secondary {
+  color: #000 !important;
+  font-weight: 600 !important;
+  font-size: 0.92em;
+}
+.receipt-print-root .receipt-qr {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.receipt-print-root .receipt-row--bold {
+  font-weight: 700;
+}
+.receipt-print-root .receipt-fiscal-sign {
+  font-weight: 700;
+  text-decoration: underline;
+}
+.receipt-print-root .receipt-section {
+  margin-bottom: 0.35em;
+}
+.receipt-print-root .receipt-divider {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  border-color: #000 !important;
+}
+
 @media print {
   body {
     background: white !important;
@@ -42,20 +136,73 @@
     padding: 0 !important;
     background: white !important;
   }
-  html.print-receipt-only #receipt-print-area {
-    width: var(--print-content-w, 72mm) !important;
-    max-width: var(--print-content-w, 72mm) !important;
+  html.print-receipt-only body,
+  html.print-fiscal-only body {
     margin: 0 !important;
-    padding: var(--print-pad-y, 3mm) var(--print-pad-x, 2mm) !important;
+    padding: 0 !important;
+  }
+  html.print-receipt-only #receipt-print-area,
+  html.print-fiscal-only #receipt-print-area {
+    width: var(--print-content-w, 78mm) !important;
+    max-width: var(--print-content-w, 78mm) !important;
+    margin: 0 !important;
+    padding: var(--print-pad-y, 1mm) var(--print-pad-x, 0mm) !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     border: none !important;
-    font-size: var(--print-font-px, 10px) !important;
-    line-height: var(--print-line-height, 1.35) !important;
+    background: white !important;
+    color: #000 !important;
+    font-size: var(--print-font-px, 13px) !important;
+    line-height: var(--print-line-height, 1.5) !important;
   }
-  html.print-receipt-only #receipt-print-area * {
-    font-size: inherit !important;
-    line-height: inherit !important;
+  html.print-receipt-only #receipt-print-area *,
+  html.print-fiscal-only #receipt-print-area * {
+    color: #000 !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+    -webkit-font-smoothing: auto !important;
+    -moz-osx-font-smoothing: auto !important;
+  }
+  html.print-receipt-only .receipt-muted,
+  html.print-fiscal-only .receipt-muted,
+  html.print-receipt-only .receipt-subtitle,
+  html.print-fiscal-only .receipt-subtitle {
+    color: #000 !important;
+  }
+  html.print-receipt-only .receipt-title,
+  html.print-fiscal-only .receipt-title {
+    font-size: 1.2em !important;
+    font-weight: 700 !important;
+  }
+  html.print-receipt-only .receipt-row--bold,
+  html.print-fiscal-only .receipt-row--bold,
+  html.print-receipt-only .receipt-section-title,
+  html.print-fiscal-only .receipt-section-title,
+  html.print-receipt-only .receipt-meta-label,
+  html.print-fiscal-only .receipt-meta-label {
+    font-weight: 700 !important;
+    color: #000 !important;
+  }
+  html.print-receipt-only .receipt-secondary,
+  html.print-fiscal-only .receipt-secondary {
+    font-weight: 600 !important;
+    color: #000 !important;
+  }
+  html.print-receipt-only .receipt-fiscal-sign,
+  html.print-fiscal-only .receipt-fiscal-sign {
+    font-weight: 700 !important;
+    text-decoration: underline;
+    color: #000 !important;
+  }
+  html.print-receipt-only .receipt-qr,
+  html.print-fiscal-only .receipt-qr {
+    image-rendering: pixelated !important;
+    image-rendering: crisp-edges !important;
+  }
+  html.print-receipt-only,
+  html.print-fiscal-only {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   /* Печать из модалки журнала — те же переменные */
@@ -88,13 +235,8 @@
     max-height: none !important;
   }
   html.print-fiscal-only #fiscal-print-shell {
-    padding: var(--print-pad-y, 3mm) var(--print-pad-x, 2mm) !important;
-    font-size: var(--print-font-px, 10px) !important;
-    line-height: var(--print-line-height, 1.35) !important;
-  }
-  html.print-fiscal-only #fiscal-print-shell * {
-    font-size: inherit !important;
-    line-height: inherit !important;
+    padding: 0 !important;
+    overflow: visible !important;
   }
 
   /* Печать Z-отчёта (модалка) */

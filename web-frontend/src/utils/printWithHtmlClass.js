@@ -12,7 +12,7 @@ const JOB_PAGE_STYLE_ID = 'pos-print-job-page';
  */
 function injectThermalPageRule(state) {
   const paper = Number(state.paperWidthMm) || 80;
-  const margin = Number(state.pageMarginMm) ?? 2;
+  const margin = Number(state.pageMarginMm) ?? 0;
   let el = document.getElementById(JOB_PAGE_STYLE_ID);
   if (!el) {
     el = document.createElement('style');
