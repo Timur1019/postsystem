@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { productApi } from '../../services/api';
+import { fmtMoney } from '../../utils/formatMoney';
 
 const rowCls = 'flex items-center justify-between gap-4 border-b border-slate-200 py-2 text-sm dark:border-slate-800';
 const labelCls = 'text-slate-500 dark:text-slate-400';
@@ -116,9 +117,7 @@ export default function ProductInfoModal({ open, productId, onClose, onEdit, onR
                       <div key={sp.storeId} className="flex items-center justify-between gap-4 text-sm">
                         <span className="text-slate-700 dark:text-slate-200">{sp.storeName}</span>
                         <span className="font-semibold text-slate-900 dark:text-white">
-                          {new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-                            Number(sp.price) || 0
-                          )}
+                          {fmtMoney(sp.price)}
                         </span>
                       </div>
                     ))}

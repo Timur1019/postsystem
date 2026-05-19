@@ -8,8 +8,7 @@ import { zReportApi } from '../../services/api';
 import { printWithHtmlClass } from '../../utils/printWithHtmlClass';
 import ThermalPrintSettingsPanel from '../receipt/ThermalPrintSettingsPanel';
 
-const fmtMoney = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
+import { fmtMoney } from '../../utils/formatMoney';
 
 const fmtAt = (iso) => {
   try {

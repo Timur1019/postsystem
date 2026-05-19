@@ -17,9 +17,7 @@ import ProductExportModal from '../components/products/ProductExportModal';
 import WarehouseReceiveModal from '../components/stock/WarehouseReceiveModal';
 import ProductInfoModal from '../components/products/ProductInfoModal';
 import { invalidateProductCaches } from '../utils/productCache';
-
-const fmtNum = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
+import { fmtMoney as fmtNum } from '../utils/formatMoney';
 
 const defaultFilters = {
   ikpuStatus: 'ALL',

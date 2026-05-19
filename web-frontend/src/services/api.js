@@ -179,8 +179,6 @@ export const saleApi = {
   getById:    (id)     => api.get(`/sales/${id}`),
   getReceipt: (num) =>
     api.get(`/sales/receipt/${encodeURIComponent(String(num).trim())}`),
-  getByReceipt: (num) =>
-    api.get(`/sales/receipt/${encodeURIComponent(String(num).trim())}`),
   voidSale:   (id, reason) =>
     api.post(`/sales/${id}/void`, null, { params: { reason } }),
   mySales:    (params) => api.get('/sales/my-sales', { params }),

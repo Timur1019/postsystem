@@ -8,9 +8,9 @@ import { syncPrintCssVars } from '../utils/syncPrintCssVars';
  */
 export const PRINT_SETTINGS_DEFAULTS = {
   paperWidthMm: 80,
-  contentWidthMm: 78,
+  contentWidthMm: 72,
   pageMarginMm: 0,
-  padHorizontalMm: 0,
+  padHorizontalMm: 3,
   padVerticalMm: 2,
   fontSizePx: 13,
   lineHeight: 1.5,
@@ -32,9 +32,9 @@ export const usePrintSettingsStore = create(
         if (preset === '58') {
           set({
             paperWidthMm: 58,
-            contentWidthMm: 56,
+            contentWidthMm: 52,
             pageMarginMm: 0,
-            padHorizontalMm: 0,
+            padHorizontalMm: 2,
             padVerticalMm: 1,
             fontSizePx: 11,
             lineHeight: 1.4,
@@ -81,19 +81,19 @@ export const usePrintSettingsStore = create(
     }),
     {
       name: 'pos-print-settings',
-      version: 4,
+      version: 5,
       migrate: (persisted, version) => {
         if (!persisted) return persisted;
         const paper = Number(persisted.paperWidthMm) || 80;
-        if (version < 4) {
+        if (version < 5) {
           return {
             ...persisted,
             pageMarginMm: 0,
-            padHorizontalMm: 0,
-            padVerticalMm: 2,
-            contentWidthMm: paper <= 58 ? 56 : 78,
+            padHorizontalMm: paper <= 58 ? 2 : 3,
+            padVerticalMm: paper <= 58 ? 1 : 2,
+            contentWidthMm: paper <= 58 ? 52 : 72,
             fontSizePx: paper <= 58 ? 11 : 13,
-            lineHeight: 1.5,
+            lineHeight: paper <= 58 ? 1.4 : 1.5,
           };
         }
         return persisted;

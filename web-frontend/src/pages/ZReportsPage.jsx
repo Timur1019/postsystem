@@ -10,8 +10,7 @@ import { zReportApi, storeApi } from '../services/api';
 import ZReportFiltersDrawer from '../components/z-reports/ZReportFiltersDrawer';
 import ZReportPrintModal from '../components/z-reports/ZReportPrintModal';
 
-const fmtMoney = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
+import { fmtMoney } from '../utils/formatMoney';
 
 const defaultFilters = {
   storeId: '',

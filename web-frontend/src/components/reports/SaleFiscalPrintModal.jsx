@@ -4,7 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Printer, X, Settings2 } from 'lucide-react';
 import { saleApi } from '../../services/api';
-import { printWithHtmlClass } from '../../utils/printWithHtmlClass';
+import {
+  printWithHtmlClass,
+  PRINT_THERMAL_CLASS,
+  PRINT_THERMAL_MODAL_CLASS,
+} from '../../utils/printWithHtmlClass';
 import ThermalPrintSettingsPanel from '../receipt/ThermalPrintSettingsPanel';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
 
@@ -18,7 +22,7 @@ export default function SaleFiscalPrintModal({ saleId, onClose }) {
   });
 
   const handlePrint = () => {
-    printWithHtmlClass('print-fiscal-only');
+    printWithHtmlClass([PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS]);
   };
 
   if (!saleId) return null;

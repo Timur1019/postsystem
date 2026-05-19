@@ -8,9 +8,7 @@ import { ChevronDown, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cashierShiftApi, saleApi } from '../../services/api';
 import { useCashierStore } from '../../hooks/useCashierStore';
-
-const fmt = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n ?? 0);
+import { fmtMoney as fmt } from '../../utils/formatMoney';
 
 function SalesTable({ rows, isPending, onReturn, voidPending, onRowClick, t }) {
   return (

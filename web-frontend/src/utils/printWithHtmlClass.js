@@ -3,7 +3,13 @@ import { usePrintSettingsStore } from '../store/printSettingsStore';
 
 export const POS_RECEIPT_PRINT_EVENT = 'pos-request-receipt-print';
 
-const THERMAL_PRINT_CLASSES = new Set(['print-receipt-only', 'print-fiscal-only', 'print-z-report-only']);
+/** Класс на `<html>` для печати фискального чека. */
+export const PRINT_THERMAL_CLASS = 'print-thermal-only';
+
+/** Доп. класс: печать из модалки журнала (скрывает #root). */
+export const PRINT_THERMAL_MODAL_CLASS = 'print-thermal-modal';
+
+const THERMAL_PRINT_CLASSES = new Set([PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS, 'print-z-report-only']);
 const JOB_PAGE_STYLE_ID = 'pos-print-job-page';
 
 /**
@@ -27,24 +33,26 @@ function removeThermalPageRule() {
 }
 
 /**
- * Adds a class on <html> for the duration of one print job (for @media print rules).
+ * Adds class(es) on <html> for the duration of one print job (for @media print rules).
+ * @param {string | string[]} className — один класс или массив (напр. чек + модалка)
  */
 export function printWithHtmlClass(className) {
+  const classes = (Array.isArray(className) ? className : [className]).filter(Boolean);
   const state = usePrintSettingsStore.getState();
   syncPrintCssVars(state);
-  const useThermalPage = THERMAL_PRINT_CLASSES.has(className);
+  const useThermalPage = classes.some((c) => THERMAL_PRINT_CLASSES.has(c));
   if (useThermalPage) {
     injectThermalPageRule(state);
   }
 
   const done = () => {
-    document.documentElement.classList.remove(className);
+    classes.forEach((c) => document.documentElement.classList.remove(c));
     window.removeEventListener('afterprint', done);
     if (useThermalPage) {
       removeThermalPageRule();
     }
   };
   window.addEventListener('afterprint', done);
-  document.documentElement.classList.add(className);
+  classes.forEach((c) => document.documentElement.classList.add(c));
   requestAnimationFrame(() => window.print());
 }

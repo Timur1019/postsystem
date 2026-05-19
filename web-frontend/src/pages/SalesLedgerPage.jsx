@@ -11,8 +11,7 @@ import { saleApi, storeApi } from '../services/api';
 import SalesLedgerFiltersDrawer from '../components/reports/SalesLedgerFiltersDrawer';
 import SaleFiscalPrintModal from '../components/reports/SaleFiscalPrintModal';
 
-const fmtMoney = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
+import { fmtMoney } from '../utils/formatMoney';
 
 const defaultFilters = {
   storeId: '',

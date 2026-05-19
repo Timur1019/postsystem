@@ -7,7 +7,7 @@ export default function AuthBootstrap({ children }) {
   if (!hasHydrated) {
     return (
       <div
-        className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950"
+        className="flex min-h-screen items-center justify-center bg-slate-100"
         role="status"
         aria-label="Loading"
       >

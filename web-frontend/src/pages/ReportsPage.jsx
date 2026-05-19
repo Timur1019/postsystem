@@ -9,17 +9,18 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { Calendar, TrendingUp, DollarSign, Package } from 'lucide-react';
-import { useThemeStore } from '../store/themeStore';
-
 const fmt = (n) => new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(n ?? 0);
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
+const CHART_GRID = '#e2e8f0';
+const CHART_TOOLTIP_BG = '#ffffff';
+const CHART_TOOLTIP_BORDER = '#e2e8f0';
+const CHART_LEGEND_LABEL = '#64748b';
 
 export default function ReportsPage() {
   const { t } = useTranslation();
-  const isDark = useThemeStore((s) => s.mode === 'dark');
-  const gridStroke = isDark ? '#334155' : '#e2e8f0';
-  const tooltipBg = isDark ? '#1e293b' : '#ffffff';
-  const tooltipBorder = isDark ? '#334155' : '#e2e8f0';
+  const gridStroke = CHART_GRID;
+  const tooltipBg = CHART_TOOLTIP_BG;
+  const tooltipBorder = CHART_TOOLTIP_BORDER;
   const presets = useMemo(() => [
     { key: 'presetToday', from: () => format(new Date(), 'yyyy-MM-dd'), to: () => format(new Date(), 'yyyy-MM-dd') },
     { key: 'preset7', from: () => format(subDays(new Date(), 6), 'yyyy-MM-dd'), to: () => format(new Date(), 'yyyy-MM-dd') },
@@ -188,7 +189,7 @@ export default function ReportsPage() {
                   />
                   <Legend
                     formatter={(v) => (
-                      <span style={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }}>{v}</span>
+                      <span style={{ color: CHART_LEGEND_LABEL, fontSize: 12 }}>{v}</span>
                     )}
                   />
                 </PieChart>

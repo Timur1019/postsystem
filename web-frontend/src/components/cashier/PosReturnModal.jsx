@@ -6,9 +6,7 @@ import toast from 'react-hot-toast';
 import { X, Loader, Search } from 'lucide-react';
 import { saleApi } from '../../services/api';
 import PosModalPortal from './PosModalPortal';
-
-const fmt = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n ?? 0);
+import { fmtMoney as fmt } from '../../utils/formatMoney';
 
 function normalizeReceiptCode(raw) {
   return String(raw ?? '')
@@ -63,7 +61,7 @@ export default function PosReturnModal({ open, onClose, onSuccess }) {
     setLookupPending(true);
     setSale(null);
     try {
-      const res = await saleApi.getByReceipt(code);
+      const res = await saleApi.getReceipt(code);
       if (res.data.status === 'VOIDED') {
         toast.error(t('pos.returnAlreadyVoided'));
         return;

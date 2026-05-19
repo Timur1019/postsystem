@@ -6,9 +6,7 @@ import { X, FileText, Printer, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cashierShiftApi } from '../../services/api';
 import PosModalPortal from './PosModalPortal';
-
-const fmt = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n ?? 0);
+import { fmtMoney as fmt } from '../../utils/formatMoney';
 
 function ReportBlock({ report, t }) {
   if (!report) return null;
@@ -83,22 +81,22 @@ export default function CashierShiftModal({ open, onClose, storeId, shift, onShi
 
   return (
     <PosModalPortal open={open} onClose={onClose}>
-      <div className="pos-pay-modal pos-pay-modal--wide" onMouseDown={(e) => e.stopPropagation()}>
-        <button type="button" className="pos-pay-modal__close" onClick={onClose}>
+      <div className="pos-pay-modal pos-pay-modal--shift" onMouseDown={(e) => e.stopPropagation()}>
+        <button type="button" className="pos-pay-modal__close" onClick={onClose} aria-label={t('common.close')}>
           <X size={20} />
         </button>
         <h2 className="pos-pay-modal__title">{t('pos.shiftTitle')}</h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="cashier-shift-modal__meta">
           {shift.storeName} · {shift.cashierName}
         </p>
-        <p className="mb-4 text-xs text-slate-500">
+        <p className="cashier-shift-modal__status">
           {t('pos.shiftStatus')}:{' '}
-          <span className={isOpen ? 'text-emerald-600' : 'text-slate-500'}>
+          <span className={isOpen ? 'is-open' : ''}>
             {isOpen ? t('pos.shiftOpen') : t('pos.shiftClosedLabel')}
           </span>
         </p>
 
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="cashier-shift-modal__actions">
           <button
             type="button"
             className="pos-shift-action"

@@ -1,14 +1,5 @@
-/** Форматирование сумм/количеств и данные для QR / фискального признака на чеке. */
-
-export const fmtMoney = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-    Number(n) || 0
-  );
-
-export const fmtQty = (q) => {
-  const n = Number(q) || 0;
-  return Number.isInteger(n) ? String(n) : n.toFixed(2);
-};
+/** Данные для QR / фискального признака на чеке. */
+export { fmtMoney, fmtQty } from './formatMoney';
 
 /** Уникальный фискальный признак (до интеграции с ОФД — детерминированно из данных чека). */
 export function buildFiscalSign(sale) {

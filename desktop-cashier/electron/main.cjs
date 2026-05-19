@@ -207,7 +207,7 @@ function printReceiptInHiddenWindow(receiptNumber) {
       .then(() =>
         printWin.webContents.executeJavaScript(`
           (() => {
-            document.documentElement.classList.add('print-receipt-only');
+            document.documentElement.classList.add('print-thermal-only');
             const paper = getComputedStyle(document.documentElement).getPropertyValue('--print-paper-w-mm').trim() || '80';
             const margin = getComputedStyle(document.documentElement).getPropertyValue('--print-page-margin-mm').trim() || '0';
             let el = document.getElementById('pos-print-job-page');

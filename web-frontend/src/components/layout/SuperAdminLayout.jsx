@@ -4,7 +4,6 @@ import { Building2, Store, Users, LogOut, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import LanguageSwitcher from '../shared/LanguageSwitcher';
-import ThemeToggle from '../shared/ThemeToggle';
 
 const NAV = [
   { to: '/platform/companies', icon: Building2, key: 'platform.companies' },
@@ -58,7 +57,6 @@ export default function SuperAdminLayout() {
       </aside>
       <main className="flex flex-1 flex-col">
         <header className="flex items-center justify-end gap-2 border-b border-slate-200 bg-white px-6 py-3 dark:border-slate-800 dark:bg-slate-900">
-          <ThemeToggle />
           <LanguageSwitcher />
         </header>
         <div className="flex-1 overflow-auto p-6">

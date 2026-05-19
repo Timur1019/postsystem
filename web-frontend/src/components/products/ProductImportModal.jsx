@@ -4,6 +4,7 @@ import { X, AlertTriangle, CheckCircle2, XCircle, Percent } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { productApi } from '../../services/api';
 import toast from 'react-hot-toast';
+import { fmtMoney } from '../../utils/formatMoney';
 
 const optCls = (active) =>
   `flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition ${
@@ -18,8 +19,8 @@ const inputCls =
 function formatMoney(value) {
   if (value == null || value === '') return '—';
   const n = Number(value);
-  if (Number.isNaN(n)) return String(value);
-  return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(n);
+  if (!Number.isFinite(n)) return String(value);
+  return fmtMoney(n);
 }
 
 function parseMoneyInput(raw) {

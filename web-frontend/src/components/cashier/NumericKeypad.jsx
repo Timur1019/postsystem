@@ -1,12 +1,13 @@
 // src/components/cashier/NumericKeypad.jsx
 import { Delete, Eraser } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { fmtInteger } from '../../utils/formatMoney';
 
 export const formatKeypadAmount = (raw) => {
   if (!raw) return '0';
   const n = Number(raw);
   if (!Number.isFinite(n)) return raw;
-  return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(n);
+  return fmtInteger(n);
 };
 
 export function appendKeypadDigit(current, digit) {

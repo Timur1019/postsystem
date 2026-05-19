@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import { returnApi } from '../../services/api';
 
-const fmtMoney = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
+import { fmtMoney } from '../../utils/formatMoney';
 
 function fmtAt(iso) {
   try {

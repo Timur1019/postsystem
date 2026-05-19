@@ -8,7 +8,10 @@ import {
 } from 'recharts';
 import { TrendingUp, ShoppingCart, AlertTriangle, DollarSign } from 'lucide-react';
 import { useDateFnsLocale } from '../hooks/useDateFnsLocale';
-import { useThemeStore } from '../store/themeStore';
+const CHART_GRID = '#e2e8f0';
+const CHART_TOOLTIP_BG = '#ffffff';
+const CHART_TOOLTIP_BORDER = '#e2e8f0';
+const CHART_TOOLTIP_LABEL = '#64748b';
 
 function StatCard({ icon: Icon, label, value, sub, color = 'emerald' }) {
   const colors = {
@@ -38,12 +41,11 @@ const fmt = (n) => new Intl.NumberFormat('en-KE', { style: 'currency', currency:
 export default function DashboardPage() {
   const { t } = useTranslation();
   const dateLocale = useDateFnsLocale();
-  const isDark = useThemeStore((s) => s.mode === 'dark');
   const today = format(new Date(), 'yyyy-MM-dd');
-  const gridStroke = isDark ? '#334155' : '#e2e8f0';
-  const tooltipBg = isDark ? '#1e293b' : '#ffffff';
-  const tooltipBorder = isDark ? '#334155' : '#e2e8f0';
-  const tooltipLabel = isDark ? '#94a3b8' : '#64748b';
+  const gridStroke = CHART_GRID;
+  const tooltipBg = CHART_TOOLTIP_BG;
+  const tooltipBorder = CHART_TOOLTIP_BORDER;
+  const tooltipLabel = CHART_TOOLTIP_LABEL;
 
   const { data: daily } = useQuery({
     queryKey: ['daily-summary', today],

@@ -1,4 +1,4 @@
-import { printWithHtmlClass } from './printWithHtmlClass';
+import { printWithHtmlClass, PRINT_THERMAL_CLASS } from './printWithHtmlClass';
 
 /** Десктоп-касса (Electron): тихая печать без перехода на страницу чека. */
 export function isDesktopSilentPrintAvailable() {
@@ -23,5 +23,5 @@ export async function printReceiptAfterSale(receiptNumber) {
 
 /** Ручная печать со страницы чека (диалог браузера). */
 export function printReceiptDialog() {
-  printWithHtmlClass('print-receipt-only');
+  printWithHtmlClass(PRINT_THERMAL_CLASS);
 }

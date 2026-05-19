@@ -8,7 +8,6 @@ import {
   LogOut,
   Menu,
   X,
-  Bell,
   LayoutGrid,
   ChevronDown,
   Package,
@@ -17,7 +16,6 @@ import {
   RotateCcw,
   Home,
   Building2,
-  Printer,
   Calculator,
   List,
   FileText,
@@ -32,9 +30,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import LanguageSwitcher from '../shared/LanguageSwitcher';
-import ThemeToggle from '../shared/ThemeToggle';
 import { APP_NAME } from '../../config/brand';
-import { POS_RECEIPT_PRINT_EVENT } from '../../utils/printWithHtmlClass';
 
 const GOODS_ROUTES = ['/products', '/categories'];
 
@@ -82,6 +78,8 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  /** Полное меню — после анимации ширины, чтобы не тормозить открытие */
+  const [sidebarNavExpanded, setSidebarNavExpanded] = useState(true);
   const [goodsOpen, setGoodsOpen] = useState(true);
   const [stockOpen, setStockOpen] = useState(true);
   const [reportsOpen, setReportsOpen] = useState(true);
@@ -103,6 +101,20 @@ export default function AppLayout() {
     navigate('/login');
   };
 
+  const toggleSidebar = () => {
+    if (sidebarOpen) {
+      setSidebarNavExpanded(false);
+      setSidebarOpen(false);
+      return;
+    }
+    setSidebarOpen(true);
+  };
+
+  const onSidebarTransitionEnd = (e) => {
+    if (e.propertyName !== 'width') return;
+    setSidebarNavExpanded(sidebarOpen);
+  };
+
   const visibleRest = REST_NAV.filter((item) => !item.roles || item.roles.includes(user?.role));
   const showRegisters = ['ADMIN', 'MANAGER'].includes(user?.role);
   const showOrders = ['ADMIN', 'MANAGER'].includes(user?.role);
@@ -114,7 +126,6 @@ export default function AppLayout() {
   const inRegistersSection = REGISTER_ROUTES.includes(location.pathname);
   const inOrdersSection = ORDER_ROUTES.includes(location.pathname);
   const inHandbookSection = location.pathname.startsWith('/handbook');
-  const isReceiptRoute = /^\/receipt\//.test(location.pathname);
 
   const subLinkClass = ({ isActive }) =>
     `ml-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
@@ -133,7 +144,8 @@ export default function AppLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-100 text-slate-900 print:!bg-white print:!text-black print:min-h-0 dark:bg-slate-950 dark:text-slate-100">
       <aside
-        className={`print:hidden flex flex-col border-r border-slate-200 bg-slate-50 transition-all duration-300 dark:border-emerald-900/70 dark:bg-emerald-950 ${
+        onTransitionEnd={onSidebarTransitionEnd}
+        className={`print:hidden flex shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-slate-50 transition-[width] duration-200 ease-out dark:border-emerald-900/70 dark:bg-emerald-950 ${
           sidebarOpen ? 'w-60' : 'w-16'
         }`}
       >
@@ -141,15 +153,15 @@ export default function AppLayout() {
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500">
             <ShoppingCart size={16} className="text-white" />
           </div>
-          {sidebarOpen && (
-            <span className="text-lg font-bold text-slate-900 dark:text-white">{APP_NAME}</span>
+          {sidebarNavExpanded && (
+            <span className="truncate text-lg font-bold text-slate-900 dark:text-white">{APP_NAME}</span>
           )}
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
           <NavLink to="/dashboard" end className={topLinkClass}>
             <LayoutDashboard size={18} className="flex-shrink-0" />
-            {sidebarOpen && t('nav.dashboard')}
+            {sidebarNavExpanded && t('nav.dashboard')}
           </NavLink>
 
           <NavLink
@@ -159,10 +171,10 @@ export default function AppLayout() {
             }
           >
             <BookOpen size={18} className="flex-shrink-0" />
-            {sidebarOpen && t('nav.handbook')}
+            {sidebarNavExpanded && t('nav.handbook')}
           </NavLink>
 
-          {sidebarOpen ? (
+          {sidebarNavExpanded ? (
             <div className="pt-1">
               <button
                 type="button"
@@ -214,7 +226,7 @@ export default function AppLayout() {
             </div>
           )}
 
-          {sidebarOpen ? (
+          {sidebarNavExpanded ? (
             <div className="pt-1">
               <button
                 type="button"
@@ -267,7 +279,7 @@ export default function AppLayout() {
           )}
 
           {showOrders &&
-            (sidebarOpen ? (
+            (sidebarNavExpanded ? (
               <div className="pt-1">
                 <button
                   type="button"
@@ -320,7 +332,7 @@ export default function AppLayout() {
             ))}
 
           {showRegisters &&
-            (sidebarOpen ? (
+            (sidebarNavExpanded ? (
               <div className="pt-1">
                 <button
                   type="button"
@@ -373,7 +385,7 @@ export default function AppLayout() {
             ))}
 
           {showReports &&
-            (sidebarOpen ? (
+            (sidebarNavExpanded ? (
               <div className="pt-1">
                 <button
                   type="button"
@@ -428,7 +440,7 @@ export default function AppLayout() {
           {visibleRest.map(({ to, icon: Icon, key }) => (
             <NavLink key={to} to={to} className={topLinkClass}>
               <Icon size={18} className="flex-shrink-0" />
-              {sidebarOpen && t(`nav.${key}`)}
+              {sidebarNavExpanded && t(`nav.${key}`)}
             </NavLink>
           ))}
         </nav>
@@ -440,7 +452,7 @@ export default function AppLayout() {
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-600 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-slate-300 dark:hover:bg-red-950/40 dark:hover:text-red-300"
           >
             <LogOut size={18} className="flex-shrink-0" />
-            {sidebarOpen && t('nav.logout')}
+            {sidebarNavExpanded && t('nav.logout')}
           </button>
         </div>
       </aside>
@@ -449,31 +461,14 @@ export default function AppLayout() {
         <header className="print:hidden flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 dark:border-slate-800 dark:bg-slate-900">
           <button
             type="button"
-            onClick={() => setSidebarOpen((v) => !v)}
+            onClick={toggleSidebar}
             className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           >
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
           <div className="flex items-center gap-3 md:gap-4">
-            {isReceiptRoute && (
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent(POS_RECEIPT_PRINT_EVENT))}
-                className="inline-flex items-center gap-2 rounded-lg border border-emerald-600 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
-              >
-                <Printer size={18} />
-                <span className="hidden sm:inline">{t('receipt.print')}</span>
-              </button>
-            )}
-            <ThemeToggle />
             <LanguageSwitcher />
-            <button
-              type="button"
-              className="relative text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
-            >
-              <Bell size={20} />
-            </button>
             <div className="flex items-center gap-2 text-sm">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 font-bold text-white">
                 {user?.fullName?.[0] ?? 'U'}

@@ -23,6 +23,7 @@ desktop-cashier/node_modules/
 desktop-cashier/web-dist/
 desktop-cashier/release/
 dist/
+web-frontend/docker-build/
 .vite/
 npm-debug.log*
 yarn-debug.log*

@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { storeApi, orderApi } from '../services/api';
 import OrdersFiltersDrawer from '../components/orders/OrdersFiltersDrawer';
 import OrderAddWizard from '../components/orders/OrderAddWizard';
+import { fmtMoney } from '../utils/formatMoney';
 
 const defaultFilters = {
   externalNumber: '',
@@ -18,9 +19,6 @@ const defaultFilters = {
   createdFrom: '',
   createdTo: '',
 };
-
-const fmtMoney = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
 
 function fmtDateTime(iso) {
   if (!iso) return '—';

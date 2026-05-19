@@ -11,8 +11,7 @@ import TableRowActionsMenu from '../components/shared/TableRowActionsMenu';
 import ReturnDetailModal from '../components/reports/ReturnDetailModal';
 import ReturnReasonModal from '../components/reports/ReturnReasonModal';
 
-const fmtMoney = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
+import { fmtMoney } from '../utils/formatMoney';
 
 const defaultFilters = {
   storeId: '',

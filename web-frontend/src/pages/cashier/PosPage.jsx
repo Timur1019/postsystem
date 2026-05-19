@@ -5,17 +5,15 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { printReceiptAfterSale } from '../../utils/printReceipt';
-import { ScanLine, Store, Clock } from 'lucide-react';
 import { categoryApi, productApi, saleApi, cashierShiftApi } from '../../services/api';
 import { useCartStore, lineDiscountAmount } from '../../store/cartStore';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import PosOrderPanel from '../../components/cashier/PosOrderPanel';
-import PosCatalogPanel from '../../components/cashier/PosCatalogPanel';
+import PosCatalogPanel, { ALL_CATEGORY_ID } from '../../components/cashier/PosCatalogPanel';
 import PosPaymentFlow from '../../components/cashier/PosPaymentFlow';
 import PosReturnModal from '../../components/cashier/PosReturnModal';
-import CashierShiftModal from '../../components/cashier/CashierShiftModal';
-import '../../styles/pos.css';
+import { useCashierShiftModal } from '../../contexts/CashierShiftModalContext';
 
 const PRODUCT_PAGE_SIZE = 120;
 
@@ -25,14 +23,14 @@ export default function PosPage() {
   const qc = useQueryClient();
   const barcodeRef = useRef(null);
   const scanningRef = useRef(false);
-  const { storeId, storeName, storeLoading, noAssignment, multipleAssignment } = useCashierStore();
+  const { storeId, noAssignment, multipleAssignment } = useCashierStore();
   const [search, setSearch] = useState('');
   const [barcode, setBarcode] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(ALL_CATEGORY_ID);
   const [selectedLineId, setSelectedLineId] = useState(null);
   const [payOpen, setPayOpen] = useState(false);
-  const [shiftOpen, setShiftOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
+  const { open: shiftModalOpen } = useCashierShiftModal();
 
   const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
@@ -64,12 +62,12 @@ export default function PosPage() {
   }, [storeId]);
 
   useEffect(() => {
-    if (!returnOpen && !payOpen && !shiftOpen && storeId) {
-      const t = setTimeout(() => barcodeRef.current?.focus(), 50);
-      return () => clearTimeout(t);
+    if (!returnOpen && !payOpen && storeId) {
+      const timer = setTimeout(() => barcodeRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
     }
     return undefined;
-  }, [returnOpen, payOpen, shiftOpen, storeId]);
+  }, [returnOpen, payOpen, storeId]);
 
   const { data: categories = [], isPending: categoriesLoading } = useQuery({
     queryKey: ['pos-categories'],
@@ -78,8 +76,10 @@ export default function PosPage() {
   });
 
   const searchActive = search.trim().length > 0;
-  const categoryFilterId = searchActive ? undefined : selectedCategoryId ?? undefined;
-  const showCategoryPicker = !searchActive && selectedCategoryId == null;
+  const categoryFilterId =
+    searchActive || selectedCategoryId === ALL_CATEGORY_ID
+      ? undefined
+      : selectedCategoryId;
 
   const { data: productsData, isPending: productsLoading } = useQuery({
     queryKey: ['pos-products', storeId, categoryFilterId, search],
@@ -94,7 +94,7 @@ export default function PosPage() {
           activeOnly: true,
         })
         .then((r) => r.data),
-    enabled: !!storeId && (searchActive || selectedCategoryId != null),
+    enabled: !!storeId,
   });
 
   const products = productsData?.content ?? [];
@@ -148,7 +148,7 @@ export default function PosPage() {
   );
 
   useBarcodeScanner({
-    enabled: !!storeId && !payOpen && !shiftOpen && !returnOpen,
+    enabled: !!storeId && !payOpen && !shiftModalOpen && !returnOpen,
     barcodeInputRef: barcodeRef,
     onScan: resolveBarcode,
     alwaysCapture: true,
@@ -211,8 +211,24 @@ export default function PosPage() {
         state: { autoPrint: true, fromCashier: true },
       });
     },
-    onError: (e) => toast.error(e.response?.data?.message ?? t('pos.saleFailed')),
+    onError: (e) => {
+      const msg = e.response?.data?.message ?? t('pos.saleFailed');
+      toast.error(msg, { id: 'pos-checkout-error' });
+    },
   });
+
+  const handleConfirmPayment = (payment) => {
+    if (checkoutMutation.isPending) return;
+    if (
+      payment.paymentMethod === 'MIXED' &&
+      payment.cashAmount != null &&
+      Number(payment.cashAmount) > total + 0.001
+    ) {
+      toast.error(t('pos.mixedCashExceeds'), { id: 'mixed-cash-exceed' });
+      return;
+    }
+    checkoutMutation.mutate(payment);
+  };
 
   const handleQtyDelta = (productId, delta) => {
     const item = items.find((i) => i.productId === productId);
@@ -223,97 +239,76 @@ export default function PosPage() {
   const total = getTotal();
   const discountTotal = getDiscountTotal();
   const storeBlocked = noAssignment || multipleAssignment;
-  const categoryName = categories.find((c) => c.id === selectedCategoryId)?.name ?? '';
-
   return (
-    <div className="pos-shell pos-shell--register">
-      <header className="pos-register-header">
-        {storeId && (
-          <div className="pos-toolbar__store-badge">
-            <Store size={16} className="shrink-0 text-emerald-600" aria-hidden />
-            <div className="min-w-0">
-              <p className="text-[11px] text-slate-500">{t('pos.assignedStore')}</p>
-              <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                {storeLoading ? t('common.loading') : storeName}
-              </p>
-            </div>
-          </div>
-        )}
-        {shift && (
-          <button type="button" className="pos-shift-badge" onClick={() => setShiftOpen(true)}>
-            <Clock size={16} />
-            <span>{shift.status === 'OPEN' ? t('pos.shiftOpen') : t('pos.shiftClosedLabel')}</span>
-          </button>
-        )}
-        <div className="pos-toolbar__barcode pos-toolbar__barcode--compact">
-          <ScanLine size={16} className="text-emerald-600" aria-hidden />
-          <input
-            ref={barcodeRef}
-            value={barcode}
-            onChange={(e) => setBarcode(e.target.value)}
-            onKeyDown={handleBarcodeKeyDown}
-            disabled={!storeId}
-            placeholder={t('pos.barcodePh')}
-            autoComplete="off"
-            className="pos-barcode-input"
-          />
-        </div>
-      </header>
+    <div className="cashier-register d-flex flex-column flex-grow-1 min-h-0">
+      <input
+        ref={barcodeRef}
+        type="text"
+        value={barcode}
+        onChange={(e) => setBarcode(e.target.value)}
+        onKeyDown={handleBarcodeKeyDown}
+        disabled={!storeId}
+        autoComplete="off"
+        tabIndex={-1}
+        aria-hidden
+        className="pos-barcode-hidden"
+      />
 
       {storeBlocked ? (
-        <p className="pos-alert">{noAssignment ? t('pos.noStoreAssigned') : t('pos.multipleStoresAssigned')}</p>
+        <div className="alert alert-warning mb-0">
+          {noAssignment ? t('pos.noStoreAssigned') : t('pos.multipleStoresAssigned')}
+        </div>
       ) : !storeId ? (
-        <p className="pos-alert">{t('common.loading')}</p>
+        <div className="alert alert-secondary mb-0">{t('common.loading')}</div>
       ) : (
-        <div className="pos-page pos-page--register">
-          <PosOrderPanel
-            items={items}
-            selectedLineId={selectedLineId}
-            onSelectLine={setSelectedLineId}
-            onQtyDelta={handleQtyDelta}
-            onSetQuantity={updateQuantity}
-            onUpdatePrice={updateUnitPrice}
-            onUpdateLineSubtotal={updateLineSubtotal}
-            onUpdateDiscountPercent={updateDiscountPercent}
-            onRemove={removeItem}
-            onClear={clearCart}
-            onReturn={() => setReturnOpen(true)}
-            total={total}
-            discountTotal={discountTotal}
-            itemCount={itemCount}
-            onCheckout={() => setPayOpen(true)}
-            checkoutDisabled={items.length === 0 || checkoutMutation.isPending || shift?.status !== 'OPEN'}
-          />
-          <PosCatalogPanel
-            search={search}
-            onSearchChange={setSearch}
-            onSearchEnter={handleSearchEnter}
-            categories={categories}
-            categoriesLoading={categoriesLoading}
-            selectedCategoryId={selectedCategoryId}
-            onSelectCategory={(id) => {
-              setSelectedCategoryId(id);
-              setSearch('');
-            }}
-            onBackToCategories={() => setSelectedCategoryId(null)}
-            showCategoryPicker={showCategoryPicker}
-            searchActive={searchActive}
-            products={products}
-            productsLoading={productsLoading}
-            categoryName={categoryName}
-            onAddProduct={addProductToCart}
-          />
+        <div className="cashier-register__split">
+            <div className="cashier-register__left">
+              <PosOrderPanel
+                className={payOpen ? 'is-slide-away' : ''}
+                items={items}
+                selectedLineId={selectedLineId}
+                onSelectLine={setSelectedLineId}
+                onQtyDelta={handleQtyDelta}
+                onUpdatePrice={updateUnitPrice}
+                onUpdateDiscountPercent={updateDiscountPercent}
+                onRemove={removeItem}
+                onClear={clearCart}
+                onReturn={() => setReturnOpen(true)}
+                total={total}
+                discountTotal={discountTotal}
+                onCheckout={() => setPayOpen(true)}
+                checkoutDisabled={items.length === 0 || checkoutMutation.isPending || shift?.status !== 'OPEN'}
+              />
+              <PosPaymentFlow
+                open={payOpen}
+                onClose={() => setPayOpen(false)}
+                items={items}
+                total={total}
+                discountTotal={discountTotal}
+                isPending={checkoutMutation.isPending}
+                onConfirm={handleConfirmPayment}
+              />
+            </div>
+            <PosCatalogPanel
+              search={search}
+              onSearchChange={setSearch}
+              onSearchEnter={handleSearchEnter}
+              scanDisabled={!storeId}
+              onBarcodeFocus={() => barcodeRef.current?.focus()}
+              categories={categories}
+              categoriesLoading={categoriesLoading}
+              selectedCategoryId={selectedCategoryId}
+              onSelectCategory={(id) => {
+                setSelectedCategoryId(id);
+                setSearch('');
+              }}
+              searchActive={searchActive}
+              products={products}
+              productsLoading={productsLoading}
+              onAddProduct={addProductToCart}
+            />
         </div>
       )}
-
-      <PosPaymentFlow
-        open={payOpen}
-        onClose={() => setPayOpen(false)}
-        total={total}
-        discountTotal={discountTotal}
-        isPending={checkoutMutation.isPending}
-        onConfirm={(payment) => checkoutMutation.mutate(payment)}
-      />
 
       <PosReturnModal
         open={returnOpen}
@@ -325,12 +320,6 @@ export default function PosPage() {
         }}
       />
 
-      <CashierShiftModal
-        open={shiftOpen}
-        onClose={() => setShiftOpen(false)}
-        storeId={storeId}
-        shift={shift}
-      />
     </div>
   );
 }

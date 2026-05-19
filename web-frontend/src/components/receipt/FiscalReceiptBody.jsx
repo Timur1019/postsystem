@@ -97,7 +97,7 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
       </header>
 
       <section className="receipt-section mt-2 space-y-0.5">
-        <div className="receipt-meta-grid grid grid-cols-2 gap-x-1 gap-y-1">
+        <div className="receipt-meta-grid grid grid-cols-2 gap-x-2 gap-y-1">
           <div className="min-w-0">
             <span className="receipt-meta-label">{t('fiscalReceipt.date')}: </span>
             <span>{date}</span>
@@ -106,11 +106,11 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
             <span className="receipt-meta-label">{t('fiscalReceipt.time')}: </span>
             <span>{time}</span>
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 col-span-2">
             <span className="receipt-meta-label">{t('fiscalReceipt.receiptNoShort')}: </span>
             <span className="break-all">№{sale.receiptNumber}</span>
           </div>
-          <div className="min-w-0 text-right">
+          <div className="min-w-0 col-span-2">
             <span className="receipt-meta-label">{t('fiscalReceipt.employee')}: </span>
             <span className="break-words">{sale.cashierName}</span>
           </div>

@@ -2,14 +2,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from './store/authStore';
-import ThemeSync from './components/shared/ThemeSync';
 import ThemedToaster from './components/shared/ThemedToaster';
 
 import LoginPage         from './pages/LoginPage';
 import DashboardPage     from './pages/DashboardPage';
 import ProductsPage      from './pages/ProductsPage';
 import CategoriesPage    from './pages/CategoriesPage';
-import CheckoutPage      from './pages/CheckoutPage';
 import ReportsPage       from './pages/ReportsPage';
 import SalesLedgerPage   from './pages/SalesLedgerPage';
 import ReturnsPage       from './pages/ReturnsPage';
@@ -69,6 +67,12 @@ function ProtectedRoute({ children, requiredRole }) {
   return children;
 }
 
+function CheckoutRedirect() {
+  const user = useAuthStore((s) => s.user);
+  if (user?.role === 'CASHIER') return <Navigate to="/cashier/pos" replace />;
+  return <Navigate to="/dashboard" replace />;
+}
+
 function SuperAdminRoute({ children }) {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
@@ -79,7 +83,6 @@ function SuperAdminRoute({ children }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeSync />
       <HtmlLangSync />
       <BrowserRouter>
         <AuthBootstrap>
@@ -122,7 +125,7 @@ export default function App() {
               <ProtectedRoute requiredRole="MANAGER"><OrdersListPage /></ProtectedRoute>
             } />
             <Route path="orders" element={<Navigate to="/orders/list" replace />} />
-            <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="checkout" element={<CheckoutRedirect />} />
             <Route path="reports/sales" element={
               <ProtectedRoute requiredRole="MANAGER"><SalesLedgerPage /></ProtectedRoute>
             } />

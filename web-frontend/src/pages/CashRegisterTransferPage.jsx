@@ -7,8 +7,7 @@ import { format, parseISO } from 'date-fns';
 import { cashRegisterApi } from '../services/api';
 import CashTransferFiltersDrawer from '../components/cash-registers/CashTransferFiltersDrawer';
 
-const fmtMoney = (n) =>
-  new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n) || 0);
+import { fmtMoney } from '../utils/formatMoney';
 
 const defaultFilters = {
   registerNumber: '',
