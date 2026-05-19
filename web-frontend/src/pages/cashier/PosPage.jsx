@@ -5,8 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { printReceiptAfterSale } from '../../utils/printReceipt';
+import { fmtMoney as fmt } from '../../utils/formatMoney';
 import { categoryApi, productApi, saleApi, cashierShiftApi } from '../../services/api';
-import { useCartStore, lineDiscountAmount } from '../../store/cartStore';
+import { useCartStore, lineDiscountAmount, lineSubtotal } from '../../store/cartStore';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import PosOrderPanel from '../../components/cashier/PosOrderPanel';
@@ -117,11 +118,19 @@ export default function PosPage() {
         id: product.id,
         name: product.name,
         sku: product.sku,
+        costPrice: Number(product.costPrice ?? 0),
         sellingPrice: Number(product.sellingPrice),
         defaultDiscountPercent: Number(product.defaultDiscountPercent ?? 0),
         taxRate: Number(product.taxRate ?? 12),
         stockQuantity: product.stockQuantity,
       });
+      const line = useCartStore.getState().items.find((i) => i.productId === product.id);
+      if (line) {
+        toast.success(
+          t('pos.itemAdded', { name: product.name, sum: fmt(lineSubtotal(line)) }),
+          { duration: 2200 }
+        );
+      }
       setSelectedLineId(product.id);
     },
     [addItem, shift, t]
@@ -135,7 +144,14 @@ export default function PosPage() {
       try {
         const res = await productApi.getByBarcode(trimmed, storeId);
         addProductToCart(res.data);
-        toast.success(t('pos.barcodeAdded', { name: res.data.name }));
+        const line = useCartStore.getState().items.find((i) => i.productId === res.data.id);
+        toast.success(
+          t('pos.itemAdded', {
+            name: res.data.name,
+            sum: line ? fmt(lineSubtotal(line)) : fmt(res.data.sellingPrice),
+          }),
+          { duration: 2200 }
+        );
         setBarcode('');
       } catch (e) {
         toast.error(e.response?.data?.message ?? t('pos.barcodeNotFound'));
@@ -262,7 +278,25 @@ export default function PosPage() {
         <div className="alert alert-secondary mb-0">{t('common.loading')}</div>
       ) : (
         <div className="cashier-register__split">
-            <div className="cashier-register__left">
+            <PosCatalogPanel
+              search={search}
+              onSearchChange={setSearch}
+              onSearchEnter={handleSearchEnter}
+              scanDisabled={!storeId}
+              onBarcodeFocus={() => barcodeRef.current?.focus()}
+              categories={categories}
+              categoriesLoading={categoriesLoading}
+              selectedCategoryId={selectedCategoryId}
+              onSelectCategory={(id) => {
+                setSelectedCategoryId(id);
+                setSearch('');
+              }}
+              searchActive={searchActive}
+              products={products}
+              productsLoading={productsLoading}
+              onAddProduct={addProductToCart}
+            />
+            <div className="cashier-register__receipt">
               <PosOrderPanel
                 className={payOpen ? 'is-slide-away' : ''}
                 items={items}
@@ -289,24 +323,6 @@ export default function PosPage() {
                 onConfirm={handleConfirmPayment}
               />
             </div>
-            <PosCatalogPanel
-              search={search}
-              onSearchChange={setSearch}
-              onSearchEnter={handleSearchEnter}
-              scanDisabled={!storeId}
-              onBarcodeFocus={() => barcodeRef.current?.focus()}
-              categories={categories}
-              categoriesLoading={categoriesLoading}
-              selectedCategoryId={selectedCategoryId}
-              onSelectCategory={(id) => {
-                setSelectedCategoryId(id);
-                setSearch('');
-              }}
-              searchActive={searchActive}
-              products={products}
-              productsLoading={productsLoading}
-              onAddProduct={addProductToCart}
-            />
         </div>
       )}
 

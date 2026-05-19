@@ -136,6 +136,30 @@ public interface SaleRepository extends JpaRepository<Sale, UUID> {
     );
 
     @Query("""
+        SELECT s FROM Sale s
+        WHERE s.cashier.username = :username
+        AND (:shiftId IS NULL OR s.cashierShift.id = :shiftId)
+        AND (:excludeShiftId IS NULL OR s.cashierShift IS NULL OR s.cashierShift.id <> :excludeShiftId)
+        AND (:receiptNumber IS NULL OR :receiptNumber = '' OR LOWER(s.receiptNumber) LIKE LOWER(CONCAT('%', :receiptNumber, '%')))
+        AND (:paymentMethod IS NULL OR s.paymentMethod = :paymentMethod)
+        AND (:status IS NULL OR s.status = :status)
+        AND (:dateFrom IS NULL OR s.createdAt >= :dateFrom)
+        AND (:dateTo IS NULL OR s.createdAt < :dateTo)
+        ORDER BY s.createdAt DESC
+        """)
+    Page<Sale> searchCashierSales(
+        @Param("username") String username,
+        @Param("shiftId") UUID shiftId,
+        @Param("excludeShiftId") UUID excludeShiftId,
+        @Param("receiptNumber") String receiptNumber,
+        @Param("paymentMethod") Sale.PaymentMethod paymentMethod,
+        @Param("status") Sale.SaleStatus status,
+        @Param("dateFrom") java.time.Instant dateFrom,
+        @Param("dateTo") java.time.Instant dateTo,
+        Pageable pageable
+    );
+
+    @Query("""
         SELECT COALESCE(SUM(s.totalAmount), 0)
         FROM Sale s
         WHERE s.createdAt >= :start AND s.createdAt < :end AND s.status = :status

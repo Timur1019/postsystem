@@ -15,7 +15,7 @@ import {
   Check,
 } from 'lucide-react';
 import NumericKeypad, { formatKeypadAmount } from './NumericKeypad';
-import { lineSubtotal } from '../../store/cartStore';
+import PosOrderComposition from './PosOrderComposition';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
@@ -66,61 +66,6 @@ function PayStepHeader({ title, onBack, onClose }) {
   );
 }
 
-function PayOrderMini({ items, total, discountTotal }) {
-  const { t } = useTranslation();
-  const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
-
-  return (
-    <div className="pos-pay-panel__order">
-      <div className="pos-pay-panel__order-head">
-        <span className="pos-pay-panel__order-label">{t('pos.orderComposition')}</span>
-        <span className="pos-pay-panel__order-badge">
-          {t('pos.orderPositions', { count: items.length })}
-        </span>
-      </div>
-      <div className="pos-pay-panel__order-card">
-        {items.length > 0 && (
-          <div
-            className={`pos-pay-panel__order-items${items.length > 4 ? ' is-scrollable' : ''}`}
-            aria-label={t('pos.orderComposition')}
-          >
-            <ul className="pos-pay-panel__order-list">
-              {items.map((item) => (
-                <li key={item.productId} className="pos-pay-panel__order-line">
-                  <span className="pos-pay-panel__order-name">
-                    {item.name}
-                    {item.quantity > 1 ? (
-                      <span className="pos-pay-panel__order-qty"> × {item.quantity}</span>
-                    ) : null}
-                  </span>
-                  <span className="pos-pay-panel__order-dots" aria-hidden />
-                  <span className="pos-pay-panel__order-sum">{fmt(lineSubtotal(item))}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="pos-pay-panel__order-summary">
-          <div className="pos-pay-panel__order-row">
-            <span>{t('pos.subtotal')}</span>
-            <span>{fmt(subtotal)}</span>
-          </div>
-          {discountTotal > 0 && (
-            <div className="pos-pay-panel__order-row pos-pay-panel__order-row--disc">
-              <span>{t('pos.discount')}</span>
-              <span>−{fmt(discountTotal)}</span>
-            </div>
-          )}
-          <div className="pos-pay-panel__order-grand">
-            <span>{t('pos.total')}</span>
-            <strong>{fmt(total)}</strong>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function PosPaymentFlow({
   open,
@@ -289,7 +234,13 @@ export default function PosPaymentFlow({
       aria-label={t('pos.paymentTitle')}
       aria-hidden={!open}
     >
-      <PayOrderMini items={items} total={toPay} discountTotal={discountTotal} />
+      <PosOrderComposition
+        className="pos-pay-panel__composition"
+        items={items}
+        total={toPay}
+        discountTotal={discountTotal}
+        compact
+      />
 
       <div className="pos-pay-panel__body">
         <PayStepHeader

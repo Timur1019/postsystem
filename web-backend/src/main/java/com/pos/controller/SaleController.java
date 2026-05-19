@@ -108,13 +108,28 @@ public class SaleController {
         @AuthenticationPrincipal UserDetails currentUser,
         @RequestParam(required = false) UUID shiftId,
         @RequestParam(required = false) UUID excludeShiftId,
-        @PageableDefault(size = 50) Pageable pageable
+        @RequestParam(required = false) String receiptNumber,
+        @RequestParam(required = false) String paymentMethod,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+        @PageableDefault(size = 10) Pageable pageable
     ) {
         if (shiftId != null && excludeShiftId != null) {
             throw new BadRequestException("Use either shiftId or excludeShiftId, not both");
         }
         return ResponseEntity.ok(
-            saleService.getSalesByCashier(currentUser.getUsername(), shiftId, excludeShiftId, pageable)
+            saleService.getSalesByCashier(
+                currentUser.getUsername(),
+                shiftId,
+                excludeShiftId,
+                receiptNumber,
+                paymentMethod,
+                status,
+                from,
+                to,
+                pageable
+            )
         );
     }
 }

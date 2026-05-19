@@ -47,8 +47,13 @@ public interface SaleService {
 
     PageResponse<SaleResponse> getSalesByCashier(
         String username,
-        java.util.UUID shiftId,
-        java.util.UUID excludeShiftId,
+        UUID shiftId,
+        UUID excludeShiftId,
+        String receiptNumber,
+        String paymentMethodStr,
+        String statusStr,
+        LocalDate from,
+        LocalDate to,
         Pageable pageable
     );
 

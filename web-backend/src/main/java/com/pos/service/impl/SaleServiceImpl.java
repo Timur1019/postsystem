@@ -294,17 +294,54 @@ public class SaleServiceImpl implements SaleService {
         String username,
         UUID shiftId,
         UUID excludeShiftId,
+        String receiptNumber,
+        String paymentMethodStr,
+        String statusStr,
+        LocalDate from,
+        LocalDate to,
         Pageable pageable
     ) {
-        Page<Sale> page;
-        if (shiftId != null) {
-            page = saleRepository.findByCashierUsernameAndShiftId(username, shiftId, pageable);
-        } else if (excludeShiftId != null) {
-            page = saleRepository.findByCashierUsernameExcludingShiftId(username, excludeShiftId, pageable);
-        } else {
-            page = saleRepository.findByCashier_Username(username, pageable);
-        }
+        Sale.PaymentMethod paymentMethod = parseMySalesPaymentMethod(paymentMethodStr);
+        Sale.SaleStatus status = parseMySalesStatus(statusStr);
+        String receipt = receiptNumber != null && !receiptNumber.isBlank() ? receiptNumber.trim() : null;
+        ZoneId zone = ZoneId.systemDefault();
+        Instant dateFrom = from != null ? from.atStartOfDay(zone).toInstant() : null;
+        Instant dateTo = to != null ? to.plusDays(1).atStartOfDay(zone).toInstant() : null;
+
+        Page<Sale> page = saleRepository.searchCashierSales(
+            username,
+            shiftId,
+            excludeShiftId,
+            receipt,
+            paymentMethod,
+            status,
+            dateFrom,
+            dateTo,
+            pageable
+        );
         return PageResponse.from(page.map(saleMapper::toSummaryResponse));
+    }
+
+    private static Sale.PaymentMethod parseMySalesPaymentMethod(String s) {
+        if (s == null || s.isBlank()) {
+            return null;
+        }
+        try {
+            return Sale.PaymentMethod.valueOf(s.trim());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private static Sale.SaleStatus parseMySalesStatus(String s) {
+        if (s == null || s.isBlank()) {
+            return null;
+        }
+        try {
+            return Sale.SaleStatus.valueOf(s.trim());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     @Override

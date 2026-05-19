@@ -50,7 +50,9 @@
     "stores": "Do‘konlar",
     "users": "Foydalanuvchilar",
     "handbook": "Qo'llanma",
-    "logout": "Chiqish"
+    "logout": "Chiqish",
+    "collapseMenu": "Menyuni yig‘ish",
+    "expandMenu": "Menyuni ochish"
   },
   "theme": {
     "switchToDay": "Kunduzgi mavzuga o‘tish",
@@ -946,6 +948,8 @@
     "barcodePh": "Shtrix-kod yoki QR ni skanerlang",
     "barcodeNotFound": "Mahsulot topilmadi",
     "barcodeAdded": "Chekka: {{name}}",
+    "itemAdded": "{{name}} — {{sum}}",
+    "cartLineCalc": "{{price}} × {{qty}} {{unit}}",
     "scannerHint": "USB/Bluetooth skaner: shtrix-kod maydoniga yoki istalgan vaqtda skaner qiling — mahsulot savatga qoʻshiladi",
     "pickCategory": "Kategoriyani tanlang",
     "backToCategories": "Kategoriyalarga",
@@ -968,6 +972,7 @@
     "orderTitle": "Joriy chek",
     "orderComposition": "Buyurtma tarkibi",
     "orderPositions": "{{count}} ta",
+    "grandTotal": "JAMI",
     "subtotal": "Oraliq jami",
     "unitPcs": "dona",
     "productCode": "Kod",
@@ -978,6 +983,8 @@
     "colPrice": "Narx",
     "colQty": "Soni",
     "colSum": "Summa",
+    "colCost": "Tan narxi",
+    "totalCost": "Tan narxi jami",
     "discount": "Chegirma",
     "receiptTypeTitle": "Chek turi",
     "receiptType": {
@@ -1070,6 +1077,15 @@
     "returnDefaultReason": "Kassada qaytarish",
     "voidSale": "Chekni bekor qilish",
     "statusVoided": "Bekor qilingan",
+    "statusCompleted": "Yakunlangan",
+    "statusRefunded": "Qaytarilgan",
+    "salesFiltersTitle": "Filtrlar",
+    "salesFilterFrom": "Sanadan",
+    "salesFilterTo": "Sanagacha",
+    "salesFilterStatus": "Holat",
+    "salesFilterAll": "Barchasi",
+    "salesFilterReset": "Tozalash",
+    "shiftSalesList": "Smena savdolari",
     "editHint": "Ikki marta bosing — narx, miqdor yoki summa"
   },
   "handbook": {

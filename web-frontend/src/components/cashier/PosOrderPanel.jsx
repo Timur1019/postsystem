@@ -1,8 +1,8 @@
 // src/components/cashier/PosOrderPanel.jsx
 import { useEffect, useRef, useState } from 'react';
-import { Minus, Plus, Trash2, RotateCcw, Percent, Banknote } from 'lucide-react';
+import { Minus, Plus, Trash2, Percent, Banknote } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { lineDiscountAmount, lineSubtotal } from '../../store/cartStore';
+import { lineCostTotal, lineDiscountAmount, lineSubtotal } from '../../store/cartStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 
 export default function PosOrderPanel({
@@ -33,6 +33,7 @@ export default function PosOrderPanel({
   }, [selectedLineId, items]);
 
   const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+  const costTotal = items.reduce((s, i) => s + lineCostTotal(i), 0);
   const discountPct =
     items.length > 0
       ? Math.round(
@@ -49,7 +50,12 @@ export default function PosOrderPanel({
   return (
     <section className={`pos-order-panel${className ? ` ${className}` : ''}`}>
       <header className="pos-order-panel__head">
-        <h2 className="pos-order-panel__title">{t('pos.orderTitle')}</h2>
+        <h2 className="pos-order-panel__title">
+          {t('pos.orderTitle')}
+          {items.length > 0 ? (
+            <span className="pos-order-panel__badge">{t('pos.orderPositions', { count: items.length })}</span>
+          ) : null}
+        </h2>
         <div className="pos-order-panel__actions">
           {onReturn && (
             <button type="button" className="pos-order-panel__link pos-order-panel__link--warn" onClick={onReturn}>
@@ -68,27 +74,50 @@ export default function PosOrderPanel({
         {items.length === 0 ? (
           <p className="pos-order-panel__empty">{t('pos.cartEmpty')}</p>
         ) : (
-          <ul className="pos-cart-lines">
-            {items.map((item) => {
-              const active = selectedLineId === item.productId;
-              return (
-                <li
-                  key={item.productId}
-                  ref={(el) => {
-                    if (el) rowRefs.current[item.productId] = el;
-                    else delete rowRefs.current[item.productId];
-                  }}
-                  className={`pos-cart-line${active ? ' is-active' : ''}`}
-                  onClick={() => onSelectLine(item.productId)}
-                >
-                  <div className="pos-cart-line__main">
-                    <div className="pos-cart-line__info">
-                      <p className="pos-cart-line__name">{item.name}</p>
+          <div className="pos-cart-table">
+            <div className="pos-cart-table__head" role="row">
+              <span className="pos-cart-table__col pos-cart-table__col--name">{t('pos.colName')}</span>
+              <span className="pos-cart-table__col pos-cart-table__col--cost">{t('pos.colCost')}</span>
+              <span className="pos-cart-table__col pos-cart-table__col--price">{t('pos.colPrice')}</span>
+              <span className="pos-cart-table__col pos-cart-table__col--qty">{t('pos.colQty')}</span>
+              <span className="pos-cart-table__col pos-cart-table__col--sum">{t('pos.colSum')}</span>
+            </div>
+            <ul className="pos-cart-table__body">
+              {items.map((item) => {
+                const active = selectedLineId === item.productId;
+                const lineSum = lineSubtotal(item);
+                const lineCost = lineCostTotal(item);
+                return (
+                  <li
+                    key={item.productId}
+                    ref={(el) => {
+                      if (el) rowRefs.current[item.productId] = el;
+                      else delete rowRefs.current[item.productId];
+                    }}
+                    className={`pos-cart-table__row${active ? ' is-active' : ''}`}
+                    role="row"
+                    onClick={() => onSelectLine(item.productId)}
+                  >
+                    <div className="pos-cart-table__col pos-cart-table__col--name">
+                      <span className="pos-cart-table__name" title={item.name}>
+                        {item.name}
+                      </span>
+                      {item.sku ? <span className="pos-cart-table__sku">{item.sku}</span> : null}
+                    </div>
+
+                    <div className="pos-cart-table__col pos-cart-table__col--cost">
+                      <span className="pos-cart-table__cost">{fmt(lineCost)}</span>
+                      <span className="pos-cart-table__cost-unit">
+                        {fmt(item.costPrice ?? 0)} × {item.quantity}
+                      </span>
+                    </div>
+
+                    <div className="pos-cart-table__col pos-cart-table__col--price">
                       {editingPriceId === item.productId ? (
                         <input
                           type="number"
                           step="0.01"
-                          className="pos-cart-line__price-input"
+                          className="pos-cart-table__price-input"
                           value={priceDraft}
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => setPriceDraft(e.target.value)}
@@ -102,104 +131,128 @@ export default function PosOrderPanel({
                       ) : (
                         <button
                           type="button"
-                          className="pos-cart-line__unit"
+                          className="pos-cart-table__price-btn"
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditingPriceId(item.productId);
                             setPriceDraft(String(item.unitPrice));
                           }}
                         >
-                          {fmt(item.unitPrice)} / {t('pos.unitPcs')}
+                          {fmt(item.unitPrice)}
                         </button>
                       )}
                     </div>
 
-                    <div
-                      className="pos-qty-control"
-                      onClick={(e) => e.stopPropagation()}
-                      role="group"
-                      aria-label={t('pos.colQty')}
-                    >
-                      <button type="button" className="pos-qty-control__btn" onClick={() => onQtyDelta(item.productId, -1)}>
-                        <Minus size={18} strokeWidth={2} />
-                      </button>
-                      <span className="pos-qty-control__val">{item.quantity}</span>
-                      <button type="button" className="pos-qty-control__btn" onClick={() => onQtyDelta(item.productId, 1)}>
-                        <Plus size={18} strokeWidth={2} />
-                      </button>
+                    <div className="pos-cart-table__col pos-cart-table__col--qty" onClick={(e) => e.stopPropagation()}>
+                      <div className="pos-qty-control pos-qty-control--compact" role="group" aria-label={t('pos.colQty')}>
+                        <button type="button" className="pos-qty-control__btn" onClick={() => onQtyDelta(item.productId, -1)}>
+                          <Minus size={14} strokeWidth={2} />
+                        </button>
+                        <span className="pos-qty-control__val">{item.quantity}</span>
+                        <button type="button" className="pos-qty-control__btn" onClick={() => onQtyDelta(item.productId, 1)}>
+                          <Plus size={14} strokeWidth={2} />
+                        </button>
+                      </div>
                     </div>
 
-                    <span className="pos-cart-line__sum">{fmt(lineSubtotal(item))}</span>
-                  </div>
-                  {lineDiscountAmount(item) > 0 && (
-                    <p className="pos-cart-line__disc">
-                      −{fmt(lineDiscountAmount(item))} ({item.discountPercent ?? 0}%)
-                    </p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+                    <div className="pos-cart-table__col pos-cart-table__col--sum">
+                      <span className="pos-cart-table__sum">{fmt(lineSum)}</span>
+                    </div>
+
+                    {lineDiscountAmount(item) > 0 && (
+                      <p className="pos-cart-table__disc">
+                        −{fmt(lineDiscountAmount(item))} ({item.discountPercent ?? 0}%)
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         )}
       </div>
 
       <div className="pos-order-panel__bottom">
-      {selected && (
-        <div className="pos-line-toolbar">
-          <div className="pos-line-toolbar__discount">
-            <Percent size={15} aria-hidden />
-            <span>{t('pos.lineDiscount')}</span>
-            <button type="button" onClick={() => onUpdateDiscountPercent(selected.productId, Math.max(0, (Number(selected.discountPercent) || 0) - 1))}>
-              <Minus size={16} />
-            </button>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={selected.discountPercent ?? 0}
-              onChange={(e) => {
-                const v = e.target.value.replace(',', '.');
-                if (v === '' || v === '.') {
-                  onUpdateDiscountPercent(selected.productId, 0);
-                  return;
+        {selected && (
+          <div className="pos-line-toolbar">
+            <div className="pos-line-toolbar__discount">
+              <Percent size={15} aria-hidden />
+              <span>{t('pos.lineDiscount')}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  onUpdateDiscountPercent(selected.productId, Math.max(0, (Number(selected.discountPercent) || 0) - 1))
                 }
-                const n = Number(v);
-                if (!Number.isNaN(n)) onUpdateDiscountPercent(selected.productId, n);
-              }}
-            />
-            <span>%</span>
-            <button type="button" onClick={() => onUpdateDiscountPercent(selected.productId, Math.min(100, (Number(selected.discountPercent) || 0) + 1))}>
-              <Plus size={16} />
+              >
+                <Minus size={16} />
+              </button>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={selected.discountPercent ?? 0}
+                onChange={(e) => {
+                  const v = e.target.value.replace(',', '.');
+                  if (v === '' || v === '.') {
+                    onUpdateDiscountPercent(selected.productId, 0);
+                    return;
+                  }
+                  const n = Number(v);
+                  if (!Number.isNaN(n)) onUpdateDiscountPercent(selected.productId, n);
+                }}
+              />
+              <span>%</span>
+              <button
+                type="button"
+                onClick={() =>
+                  onUpdateDiscountPercent(
+                    selected.productId,
+                    Math.min(100, (Number(selected.discountPercent) || 0) + 1)
+                  )
+                }
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+            <button
+              type="button"
+              className="pos-line-toolbar__remove"
+              onClick={() => onRemove(selected.productId)}
+              title={t('common.delete')}
+            >
+              <Trash2 size={18} />
             </button>
           </div>
-          <button type="button" className="pos-line-toolbar__remove" onClick={() => onRemove(selected.productId)} title={t('common.delete')}>
-            <Trash2 size={18} />
+        )}
+
+        <div className="pos-order-panel__checkout">
+          <div className="pos-order-panel__foot">
+            <div className="pos-order-panel__row pos-order-panel__row--cost">
+            <span>{t('pos.totalCost')}</span>
+            <span>{fmt(costTotal)}</span>
+          </div>
+          <div className="pos-order-panel__row">
+            <span>{t('pos.subtotal')}</span>
+            <span>{fmt(subtotal)}</span>
+          </div>
+          <div className="pos-order-panel__row pos-order-panel__row--disc">
+            <span>
+              {t('pos.discount')}
+              {discountPct > 0 ? ` ${discountPct}%` : ''}
+            </span>
+            <span>−{fmt(discountTotal)}</span>
+            </div>
+          </div>
+          <div className="pos-order-panel__grand">
+            <span>{t('pos.grandTotal')}</span>
+            <span>{fmt(total)}</span>
+          </div>
+          <button type="button" className="pos-checkout-btn" disabled={checkoutDisabled} onClick={onCheckout}>
+            <Banknote size={22} strokeWidth={1.75} />
+            <span>
+              {t('pos.toPayment')} — {fmt(total)}
+            </span>
           </button>
         </div>
-      )}
-
-      <footer className="pos-order-panel__foot">
-        <div className="pos-order-panel__row">
-          <span>{t('pos.subtotal')}</span>
-          <span>{fmt(subtotal)}</span>
-        </div>
-        <div className="pos-order-panel__row pos-order-panel__row--disc">
-          <span>
-            {t('pos.discount')}
-            {discountPct > 0 ? ` ${discountPct}%` : ''}
-          </span>
-          <span>−{fmt(discountTotal)}</span>
-        </div>
-        <div className="pos-order-panel__row pos-order-panel__row--total">
-          <span>{t('pos.total')}</span>
-          <span>{fmt(total)}</span>
-        </div>
-        <button type="button" className="pos-checkout-btn" disabled={checkoutDisabled} onClick={onCheckout}>
-          <Banknote size={22} strokeWidth={1.75} />
-          <span>
-            {t('pos.toPayment')} — {fmt(total)}
-          </span>
-        </button>
-      </footer>
       </div>
     </section>
   );

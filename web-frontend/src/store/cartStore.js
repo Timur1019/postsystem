@@ -14,6 +14,10 @@ export const lineDiscountAmount = (item) => {
 
 export const lineSubtotal = (item) => round2(lineGross(item) - lineDiscountAmount(item));
 
+/** Сумма закупа по строке (себестоимость × кол-во) */
+export const lineCostTotal = (item) =>
+  round2((Number(item.costPrice) || 0) * (Number(item.quantity) || 0));
+
 const syncDiscountFromPercent = (item) => ({
   ...item,
   discount: lineDiscountAmount({ ...item, discount: 0 }),
@@ -42,6 +46,7 @@ export const useCartStore = create((set, get) => ({
         productId: product.id,
         name: product.name,
         sku: product.sku,
+        costPrice: Number(product.costPrice ?? 0),
         unitPrice,
         taxRate: Number(product.taxRate ?? 12),
         maxStock: product.stockQuantity,

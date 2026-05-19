@@ -1,65 +1,231 @@
 // src/pages/cashier/CashierMySalesPage.jsx
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { ChevronDown, Clock } from 'lucide-react';
+import { ChevronDown, Clock, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cashierShiftApi, saleApi } from '../../services/api';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 
+const PAGE_SIZE = 10;
+
+const EMPTY_FILTERS = {
+  receiptNumber: '',
+  paymentMethod: '',
+  status: '',
+  from: '',
+  to: '',
+};
+
+function paymentLabel(method, t) {
+  switch (method) {
+    case 'CASH':
+      return t('pos.payCash');
+    case 'CARD':
+      return t('pos.payCard');
+    case 'MIXED':
+      return t('pos.payMixed');
+    case 'MPESA':
+      return 'M-Pesa';
+    default:
+      return method || '—';
+  }
+}
+
+function statusBadge(status, t) {
+  if (status === 'VOIDED') {
+    return <span className="cashier-sales-badge cashier-sales-badge--voided">{t('pos.statusVoided')}</span>;
+  }
+  if (status === 'REFUNDED') {
+    return <span className="cashier-sales-badge cashier-sales-badge--refunded">{t('pos.statusRefunded')}</span>;
+  }
+  return null;
+}
+
+function buildQueryParams(filters, page) {
+  const params = { page, size: PAGE_SIZE };
+  if (filters.receiptNumber?.trim()) params.receiptNumber = filters.receiptNumber.trim();
+  if (filters.paymentMethod) params.paymentMethod = filters.paymentMethod;
+  if (filters.status) params.status = filters.status;
+  if (filters.from) params.from = filters.from;
+  if (filters.to) params.to = filters.to;
+  return params;
+}
+
+function SalesFilters({ filters, onPatch, onApply, onReset, t }) {
+  return (
+    <div className="cashier-sales-card mb-3 flex-shrink-0">
+      <div className="cashier-sales-card__head d-flex align-items-center gap-2">
+        <Filter size={16} aria-hidden />
+        {t('pos.salesFiltersTitle')}
+      </div>
+      <form
+        className="p-2 px-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onApply();
+        }}
+      >
+        <div className="cashier-sales-filters">
+          <div className="cashier-sales-filters__field cashier-sales-filters__field--receipt">
+            <label className="form-label small mb-1" htmlFor="sales-filter-receipt">
+              {t('pos.receipt')}
+            </label>
+            <input
+              id="sales-filter-receipt"
+              type="text"
+              className="form-control form-control-sm"
+              placeholder={t('pos.returnReceiptPh')}
+              value={filters.receiptNumber}
+              onChange={(e) => onPatch({ receiptNumber: e.target.value })}
+            />
+          </div>
+          <div className="cashier-sales-filters__field cashier-sales-filters__field--date">
+            <label className="form-label small mb-1" htmlFor="sales-filter-from">
+              {t('pos.salesFilterFrom')}
+            </label>
+            <input
+              id="sales-filter-from"
+              type="date"
+              className="form-control form-control-sm"
+              value={filters.from}
+              onChange={(e) => onPatch({ from: e.target.value })}
+            />
+          </div>
+          <div className="cashier-sales-filters__field cashier-sales-filters__field--date">
+            <label className="form-label small mb-1" htmlFor="sales-filter-to">
+              {t('pos.salesFilterTo')}
+            </label>
+            <input
+              id="sales-filter-to"
+              type="date"
+              className="form-control form-control-sm"
+              value={filters.to}
+              onChange={(e) => onPatch({ to: e.target.value })}
+            />
+          </div>
+          <div className="cashier-sales-filters__field cashier-sales-filters__field--select">
+            <label className="form-label small mb-1" htmlFor="sales-filter-payment">
+              {t('pos.payment')}
+            </label>
+            <select
+              id="sales-filter-payment"
+              className="form-select form-select-sm"
+              value={filters.paymentMethod}
+              onChange={(e) => onPatch({ paymentMethod: e.target.value })}
+            >
+              <option value="">{t('pos.salesFilterAll')}</option>
+              <option value="CASH">{t('pos.payCash')}</option>
+              <option value="CARD">{t('pos.payCard')}</option>
+              <option value="MIXED">{t('pos.payMixed')}</option>
+            </select>
+          </div>
+          <div className="cashier-sales-filters__field cashier-sales-filters__field--select">
+            <label className="form-label small mb-1" htmlFor="sales-filter-status">
+              {t('pos.salesFilterStatus')}
+            </label>
+            <select
+              id="sales-filter-status"
+              className="form-select form-select-sm"
+              value={filters.status}
+              onChange={(e) => onPatch({ status: e.target.value })}
+            >
+              <option value="">{t('pos.salesFilterAll')}</option>
+              <option value="COMPLETED">{t('pos.statusCompleted')}</option>
+              <option value="VOIDED">{t('pos.statusVoided')}</option>
+              <option value="REFUNDED">{t('pos.statusRefunded')}</option>
+            </select>
+          </div>
+          <div className="cashier-sales-filters__actions">
+            <button type="submit" className="btn btn-success btn-sm">
+              {t('common.apply')}
+            </button>
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onReset}>
+              {t('pos.salesFilterReset')}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function SalesPagination({ page, totalPages, totalElements, onPageChange, t }) {
+  if (!totalElements) return null;
+  return (
+    <div className="cashier-sales-pagination">
+      <span className="text-muted">
+        {t('common.pageOf', { current: page + 1, total: Math.max(totalPages, 1) })}
+        {' · '}
+        {totalElements}
+      </span>
+      <div className="btn-group btn-group-sm">
+        <button
+          type="button"
+          className="btn btn-outline-secondary"
+          disabled={page <= 0}
+          onClick={() => onPageChange(page - 1)}
+        >
+          {t('common.prev')}
+        </button>
+        <button
+          type="button"
+          className="btn btn-outline-secondary"
+          disabled={page >= totalPages - 1}
+          onClick={() => onPageChange(page + 1)}
+        >
+          {t('common.next')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function SalesTable({ rows, isPending, onReturn, voidPending, onRowClick, t }) {
   return (
-    <table className="w-full text-sm">
+    <table className="cashier-sales-table">
       <thead>
-        <tr className="border-b bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-800/50">
-          <th className="px-4 py-3">{t('pos.receipt')}</th>
-          <th className="px-4 py-3">{t('pos.date')}</th>
-          <th className="px-4 py-3">{t('pos.total')}</th>
-          <th className="px-4 py-3">{t('pos.payment')}</th>
-          <th className="px-4 py-3 w-28" />
+        <tr>
+          <th>{t('pos.receipt')}</th>
+          <th>{t('pos.date')}</th>
+          <th>{t('pos.total')}</th>
+          <th>{t('pos.payment')}</th>
+          <th className="cashier-sales-table__actions" />
         </tr>
       </thead>
-      <tbody className="divide-y dark:divide-slate-800">
+      <tbody>
         {isPending ? (
           <tr>
-            <td colSpan={5} className="px-4 py-8 text-center">
+            <td colSpan={5} className="text-center text-muted py-4">
               {t('common.loading')}
             </td>
           </tr>
         ) : rows.length === 0 ? (
           <tr>
-            <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+            <td colSpan={5} className="text-center text-muted py-4">
               {t('pos.noSales')}
             </td>
           </tr>
         ) : (
           rows.map((row) => (
-            <tr
-              key={row.id}
-              className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
-              onClick={() => onRowClick(row)}
-            >
-              <td className="px-4 py-3 font-mono text-xs">
+            <tr key={row.id} onClick={() => onRowClick(row)}>
+              <td className="cashier-sales-table__receipt">
                 {row.receiptNumber}
-                {row.status === 'VOIDED' && (
-                  <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-300">
-                    {t('pos.statusVoided')}
-                  </span>
-                )}
+                {statusBadge(row.status, t)}
               </td>
-              <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+              <td className="text-muted">
                 {row.createdAt ? format(new Date(row.createdAt), 'dd.MM.yyyy HH:mm') : '—'}
               </td>
-              <td className="px-4 py-3 font-semibold">{fmt(row.totalAmount)}</td>
-              <td className="px-4 py-3">{row.paymentMethod}</td>
-              <td className="px-4 py-3">
+              <td className="cashier-sales-table__amount">{fmt(row.totalAmount)}</td>
+              <td>{paymentLabel(row.paymentMethod, t)}</td>
+              <td className="cashier-sales-table__actions">
                 {row.status !== 'VOIDED' && onReturn && (
                   <button
                     type="button"
-                    className="text-xs font-semibold text-amber-700 hover:underline dark:text-amber-400"
+                    className="btn btn-link btn-sm text-warning p-0 text-decoration-none"
                     onClick={(e) => onReturn(row, e)}
                     disabled={voidPending}
                   >
@@ -75,12 +241,86 @@ function SalesTable({ rows, isPending, onReturn, voidPending, onRowClick, t }) {
   );
 }
 
+function SalesSection({
+  title,
+  rows,
+  isPending,
+  page,
+  totalPages,
+  totalElements,
+  onPageChange,
+  onReturn,
+  voidPending,
+  onRowClick,
+  collapsible,
+  expanded,
+  onToggleExpanded,
+  t,
+}) {
+  const body = (
+    <>
+      <div className="cashier-page__table-wrap">
+        <SalesTable
+          rows={rows}
+          isPending={isPending}
+          onReturn={onReturn}
+          voidPending={voidPending}
+          onRowClick={onRowClick}
+          t={t}
+        />
+      </div>
+      <SalesPagination
+        page={page}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        onPageChange={onPageChange}
+        t={t}
+      />
+    </>
+  );
+
+  if (!collapsible) {
+    return (
+      <div className="cashier-sales-card mb-3">
+        <div className="cashier-sales-card__head">{title}</div>
+        {body}
+      </div>
+    );
+  }
+
+  return (
+    <div className="cashier-sales-card mb-3">
+      <button
+        type="button"
+        className="cashier-sales-card__head w-100 d-flex align-items-center justify-content-between border-0"
+        onClick={onToggleExpanded}
+      >
+        <span>
+          {title}
+          {!expanded && totalElements > 0 && (
+            <span className="text-muted fw-normal ms-2">({totalElements})</span>
+          )}
+        </span>
+        <ChevronDown
+          size={18}
+          className={`text-muted transition-transform ${expanded ? 'rotate-180' : ''}`}
+          style={{ transition: 'transform 0.2s' }}
+        />
+      </button>
+      {expanded && body}
+    </div>
+  );
+}
+
 export default function CashierMySalesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { storeId } = useCashierStore();
   const [showOtherSales, setShowOtherSales] = useState(false);
+  const [shiftPage, setShiftPage] = useState(0);
+  const [otherPage, setOtherPage] = useState(0);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
 
   const { data: shift, isPending: shiftLoading } = useQuery({
     queryKey: ['cashier-shift', storeId],
@@ -90,16 +330,24 @@ export default function CashierMySalesPage() {
   });
 
   const shiftId = shift?.id;
+  const shiftQueryParams = useMemo(
+    () => ({ ...buildQueryParams(filters, shiftPage), shiftId }),
+    [filters, shiftPage, shiftId]
+  );
+  const otherQueryParams = useMemo(
+    () => ({ ...buildQueryParams(filters, otherPage), excludeShiftId: shiftId }),
+    [filters, otherPage, shiftId]
+  );
 
   const { data: shiftSales, isPending: shiftSalesLoading } = useQuery({
-    queryKey: ['my-sales', 'shift', shiftId],
-    queryFn: () => saleApi.mySales({ page: 0, size: 50, shiftId }).then((r) => r.data),
+    queryKey: ['my-sales', 'shift', shiftQueryParams],
+    queryFn: () => saleApi.mySales(shiftQueryParams).then((r) => r.data),
     enabled: !!shiftId,
   });
 
   const { data: otherSales, isPending: otherSalesLoading } = useQuery({
-    queryKey: ['my-sales', 'other', shiftId],
-    queryFn: () => saleApi.mySales({ page: 0, size: 50, excludeShiftId: shiftId }).then((r) => r.data),
+    queryKey: ['my-sales', 'other', otherQueryParams],
+    queryFn: () => saleApi.mySales(otherQueryParams).then((r) => r.data),
     enabled: !!shiftId,
   });
 
@@ -122,33 +370,58 @@ export default function CashierMySalesPage() {
     voidMutation.mutate({ id: row.id, reason });
   };
 
+  const patchFilters = (patch, resetPages = true) => {
+    setFilters((prev) => ({ ...prev, ...patch }));
+    if (resetPages) {
+      setShiftPage(0);
+      setOtherPage(0);
+    }
+  };
+
+  const applyFilters = () => {
+    setShiftPage(0);
+    setOtherPage(0);
+  };
+
+  const resetFilters = () => {
+    setFilters(EMPTY_FILTERS);
+    setShiftPage(0);
+    setOtherPage(0);
+  };
+
   const shiftRows = shiftSales?.content ?? [];
   const otherRows = otherSales?.content ?? [];
+  const shiftTotalPages = shiftSales?.totalPages ?? 0;
+  const otherTotalPages = otherSales?.totalPages ?? 0;
   const otherTotal = otherSales?.totalElements ?? 0;
 
   const shiftOpenedLabel =
-    shift?.openedAt != null
-      ? format(new Date(shift.openedAt), 'dd.MM.yyyy HH:mm')
-      : '—';
+    shift?.openedAt != null ? format(new Date(shift.openedAt), 'dd.MM.yyyy HH:mm') : '—';
 
   return (
-    <div className="cashier-page space-y-4">
-      <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t('pos.mySalesTitle')}</h1>
+    <div className="cashier-page">
+      <h1 className="h5 fw-bold mb-3 flex-shrink-0">{t('pos.mySalesTitle')}</h1>
 
-      {shiftLoading ? (
-        <p className="text-sm text-slate-500">{t('common.loading')}</p>
-      ) : !shiftId ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-          {t('pos.shiftRequired')}
-        </p>
-      ) : (
-        <>
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
-            <div className="flex flex-wrap items-center gap-3 text-sm text-emerald-900 dark:text-emerald-200">
-              <Clock size={18} className="shrink-0 opacity-80" />
+      <SalesFilters
+        filters={filters}
+        onPatch={patchFilters}
+        onApply={applyFilters}
+        onReset={resetFilters}
+        t={t}
+      />
+
+      <div className="cashier-page__scroll">
+        {shiftLoading ? (
+          <p className="text-muted small">{t('common.loading')}</p>
+        ) : !shiftId ? (
+          <div className="alert alert-warning mb-0">{t('pos.shiftRequired')}</div>
+        ) : (
+          <>
+            <div className="cashier-sales-shift-banner mb-3 flex-shrink-0">
+              <Clock size={18} className="flex-shrink-0 opacity-75" aria-hidden />
               <div>
-                <p className="font-semibold">{t('pos.currentShiftSales')}</p>
-                <p className="text-xs opacity-90">
+                <p className="fw-semibold mb-0">{t('pos.currentShiftSales')}</p>
+                <p className="small mb-0 opacity-90">
                   {t('pos.shiftOpenedAt', { time: shiftOpenedLabel })}
                   {' · '}
                   {shift?.saleCount ?? 0} {t('pos.shiftSales').toLowerCase()}
@@ -157,50 +430,40 @@ export default function CashierMySalesPage() {
                 </p>
               </div>
             </div>
-          </div>
 
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <SalesTable
+            <SalesSection
+              title={t('pos.shiftSalesList')}
               rows={shiftRows}
               isPending={shiftSalesLoading}
+              page={shiftPage}
+              totalPages={shiftTotalPages}
+              totalElements={shiftSales?.totalElements ?? 0}
+              onPageChange={setShiftPage}
               onReturn={handleReturn}
               voidPending={voidMutation.isPending}
               onRowClick={(row) => navigate(`/receipt/${row.receiptNumber}`)}
               t={t}
             />
-          </div>
 
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <button
-              type="button"
-              onClick={() => setShowOtherSales((v) => !v)}
-              className="flex w-full items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              <span>
-                {showOtherSales ? t('pos.hideOtherSales') : t('pos.showOtherSales')}
-                {!showOtherSales && otherTotal > 0 && (
-                  <span className="ml-2 text-xs font-normal text-slate-500">({otherTotal})</span>
-                )}
-              </span>
-              <ChevronDown
-                size={18}
-                className={`shrink-0 text-slate-500 transition-transform ${showOtherSales ? 'rotate-180' : ''}`}
-              />
-            </button>
-            {showOtherSales && (
-              <SalesTable
-                rows={otherRows}
-                isPending={otherSalesLoading}
-                onReturn={handleReturn}
-                voidPending={voidMutation.isPending}
-                onRowClick={(row) => navigate(`/receipt/${row.receiptNumber}`)}
-                t={t}
-              />
-            )}
-          </div>
-        </>
-      )}
+            <SalesSection
+              title={showOtherSales ? t('pos.hideOtherSales') : t('pos.showOtherSales')}
+              rows={otherRows}
+              isPending={otherSalesLoading}
+              page={otherPage}
+              totalPages={otherTotalPages}
+              totalElements={otherTotal}
+              onPageChange={setOtherPage}
+              onReturn={handleReturn}
+              voidPending={voidMutation.isPending}
+              onRowClick={(row) => navigate(`/receipt/${row.receiptNumber}`)}
+              collapsible
+              expanded={showOtherSales}
+              onToggleExpanded={() => setShowOtherSales((v) => !v)}
+              t={t}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 }
-

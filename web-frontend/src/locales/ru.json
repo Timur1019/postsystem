@@ -50,7 +50,9 @@
     "stores": "Магазины",
     "users": "Пользователи",
     "handbook": "Справочник",
-    "logout": "Выход"
+    "logout": "Выход",
+    "collapseMenu": "Свернуть меню",
+    "expandMenu": "Развернуть меню"
   },
   "theme": {
     "switchToDay": "Переключить на дневную тему",
@@ -946,6 +948,8 @@
     "barcodePh": "Сканируйте или введите штрихкод / QR",
     "barcodeNotFound": "Товар не найден",
     "barcodeAdded": "В чек: {{name}}",
+    "itemAdded": "{{name}} — {{sum}}",
+    "cartLineCalc": "{{price}} × {{qty}} {{unit}}",
     "scannerHint": "USB/Bluetooth-сканер: наведите на поле штрихкода или сканируйте в любой момент — товар добавится в корзину",
     "pickCategory": "Выберите категорию",
     "backToCategories": "К категориям",
@@ -968,6 +972,7 @@
     "orderTitle": "Текущий чек",
     "orderComposition": "Состав заказа",
     "orderPositions": "{{count}} поз.",
+    "grandTotal": "ИТОГО",
     "subtotal": "Подытог",
     "unitPcs": "шт",
     "productCode": "Код",
@@ -978,6 +983,8 @@
     "colPrice": "Цена",
     "colQty": "Кол-во",
     "colSum": "Сумма",
+    "colCost": "Себест.",
+    "totalCost": "Себестоимость",
     "discount": "Скидка",
     "receiptTypeTitle": "Тип чека",
     "receiptType": {
@@ -1070,6 +1077,15 @@
     "returnDefaultReason": "Возврат на кассе",
     "voidSale": "Отменить чек",
     "statusVoided": "Отменён",
+    "statusCompleted": "Завершён",
+    "statusRefunded": "Возврат",
+    "salesFiltersTitle": "Фильтры",
+    "salesFilterFrom": "Дата с",
+    "salesFilterTo": "Дата по",
+    "salesFilterStatus": "Статус",
+    "salesFilterAll": "Все",
+    "salesFilterReset": "Сбросить",
+    "shiftSalesList": "Продажи смены",
     "editHint": "Двойной клик — изменить цену, кол-во или сумму"
   },
   "handbook": {
