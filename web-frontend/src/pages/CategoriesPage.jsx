@@ -1,5 +1,5 @@
 // src/pages/CategoriesPage.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import { Plus, Tags, MoreVertical } from 'lucide-react';
 import { categoryApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import CategoryModal from '../components/categories/CategoryModal';
+import TablePagination from '../components/shared/TablePagination';
 
 const canManage = (role) => role === 'ADMIN' || role === 'MANAGER';
 
@@ -21,6 +22,8 @@ export default function CategoriesPage() {
   const [editCategory, setEditCategory] = useState(null);
   const [deleteCategory, setDeleteCategory] = useState(null);
   const [rowMenu, setRowMenu] = useState(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(14);
 
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['categories'],
@@ -35,6 +38,13 @@ export default function CategoriesPage() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [rowMenu]);
+
+  const total = categories.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const pageRows = useMemo(() => {
+    const start = page * pageSize;
+    return categories.slice(start, start + pageSize);
+  }, [categories, page, pageSize]);
 
   return (
     <div className="space-y-4">
@@ -84,7 +94,7 @@ export default function CategoriesPage() {
                   </td>
                 </tr>
               ) : (
-                categories.map((c) => (
+                pageRows.map((c) => (
                   <tr key={c.id} className="transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td className="px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-500">{c.id}</td>
                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{c.name}</td>
@@ -112,6 +122,14 @@ export default function CategoriesPage() {
             </tbody>
           </table>
         </div>
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {(createOpen || editCategory) && (

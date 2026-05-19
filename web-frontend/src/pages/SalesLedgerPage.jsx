@@ -12,6 +12,7 @@ import SalesLedgerFiltersDrawer from '../components/reports/SalesLedgerFiltersDr
 import SaleFiscalPrintModal from '../components/reports/SaleFiscalPrintModal';
 
 import { fmtMoney } from '../utils/formatMoney';
+import TablePagination from '../components/shared/TablePagination';
 
 const defaultFilters = {
   storeId: '',
@@ -35,7 +36,7 @@ export default function SalesLedgerPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(14);
+  const [pageSize, setPageSize] = useState(14);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
   const [applied, setApplied] = useState(defaultFilters);
@@ -136,9 +137,6 @@ export default function SalesLedgerPage() {
     }
   };
 
-  const fromN = total === 0 ? 0 : page * pageSize + 1;
-  const toN = Math.min((page + 1) * pageSize, total);
-
   const paymentLabel = (m) => {
     if (m === 'CARD') return t('sales.paymentCard');
     if (m === 'MPESA') return t('sales.paymentMpesa');
@@ -168,22 +166,6 @@ export default function SalesLedgerPage() {
       return '—';
     }
   };
-
-  const pageButtons = useMemo(() => {
-    if (totalPages <= 1) return [];
-    const maxBtns = 5;
-    if (totalPages <= maxBtns) {
-      return Array.from({ length: totalPages }, (_, i) => i);
-    }
-    let start = Math.max(0, page - 2);
-    let end = Math.min(totalPages, start + maxBtns);
-    start = Math.max(0, end - maxBtns);
-    return Array.from({ length: end - start }, (_, i) => start + i);
-  }, [totalPages, page]);
-
-  const showEllipsisBefore = totalPages > 5 && pageButtons.length > 0 && pageButtons[0] > 0;
-  const showEllipsisAfter =
-    totalPages > 5 && pageButtons.length > 0 && pageButtons[pageButtons.length - 1] < totalPages - 1;
 
   const handleExportSalesExcel = async () => {
     try {
@@ -345,74 +327,14 @@ export default function SalesLedgerPage() {
           </table>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            {t('products.recordsRange', { from: fromN, to: toN, total })}
-          </span>
-          <span className="text-xs">{t('products.pageSizeLabel', { size: pageSize })}</span>
-          {totalPages > 1 && (
-            <div className="flex flex-wrap items-center gap-1">
-              <button
-                type="button"
-                disabled={page === 0}
-                onClick={() => setPage((p) => p - 1)}
-                className="rounded border border-slate-300 px-2 py-1 text-xs disabled:opacity-40 dark:border-slate-600"
-              >
-                {t('common.prev')}
-              </button>
-              {showEllipsisBefore && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setPage(0)}
-                    className="min-w-[2rem] rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
-                  >
-                    1
-                  </button>
-                  <span className="px-1">…</span>
-                </>
-              )}
-              {pageButtons.map((i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setPage(i)}
-                  className={`min-w-[2rem] rounded border px-2 py-1 text-xs ${
-                    page === i
-                      ? 'border-emerald-600 text-emerald-700 dark:border-emerald-500 dark:text-emerald-400'
-                      : 'border-slate-300 dark:border-slate-600'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              {showEllipsisAfter && (
-                <>
-                  <span className="px-1">…</span>
-                  <button
-                    type="button"
-                    onClick={() => setPage(totalPages - 1)}
-                    className={`min-w-[2rem] rounded border px-2 py-1 text-xs dark:border-slate-600 ${
-                      page === totalPages - 1
-                        ? 'border-emerald-600 text-emerald-700'
-                        : 'border-slate-300'
-                    }`}
-                  >
-                    {totalPages}
-                  </button>
-                </>
-              )}
-              <button
-                type="button"
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => p + 1)}
-                className="rounded border border-slate-300 px-2 py-1 text-xs disabled:opacity-40 dark:border-slate-600"
-              >
-                {t('common.next')}
-              </button>
-            </div>
-          )}
-        </div>
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <SalesLedgerFiltersDrawer

@@ -14,6 +14,10 @@ export {
   RECEIPT_LOGO_HEIGHT_MAX_MM,
 } from '../utils/syncReceiptDisplayCssVars';
 
+export const SYSTEM_LOGO_SIZE_DEFAULT_PX = 32;
+export const SYSTEM_LOGO_SIZE_MIN_PX = 20;
+export const SYSTEM_LOGO_SIZE_MAX_PX = 96;
+
 /** Поля фискального чека (вкл./выкл. в настройках принтера). */
 export const RECEIPT_FIELD_DEFS = [
   { key: 'logo', labelKey: 'tenantSettings.receiptFields.logo' },
@@ -55,6 +59,7 @@ export const useTenantDisplayStore = create(
   persist(
     (set, get) => ({
       systemLogoDataUrl: null,
+      systemLogoSizePx: SYSTEM_LOGO_SIZE_DEFAULT_PX,
       systemAppName: '',
 
       receiptLogoDataUrl: null,
@@ -67,6 +72,13 @@ export const useTenantDisplayStore = create(
 
       setSystemLogo: (dataUrl) => set({ systemLogoDataUrl: dataUrl || null }),
       clearSystemLogo: () => set({ systemLogoDataUrl: null }),
+      setSystemLogoSizePx: (px) => {
+        const n = Number(px);
+        const clamped = Number.isFinite(n)
+          ? Math.min(SYSTEM_LOGO_SIZE_MAX_PX, Math.max(SYSTEM_LOGO_SIZE_MIN_PX, Math.round(n)))
+          : SYSTEM_LOGO_SIZE_DEFAULT_PX;
+        set({ systemLogoSizePx: clamped });
+      },
       setSystemAppName: (name) => set({ systemAppName: String(name ?? '').trim() }),
 
       setReceiptLogo: (dataUrl) => set({ receiptLogoDataUrl: dataUrl || null }),
@@ -105,16 +117,21 @@ export const useTenantDisplayStore = create(
     }),
     {
       name: 'pos-tenant-display',
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         if (!persisted) return persisted;
+        let next = persisted;
         if (version < 2) {
-          return { ...persisted, receiptLogoMaxHeightMm: RECEIPT_LOGO_HEIGHT_DEFAULT_MM };
+          next = { ...next, receiptLogoMaxHeightMm: RECEIPT_LOGO_HEIGHT_DEFAULT_MM };
         }
-        return persisted;
+        if (version < 3) {
+          next = { ...next, systemLogoSizePx: SYSTEM_LOGO_SIZE_DEFAULT_PX };
+        }
+        return next;
       },
       partialize: (s) => ({
         systemLogoDataUrl: s.systemLogoDataUrl,
+        systemLogoSizePx: s.systemLogoSizePx,
         systemAppName: s.systemAppName,
         receiptLogoDataUrl: s.receiptLogoDataUrl,
         receiptLogoMaxHeightMm: s.receiptLogoMaxHeightMm,

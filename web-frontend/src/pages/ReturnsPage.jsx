@@ -1,6 +1,6 @@
 // src/pages/ReturnsPage.jsx
 import { useMemo, useState, useCallback } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Search, Filter, Info, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
@@ -12,6 +12,7 @@ import ReturnDetailModal from '../components/reports/ReturnDetailModal';
 import ReturnReasonModal from '../components/reports/ReturnReasonModal';
 
 import { fmtMoney } from '../utils/formatMoney';
+import TablePagination from '../components/shared/TablePagination';
 
 const defaultFilters = {
   storeId: '',
@@ -24,7 +25,7 @@ export default function ReturnsPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(14);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
   const [applied, setApplied] = useState(defaultFilters);
@@ -67,7 +68,7 @@ export default function ReturnsPage() {
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['returns', queryParams],
     queryFn: () => returnApi.getAll(queryParams).then((r) => r.data),
-    placeholderData: { content: [], totalPages: 0, totalElements: 0 },
+    placeholderData: keepPreviousData,
   });
 
 
@@ -93,6 +94,7 @@ export default function ReturnsPage() {
 
   const rows = data?.content ?? [];
   const total = data?.totalElements ?? 0;
+  const totalPages = data?.totalPages ?? 0;
 
   const fmtAt = useCallback(
     (iso) => {
@@ -263,31 +265,14 @@ export default function ReturnsPage() {
           </table>
         </div>
 
-        {data && data.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 dark:border-slate-800">
-            <span className="text-xs text-slate-600 dark:text-slate-500">
-              {t('common.pageOf', { current: page + 1, total: data.totalPages })} · {total}
-            </span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={page === 0}
-                onClick={() => setPage((p) => p - 1)}
-                className="rounded bg-slate-200 px-3 py-1 text-xs text-slate-800 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-300"
-              >
-                {t('common.prev')}
-              </button>
-              <button
-                type="button"
-                disabled={page >= data.totalPages - 1}
-                onClick={() => setPage((p) => p + 1)}
-                className="rounded bg-slate-200 px-3 py-1 text-xs text-slate-800 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-300"
-              >
-                {t('common.next')}
-              </button>
-            </div>
-          </div>
-        )}
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <ReturnsFiltersDrawer

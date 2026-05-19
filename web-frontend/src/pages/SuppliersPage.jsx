@@ -1,6 +1,6 @@
 // src/pages/SuppliersPage.jsx
-import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState, useEffect } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { Search, Filter, Plus, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
@@ -8,6 +8,7 @@ import { supplierApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import SupplierFiltersDrawer from '../components/suppliers/SupplierFiltersDrawer';
 import SupplierModal from '../components/suppliers/SupplierModal';
+import TablePagination from '../components/shared/TablePagination';
 
 const canManage = (role) => role === 'ADMIN' || role === 'MANAGER';
 
@@ -20,7 +21,7 @@ export default function SuppliersPage() {
 
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(14);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
@@ -36,17 +37,23 @@ export default function SuppliersPage() {
     [search, page, pageSize, applied]
   );
 
-  const { data, isPending, isError, error } = useQuery({
+  const { data, isPending, isFetching, isError, error } = useQuery({
     queryKey: ['suppliers', queryParams],
     queryFn: () => supplierApi.getAll(queryParams).then((r) => r.data),
-    placeholderData: { content: [], totalPages: 0, totalElements: 0 },
+    placeholderData: keepPreviousData,
   });
 
   const rows = data?.content ?? [];
   const total = data?.totalElements ?? 0;
   const totalPages = data?.totalPages ?? 0;
   const loading = isPending;
-  const showEmptyHint = !loading && !isError && rows.length === 0;
+  const showEmptyHint = !loading && !isFetching && !isError && total === 0;
+
+  useEffect(() => {
+    if (totalPages > 0 && page >= totalPages) {
+      setPage(totalPages - 1);
+    }
+  }, [totalPages, page]);
 
   const fmtDate = (iso) => {
     try {
@@ -142,37 +149,16 @@ export default function SuppliersPage() {
             <span>{t('suppliersModule.empty')}</span>
           </div>
         )}
-      </div>
 
-      {totalPages > 1 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600 dark:text-slate-400">
-          <span>
-            {t('products.recordsRange', {
-              from: page * pageSize + (rows.length ? 1 : 0),
-              to: page * pageSize + rows.length,
-              total,
-            })}
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={page <= 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-40 dark:border-slate-600"
-            >
-              {t('common.prev')}
-            </button>
-            <button
-              type="button"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => p + 1)}
-              className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-40 dark:border-slate-600"
-            >
-              {t('common.next')}
-            </button>
-          </div>
-        </div>
-      )}
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      </div>
 
       <SupplierFiltersDrawer
         open={filtersOpen}

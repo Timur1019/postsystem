@@ -11,6 +11,7 @@ import ZReportFiltersDrawer from '../components/z-reports/ZReportFiltersDrawer';
 import ZReportAutoPrint from '../components/z-reports/ZReportAutoPrint';
 
 import { fmtMoney } from '../utils/formatMoney';
+import TablePagination from '../components/shared/TablePagination';
 
 const defaultFilters = {
   storeId: '',
@@ -19,8 +20,6 @@ const defaultFilters = {
   fiscalCardId: '',
   terminalSerial: '',
 };
-
-const PAGE_SIZE_OPTIONS = [10, 14, 20, 50];
 
 function fmtDateTime(iso) {
   try {
@@ -120,25 +119,6 @@ export default function ZReportsPage() {
       });
     }
   };
-
-  const fromN = total === 0 ? 0 : page * pageSize + 1;
-  const toN = Math.min((page + 1) * pageSize, total);
-
-  const pageButtons = useMemo(() => {
-    if (totalPages <= 1) return [];
-    const maxBtns = 5;
-    if (totalPages <= maxBtns) {
-      return Array.from({ length: totalPages }, (_, i) => i);
-    }
-    let start = Math.max(0, page - 2);
-    let end = Math.min(totalPages, start + maxBtns);
-    start = Math.max(0, end - maxBtns);
-    return Array.from({ length: end - start }, (_, i) => start + i);
-  }, [totalPages, page]);
-
-  const showEllipsisBefore = totalPages > 5 && pageButtons.length > 0 && pageButtons[0] > 0;
-  const showEllipsisAfter =
-    totalPages > 5 && pageButtons.length > 0 && pageButtons[pageButtons.length - 1] < totalPages - 1;
 
   const handleExportAll = async () => {
     try {
@@ -308,84 +288,14 @@ export default function ZReportsPage() {
           </table>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-400 lg:flex-row lg:items-center lg:justify-between">
-          <span>{t('products.recordsRange', { from: fromN, to: toN, total })}</span>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-500">{t('cashRegisters.pageSizePrefix')}</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setPage(0);
-              }}
-              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            >
-              {PAGE_SIZE_OPTIONS.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </div>
-          {totalPages > 1 ? (
-            <div className="flex flex-wrap items-center gap-1">
-              <button
-                type="button"
-                disabled={page === 0}
-                onClick={() => setPage((p) => p - 1)}
-                className="rounded border border-slate-300 px-2 py-1 text-xs disabled:opacity-40 dark:border-slate-600"
-              >
-                {t('common.prev')}
-              </button>
-              {showEllipsisBefore && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setPage(0)}
-                    className="min-w-[2rem] rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
-                  >
-                    1
-                  </button>
-                  <span className="px-1">…</span>
-                </>
-              )}
-              {pageButtons.map((i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setPage(i)}
-                  className={`min-w-[2rem] rounded border px-2 py-1 text-xs ${
-                    page === i
-                      ? 'border-emerald-600 bg-emerald-50 font-semibold text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-200'
-                      : 'border-slate-300 dark:border-slate-600'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              {showEllipsisAfter && (
-                <>
-                  <span className="px-1">…</span>
-                  <button
-                    type="button"
-                    onClick={() => setPage(totalPages - 1)}
-                    className="min-w-[2rem] rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
-                  >
-                    {totalPages}
-                  </button>
-                </>
-              )}
-              <button
-                type="button"
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => p + 1)}
-                className="rounded border border-slate-300 px-2 py-1 text-xs disabled:opacity-40 dark:border-slate-600"
-              >
-                {t('common.next')}
-              </button>
-            </div>
-          ) : null}
-        </div>
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <ZReportFiltersDrawer

@@ -4,8 +4,11 @@ import { APP_NAME } from '../../config/brand';
 import {
   USER_FORM_FIELD_DEFS,
   useTenantDisplayStore,
+  SYSTEM_LOGO_SIZE_MIN_PX,
+  SYSTEM_LOGO_SIZE_MAX_PX,
 } from '../../store/tenantDisplayStore';
 import LogoUploadField from './LogoUploadField';
+import ReceiptLogoSizeControl from './ReceiptLogoSizeControl';
 import SettingsFieldToggles from './SettingsFieldToggles';
 import BrandMark from '../shared/BrandMark';
 
@@ -15,10 +18,17 @@ const inputCls =
 export default function UserBrandingSettingsPanel() {
   const { t } = useTranslation();
   const systemLogoDataUrl = useTenantDisplayStore((s) => s.systemLogoDataUrl);
+  const systemLogoSizePx = useTenantDisplayStore((s) => s.systemLogoSizePx);
   const systemAppName = useTenantDisplayStore((s) => s.systemAppName);
+  const receiptLogoDataUrl = useTenantDisplayStore((s) => s.receiptLogoDataUrl);
+  const receiptLogoMaxHeightMm = useTenantDisplayStore((s) => s.receiptLogoMaxHeightMm);
   const userFormFields = useTenantDisplayStore((s) => s.userFormFields);
   const setSystemLogo = useTenantDisplayStore((s) => s.setSystemLogo);
   const clearSystemLogo = useTenantDisplayStore((s) => s.clearSystemLogo);
+  const setSystemLogoSizePx = useTenantDisplayStore((s) => s.setSystemLogoSizePx);
+  const setReceiptLogo = useTenantDisplayStore((s) => s.setReceiptLogo);
+  const clearReceiptLogo = useTenantDisplayStore((s) => s.clearReceiptLogo);
+  const setReceiptLogoMaxHeightMm = useTenantDisplayStore((s) => s.setReceiptLogoMaxHeightMm);
   const setSystemAppName = useTenantDisplayStore((s) => s.setSystemAppName);
   const setUserFormField = useTenantDisplayStore((s) => s.setUserFormField);
   const resetUserFormFields = useTenantDisplayStore((s) => s.resetUserFormFields);
@@ -39,8 +49,36 @@ export default function UserBrandingSettingsPanel() {
           dataUrl={systemLogoDataUrl}
           onSet={setSystemLogo}
           onClear={clearSystemLogo}
-          previewSize={72}
+          previewSize={Math.min(96, systemLogoSizePx)}
         />
+
+        {systemLogoDataUrl ? (
+          <div>
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+              {t('tenantSettings.systemLogoSize')}
+            </label>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <input
+                type="range"
+                min={SYSTEM_LOGO_SIZE_MIN_PX}
+                max={SYSTEM_LOGO_SIZE_MAX_PX}
+                step={2}
+                value={systemLogoSizePx}
+                onChange={(e) => setSystemLogoSizePx(e.target.value)}
+                className="min-w-[10rem] flex-1"
+              />
+              <span className="text-sm font-medium tabular-nums text-slate-800 dark:text-slate-200">
+                {systemLogoSizePx} {t('tenantSettings.systemLogoSizeUnit')}
+              </span>
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 dark:border-slate-600 dark:bg-slate-800/50">
+                <BrandMark size={systemLogoSizePx} />
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {t('tenantSettings.systemLogoSizeHint')}
+            </p>
+          </div>
+        ) : null}
 
         <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/40">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500">
@@ -63,6 +101,27 @@ export default function UserBrandingSettingsPanel() {
             placeholder={APP_NAME}
           />
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('tenantSettings.systemAppNameHint')}</p>
+        </div>
+
+        <div className="border-t border-slate-200 pt-5 dark:border-slate-800">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            {t('tenantSettings.brandingReceiptSection')}
+          </p>
+          <div className="space-y-4">
+            <LogoUploadField
+              label={t('tenantSettings.receiptLogo')}
+              hint={t('tenantSettings.receiptLogoHint')}
+              dataUrl={receiptLogoDataUrl}
+              onSet={setReceiptLogo}
+              onClear={clearReceiptLogo}
+              previewSize={72}
+            />
+            <ReceiptLogoSizeControl
+              mm={receiptLogoMaxHeightMm}
+              onChange={setReceiptLogoMaxHeightMm}
+              previewDataUrl={receiptLogoDataUrl}
+            />
+          </div>
         </div>
 
         <div>

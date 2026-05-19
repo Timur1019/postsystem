@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { cashRegisterApi } from '../services/api';
 import CashTransferFiltersDrawer from '../components/cash-registers/CashTransferFiltersDrawer';
+import TablePagination from '../components/shared/TablePagination';
 
 import { fmtMoney } from '../utils/formatMoney';
 
@@ -15,8 +16,6 @@ const defaultFilters = {
   closedFrom: '',
   closedTo: '',
 };
-
-const PAGE_SIZE_OPTIONS = [10, 14, 20, 50];
 
 function fmtDateTime(iso) {
   try {
@@ -69,9 +68,6 @@ export default function CashRegisterTransferPage() {
   const totalPages = data?.totalPages ?? 0;
   const loading = isPending;
 
-  const fromN = total === 0 ? 0 : page * pageSize + 1;
-  const toN = Math.min((page + 1) * pageSize, total);
-
   const handleExportExcel = useCallback(async () => {
     setExporting(true);
     try {
@@ -96,18 +92,6 @@ export default function CashRegisterTransferPage() {
       setExporting(false);
     }
   }, [exportParams, applied.closedFrom, applied.closedTo, t]);
-
-  const pageButtons = useMemo(() => {
-    if (totalPages <= 1) return [];
-    const maxBtns = 5;
-    if (totalPages <= maxBtns) {
-      return Array.from({ length: totalPages }, (_, i) => i);
-    }
-    let start = Math.max(0, page - 2);
-    let end = Math.min(totalPages, start + maxBtns);
-    start = Math.max(0, end - maxBtns);
-    return Array.from({ length: end - start }, (_, i) => start + i);
-  }, [totalPages, page]);
 
   return (
     <div className="space-y-4">
@@ -270,63 +254,16 @@ export default function CashRegisterTransferPage() {
           </table>
         </div>
 
-        {!loading && rows.length > 0 && (
-          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              {t('cashRegisters.transferPageRange', { from: fromN, to: toN, total })}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-slate-500">{t('cashRegisters.pageSizePrefix')}</span>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setPage(0);
-                }}
-                className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white"
-              >
-                {PAGE_SIZE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  disabled={page <= 0}
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  className="rounded border border-slate-300 px-2 py-1 disabled:opacity-40 dark:border-slate-600"
-                >
-                  ‹
-                </button>
-                {pageButtons.map((i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setPage(i)}
-                    className={`min-w-[2rem] rounded border px-2 py-1 ${
-                      i === page
-                        ? 'border-emerald-600 bg-emerald-600 text-white'
-                        : 'border-slate-300 dark:border-slate-600'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  disabled={page >= totalPages - 1}
-                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                  className="rounded border border-slate-300 px-2 py-1 disabled:opacity-40 dark:border-slate-600"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
+
 
       <CashTransferFiltersDrawer
         open={filtersOpen}

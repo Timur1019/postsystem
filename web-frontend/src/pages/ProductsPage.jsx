@@ -1,7 +1,7 @@
 // src/pages/ProductsPage.jsx
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Search, MoreVertical, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +19,7 @@ import WarehouseReceiveModal from '../components/stock/WarehouseReceiveModal';
 import ProductInfoModal from '../components/products/ProductInfoModal';
 import { invalidateProductCaches } from '../utils/productCache';
 import { fmtMoney as fmtNum } from '../utils/formatMoney';
+import TablePagination from '../components/shared/TablePagination';
 
 const defaultFilters = {
   ikpuStatus: 'ALL',
@@ -40,7 +41,7 @@ export default function ProductsPage() {
 
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(14);
+  const [pageSize, setPageSize] = useState(14);
   const [editProduct, setEditProduct] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [stockProduct, setStockProduct] = useState(null);
@@ -81,7 +82,7 @@ export default function ProductsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['products', queryParams],
     queryFn: () => productApi.getAll(queryParams).then((r) => r.data),
-    placeholderData: { content: [], totalPages: 0, totalElements: 0 },
+    placeholderData: keepPreviousData,
   });
 
   const { data: categories = [] } = useQuery({
@@ -138,17 +139,14 @@ export default function ProductsPage() {
     });
   };
 
-  const from = data?.totalElements ? page * pageSize + 1 : 0;
-  const to = Math.min((page + 1) * pageSize, data?.totalElements ?? 0);
+  const total = data?.totalElements ?? 0;
+  const totalPages = data?.totalPages ?? 0;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t('products.title')}</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            {t('products.recordsRange', { from, to, total: data?.totalElements ?? 0 })}
-          </p>
         </div>
         <ProductsToolbar
           canManage={manage}
@@ -185,9 +183,6 @@ export default function ProductsPage() {
             placeholder={t('products.searchNamePh')}
             className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-4 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder-slate-500"
           />
-        </div>
-        <div className="whitespace-nowrap text-xs text-slate-600 dark:text-slate-500">
-          {t('products.pageSizeLabel', { size: pageSize })}
         </div>
       </div>
 
@@ -290,29 +285,14 @@ export default function ProductsPage() {
           </table>
         </div>
 
-        {data && data.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 dark:border-slate-800">
-            <span className="text-xs text-slate-600 dark:text-slate-500">{t('common.pageOf', { current: page + 1, total: data.totalPages })}</span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setPage((p) => p - 1)}
-                disabled={page === 0}
-                className="rounded bg-slate-200 px-3 py-1 text-xs text-slate-800 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-300"
-              >
-                {t('common.prev')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={page >= data.totalPages - 1}
-                className="rounded bg-slate-200 px-3 py-1 text-xs text-slate-800 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-300"
-              >
-                {t('common.next')}
-              </button>
-            </div>
-          </div>
-        )}
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {(showCreate || editProduct) && (

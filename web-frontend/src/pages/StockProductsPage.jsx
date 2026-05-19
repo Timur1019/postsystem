@@ -1,7 +1,7 @@
 // src/pages/StockProductsPage.jsx
 import { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Search, Filter, Plus, Info, MoreVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
@@ -13,6 +13,7 @@ import ProductCatalogModal from '../components/products/ProductCatalogModal';
 import StockAdjustModal from '../components/products/StockAdjustModal';
 import ProductInfoModal from '../components/products/ProductInfoModal';
 import { invalidateProductCaches } from '../utils/productCache';
+import TablePagination from '../components/shared/TablePagination';
 
 const canManage = (role) => role === 'ADMIN' || role === 'MANAGER';
 
@@ -26,7 +27,7 @@ export default function StockProductsPage() {
 
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(14);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [receiveOpen, setReceiveOpen] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
@@ -51,10 +52,10 @@ export default function StockProductsPage() {
     [search, page, pageSize, applied]
   );
 
-  const { data, isPending, isError, error } = useQuery({
+  const { data, isPending, isFetching, isError, error } = useQuery({
     queryKey: ['warehouse-products', queryParams],
     queryFn: () => warehouseApi.getProducts(queryParams).then((r) => r.data),
-    placeholderData: { content: [], totalPages: 0, totalElements: 0 },
+    placeholderData: keepPreviousData,
   });
 
   const { data: categories = [] } = useQuery({
@@ -71,7 +72,13 @@ export default function StockProductsPage() {
   const total = data?.totalElements ?? 0;
   const totalPages = data?.totalPages ?? 0;
   const loading = isPending;
-  const showEmptyHint = !loading && !isError && rows.length === 0;
+  const showEmptyHint = !loading && !isFetching && !isError && total === 0;
+
+  useEffect(() => {
+    if (totalPages > 0 && page >= totalPages) {
+      setPage(totalPages - 1);
+    }
+  }, [totalPages, page]);
 
   useEffect(() => {
     if (!rowMenu) return undefined;
@@ -202,37 +209,16 @@ export default function StockProductsPage() {
             <span>{t('stockModule.empty')}</span>
           </div>
         )}
-      </div>
 
-      {totalPages > 1 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600 dark:text-slate-400">
-          <span>
-            {t('products.recordsRange', {
-              from: page * pageSize + (rows.length ? 1 : 0),
-              to: page * pageSize + rows.length,
-              total,
-            })}
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={page <= 0}
-              onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-              className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-40 dark:border-slate-600"
-            >
-              {t('common.prev')}
-            </button>
-            <button
-              type="button"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((prev) => prev + 1)}
-              className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-40 dark:border-slate-600"
-            >
-              {t('common.next')}
-            </button>
-          </div>
-        </div>
-      )}
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      </div>
 
       <StockProductsFiltersDrawer
         open={filtersOpen}

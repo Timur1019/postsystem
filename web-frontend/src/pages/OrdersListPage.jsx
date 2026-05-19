@@ -9,6 +9,7 @@ import { storeApi, orderApi } from '../services/api';
 import OrdersFiltersDrawer from '../components/orders/OrdersFiltersDrawer';
 import OrderAddWizard from '../components/orders/OrderAddWizard';
 import { fmtMoney } from '../utils/formatMoney';
+import TablePagination from '../components/shared/TablePagination';
 
 const defaultFilters = {
   externalNumber: '',
@@ -46,6 +47,8 @@ export default function OrdersListPage() {
   const [filters, setFilters] = useState(defaultFilters);
   const [applied, setApplied] = useState(defaultFilters);
   const [addOpen, setAddOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(14);
 
   const { data: stores = [] } = useQuery({
     queryKey: ['stores'],
@@ -55,8 +58,8 @@ export default function OrdersListPage() {
   const queryParams = useMemo(() => {
     const a = applied;
     return {
-      page: 0,
-      size: 50,
+      page,
+      size: pageSize,
       search: appliedSearch.trim() || undefined,
       externalNumber: a.externalNumber.trim() || undefined,
       clientName: a.clientName.trim() || undefined,
@@ -66,7 +69,7 @@ export default function OrdersListPage() {
       createdFrom: a.createdFrom || undefined,
       createdTo: a.createdTo || undefined,
     };
-  }, [appliedSearch, applied]);
+  }, [appliedSearch, applied, page, pageSize]);
 
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['orders', queryParams],
@@ -74,6 +77,8 @@ export default function OrdersListPage() {
   });
 
   const rows = data?.content ?? [];
+  const total = data?.totalElements ?? 0;
+  const totalPages = data?.totalPages ?? 0;
   const loading = isPending;
 
   const onExport = () => {
@@ -116,6 +121,7 @@ export default function OrdersListPage() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   setAppliedSearch(search.trim());
+                  setPage(0);
                 }
               }}
               placeholder={t('orders.searchPlaceholder')}
@@ -208,6 +214,14 @@ export default function OrdersListPage() {
             </tbody>
           </table>
         </div>
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <OrdersFiltersDrawer
@@ -217,11 +231,13 @@ export default function OrdersListPage() {
         onChange={setFilters}
         onApply={() => {
           setApplied({ ...filters });
+          setPage(0);
           setFiltersOpen(false);
         }}
         onReset={() => {
           setFilters(defaultFilters);
           setApplied(defaultFilters);
+          setPage(0);
         }}
       />
 

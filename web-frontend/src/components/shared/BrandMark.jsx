@@ -6,7 +6,9 @@ import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
  */
 export default function BrandMark({ size = 32, className = '', iconClassName = 'text-white' }) {
   const logo = useTenantDisplayStore((s) => s.systemLogoDataUrl);
-  const px = typeof size === 'number' ? size : 32;
+  const systemLogoSizePx = useTenantDisplayStore((s) => s.systemLogoSizePx);
+  const base = typeof size === 'number' ? size : 32;
+  const px = logo && systemLogoSizePx ? systemLogoSizePx : base;
 
   if (logo) {
     return (
@@ -14,7 +16,7 @@ export default function BrandMark({ size = 32, className = '', iconClassName = '
         src={logo}
         alt=""
         className={`object-contain ${className}`}
-        style={{ width: px, height: px }}
+        style={{ width: px, height: px, maxWidth: px, maxHeight: px }}
       />
     );
   }

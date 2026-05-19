@@ -143,7 +143,7 @@ export default function ReportsPage() {
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:shadow-none p-5">
           <h2 className="mb-4 font-semibold text-slate-900 dark:text-white">{t('reports.topByUnits')}</h2>
           {topProducts?.length > 0 ? (
-            <div className="space-y-3">
+            <div className="reports-scroll-list max-h-[min(22rem,52vh)] space-y-3 overflow-y-auto overscroll-contain pr-1">
               {topProducts.map((p, i) => (
                 <div key={p.productId} className="flex items-center gap-3">
                   <span className="w-5 text-xs text-slate-500 dark:text-slate-500">{i + 1}</span>
@@ -194,7 +194,7 @@ export default function ReportsPage() {
                   />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="mt-3 space-y-2">
+              <div className="reports-scroll-list mt-3 max-h-[min(12rem,28vh)] space-y-2 overflow-y-auto overscroll-contain pr-1">
                 {cashierPerf.map((c, i) => (
                   <div key={c.cashierId ?? i} className="flex justify-between text-sm">
                     <div className="flex items-center gap-2">

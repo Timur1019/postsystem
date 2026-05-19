@@ -1,5 +1,5 @@
 // src/pages/UsersPage.jsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Plus, CheckCircle2, Circle } from 'lucide-react';
@@ -7,6 +7,7 @@ import TableRowActionsMenu from '../components/shared/TableRowActionsMenu';
 import { useTranslation } from 'react-i18next';
 import { userApi } from '../services/api';
 import UserFormModal from '../components/users/UserFormModal';
+import TablePagination from '../components/shared/TablePagination';
 const roleBadge = {
   ADMIN: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
   MANAGER: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
@@ -19,6 +20,8 @@ export default function UsersPage({ mode = 'tenant' }) {
   const qc = useQueryClient();
   const [formMode, setFormMode] = useState(null);
   const [menuId, setMenuId] = useState(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(14);
 
   const modalOpen = formMode !== null;
 
@@ -45,6 +48,13 @@ export default function UsersPage({ mode = 'tenant' }) {
     setFormMode({ type: 'edit', user: row });
   };
   const closeModal = () => setFormMode(null);
+
+  const total = users.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const pageRows = useMemo(() => {
+    const start = page * pageSize;
+    return users.slice(start, start + pageSize);
+  }, [users, page, pageSize]);
 
   return (
     <div className="space-y-4">
@@ -86,7 +96,7 @@ export default function UsersPage({ mode = 'tenant' }) {
                 </td>
               </tr>
             ) : (
-              users.map((user) => (
+              pageRows.map((user) => (
                 <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                   <td className="px-4 py-3">
                     <p className="font-medium text-slate-900 dark:text-white">{user.fullName}</p>
@@ -125,6 +135,14 @@ export default function UsersPage({ mode = 'tenant' }) {
             )}
           </tbody>
         </table>
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <UserFormModal
