@@ -8,9 +8,9 @@
   --cashier-font: 14px;
   --cashier-gap: clamp(8px, 1vw, 14px);
   --cashier-pad: clamp(8px, 1.2vw, 16px);
-  /* Ширина колонки чека (справа) — без жёсткого min 570px, чтобы каталог не сжимался */
-  --cashier-left-w: clamp(340px, 42vw, 680px);
-  --cashier-receipt-w: clamp(340px, 42vw, 680px);
+  /* Ширина колонки чека (справа) */
+  --cashier-left-w: clamp(440px, 42vw, 780px);
+  --cashier-receipt-w: clamp(440px, 42vw, 780px);
   --cashier-cart-cols: minmax(0, 1.65fr) minmax(0, 0.85fr) minmax(4.75rem, 0.72fr) minmax(0, 0.95fr);
   --cashier-sidebar-w: clamp(212px, 15vw, 248px);
   --cashier-sidebar-w-collapsed: 64px;
@@ -209,12 +209,12 @@
 
 /* ── Планшет портрет: чек сверху, каталог снизу ── */
 @media (max-width: 1023px) {
-  .cashier-register__split {
+  .cashier-register__split:not(.cashier-register__split--tabbed) {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(clamp(220px, 40dvh, 440px), auto) minmax(0, 1fr);
   }
 
-  .cashier-register__receipt {
+  .cashier-register__split:not(.cashier-register__split--tabbed) .cashier-register__receipt {
     min-height: clamp(220px, 40dvh, 440px);
     max-height: min(52dvh, 480px);
   }
@@ -226,18 +226,18 @@
 
 /* Планшет альбом: снова две колонки, если хватает ширины */
 @media (max-width: 1023px) and (min-width: 700px) and (orientation: landscape) {
-  .cashier-register__split {
+  .cashier-register__split:not(.cashier-register__split--tabbed) {
     grid-template-columns: minmax(0, 1fr) minmax(0, 46%);
     grid-template-rows: unset;
   }
 
-  .cashier-register__receipt {
+  .cashier-register__split:not(.cashier-register__split--tabbed) .cashier-register__receipt {
     order: unset;
     min-height: 0;
     max-height: none;
   }
 
-  .cashier-register__split > .pos-catalog-panel {
+  .cashier-register__split:not(.cashier-register__split--tabbed) > .pos-catalog-panel {
     order: unset;
   }
 }
@@ -271,18 +271,18 @@
   }
 
   /* Сначала каталог, чек ниже — удобнее на телефоне */
-  .cashier-register__split {
+  .cashier-register__split:not(.cashier-register__split--tabbed) {
     grid-template-rows: minmax(0, 1fr) minmax(clamp(180px, 32dvh, 300px), auto);
     gap: 10px;
   }
 
-  .cashier-register__receipt {
+  .cashier-register__split:not(.cashier-register__split--tabbed) .cashier-register__receipt {
     order: 2;
     min-height: clamp(180px, 32dvh, 300px);
     max-height: min(42dvh, 360px);
   }
 
-  .cashier-register__split > .pos-catalog-panel {
+  .cashier-register__split:not(.cashier-register__split--tabbed) > .pos-catalog-panel {
     order: 1;
     min-height: 0;
   }
@@ -348,11 +348,11 @@
     justify-content: space-between;
   }
 
-  .cashier-register__split {
+  .cashier-register__split:not(.cashier-register__split--tabbed) {
     grid-template-rows: minmax(0, 1fr) minmax(150px, 28dvh);
   }
 
-  .cashier-register__receipt {
+  .cashier-register__split:not(.cashier-register__split--tabbed) .cashier-register__receipt {
     min-height: 150px;
     max-height: min(34dvh, 280px);
   }
@@ -425,14 +425,16 @@
 /* Широкий монитор / кассовый терминал */
 @media (min-width: 1400px) {
   .cashier-app {
-    --cashier-left-w: clamp(610px, 40vw, 750px);
+    --cashier-left-w: clamp(710px, 40vw, 850px);
+    --cashier-receipt-w: clamp(710px, 40vw, 850px);
     --cashier-cart-cols: minmax(0, 2.2fr) minmax(0, 1fr) minmax(5.75rem, 0.85fr) minmax(0, 1.1fr);
   }
 }
 
 @media (min-width: 1920px) {
   .cashier-app {
-    --cashier-left-w: 750px;
+    --cashier-left-w: 850px;
+    --cashier-receipt-w: 850px;
     --cashier-cart-cols: minmax(0, 2.3fr) minmax(0, 1.05fr) minmax(6rem, 0.85fr) minmax(0, 1.15fr);
   }
 }
@@ -443,13 +445,13 @@
     --cashier-sidebar-w: 188px;
     --cashier-gap: 8px;
     --cashier-pad: 8px;
-    --cashier-receipt-w: minmax(0, 0.92fr);
-    --cashier-left-w: minmax(0, 0.92fr);
+    --cashier-receipt-w: minmax(440px, 1fr);
+    --cashier-left-w: minmax(440px, 1fr);
     --cashier-cart-cols: minmax(0, 2.5fr) minmax(3.5rem, 0.72fr) minmax(5rem, 0.68fr) minmax(4.25rem, 0.92fr);
   }
 
   .cashier-app.cashier-app--pos-screen .cashier-register__split {
-    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    grid-template-columns: minmax(0, 1fr) minmax(440px, 1.05fr);
   }
 
   .cashier-app.cashier-app--pos-screen .pos-product-grid {
@@ -489,6 +491,21 @@
 
 /* Узкий каталог (~телефон): одна колонка, карточка на всю ширину */
 @container pos-catalog (max-width: 540px) {
+  .pos-category-browse {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pos-category-tile--all {
+    grid-column: 1 / -1;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pos-category-tile--all .pos-category-tile__hint {
+    margin-left: 0;
+    text-align: left;
+  }
+
   .pos-product-grid {
     grid-template-columns: 1fr;
     gap: 10px;
@@ -528,8 +545,8 @@
 /* Средние экраны (широкий но не ultrawide) */
 @media (min-width: 1024px) and (max-width: 1279px) {
   .cashier-app:not(.cashier-app--pos-screen) {
-    --cashier-left-w: clamp(380px, 40vw, 560px);
-    --cashier-receipt-w: clamp(380px, 40vw, 560px);
+    --cashier-left-w: clamp(480px, 40vw, 660px);
+    --cashier-receipt-w: clamp(480px, 40vw, 660px);
   }
 }
 
@@ -696,6 +713,348 @@
   border-top: 1px solid var(--bs-border-color, #dee2e6);
   background: #f8f9fa;
   font-size: 0.8125rem;
+}
+
+/* Планшет 768–1023: боковое меню скрыто — только верхняя навигация */
+@media (max-width: 1023px) {
+  .cashier-app .cashier-sidebar {
+    display: none !important;
+  }
+
+  .cashier-app.cashier-app--sidebar-collapsed {
+    --cashier-sidebar-current-w: 0px;
+  }
+
+  .cashier-app .cashier-topbar--pos {
+    min-height: 40px;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .cashier-app main.flex-grow-1 {
+    padding: 8px !important;
+  }
+}
+
+/* Компактный режим кассы: вкладки «Товары» / «Чек» */
+.cashier-register__split--tabbed {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 0;
+}
+
+.cashier-pos-tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 4px;
+  margin-bottom: var(--cashier-gap, 8px);
+  background: var(--pos-surface, #fff);
+  border: 1px solid var(--pos-border, #e5e7eb);
+  border-radius: var(--pos-radius-lg, 12px);
+}
+
+.cashier-pos-tabs__btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pos-muted, #6b7280);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.cashier-pos-tabs__btn.is-active {
+  background: var(--pos-green-soft, #e8f5ef);
+  color: var(--pos-green, #006847);
+  box-shadow: inset 0 0 0 1px rgb(0 104 71 / 0.15);
+}
+
+.cashier-pos-tabs__badge {
+  min-width: 1.25rem;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--pos-green, #006847);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.cashier-register__split--tabbed > .pos-catalog-panel,
+.cashier-register__split--tabbed > .cashier-register__receipt {
+  grid-column: unset;
+  grid-row: unset;
+  order: unset;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  width: 100%;
+  display: none;
+}
+
+.cashier-register__split--tabbed.cashier-register__split--catalog > .pos-catalog-panel {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.cashier-register__split--tabbed.cashier-register__split--receipt > .cashier-register__receipt {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* absolute-дети без высоты родителя давали пустой «Чек» — в табах чек на всю область */
+.cashier-register__split--tabbed .cashier-register__receipt .pos-order-panel {
+  position: relative;
+  inset: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  width: 100%;
+}
+
+.cashier-register__split--tabbed .cashier-register__receipt .pos-order-panel.is-slide-away {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+
+.cashier-register__split--tabbed .cashier-register__receipt .pos-pay-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  height: 100%;
+  max-height: 100%;
+}
+
+.cashier-register__split--tabbed .cashier-register__receipt .pos-pay-panel.is-open {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+/* Очень узкий / низкий экран (телефон, 450×200, мини-окно) */
+@media (max-width: 480px) {
+  .cashier-app {
+    --cashier-font: 13px;
+  }
+
+  .cashier-app .cashier-topbar {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  .cashier-app .cashier-topbar__mobile-nav .nav-link {
+    padding: 4px 8px !important;
+    font-size: 0.6875rem !important;
+  }
+
+  .cashier-app .cashier-topbar__lang {
+    transform: scale(0.92);
+    transform-origin: right center;
+  }
+
+  .cashier-pos-tabs__btn {
+    min-height: 36px;
+    font-size: 0.75rem;
+  }
+
+  .cashier-app .pos-order-panel__head {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .cashier-app .pos-order-panel__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .cashier-app .pos-order-panel__btn {
+    padding: 6px 10px;
+    font-size: 0.6875rem;
+  }
+
+  .cashier-app .pos-checkout-btn {
+    min-height: 42px;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-height: 320px) {
+  .cashier-app {
+    --cashier-pad: 4px;
+    --cashier-gap: 4px;
+  }
+
+  .cashier-app .cashier-topbar--pos {
+    min-height: 28px;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+  }
+
+  .cashier-app .cashier-topbar__mobile-nav {
+    display: none;
+  }
+
+  .cashier-app main.flex-grow-1 {
+    padding: 4px !important;
+  }
+
+  .cashier-pos-tabs {
+    margin-bottom: 4px;
+    padding: 2px;
+  }
+
+  .cashier-pos-tabs__btn {
+    min-height: 32px;
+    padding: 4px 8px;
+    font-size: 0.6875rem;
+  }
+
+  .cashier-app .pos-shift-closed-banner {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
+
+  .cashier-app .pos-catalog-panel__head {
+    padding: 8px 10px 6px;
+  }
+
+  .cashier-app .pos-search-bar__field {
+    height: 34px;
+  }
+}
+
+/* 1024×768 и похожие: две колонки без переполнения */
+@media (min-width: 640px) and (max-width: 1023px) and (min-height: 500px) and (orientation: landscape) {
+  .cashier-register__split:not(.cashier-register__split--tabbed) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 42%);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .cashier-register__split:not(.cashier-register__split--tabbed) > .pos-catalog-panel,
+  .cashier-register__split:not(.cashier-register__split--tabbed) > .cashier-register__receipt {
+    min-height: 0;
+    max-height: none;
+    order: unset;
+  }
+}
+
+/* Мои продажи — карточки на узком экране */
+.cashier-sales-mobile-list {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cashier-sales-mobile-card {
+  padding: 12px 14px;
+  border: 1px solid var(--pos-border, #e5e7eb);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.cashier-sales-mobile-card:active {
+  border-color: rgb(0 104 71 / 0.35);
+  box-shadow: 0 0 0 2px rgb(0 104 71 / 0.08);
+}
+
+.cashier-sales-mobile-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.cashier-sales-mobile-card__receipt {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--pos-text, #111827);
+  word-break: break-all;
+}
+
+.cashier-sales-mobile-card__amount {
+  font-weight: 800;
+  font-size: 0.9375rem;
+  color: var(--pos-green, #006847);
+  white-space: nowrap;
+}
+
+.cashier-sales-mobile-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 0.75rem;
+  color: var(--pos-muted, #6b7280);
+}
+
+.cashier-sales-mobile-card__actions {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--pos-border, #e5e7eb);
+}
+
+@media (max-width: 639px) {
+  .cashier-page__table-wrap .cashier-sales-table-wrap {
+    display: none;
+  }
+
+  .cashier-sales-mobile-list {
+    display: flex;
+  }
+
+  .cashier-page h1.h5 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .cashier-sales-shift-stats {
+    padding: 10px 12px;
+  }
+
+  .cashier-sales-shift-stats__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .cashier-sales-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .cashier-sales-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cashier-sales-pagination__controls {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 380px) {
+  .cashier-sales-shift-stats__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Колонка чека и оплата — без уменьшения (читаемость на кассе) */

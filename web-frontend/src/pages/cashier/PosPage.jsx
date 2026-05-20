@@ -18,6 +18,7 @@ import PosCatalogPanel, { ALL_CATEGORY_ID } from '../../components/cashier/PosCa
 import PosPaymentFlow from '../../components/cashier/PosPaymentFlow';
 import PosReturnModal from '../../components/cashier/PosReturnModal';
 import { useCashierShiftModal } from '../../contexts/CashierShiftModalContext';
+import { useCashierCompactLayout } from '../../hooks/useCashierCompactLayout';
 import { DoorOpen } from 'lucide-react';
 
 const PRODUCT_PAGE_SIZE = 120;
@@ -31,9 +32,12 @@ export default function PosPage() {
   const { storeId, noAssignment, multipleAssignment } = useCashierStore();
   const [search, setSearch] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(ALL_CATEGORY_ID);
+  const [catalogBrowse, setCatalogBrowse] = useState('categories');
   const [selectedLineId, setSelectedLineId] = useState(null);
   const [payOpen, setPayOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
+  const [posPane, setPosPane] = useState('catalog');
+  const compactPos = useCashierCompactLayout();
   const { open: shiftModalOpen, openShift: openShiftModal } = useCashierShiftModal();
 
   const items = useCartStore((s) => s.items);
@@ -64,6 +68,10 @@ export default function PosPage() {
     return undefined;
   }, [returnOpen, payOpen, storeId]);
 
+  useEffect(() => {
+    if (payOpen) setPosPane('receipt');
+  }, [payOpen]);
+
   const { data: categories = [], isPending: categoriesLoading } = useQuery({
     queryKey: ['pos-categories'],
     queryFn: () => categoryApi.getAll().then((r) => r.data),
@@ -89,7 +97,7 @@ export default function PosPage() {
           activeOnly: true,
         })
         .then((r) => r.data),
-    enabled: !!storeId,
+    enabled: !!storeId && (searchActive || catalogBrowse === 'products'),
   });
 
   const products = productsData?.content ?? [];
@@ -280,7 +288,36 @@ export default function PosPage() {
               </div>
             </div>
           ) : null}
-          <div className="cashier-register__split">
+          <div
+            className={`cashier-register__split${
+              compactPos ? ` cashier-register__split--tabbed cashier-register__split--${posPane}` : ''
+            }`}
+          >
+            {compactPos ? (
+              <div className="cashier-pos-tabs" role="tablist" aria-label={t('pos.navSale')}>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={posPane === 'catalog'}
+                  className={`cashier-pos-tabs__btn${posPane === 'catalog' ? ' is-active' : ''}`}
+                  onClick={() => setPosPane('catalog')}
+                >
+                  {t('pos.tabCatalog')}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={posPane === 'receipt'}
+                  className={`cashier-pos-tabs__btn${posPane === 'receipt' ? ' is-active' : ''}`}
+                  onClick={() => setPosPane('receipt')}
+                >
+                  {t('pos.tabReceipt')}
+                  {itemCount > 0 ? (
+                    <span className="cashier-pos-tabs__badge">{itemCount}</span>
+                  ) : null}
+                </button>
+              </div>
+            ) : null}
             <PosCatalogPanel
               ref={searchInputRef}
               search={search}
@@ -298,6 +335,7 @@ export default function PosPage() {
               products={products}
               productsLoading={productsLoading}
               onAddProduct={addProductToCart}
+              onBrowseChange={setCatalogBrowse}
             />
             <div className="cashier-register__receipt">
               <PosOrderPanel
@@ -313,7 +351,10 @@ export default function PosPage() {
                 onReturn={() => setReturnOpen(true)}
                 total={total}
                 discountTotal={discountTotal}
-                onCheckout={() => setPayOpen(true)}
+                onCheckout={() => {
+                  setPosPane('receipt');
+                  setPayOpen(true);
+                }}
                 checkoutDisabled={items.length === 0 || checkoutMutation.isPending || !shiftIsOpen}
               />
               <PosPaymentFlow

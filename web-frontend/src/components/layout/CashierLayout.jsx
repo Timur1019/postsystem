@@ -53,13 +53,20 @@ function CashierLayoutShell() {
   const location = useLocation();
   const isPosRoute = location.pathname.startsWith('/cashier/pos');
 
-  /** На кассовом мониторе (~1024px) — больше места каталогу и чеку */
+  /** На экране кассы ≤1024px — сворачиваем боковое меню, остаётся верхняя навигация */
   useEffect(() => {
     if (!isPosRoute) return;
     if (typeof window === 'undefined') return;
-    if (window.innerWidth > 1280) return;
-    setSidebarOpen(false);
-    setSidebarNavExpanded(false);
+    const mq = window.matchMedia('(max-width: 1024px)');
+    const apply = () => {
+      if (mq.matches) {
+        setSidebarOpen(false);
+        setSidebarNavExpanded(false);
+      }
+    };
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
   }, [isPosRoute]);
   const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
 
@@ -84,7 +91,7 @@ function CashierLayoutShell() {
     }
   };
 
-  const sidebarClass = `cashier-sidebar d-none d-md-flex flex-column${sidebarOpen ? '' : ' is-collapsed'}`;
+  const sidebarClass = `cashier-sidebar d-none d-lg-flex flex-column${sidebarOpen ? '' : ' is-collapsed'}`;
 
   return (
     <div
@@ -170,7 +177,7 @@ function CashierLayoutShell() {
           <div className="d-flex align-items-center gap-2 min-w-0">
             <button
               type="button"
-              className="cashier-topbar__menu d-none d-md-inline-flex"
+              className="cashier-topbar__menu d-none d-lg-inline-flex"
               onClick={toggleSidebar}
               aria-label={sidebarOpen ? t('nav.collapseMenu') : t('nav.expandMenu')}
             >
@@ -178,14 +185,14 @@ function CashierLayoutShell() {
             </button>
             {!isPosRoute && (
               <>
-                <div className="d-md-none min-w-0">
+                <div className="d-lg-none min-w-0">
                   <p className="fw-semibold mb-0">{displayAppName()}</p>
                   <p className="text-muted small mb-0">{displayName(user)}</p>
                   {storeName ? (
                     <p className="text-success small mb-0 text-truncate">{storeName}</p>
                   ) : null}
                 </div>
-                <div className="d-none d-md-block min-w-0">
+                <div className="d-none d-lg-block min-w-0">
                   {!sidebarOpen ? (
                     <p className="cashier-topbar__app-name mb-0 fw-bold">{displayAppName()}</p>
                   ) : null}
@@ -196,12 +203,12 @@ function CashierLayoutShell() {
               </>
             )}
             {isPosRoute && (
-              <p className="cashier-topbar__pos-title mb-0 fw-semibold d-none d-md-block">{t('pos.navSale')}</p>
+              <p className="cashier-topbar__pos-title mb-0 fw-semibold d-none d-lg-block">{t('pos.navSale')}</p>
             )}
           </div>
 
           <div className="d-flex flex-wrap align-items-center gap-2">
-            <nav className="nav nav-pills d-md-none gap-1">
+            <nav className="nav nav-pills d-lg-none gap-1 cashier-topbar__mobile-nav">
               <NavLink to="/cashier/pos" className="nav-link py-1 px-2 small">
                 {t('pos.navSale')}
               </NavLink>

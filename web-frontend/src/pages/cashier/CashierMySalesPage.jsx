@@ -349,6 +349,60 @@ function ShiftStatsBanner({ shift, t }) {
   );
 }
 
+function SalesMobileList({ rows, isPending, onReturn, voidPending, onRowClick, t }) {
+  if (isPending) {
+    return <p className="cashier-sales-table__empty">{t('common.loading')}</p>;
+  }
+  if (rows.length === 0) {
+    return <p className="cashier-sales-table__empty">{t('pos.noSales')}</p>;
+  }
+  return (
+    <div className="cashier-sales-mobile-list">
+      {rows.map((row) => (
+        <article
+          key={row.id}
+          className="cashier-sales-mobile-card"
+          role="button"
+          tabIndex={0}
+          onClick={() => onRowClick(row)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onRowClick(row);
+            }
+          }}
+        >
+          <div className="cashier-sales-mobile-card__top">
+            <span className="cashier-sales-mobile-card__receipt">{row.receiptNumber}</span>
+            <span className="cashier-sales-mobile-card__amount">{fmt(row.totalAmount)}</span>
+          </div>
+          <div className="cashier-sales-mobile-card__meta">
+            <span>
+              {row.createdAt ? format(new Date(row.createdAt), 'dd.MM.yyyy HH:mm') : '—'}
+            </span>
+            <span className={`cashier-sales-pill ${paymentPillClass(row.paymentMethod)}`}>
+              {paymentLabel(row.paymentMethod, t)}
+            </span>
+            {statusBadge(row.status, t)}
+          </div>
+          {row.status !== 'VOIDED' && onReturn ? (
+            <div className="cashier-sales-mobile-card__actions">
+              <button
+                type="button"
+                className="cashier-sales-table__return w-100"
+                onClick={(e) => onReturn(row, e)}
+                disabled={voidPending}
+              >
+                {t('pos.return')}
+              </button>
+            </div>
+          ) : null}
+        </article>
+      ))}
+    </div>
+  );
+}
+
 function SalesListCard({
   rows,
   isPending,
@@ -363,7 +417,15 @@ function SalesListCard({
 }) {
   return (
     <div className="cashier-sales-card">
-      <div className="cashier-sales-card__table">
+      <div className="cashier-page__table-wrap cashier-sales-card__table">
+        <SalesMobileList
+          rows={rows}
+          isPending={isPending}
+          onReturn={onReturn}
+          voidPending={voidPending}
+          onRowClick={onRowClick}
+          t={t}
+        />
         <SalesTable
           rows={rows}
           isPending={isPending}
