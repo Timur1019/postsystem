@@ -1,4 +1,4 @@
-import { ArrowLeft, FolderOpen, LayoutGrid, List, Package } from 'lucide-react';
+import { LayoutGrid, List, Package, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { usePosShell } from '../../contexts/PosShellContext';
 
@@ -8,17 +8,8 @@ export default function PosTopbarStrip() {
 
   if (!shell) return null;
 
-  const {
-    posPane,
-    onGoToRegister,
-    onGoToCatalog,
-    catalogBrowse,
-    onOpenCategories,
-    onOpenProducts,
-    searchActive,
-    viewMode,
-    onViewModeChange,
-  } = shell;
+  const { posPane, onGoToRegister, onGoToCatalog, catalogBrowse, searchActive, viewMode, onViewModeChange } =
+    shell;
 
   if (posPane === 'register') {
     return (
@@ -35,40 +26,19 @@ export default function PosTopbarStrip() {
     );
   }
 
-  const onCategories = catalogBrowse === 'categories' && !searchActive;
-  const onProducts = catalogBrowse === 'products' || searchActive;
-  const showViewToggle = onProducts;
+  const showViewToggle = !searchActive && catalogBrowse === 'products';
 
   return (
-    <div className="pos-topbar-strip">
+    <div className="pos-topbar-strip pos-topbar-strip--catalog">
       <button
         type="button"
-        className="pos-topbar-nav__btn pos-topbar-nav__btn--back"
+        className="pos-topbar-close"
         onClick={onGoToRegister}
+        aria-label={t('common.close')}
+        title={t('pos.backToRegister')}
       >
-        <ArrowLeft size={18} aria-hidden />
-        <span>{t('pos.backToRegister')}</span>
+        <X size={20} strokeWidth={2} aria-hidden />
       </button>
-      <div className="pos-topbar-nav" role="group" aria-label={t('pos.catalogNavLabel')}>
-        <button
-          type="button"
-          className={`pos-topbar-nav__btn${onCategories ? ' is-active' : ''}`}
-          onClick={onOpenCategories}
-          aria-pressed={onCategories}
-        >
-          <FolderOpen size={18} aria-hidden />
-          <span>{t('pos.navCategories')}</span>
-        </button>
-        <button
-          type="button"
-          className={`pos-topbar-nav__btn${onProducts ? ' is-active' : ''}`}
-          onClick={onOpenProducts}
-          aria-pressed={onProducts}
-        >
-          <Package size={18} aria-hidden />
-          <span>{t('pos.navProducts')}</span>
-        </button>
-      </div>
 
       {showViewToggle ? (
         <div className="pos-topbar-views" role="group" aria-label={t('pos.viewModeLabel')}>

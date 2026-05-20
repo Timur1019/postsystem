@@ -232,6 +232,14 @@
     order: 10;
   }
 
+  .pos-topbar-strip--catalog {
+    justify-content: space-between;
+  }
+
+  .pos-topbar-strip--catalog .pos-topbar-views {
+    margin-left: auto;
+  }
+
   .pos-topbar-nav__btn {
     padding: 6px 10px;
     font-size: 0.75rem;

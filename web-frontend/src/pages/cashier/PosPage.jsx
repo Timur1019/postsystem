@@ -111,7 +111,7 @@ export default function PosPage() {
           activeOnly: true,
         })
         .then((r) => r.data),
-    enabled: !!storeId && (searchActive || catalogBrowse === 'products'),
+    enabled: !!storeId && posPane === 'catalog' && (searchActive || catalogBrowse === 'products'),
   });
 
   const products = productsData?.content ?? [];
@@ -120,16 +120,6 @@ export default function PosPage() {
     setSelectedCategoryId(id);
     setSearch('');
     setCatalogBrowse('products');
-  }, []);
-
-  const handleOpenCategories = useCallback(() => {
-    setCatalogBrowse('categories');
-    setSearch('');
-  }, []);
-
-  const handleOpenProducts = useCallback(() => {
-    setCatalogBrowse('products');
-    setSearch('');
   }, []);
 
   const handleViewModeChange = useCallback((mode) => {
@@ -141,18 +131,25 @@ export default function PosPage() {
     }
   }, []);
 
-  const handleGoToCatalog = useCallback(() => setPosPane('catalog'), []);
-  const handleGoToRegister = useCallback(() => setPosPane('register'), []);
+  const handleGoToCatalog = useCallback(() => {
+    setPosPane('catalog');
+    setCatalogBrowse('categories');
+    setSelectedCategoryId(ALL_CATEGORY_ID);
+    setSearch('');
+  }, []);
+
+  const handleGoToRegister = useCallback(() => {
+    setPosPane('register');
+    setSearch('');
+  }, []);
 
   useEffect(() => {
     if (!setShell) return undefined;
     setShell({
       posPane,
+      catalogBrowse,
       onGoToCatalog: handleGoToCatalog,
       onGoToRegister: handleGoToRegister,
-      catalogBrowse,
-      onOpenCategories: handleOpenCategories,
-      onOpenProducts: handleOpenProducts,
       searchActive,
       viewMode,
       onViewModeChange: handleViewModeChange,
@@ -161,11 +158,9 @@ export default function PosPage() {
   }, [
     setShell,
     posPane,
+    catalogBrowse,
     handleGoToCatalog,
     handleGoToRegister,
-    catalogBrowse,
-    handleOpenCategories,
-    handleOpenProducts,
     searchActive,
     viewMode,
     handleViewModeChange,
@@ -358,29 +353,6 @@ export default function PosPage() {
             </div>
           ) : null}
           <div className={`cashier-register__split cashier-register__split--pane cashier-register__split--${posPane}`}>
-            <div className="cashier-pos-tabs" role="tablist" aria-label={t('pos.navSale')}>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={posPane === 'register'}
-                className={`cashier-pos-tabs__btn${posPane === 'register' ? ' is-active' : ''}`}
-                onClick={handleGoToRegister}
-              >
-                {t('pos.tabRegister')}
-                {itemCount > 0 ? (
-                  <span className="cashier-pos-tabs__badge">{itemCount}</span>
-                ) : null}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={posPane === 'catalog'}
-                className={`cashier-pos-tabs__btn${posPane === 'catalog' ? ' is-active' : ''}`}
-                onClick={handleGoToCatalog}
-              >
-                {t('pos.tabCatalog')}
-              </button>
-            </div>
             <div className="cashier-register__workspace">
               <div className="cashier-register__main">
                 <div className="cashier-register__pane cashier-register__pane--catalog">
