@@ -5,7 +5,7 @@ const { app } = require('electron');
 const { resolveWebDist } = require('./embedded-server.cjs');
 
 const DEFAULT_WEB_PORT = process.env.POS_WEB_PORT || '80';
-const DEFAULT_API_PORT = process.env.POS_API_PORT || '8080';
+const DEFAULT_API_PORT = process.env.POS_API_PORT || '80';
 
 function configPath() {
   return path.join(app.getPath('userData'), 'config.json');
@@ -54,11 +54,12 @@ function buildSetupHtml(current) {
     ? 'Укажите адрес магазина (как сказал администратор). Обычно это IP или имя сервера — ничего сложного настраивать не нужно.'
     : 'Укажите адрес сервера магазина. Интерфейс загрузится из сети — после обновления на сервере нажмите «Вид → Обновить».';
   const hint = hasEmbedded
-    ? 'Если не подключается — спросите администратора, открыт ли на сервере порт ' + apiPort + '.'
+    ? 'Порт: обычно 80 (сайт и API через один адрес). 8080 — только если администратор открыл его отдельно.'
     : 'Касса откроет сайт http://адрес:' + webPort + '/ — нужен интернет и порт ' + webPort + '.';
+  const displayApiPort = apiPort === '8080' ? '80' : apiPort;
   const portFields = hasEmbedded
-    ? `<label for="apiPort">Порт (оставьте ${apiPort}, если не сказали иное)</label>
-    <input id="apiPort" name="apiPort" type="number" placeholder="8080" value="${apiPort}" required />
+    ? `<label for="apiPort">Порт сервера (обычно 80)</label>
+    <input id="apiPort" name="apiPort" type="number" placeholder="80" value="${displayApiPort}" required />
     <input type="hidden" id="webPort" value="80" />`
     : `<div class="row">
       <div>
@@ -114,7 +115,7 @@ function buildSetupHtml(current) {
       const host = document.getElementById('host').value.trim();
       const webEl = document.getElementById('webPort');
       const webPort = webEl ? (webEl.value.trim() || '80') : '80';
-      const apiPort = document.getElementById('apiPort').value.trim() || '8080';
+      const apiPort = document.getElementById('apiPort').value.trim() || '80';
       window.setupApi.save({ host, webPort, apiPort });
     });
   </script>
@@ -127,7 +128,7 @@ function parseOrigin(url) {
     const u = new URL(url.startsWith('http') ? url : `http://${url}`);
     return {
       host: u.hostname,
-      port: u.port || '8080',
+      port: u.port || (u.protocol === 'https:' ? '443' : '80'),
       webPort: u.port || DEFAULT_WEB_PORT,
     };
   } catch {

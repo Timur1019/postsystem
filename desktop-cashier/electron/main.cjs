@@ -78,11 +78,58 @@ function httpOk(url) {
       resolve(res.statusCode >= 200 && res.statusCode < 400);
     });
     req.on('error', () => resolve(false));
-    req.setTimeout(5000, () => {
+    req.setTimeout(8000, () => {
       req.destroy();
       resolve(false);
     });
   });
+}
+
+/** Пробуем health на :80 (nginx) и :8080 (прямой API) — на Windows часто открыт только 80. */
+function collectApiHealthUrls(cfg) {
+  const urls = [];
+  const push = (base) => {
+    if (!base) return;
+    let b = String(base).trim();
+    if (!b) return;
+    b = b.replace(/\/api\/v1\/actuator\/health\/?$/i, '').replace(/\/$/, '');
+    if (!/^https?:\/\//i.test(b)) {
+      b = `http://${b}`;
+    }
+    urls.push(`${b}/api/v1/actuator/health`);
+  };
+  if (cfg.useEmbedded && cfg.cashierUrl) {
+    push(cfg.cashierUrl);
+  }
+  push(cfg.apiHealthUrl);
+  push(cfg.backendOrigin);
+  if (cfg.useRemoteUi && cfg.cashierUrl) {
+    push(cfg.cashierUrl);
+  }
+  try {
+    const u = new URL(cfg.backendOrigin || cfg.cashierUrl || 'http://127.0.0.1');
+    const host = u.hostname;
+    if (host && host !== '127.0.0.1' && host !== 'localhost') {
+      const seen = new Set(urls);
+      for (const port of ['80', '8080']) {
+        const line = `http://${host}:${port}/api/v1/actuator/health`;
+        if (!seen.has(line)) urls.push(line);
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return [...new Set(urls)];
+}
+
+async function probeApiHealth(cfg) {
+  const urls = collectApiHealthUrls(cfg);
+  for (const url of urls) {
+    if (await httpOk(url)) {
+      return { ok: true, url };
+    }
+  }
+  return { ok: false, tried: urls };
 }
 
 async function waitForServices() {
@@ -112,43 +159,38 @@ async function waitForServices() {
     };
   }
 
-  const apiHealthUrl = config.useRemoteUi
-    ? `${config.cashierUrl}/api/v1/actuator/health`
-    : config.useEmbedded
-      ? `${config.cashierUrl}/api/v1/actuator/health`
-      : config.apiHealthUrl;
-
-  let apiOk = await httpOk(apiHealthUrl);
-  if (!apiOk && !config.useRemoteUi) {
-    apiOk = await httpOk(config.apiHealthUrl);
-  }
-  if (!apiOk) {
+  let apiProbe = await probeApiHealth(config);
+  if (!apiProbe.ok) {
     try {
       await configureServerInteractive();
       config = loadConfig();
-      const retryUrl = config.useRemoteUi
-        ? `${config.cashierUrl}/api/v1/actuator/health`
-        : config.apiHealthUrl;
-      apiOk = await httpOk(retryUrl);
+      if (config.useEmbedded) {
+        const url = await startEmbeddedUi({
+          port: config.embeddedPort,
+          backendOrigin: config.backendOrigin,
+        });
+        config.cashierUrl = url.replace(/\/$/, '');
+      }
+      apiProbe = await probeApiHealth(config);
     } catch {
-      apiOk = false;
+      apiProbe = { ok: false, tried: apiProbe.tried || [] };
     }
   }
 
-  if (!apiOk) {
-    const healthLine = config.useRemoteUi
-      ? `${config.cashierUrl}/api/v1/actuator/health`
-      : config.apiHealthUrl;
+  if (!apiProbe.ok) {
+    const tried = (apiProbe.tried || []).slice(0, 4).join('\n');
     return {
       ok: false,
       message:
-        `Сервер Aurent не отвечает:\n${healthLine}\n\n` +
-        'Проверьте:\n' +
-        '• сервер запущен (bash deploy/git-update.sh)\n' +
-        '• IP и порты указаны верно\n' +
-        (config.useRemoteUi
-          ? `• файрвол пропускает порт веб-интерфейса (обычно ${config.webPort || '80'})`
-          : '• файрвол пропускает порт API (обычно 8080)'),
+        `Сервер Aurent не отвечает.\n\n` +
+        `Проверялись адреса:\n${tried}\n\n` +
+        'Что сделать:\n' +
+        '• Укажите IP сервера без http://\n' +
+        '• Порт: обычно **80** (если админ не дал другой)\n' +
+        '• В браузере на этом ПК откройте:\n' +
+        `  http://ВАШ_IP/api/v1/actuator/health\n` +
+        '  Должно быть: {"status":"UP"}\n' +
+        '• На сервере: bash deploy/git-update.sh',
     };
   }
 

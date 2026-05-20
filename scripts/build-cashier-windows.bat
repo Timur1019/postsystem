@@ -5,7 +5,7 @@ cd /d "%~dp0.."
 
 set SERVER_HOST=111.88.132.126
 set SERVER_WEB_PORT=80
-set SERVER_API_PORT=8080
+set SERVER_API_PORT=80
 rem 1 = встроить актуальный фронт в .exe (рекомендуется); 0 = только оболочка, UI с сервера :80
 set INCLUDE_WEB_DIST=1
 set CSC_IDENTITY_AUTO_DISCOVERY=false
