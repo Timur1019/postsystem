@@ -20,6 +20,12 @@ public class PosCacheProperties {
     /** Потоки пула report-cache-* (агрегаты + чанки журнала). */
     private int loaderThreads = 8;
 
+    /**
+     * Если true — аналитика и журнал продаж прогреваются параллельно при старте / cron / админ‑эндпоинте
+     * (разные задачи БД не блокируют друг друга). Оба кеша всё равно per‑JVM; в каждом инстансе приложения свой набор ключей в памяти.
+     */
+    private boolean parallelRefresh = true;
+
     private int topProductsLimit = 100;
 
     private SalesLedger salesLedger = new SalesLedger();

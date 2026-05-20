@@ -3,8 +3,7 @@ package com.pos.controller;
 import com.pos.dto.report.DailySummaryResponse;
 import com.pos.dto.report.SalesReportResponse;
 import com.pos.service.ReportService;
-import com.pos.service.analytics.ReportAnalyticsCacheService;
-import com.pos.service.salesledger.SalesLedgerCacheService;
+import com.pos.service.cache.PosCacheWarmupCoordinator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +19,7 @@ import java.time.LocalDate;
 public class ReportController {
 
     private final ReportService reportService;
-    private final ReportAnalyticsCacheService analyticsCacheService;
-    private final SalesLedgerCacheService salesLedgerCacheService;
+    private final PosCacheWarmupCoordinator posCacheWarmupCoordinator;
 
     @GetMapping("/daily")
     public ResponseEntity<DailySummaryResponse> dailySummary(
@@ -60,8 +58,7 @@ public class ReportController {
     @PostMapping("/cache/refresh")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> refreshCaches() {
-        analyticsCacheService.refresh();
-        salesLedgerCacheService.refresh();
+        posCacheWarmupCoordinator.refreshAllCaches();
         return ResponseEntity.noContent().build();
     }
 }

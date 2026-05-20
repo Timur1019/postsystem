@@ -7,6 +7,8 @@ public record ProductImportPreviewRow(
     String sku,
     String name,
     String ikpu,
+    /** Номер e-счёт-фактуры (напр. IS-00008429), только для источника UZ_INVOICE. */
+    String uzInvoiceDocumentId,
     String unitOfMeasure,
     int quantity,
     BigDecimal fileSellingPrice,

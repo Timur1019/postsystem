@@ -86,7 +86,7 @@ public class ProductImportServiceImpl implements ProductImportService {
             if (ProductImportParseUtil.isRowEmpty(row)) {
                 continue;
             }
-            preview.add(ProductImportSupport.toPreviewRow(rowNum++, row, productRepository));
+            preview.add(ProductImportSupport.toPreviewRow(rowNum++, row, productRepository, importSource));
         }
         int dup = (int) preview.stream().filter(r -> ProductImportPreviewRow.STATUS_DUPLICATE.equals(r.status())).count();
         int invalid = (int) preview.stream().filter(r -> ProductImportPreviewRow.STATUS_INVALID.equals(r.status())).count();
@@ -273,6 +273,7 @@ public class ProductImportServiceImpl implements ProductImportService {
             null,
             null,
             null,
+            row.uzInvoiceDocumentId(),
             storePrices,
             null
         );

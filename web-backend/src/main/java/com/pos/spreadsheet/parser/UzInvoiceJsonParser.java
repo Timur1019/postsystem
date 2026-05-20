@@ -43,11 +43,12 @@ public class UzInvoiceJsonParser {
     public List<Map<String, String>> parse(byte[] bytes) {
         try {
             JsonNode root = objectMapper.readTree(bytes);
+            String extractedDocId = extractUzInvoiceDocumentId(root);
             List<JsonNode> itemNodes = collectItemNodes(root);
             List<Map<String, String>> rows = new ArrayList<>();
             int rowNum = 2;
             for (JsonNode item : itemNodes) {
-                Map<String, String> row = mapItemNode(item, rowNum++);
+                Map<String, String> row = mapItemNode(item, rowNum++, extractedDocId);
                 if (row != null) {
                     rows.add(row);
                 }
@@ -210,13 +211,13 @@ public class UzInvoiceJsonParser {
         }
     }
 
-    private Map<String, String> mapItemNode(JsonNode item, int rowNum) {
+    private Map<String, String> mapItemNode(JsonNode item, int rowNum, String uzInvoiceDocumentId) {
         if (item == null || !item.isObject()) {
             return null;
         }
         // Didox item_row: item_columns[].dynamic_item
         if (item.has("item_columns") || item.has("itemColumns")) {
-            return mapDidoxItemRow(item, rowNum);
+            return mapDidoxItemRow(item, rowNum, uzInvoiceDocumentId);
         }
         String name = firstText(item,
             "name", "productName", "product_name", "description", "title", "service_name",
@@ -242,10 +243,10 @@ public class UzInvoiceJsonParser {
             price = firstText(item, "subtotal", "sum", "total", "lineTotal");
         }
         String vat = firstVat(item);
-        return UzInvoiceProductRowMapper.toCatalogRow(name, ikpu, unit, qty, price, vat, rowNum);
+        return UzInvoiceProductRowMapper.toCatalogRow(name, ikpu, unit, qty, price, vat, rowNum, uzInvoiceDocumentId);
     }
 
-    private Map<String, String> mapDidoxItemRow(JsonNode item, int rowNum) {
+    private Map<String, String> mapDidoxItemRow(JsonNode item, int rowNum, String uzInvoiceDocumentId) {
         JsonNode columns = item.has("item_columns") ? item.get("item_columns") : item.get("itemColumns");
         if (columns == null) {
             return null;
@@ -293,7 +294,91 @@ public class UzInvoiceJsonParser {
                 }
             }
         }
-        return UzInvoiceProductRowMapper.toCatalogRow(name, ikpu, unit, qty, price, vat, rowNum);
+        return UzInvoiceProductRowMapper.toCatalogRow(name, ikpu, unit, qty, price, vat, rowNum, uzInvoiceDocumentId);
+    }
+
+    private static String extractUzInvoiceDocumentId(JsonNode root) {
+        String structured = scanKnownInvoiceFields(root);
+        if (structured != null) {
+            return structured;
+        }
+        JsonNode document = findPathIgnoreCase(root, "document");
+        if (document != null && document.isObject()) {
+            structured = scanKnownInvoiceFields(document);
+            if (structured != null) {
+                return structured;
+            }
+        }
+        JsonNode invoice = findPathIgnoreCase(root, "invoice");
+        if (invoice != null && invoice.isObject()) {
+            structured = scanKnownInvoiceFields(invoice);
+            if (structured != null) {
+                return structured;
+            }
+        }
+        return walkJsonForDocumentId(root, 0, new int[] { 900 });
+    }
+
+    /** {@code counts[0]} — оставшийся «бюджет» посещений JSON-узлов. */
+    private static String walkJsonForDocumentId(JsonNode node, int depth, int[] budget) {
+        if (budget[0] <= 0 || depth > 14 || node == null) {
+            return null;
+        }
+        if (node.isTextual()) {
+            budget[0]--;
+            return UzInvoiceDocumentIdExtractor.extractFromPlainText(node.asText());
+        }
+        if (node.isNumber()) {
+            budget[0]--;
+            return UzInvoiceDocumentIdExtractor.extractFromPlainText(node.asText());
+        }
+        if (node.isArray()) {
+            for (JsonNode el : node) {
+                String hit = walkJsonForDocumentId(el, depth + 1, budget);
+                if (hit != null) {
+                    return hit;
+                }
+            }
+            return null;
+        }
+        if (node.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            while (fields.hasNext()) {
+                budget[0]--;
+                if (budget[0] <= 0) {
+                    return null;
+                }
+                JsonNode next = fields.next().getValue();
+                String hit = walkJsonForDocumentId(next, depth + 1, budget);
+                if (hit != null) {
+                    return hit;
+                }
+            }
+            return null;
+        }
+        return null;
+    }
+
+    private static String scanKnownInvoiceFields(JsonNode node) {
+        if (node == null || !node.isObject()) {
+            return null;
+        }
+        for (String key : new String[] {
+            "invoiceNumber", "invoice_number", "invoiceNo", "invoice_no",
+            "facturaUzId", "factura_id", "documentNumber", "document_number",
+            "docNumber", "doc_number", "registrationNumber", "registration_number",
+            "roamingFacturaUzId", "electronic_invoice_number"
+        }) {
+            String v = text(findPathIgnoreCase(node, key));
+            if (!StringUtils.hasText(v)) {
+                continue;
+            }
+            String hit = UzInvoiceDocumentIdExtractor.extractFromPlainText(v);
+            if (hit != null) {
+                return hit;
+            }
+        }
+        return null;
     }
 
     private static String firstVat(JsonNode item) {

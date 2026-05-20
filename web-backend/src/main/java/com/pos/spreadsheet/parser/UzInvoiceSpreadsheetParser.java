@@ -84,10 +84,11 @@ public class UzInvoiceSpreadsheetParser {
                 "Не найдена таблица товаров в счёт-фактуре. Ожидаются колонки «Маҳсулот номи», «Нарх» и т.д."
             );
         }
+        String documentId = UzInvoiceDocumentIdExtractor.extractFromGrid(grid);
         ColumnMap columns = mapColumns(grid.get(headerRow));
         List<Map<String, String>> rows = new ArrayList<>();
         for (int r = headerRow + 1; r < grid.size(); r++) {
-            Map<String, String> mapped = mapRow(grid.get(r), columns, r + 1);
+            Map<String, String> mapped = mapRow(grid.get(r), columns, r + 1, documentId);
             if (mapped != null) {
                 rows.add(mapped);
             }
@@ -171,7 +172,7 @@ public class UzInvoiceSpreadsheetParser {
         }
     }
 
-    private Map<String, String> mapRow(List<String> row, ColumnMap cols, int excelRowNum) {
+    private Map<String, String> mapRow(List<String> row, ColumnMap cols, int excelRowNum, String uzInvoiceDocumentId) {
         if (row == null || row.isEmpty()) {
             return null;
         }
@@ -193,7 +194,8 @@ public class UzInvoiceSpreadsheetParser {
             cell(row, cols.qty),
             cell(row, cols.unitPrice),
             cell(row, cols.vatRate),
-            excelRowNum
+            excelRowNum,
+            uzInvoiceDocumentId
         );
     }
 

@@ -45,4 +45,14 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     @Query("SELECT p FROM Product p WHERE p.stockQuantity <= p.lowStockAlert AND p.isActive = true")
     List<Product> findLowStockProducts();
+
+    Optional<Product> findByUzInvoiceDocumentIdAndIkpuAndIsActiveTrue(
+        String uzInvoiceDocumentId,
+        String ikpu
+    );
+
+    Optional<Product> findByUzInvoiceDocumentIdAndSkuAndIsActiveTrue(
+        String uzInvoiceDocumentId,
+        String sku
+    );
 }

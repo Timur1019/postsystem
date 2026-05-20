@@ -9,3 +9,4 @@ migration_manual_cashier_shifts.sql
 migration_manual_product_discount.sql
 migration_manual_sale_payment_split.sql
 migration_manual_user_module_access.sql
+migration_manual_uz_invoice_document_id.sql

@@ -93,6 +93,9 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
             .ownerType(StringUtils.hasText(req.ownerType()) ? req.ownerType() : "OWN")
             .commissionTin(req.commissionTin())
             .commissionPinfl(req.commissionPinfl())
+            .uzInvoiceDocumentId(
+                StringUtils.hasText(req.uzInvoiceDocumentId()) ? req.uzInvoiceDocumentId().trim().toUpperCase() : null
+            )
             .build();
 
         Product saved = productRepository.save(product);
@@ -267,6 +270,9 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         product.setOwnerType(StringUtils.hasText(req.ownerType()) ? req.ownerType() : "OWN");
         product.setCommissionTin(req.commissionTin());
         product.setCommissionPinfl(req.commissionPinfl());
+        product.setUzInvoiceDocumentId(
+            StringUtils.hasText(req.uzInvoiceDocumentId()) ? req.uzInvoiceDocumentId().trim().toUpperCase() : null
+        );
 
         int initialStock = req.initialStock() != null ? req.initialStock() : 0;
         product.setStockQuantity(initialStock);

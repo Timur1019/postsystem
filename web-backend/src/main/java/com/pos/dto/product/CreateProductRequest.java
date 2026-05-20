@@ -33,6 +33,7 @@ public record CreateProductRequest(
     String ownerType,
     String commissionTin,
     String commissionPinfl,
+    String uzInvoiceDocumentId,
     @Valid List<ProductStorePriceRequest> storePrices,
     List<String> additionalBarcodes
 ) {}

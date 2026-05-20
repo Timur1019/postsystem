@@ -37,6 +37,7 @@ app:
     refresh-cron: "0 0 1 * * *"
     zone-id: Asia/Tashkent
     loader-threads: 8
+    parallel-refresh: true
     top-products-limit: 100
     sales-ledger:
       enabled: true

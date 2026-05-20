@@ -98,6 +98,10 @@ public class Product {
     @Column(name = "commission_pinfl", length = 14)
     private String commissionPinfl;
 
+    /** Номер электронной счёт-фактуры Узбекистан (Didox/Soliq), импорт UZ_INVOICE. */
+    @Column(name = "uz_invoice_document_id", length = 64)
+    private String uzInvoiceDocumentId;
+
     @BatchSize(size = 32)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

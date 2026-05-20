@@ -81,6 +81,7 @@ CREATE TABLE products (
     owner_type          VARCHAR(50),
     commission_tin      VARCHAR(9),
     commission_pinfl    VARCHAR(14),
+    uz_invoice_document_id VARCHAR(64),
     created_at          TIMESTAMPTZ DEFAULT NOW(),
     updated_at          TIMESTAMPTZ DEFAULT NOW()
 );

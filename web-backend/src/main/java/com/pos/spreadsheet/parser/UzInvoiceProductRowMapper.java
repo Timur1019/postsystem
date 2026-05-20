@@ -27,7 +27,8 @@ public final class UzInvoiceProductRowMapper {
         String qtyRaw,
         String priceRaw,
         String vatRaw,
-        int rowNum
+        int rowNum,
+        String uzInvoiceDocumentId
     ) {
         if (!StringUtils.hasText(name) || TOTAL_ROW.matcher(name.trim()).matches()) {
             return null;
@@ -50,7 +51,21 @@ public final class UzInvoiceProductRowMapper {
             ).orElse(null)
         );
 
-        String sku = StringUtils.hasText(ikpu) ? "IKPU-" + ikpu : "INV-" + rowNum;
+        String normDoc = null;
+        if (StringUtils.hasText(uzInvoiceDocumentId)) {
+            normDoc = uzInvoiceDocumentId.trim().toUpperCase(Locale.ROOT);
+        }
+
+        String sku;
+        if (normDoc != null) {
+            if (StringUtils.hasText(ikpu)) {
+                sku = normDoc + "-IKPU-" + ikpu;
+            } else {
+                sku = normDoc + "-INV-" + rowNum;
+            }
+        } else {
+            sku = StringUtils.hasText(ikpu) ? "IKPU-" + ikpu : "INV-" + rowNum;
+        }
 
         Map<String, String> map = new LinkedHashMap<>();
         map.put("sku", sku);
@@ -62,6 +77,9 @@ public final class UzInvoiceProductRowMapper {
         map.put("cost_price", "0");
         map.put("tax_rate_percent_nds", vat.toPlainString());
         map.put("active", "1");
+        if (normDoc != null) {
+            map.put(UzInvoiceDocumentIdExtractor.ROW_KEY_UZ_INVOICE_DOCUMENT_ID, normDoc);
+        }
         return map;
     }
 
