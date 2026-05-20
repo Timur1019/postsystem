@@ -94,6 +94,8 @@ services:
       dockerfile: Dockerfile
     container_name: aurent-pos-telegram-bot
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_SUPPORT_GROUP_ID: ${TELEGRAM_SUPPORT_GROUP_ID:-}
