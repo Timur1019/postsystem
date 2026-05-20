@@ -16,6 +16,7 @@ import SuppliersPage     from './pages/SuppliersPage';
 import UsersPage         from './pages/UsersPage';
 import UsersPrinterSettingsPage from './pages/UsersPrinterSettingsPage';
 import UsersBrandingSettingsPage from './pages/UsersBrandingSettingsPage';
+import UsersBarcodePrintPage from './pages/UsersBarcodePrintPage';
 import StoresPage        from './pages/StoresPage';
 import ReceiptPage       from './pages/ReceiptPage';
 import CashRegistersListPage from './pages/CashRegistersListPage';
@@ -181,6 +182,9 @@ export default function App() {
             } />
             <Route path="users/branding-settings" element={
               <ProtectedRoute requiredRole="ADMIN" module="usersBrandingSettings"><UsersBrandingSettingsPage /></ProtectedRoute>
+            } />
+            <Route path="users/barcode-print" element={
+              <ProtectedRoute requiredRole="ADMIN" module="usersBarcodePrint"><UsersBarcodePrintPage /></ProtectedRoute>
             } />
             <Route path="users" element={<Navigate to="/users/list" replace />} />
             <Route path="handbook" element={<HandbookPage scope="admin" />} />

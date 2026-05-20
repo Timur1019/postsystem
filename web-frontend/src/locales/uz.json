@@ -53,6 +53,7 @@
     "usersList": "Foydalanuvchilar ro‘yxati",
     "usersPrinterSettings": "Printer sozlamalari",
     "usersBrandingSettings": "Foydalanuvchi sozlamalari",
+    "usersBarcodePrint": "Shtrix kod chop etish",
     "handbook": "Qo'llanma",
     "support": "Qo'llab-quvvatlash",
     "logout": "Chiqish",
@@ -685,6 +686,7 @@
       "saved": "Huquqlar saqlandi",
       "resetDone": "Rol huquqlari tiklandi",
       "needOne": "Kamida bitta modulni yoqing",
+      "saveFailed": "Kirish huquqlarini saqlab bo‘lmadi",
       "customHint": "Quyidagi modullarni belgilang — saqlashda individual huquqlar yoqiladi"
     },
     "moduleGroups": {
@@ -714,6 +716,7 @@
       "usersList": "Foydalanuvchilar",
       "usersPrinterSettings": "Printer",
       "usersBrandingSettings": "Brending",
+      "usersBarcodePrint": "Yorliq chop etish",
       "checkout": "To'lov"
     }
   },
@@ -812,6 +815,30 @@
     "placeholderName": "Ali Vali",
     "placeholderUser": "ali",
     "placeholderEmail": "ali@store.com"
+  },
+  "usersBarcodePrint": {
+    "title": "Shtrix kod chop etish",
+    "intro": "Shtrix kodni skanerlang yoki Tasnif uchun matn kiriting. Avval sizning katalogingiz tekshiriladi, keyin Tasnif. Topilgandan keyin yorliq yoki narx yorligʻi oynasi ochiladi.",
+    "searchLabel": "Qidiruv",
+    "searchPh": "Shtrix kod yoki Tasnif soʻrovi…",
+    "searchHint": "USB-skaner boʻshliqqa yozadi va Enter yuboradi — qidiruv avtomatik ishga tushadi.",
+    "foundInCatalog": "Tovar katalogda topildi",
+    "foundViaTasnif": "Tasnif maʼlumotlari",
+    "pickFromListHint": "Roʻyxatdan pozitsiyani tanlang",
+    "noBarcodeForPrint": "Yorliq uchun kod yoʻq — Tasnifni tekshiring",
+    "currentItem": "Joriy pozitsiya",
+    "sourceCatalog": "Sizning katalogingiz",
+    "sourceTasnif": "Tasnif",
+    "priceHint": "Tasnifdan kelgan pozitsiyalar uchun narxi qoʻlda kiritish mumkin.",
+    "openPrint": "Yorliq / narxi",
+    "modalTitle": "Yorliq",
+    "tabLabel": "Yorliq",
+    "tabPriceTag": "Narxi",
+    "showName": "Nomini koʻrsatish",
+    "showBarcode": "Shtrix kodni koʻrsatish",
+    "showPrice": "Narxni koʻrsatish",
+    "copies": "Nusxalar",
+    "print": "Chop etish"
   },
   "receipt": {
     "loading": "Chek yuklanmoqda…",
@@ -1400,6 +1427,16 @@
           "Do'konlarni yaratish va tahrirlash.",
           "Har bir kassir va kassa do'kon kontekstida ishlaydi.",
           "Tovar narxlari do'konlar bo'yicha farq qilishi mumkin."
+        ]
+      },
+      "usersBarcodePrint": {
+        "title": "Shtrix kod chop etish",
+        "summary": "Shtrix kod yoki Tasnif bo'yicha qidiruv, yorliq va narx yorlig'i, chop etish.",
+        "details": [
+          "USB-skaner qidiruv maydoniga kod yozadi va odatda Enter yuboradi — qidiruv avtomatik bajariladi.",
+          "Avval sizning katalogingiz tekshiriladi; topilmasa Tasnif (klassifikator) bo'yicha izlanadi.",
+          "Topilgandan keyin «Yorliq / narxi» ni oching, kerakli bloklarni yoqing va nusxa sonini kiriting.",
+          "Chop etish brauzer orqali; termoprinter uchun o'lchamni tizim printer sozlamalaridan sozlang."
         ]
       },
       "users": {

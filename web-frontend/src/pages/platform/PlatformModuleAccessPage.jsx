@@ -7,28 +7,18 @@ import { companyApi, platformModuleAccessApi } from '../../services/api';
 
 const GROUP_ORDER = ['main', 'goods', 'stock', 'orders', 'registers', 'reports', 'settings'];
 
-function catalogGroupFor(moduleId) {
-  const groups = {
-    dashboard: 'main',
-    checkout: 'main',
-    products: 'goods',
-    categories: 'goods',
-    stockProducts: 'stock',
-    stockSuppliers: 'stock',
-    ordersList: 'orders',
-    registersList: 'registers',
-    registersZReports: 'registers',
-    registersTransfer: 'registers',
-    registersConfig: 'registers',
-    reportsSales: 'reports',
-    reportsReturns: 'reports',
-    reportsAnalytics: 'reports',
-    stores: 'settings',
-    usersList: 'settings',
-    usersPrinterSettings: 'settings',
-    usersBrandingSettings: 'settings',
-  };
-  return groups[moduleId] ?? 'main';
+function catalogGroupFor(moduleId, catalogById) {
+  return catalogById?.[moduleId] ?? 'main';
+}
+
+function extractApiError(err, fallback) {
+  const data = err?.response?.data;
+  if (data?.message) return data.message;
+  if (data?.errors && typeof data.errors === 'object') {
+    const first = Object.values(data.errors).find(Boolean);
+    if (first) return String(first);
+  }
+  return fallback;
 }
 
 export default function PlatformModuleAccessPage() {
@@ -43,6 +33,19 @@ export default function PlatformModuleAccessPage() {
     queryKey: ['companies-all'],
     queryFn: () => companyApi.listAll().then((r) => r.data),
   });
+
+  const { data: catalog = [] } = useQuery({
+    queryKey: ['platform-module-access-catalog'],
+    queryFn: () => platformModuleAccessApi.catalog().then((r) => r.data),
+  });
+
+  const catalogById = useMemo(() => {
+    const map = {};
+    for (const row of catalog) {
+      map[row.id] = row.group;
+    }
+    return map;
+  }, [catalog]);
 
   const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ['platform-module-access-users', companyId],
@@ -70,12 +73,12 @@ export default function PlatformModuleAccessPage() {
     const modules = detail?.modules ?? [];
     const byGroup = {};
     for (const row of modules) {
-      const cat = catalogGroupFor(row.id);
+      const cat = catalogGroupFor(row.id, catalogById);
       if (!byGroup[cat]) byGroup[cat] = [];
       byGroup[cat].push(row);
     }
     return GROUP_ORDER.filter((g) => byGroup[g]?.length).map((g) => ({ group: g, items: byGroup[g] }));
-  }, [detail]);
+  }, [detail, catalogById]);
 
   const saveMutation = useMutation({
     mutationFn: (payload) => platformModuleAccessApi.updateUser(selectedUserId, payload),
@@ -86,19 +89,31 @@ export default function PlatformModuleAccessPage() {
       qc.invalidateQueries({ queryKey: ['platform-module-access-detail', selectedUserId] });
     },
     onError: (e) => {
-      const msg = e.response?.data?.message ?? e.response?.data?.errors?.[0] ?? t('common.error');
-      toast.error(msg);
+      toast.error(extractApiError(e, t('platform.moduleAccess.saveFailed')));
     },
   });
 
+  const buildModulesPayload = () => {
+    const modules = {};
+    for (const row of detail?.modules ?? []) {
+      modules[row.id] = !!moduleToggles[row.id];
+    }
+    return modules;
+  };
+
   const handleSave = () => {
-    if (!selectedUserId) return;
-    const hasAny = Object.values(moduleToggles).some(Boolean);
+    if (!selectedUserId || !detail?.modules?.length) return;
+    if (!customAccess) {
+      resetMutation.mutate();
+      return;
+    }
+    const modules = buildModulesPayload();
+    const hasAny = Object.values(modules).some(Boolean);
     if (!hasAny) {
       toast.error(t('platform.moduleAccess.needOne'));
       return;
     }
-    saveMutation.mutate({ customAccess: true, modules: moduleToggles });
+    saveMutation.mutate({ customAccess: true, modules });
   };
 
   const handleToggleModule = (moduleId, checked) => {
@@ -119,7 +134,7 @@ export default function PlatformModuleAccessPage() {
       qc.invalidateQueries({ queryKey: ['platform-module-access-users', companyId] });
       qc.invalidateQueries({ queryKey: ['platform-module-access-detail', selectedUserId] });
     },
-    onError: (e) => toast.error(e.response?.data?.message ?? t('common.error')),
+    onError: (e) => toast.error(extractApiError(e, t('platform.moduleAccess.saveFailed'))),
   });
 
   const selectedUser = users.find((u) => u.userId === selectedUserId);

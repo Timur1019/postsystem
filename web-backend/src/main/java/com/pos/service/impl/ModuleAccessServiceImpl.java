@@ -72,6 +72,7 @@ public class ModuleAccessServiceImpl implements ModuleAccessService {
             }
             rows.add(UserModuleAccess.builder()
                 .id(new UserModuleAccessId(userId, module.key()))
+                .user(user)
                 .allowed(allowed)
                 .build());
         }

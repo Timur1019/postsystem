@@ -16,6 +16,7 @@ const ROUTE_MAP = [
   { test: (p) => p.startsWith('/reports/returns'), id: 'reportsReturns' },
   { test: (p) => p.startsWith('/reports/analytics'), id: 'reportsAnalytics' },
   { test: (p) => p.startsWith('/stores'), id: 'stores' },
+  { test: (p) => p.startsWith('/users/barcode-print'), id: 'usersBarcodePrint' },
   { test: (p) => p.startsWith('/users/printer-settings'), id: 'usersPrinterSettings' },
   { test: (p) => p.startsWith('/users/branding-settings'), id: 'usersBrandingSettings' },
   { test: (p) => p.startsWith('/users'), id: 'usersList' },
@@ -45,6 +46,7 @@ export const ADMIN_MODULE_IDS = [
   { id: 'usersList', group: 'settings', roles: ['ADMIN'] },
   { id: 'usersPrinterSettings', group: 'settings', roles: ['ADMIN'] },
   { id: 'usersBrandingSettings', group: 'settings', roles: ['ADMIN'] },
+  { id: 'usersBarcodePrint', group: 'settings', roles: ['ADMIN'] },
   { id: 'checkout', group: 'main', roles: ['ADMIN', 'MANAGER'] },
 ];
 

@@ -22,6 +22,7 @@ import {
   ArrowRightLeft,
   SlidersHorizontal,
   Printer,
+  Barcode,
   UserCog,
   Truck,
   ClipboardList,
@@ -68,12 +69,13 @@ const REGISTER_CHILDREN = [
   { to: '/cash-registers/config', key: 'registersConfig', icon: SlidersHorizontal, moduleId: 'registersConfig' },
 ];
 
-const USER_ROUTES = ['/users/list', '/users/printer-settings', '/users/branding-settings'];
+const USER_ROUTES = ['/users/list', '/users/printer-settings', '/users/branding-settings', '/users/barcode-print'];
 
 const USER_CHILDREN = [
   { to: '/users/list', key: 'usersList', icon: List, moduleId: 'usersList' },
   { to: '/users/printer-settings', key: 'usersPrinterSettings', icon: Printer, moduleId: 'usersPrinterSettings' },
   { to: '/users/branding-settings', key: 'usersBrandingSettings', icon: UserCog, moduleId: 'usersBrandingSettings' },
+  { to: '/users/barcode-print', key: 'usersBarcodePrint', icon: Barcode, moduleId: 'usersBarcodePrint' },
 ];
 
 const REPORT_CHILDREN = [
