@@ -69,6 +69,13 @@ fi
 echo "==> Запуск frontend..."
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d frontend
 
+if [[ -n "${TELEGRAM_BOT_TOKEN:-}" ]]; then
+  echo "==> Запуск Telegram-бота поддержки..."
+  docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build telegram-support-bot
+else
+  echo "==> TELEGRAM_BOT_TOKEN не задан — бот поддержки пропущен."
+fi
+
 echo ""
 echo "==> Статус контейнеров:"
 docker compose -f "$COMPOSE_FILE" ps
@@ -79,3 +86,6 @@ echo "Проверка:"
 echo "  Web:    http://${SERVER_IP:-localhost}:${HTTP_PORT:-80}/"
 echo "  API:    http://${SERVER_IP:-localhost}:${API_PORT:-8080}/api/v1/actuator/health"
 echo "  Логи:   docker compose -f $COMPOSE_FILE logs -f backend"
+if [[ -n "${TELEGRAM_BOT_TOKEN:-}" ]]; then
+  echo "  Бот:    docker compose -f $COMPOSE_FILE logs -f telegram-support-bot"
+fi

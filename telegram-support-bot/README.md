@@ -14,6 +14,28 @@
 
 ## Запуск
 
+### Production (сервер, Docker — рекомендуется)
+
+В корневом `.env` на сервере:
+
+```env
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_SUPPORT_GROUP_ID=-100...
+VITE_SUPPORT_TELEGRAM_BOT=your_bot_username
+```
+
+```bash
+cd /opt/aurent-pos
+bash deploy/deploy.sh
+# или только бот:
+docker compose -f docker-compose.prod.yml up -d --build telegram-support-bot
+docker compose -f docker-compose.prod.yml logs -f telegram-support-bot
+```
+
+Бот работает 24/7 в контейнере, **npm на сервере не нужен**.
+
+### Локально (разработка)
+
 ```bash
 cd telegram-support-bot
 npm install

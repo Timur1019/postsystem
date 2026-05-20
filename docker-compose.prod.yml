@@ -88,6 +88,19 @@ services:
     networks:
       - pos-net
 
+  telegram-support-bot:
+    build:
+      context: ./telegram-support-bot
+      dockerfile: Dockerfile
+    container_name: aurent-pos-telegram-bot
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_SUPPORT_GROUP_ID: ${TELEGRAM_SUPPORT_GROUP_ID:-}
+      TZ: ${TZ:-Asia/Tashkent}
+    networks:
+      - pos-net
+
 networks:
   pos-net:
     driver: bridge
