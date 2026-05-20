@@ -11,7 +11,20 @@ import '../styles/tasnif-search.css';
 const inputCls =
   'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white';
 
+const CATALOG_SEARCH_SIZE = 25;
+
 const digitsOnly = (v) => String(v || '').replace(/\D/g, '');
+
+function resolveBarcodeFromProduct(data, fallback = '') {
+  const main = data?.barcode && String(data.barcode).trim();
+  if (main) return main;
+  const extra = Array.isArray(data?.barcodes)
+    ? data.barcodes.find((b) => String(b || '').trim())
+    : null;
+  if (extra) return String(extra).trim();
+  const fb = String(fallback || '').replace(/\s/g, '').trim();
+  return fb;
+}
 
 function resolveBarcodeFromItem(item, searchQuery) {
   const fromApi = item?.barcode || item?.internalCode;
@@ -35,6 +48,7 @@ export default function UsersBarcodePrintPage() {
   const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState(null);
   const [priceInput, setPriceInput] = useState('0');
+  const [catalogResults, setCatalogResults] = useState([]);
   const [tasnifResults, setTasnifResults] = useState([]);
   const [packageItem, setPackageItem] = useState(null);
   const [pendingQuery, setPendingQuery] = useState('');
@@ -50,6 +64,31 @@ export default function UsersBarcodePrintPage() {
     setDraft(next);
     setPrintOpen(false);
   }, []);
+
+  const applyCatalogProduct = useCallback(
+    (data, searchQuerySaved = '') => {
+      if (!data?.name) return false;
+      const barcode = resolveBarcodeFromProduct(data, searchQuerySaved);
+      setDraftItem({
+        name: data.name,
+        barcode,
+        price:
+          typeof data.sellingPrice === 'number'
+            ? data.sellingPrice
+            : parseFloat(data.sellingPrice) || 0,
+        source: 'catalog',
+        mxik: data.ikpu ?? null,
+      });
+      toast.success(t('usersBarcodePrint.foundInCatalog'));
+      setCatalogResults([]);
+      setTasnifResults([]);
+      setQuery('');
+      setPackageItem(null);
+      setPendingQuery('');
+      return true;
+    },
+    [setDraftItem, t]
+  );
 
   const applyTasnifToDraft = useCallback(
     (item, pkg, searchQuerySaved) => {
@@ -74,6 +113,7 @@ export default function UsersBarcodePrintPage() {
         mxik: item.mxik ?? null,
       });
       toast.success(t('usersBarcodePrint.foundViaTasnif'));
+      setCatalogResults([]);
       setTasnifResults([]);
       setQuery('');
       setPackageItem(null);
@@ -105,6 +145,31 @@ export default function UsersBarcodePrintPage() {
     [applyTasnifToDraft, lang, pendingQuery, query]
   );
 
+  /** Поиск в своём каталоге: название, артикул, штрихкод, ИКПУ */
+  const searchCatalog = useCallback(
+    async (raw) => {
+      const { data } = await productApi.getAll({
+        search: raw,
+        activeOnly: true,
+        page: 0,
+        size: CATALOG_SEARCH_SIZE,
+      });
+      const items = data?.content ?? [];
+      if (items.length === 1) {
+        applyCatalogProduct(items[0], raw);
+        return 'done';
+      }
+      if (items.length > 1) {
+        setCatalogResults(items);
+        setTasnifResults([]);
+        toast(t('usersBarcodePrint.pickFromCatalogHint'), { icon: 'ℹ️' });
+        return 'pick-catalog';
+      }
+      return 'none';
+    },
+    [applyCatalogProduct, t]
+  );
+
   const runLookup = useCallback(
     async (rawArg) => {
       const raw = (rawArg != null ? String(rawArg) : query).trim();
@@ -115,28 +180,21 @@ export default function UsersBarcodePrintPage() {
 
       setLoading(true);
       setPrintOpen(false);
+      setCatalogResults([]);
       setTasnifResults([]);
       try {
         try {
           const { data } = await productApi.getByBarcode(raw);
-          const barcode =
-            (data.barcode && String(data.barcode).trim()) ||
-            (Array.isArray(data.barcodes) && data.barcodes.find((b) => String(b || '').trim())) ||
-            raw;
-          setDraftItem({
-            name: data.name,
-            barcode: String(barcode).trim(),
-            price:
-              typeof data.sellingPrice === 'number'
-                ? data.sellingPrice
-                : parseFloat(data.sellingPrice) || 0,
-            source: 'catalog',
-            mxik: data.ikpu ?? null,
-          });
-          toast.success(t('usersBarcodePrint.foundInCatalog'));
+          if (applyCatalogProduct(data, raw)) {
+            return;
+          }
+        } catch {
+          /* нет точного совпадения по штрихкоду */
+        }
+
+        const catalogHit = await searchCatalog(raw);
+        if (catalogHit === 'done' || catalogHit === 'pick-catalog') {
           return;
-        } catch (_) {
-          /* нет товара в базе по штрихкоду */
         }
 
         const digitKey = digitsOnly(raw);
@@ -186,7 +244,7 @@ export default function UsersBarcodePrintPage() {
         const { data } = await tasnifApi.search({ q: raw, lang, page: 0, size: 20 });
         const items = data?.items ?? [];
         if (!items.length) {
-          toast.error(t('productCatalog.mxikNotFound'));
+          toast.error(t('usersBarcodePrint.notFoundAnywhere'));
           return;
         }
         if (items.length === 1) {
@@ -201,7 +259,7 @@ export default function UsersBarcodePrintPage() {
         setLoading(false);
       }
     },
-    [applyTasnifToDraft, lang, pickTasnifItem, setDraftItem, query, t]
+    [applyCatalogProduct, applyTasnifToDraft, lang, pickTasnifItem, query, searchCatalog, t]
   );
 
   useBarcodeScanner({
@@ -215,6 +273,15 @@ export default function UsersBarcodePrintPage() {
 
   const previewPrice =
     priceInput.trim() === '' ? 0 : Math.max(0, parseFloat(priceInput.replace(',', '.')) || 0);
+
+  const renderCatalogMeta = (p) => {
+    const parts = [];
+    if (p.ikpu) parts.push(`${t('productCatalog.ikpu')}: ${p.ikpu}`);
+    if (p.sku) parts.push(`${t('products.colSku')}: ${p.sku}`);
+    const bc = resolveBarcodeFromProduct(p);
+    if (bc) parts.push(`${t('productModal.barcode')}: ${bc}`);
+    return parts.join(' · ');
+  };
 
   return (
     <div className="max-w-xl space-y-5">
@@ -252,24 +319,50 @@ export default function UsersBarcodePrintPage() {
         </div>
         <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('usersBarcodePrint.searchHint')}</p>
 
-        {tasnifResults.length > 1 && (
-          <div className="tasnif-search__results mt-4 rounded-lg border border-slate-200 dark:border-slate-600">
-            {tasnifResults.map((item) => (
-              <button
-                key={`${item.mxik}-${item.name}`}
-                type="button"
-                className="tasnif-search__item flex w-full flex-col border-b border-slate-100 text-left dark:border-slate-700"
-                onClick={() => pickTasnifItem(item)}
-              >
-                <div className="tasnif-search__item-name font-medium">{item.name}</div>
-                <div className="tasnif-search__item-meta text-xs opacity-90">
-                  {t('productCatalog.ikpu')}: {item.mxik}
-                  {item.barcode || item.internalCode
-                    ? ` · ${t('productModal.barcode')}: ${item.barcode || item.internalCode}`
-                    : ''}
-                </div>
-              </button>
-            ))}
+        {catalogResults.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
+              {t('usersBarcodePrint.catalogResultsTitle')}
+            </p>
+            <div className="tasnif-search__results rounded-lg border border-emerald-200 dark:border-emerald-800">
+              {catalogResults.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="tasnif-search__item flex w-full flex-col border-b border-slate-100 text-left dark:border-slate-700"
+                  onClick={() => applyCatalogProduct(p, query.trim() || pendingQuery.trim())}
+                >
+                  <div className="tasnif-search__item-name font-medium">{p.name}</div>
+                  <div className="tasnif-search__item-meta text-xs opacity-90">{renderCatalogMeta(p)}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tasnifResults.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {t('usersBarcodePrint.tasnifResultsTitle')}
+            </p>
+            <div className="tasnif-search__results rounded-lg border border-slate-200 dark:border-slate-600">
+              {tasnifResults.map((item) => (
+                <button
+                  key={`${item.mxik}-${item.name}`}
+                  type="button"
+                  className="tasnif-search__item flex w-full flex-col border-b border-slate-100 text-left dark:border-slate-700"
+                  onClick={() => pickTasnifItem(item)}
+                >
+                  <div className="tasnif-search__item-name font-medium">{item.name}</div>
+                  <div className="tasnif-search__item-meta text-xs opacity-90">
+                    {t('productCatalog.ikpu')}: {item.mxik}
+                    {item.barcode || item.internalCode
+                      ? ` · ${t('productModal.barcode')}: ${item.barcode || item.internalCode}`
+                      : ''}
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>

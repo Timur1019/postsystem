@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-/** Телефон, планшет до 1024px, низкий экран (например 450×200) */
-export const CASHIER_COMPACT_MEDIA = '(max-width: 1023px), (max-height: 500px)';
+/** Только телефон: вкладки «Товары» / «Чек». От 700px — две колонки (касса, планшет). */
+export const CASHIER_COMPACT_MEDIA = '(max-width: 699px)';
 
 export function useCashierCompactLayout() {
   const [compact, setCompact] = useState(

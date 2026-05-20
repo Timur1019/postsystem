@@ -19,7 +19,20 @@ import PosPaymentFlow from '../../components/cashier/PosPaymentFlow';
 import PosReturnModal from '../../components/cashier/PosReturnModal';
 import { useCashierShiftModal } from '../../contexts/CashierShiftModalContext';
 import { useCashierCompactLayout } from '../../hooks/useCashierCompactLayout';
+import { usePosShell } from '../../contexts/PosShellContext';
 import { DoorOpen } from 'lucide-react';
+
+const VIEW_MODE_KEY = 'pos-catalog-view-mode';
+
+function readViewMode() {
+  try {
+    const v = localStorage.getItem(VIEW_MODE_KEY);
+    if (v === 'list' || v === 'grid') return v;
+  } catch {
+    /* ignore */
+  }
+  return 'grid';
+}
 
 const PRODUCT_PAGE_SIZE = 120;
 
@@ -33,11 +46,13 @@ export default function PosPage() {
   const [search, setSearch] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(ALL_CATEGORY_ID);
   const [catalogBrowse, setCatalogBrowse] = useState('categories');
+  const [viewMode, setViewMode] = useState(readViewMode);
   const [selectedLineId, setSelectedLineId] = useState(null);
   const [payOpen, setPayOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [posPane, setPosPane] = useState('catalog');
   const compactPos = useCashierCompactLayout();
+  const { setShell } = usePosShell() ?? {};
   const { open: shiftModalOpen, openShift: openShiftModal } = useCashierShiftModal();
 
   const items = useCartStore((s) => s.items);
@@ -101,6 +116,52 @@ export default function PosPage() {
   });
 
   const products = productsData?.content ?? [];
+
+  const handleSelectCategory = useCallback((id) => {
+    setSelectedCategoryId(id);
+    setSearch('');
+    setCatalogBrowse('products');
+  }, []);
+
+  const handleOpenCategories = useCallback(() => {
+    setCatalogBrowse('categories');
+    setSearch('');
+  }, []);
+
+  const handleOpenProducts = useCallback(() => {
+    setCatalogBrowse('products');
+    setSearch('');
+  }, []);
+
+  const handleViewModeChange = useCallback((mode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem(VIEW_MODE_KEY, mode);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!setShell) return undefined;
+    setShell({
+      catalogBrowse,
+      onOpenCategories: handleOpenCategories,
+      onOpenProducts: handleOpenProducts,
+      searchActive,
+      viewMode,
+      onViewModeChange: handleViewModeChange,
+    });
+    return () => setShell(null);
+  }, [
+    setShell,
+    catalogBrowse,
+    handleOpenCategories,
+    handleOpenProducts,
+    searchActive,
+    viewMode,
+    handleViewModeChange,
+  ]);
 
   const addProductToCart = useCallback(
     (product) => {
@@ -327,15 +388,14 @@ export default function PosPage() {
               categories={categories}
               categoriesLoading={categoriesLoading}
               selectedCategoryId={selectedCategoryId}
-              onSelectCategory={(id) => {
-                setSelectedCategoryId(id);
-                setSearch('');
-              }}
+              onSelectCategory={handleSelectCategory}
               searchActive={searchActive}
+              catalogBrowse={catalogBrowse}
+              onBrowseChange={setCatalogBrowse}
               products={products}
               productsLoading={productsLoading}
               onAddProduct={addProductToCart}
-              onBrowseChange={setCatalogBrowse}
+              viewMode={viewMode}
             />
             <div className="cashier-register__receipt">
               <PosOrderPanel

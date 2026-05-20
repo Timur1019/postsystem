@@ -30,6 +30,14 @@ function parseMoneyInput(raw) {
   return Number.isFinite(n) ? n : null;
 }
 
+function parsePercentInput(raw) {
+  if (raw == null || raw === '') return null;
+  const cleaned = String(raw).replace(/\s/g, '').replace(',', '.');
+  const n = Number(cleaned);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return n;
+}
+
 function applyMarkup(base, percent) {
   const n = Number(base);
   if (!Number.isFinite(n)) return base;
@@ -84,7 +92,8 @@ export default function ProductImportModal({ categories = [], stores = [], onClo
   const [preview, setPreview] = useState(null);
   const [importing, setImporting] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
-  const [markupPercent, setMarkupPercent] = useState(10);
+  const [markupPercent, setMarkupPercent] = useState(0);
+  const [markupInput, setMarkupInput] = useState('0');
   const [defaultCategoryId, setDefaultCategoryId] = useState('');
   const [defaultStoreId, setDefaultStoreId] = useState('');
   const [editable, setEditable] = useState({});
@@ -113,15 +122,35 @@ export default function ProductImportModal({ categories = [], stores = [], onClo
     e.target.value = '';
   };
 
-  const applyMarkup10 = () => {
-    setMarkupPercent(10);
+  const syncMarkupField = (percent) => {
+    setMarkupPercent(percent);
+    setMarkupInput(String(percent));
+  };
+
+  const onMarkupInputChange = (raw) => {
+    setMarkupInput(raw);
+    const parsed = parsePercentInput(raw);
+    if (parsed != null) setMarkupPercent(parsed);
+  };
+
+  const onMarkupInputBlur = () => {
+    const parsed = parsePercentInput(markupInput);
+    if (parsed == null) {
+      setMarkupInput(String(markupPercent));
+      return;
+    }
+    syncMarkupField(parsed);
+  };
+
+  const applyMarkupPreset = (percent) => {
+    syncMarkupField(percent);
     setEditable((prev) => {
       const next = { ...prev };
       (preview?.rows ?? []).forEach((r) => {
         if (r.status !== 'NEW' || !next[r.rowNum]) return;
         next[r.rowNum] = {
           ...next[r.rowNum],
-          importPrice: applyMarkup(r.fileSellingPrice, 10),
+          importPrice: applyMarkup(r.fileSellingPrice, percent),
         };
       });
       return next;
@@ -264,9 +293,10 @@ export default function ProductImportModal({ categories = [], stores = [], onClo
               t={t}
               preview={preview}
               rows={rows}
-              markupPercent={markupPercent}
-              setMarkupPercent={setMarkupPercent}
-              applyMarkup10={applyMarkup10}
+              markupInput={markupInput}
+              onMarkupInputChange={onMarkupInputChange}
+              onMarkupInputBlur={onMarkupInputBlur}
+              applyMarkupPreset={applyMarkupPreset}
               applyMarkupToAll={applyMarkupToAll}
               defaultCategoryId={defaultCategoryId}
               setDefaultCategoryId={setDefaultCategoryId}
@@ -381,9 +411,10 @@ function PreviewStep({
   t,
   preview,
   rows,
-  markupPercent,
-  setMarkupPercent,
-  applyMarkup10,
+  markupInput,
+  onMarkupInputChange,
+  onMarkupInputBlur,
+  applyMarkupPreset,
   applyMarkupToAll,
   defaultCategoryId,
   setDefaultCategoryId,
@@ -428,17 +459,26 @@ function PreviewStep({
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <input
-              type="number"
-              min="0"
-              step="0.1"
-              value={markupPercent}
-              onChange={(e) => setMarkupPercent(Number(e.target.value) || 0)}
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={markupInput}
+              onChange={(e) => onMarkupInputChange(e.target.value)}
+              onBlur={onMarkupInputBlur}
               className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+              aria-label={t('products.import.markupLabel')}
             />
             <span className="text-sm text-slate-500">%</span>
             <button
               type="button"
-              onClick={applyMarkup10}
+              onClick={() => applyMarkupPreset(0)}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-white dark:border-slate-600 dark:text-slate-300"
+            >
+              {t('products.import.markup0')}
+            </button>
+            <button
+              type="button"
+              onClick={() => applyMarkupPreset(10)}
               className="inline-flex items-center gap-1 rounded-lg border border-emerald-600 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-400"
             >
               <Percent size={14} />

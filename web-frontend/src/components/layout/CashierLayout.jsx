@@ -6,7 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { CashierShiftModalProvider, useCashierShiftModal } from '../../contexts/CashierShiftModalContext';
+import { PosShellProvider } from '../../contexts/PosShellContext';
 import CashierShiftModal from '../cashier/CashierShiftModal';
+import PosTopbarStrip from '../cashier/PosTopbarStrip';
 import LanguageSwitcher from '../shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 import BrandMark from '../shared/BrandMark';
@@ -169,22 +171,62 @@ function CashierLayoutShell() {
       </aside>
 
       <div className="d-flex flex-column flex-grow-1 min-vw-0 min-h-0">
-        <header
-          className={`cashier-topbar border-bottom bg-white px-3 py-2 d-flex flex-wrap align-items-center justify-content-between gap-2${
-            isPosRoute ? ' cashier-topbar--pos' : ''
-          }`}
-        >
-          <div className="d-flex align-items-center gap-2 min-w-0">
-            <button
-              type="button"
-              className="cashier-topbar__menu d-none d-lg-inline-flex"
-              onClick={toggleSidebar}
-              aria-label={sidebarOpen ? t('nav.collapseMenu') : t('nav.expandMenu')}
-            >
-              {sidebarOpen ? <PanelLeftClose size={20} /> : <Menu size={20} />}
-            </button>
-            {!isPosRoute && (
-              <>
+        {isPosRoute ? (
+          <PosShellProvider>
+            <header className="cashier-topbar cashier-topbar--pos border-bottom bg-white px-3 py-2">
+              <div className="cashier-topbar__row cashier-topbar__row--main">
+                <div className="cashier-topbar__brand-block">
+                  <button
+                    type="button"
+                    className="cashier-topbar__menu d-none d-lg-inline-flex"
+                    onClick={toggleSidebar}
+                    aria-label={sidebarOpen ? t('nav.collapseMenu') : t('nav.expandMenu')}
+                  >
+                    {sidebarOpen ? <PanelLeftClose size={20} /> : <Menu size={20} />}
+                  </button>
+                  <p className="cashier-topbar__pos-title mb-0 fw-semibold">{t('pos.navSale')}</p>
+                </div>
+                <PosTopbarStrip />
+                <div className="cashier-topbar__actions">
+                  <nav className="nav nav-pills d-lg-none gap-1 cashier-topbar__mobile-nav">
+                    <NavLink to="/cashier/pos" className="nav-link py-1 px-2 small">
+                      {t('pos.navSale')}
+                    </NavLink>
+                    <NavLink to="/cashier/sales" className="nav-link py-1 px-2 small">
+                      {t('pos.navMySales')}
+                    </NavLink>
+                    <button
+                      type="button"
+                      className="nav-link py-1 px-2 small"
+                      onClick={openShift}
+                      disabled={!storeId}
+                    >
+                      {t('pos.navShift')}
+                    </button>
+                    <button type="button" className="nav-link py-1 px-2 small" onClick={handleLogout}>
+                      {t('nav.logout')}
+                    </button>
+                  </nav>
+                  <LanguageSwitcher className="cashier-topbar__lang" />
+                </div>
+              </div>
+            </header>
+            <main className="flex-grow-1 overflow-hidden p-2 p-lg-3 d-flex flex-column min-h-0">
+              <Outlet />
+            </main>
+          </PosShellProvider>
+        ) : (
+          <>
+            <header className="cashier-topbar border-bottom bg-white px-3 py-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+              <div className="d-flex align-items-center gap-2 min-w-0">
+                <button
+                  type="button"
+                  className="cashier-topbar__menu d-none d-lg-inline-flex"
+                  onClick={toggleSidebar}
+                  aria-label={sidebarOpen ? t('nav.collapseMenu') : t('nav.expandMenu')}
+                >
+                  {sidebarOpen ? <PanelLeftClose size={20} /> : <Menu size={20} />}
+                </button>
                 <div className="d-lg-none min-w-0">
                   <p className="fw-semibold mb-0">{displayAppName()}</p>
                   <p className="text-muted small mb-0">{displayName(user)}</p>
@@ -200,40 +242,35 @@ function CashierLayoutShell() {
                     {displayName(user)}
                   </p>
                 </div>
-              </>
-            )}
-            {isPosRoute && (
-              <p className="cashier-topbar__pos-title mb-0 fw-semibold d-none d-lg-block">{t('pos.navSale')}</p>
-            )}
-          </div>
-
-          <div className="d-flex flex-wrap align-items-center gap-2">
-            <nav className="nav nav-pills d-lg-none gap-1 cashier-topbar__mobile-nav">
-              <NavLink to="/cashier/pos" className="nav-link py-1 px-2 small">
-                {t('pos.navSale')}
-              </NavLink>
-              <NavLink to="/cashier/sales" className="nav-link py-1 px-2 small">
-                {t('pos.navMySales')}
-              </NavLink>
-              <button
-                type="button"
-                className="nav-link py-1 px-2 small"
-                onClick={openShift}
-                disabled={!storeId}
-              >
-                {t('pos.navShift')}
-              </button>
-              <button type="button" className="nav-link py-1 px-2 small" onClick={handleLogout}>
-                {t('nav.logout')}
-              </button>
-            </nav>
-            <LanguageSwitcher className="cashier-topbar__lang" />
-          </div>
-        </header>
-
-        <main className="flex-grow-1 overflow-hidden p-2 p-lg-3 d-flex flex-column min-h-0">
-          <Outlet />
-        </main>
+              </div>
+              <div className="d-flex flex-wrap align-items-center gap-2">
+                <nav className="nav nav-pills d-lg-none gap-1 cashier-topbar__mobile-nav">
+                  <NavLink to="/cashier/pos" className="nav-link py-1 px-2 small">
+                    {t('pos.navSale')}
+                  </NavLink>
+                  <NavLink to="/cashier/sales" className="nav-link py-1 px-2 small">
+                    {t('pos.navMySales')}
+                  </NavLink>
+                  <button
+                    type="button"
+                    className="nav-link py-1 px-2 small"
+                    onClick={openShift}
+                    disabled={!storeId}
+                  >
+                    {t('pos.navShift')}
+                  </button>
+                  <button type="button" className="nav-link py-1 px-2 small" onClick={handleLogout}>
+                    {t('nav.logout')}
+                  </button>
+                </nav>
+                <LanguageSwitcher className="cashier-topbar__lang" />
+              </div>
+            </header>
+            <main className="flex-grow-1 overflow-hidden p-2 p-lg-3 d-flex flex-column min-h-0">
+              <Outlet />
+            </main>
+          </>
+        )}
       </div>
 
       <CashierShiftModal

@@ -42,7 +42,11 @@ public final class ProductSpecifications {
                     cb.isNotNull(root.get("barcode")),
                     cb.like(cb.lower(root.get("barcode")), like)
                 );
-                parts.add(cb.or(name, sku, bc));
+                var ikpu = cb.and(
+                    cb.isNotNull(root.get("ikpu")),
+                    cb.like(cb.lower(root.get("ikpu")), like)
+                );
+                parts.add(cb.or(name, sku, bc, ikpu));
             }
 
             if (categoryId != null) {

@@ -6,18 +6,6 @@ import { fmtMoney as fmt } from '../../utils/formatMoney';
 
 export const ALL_CATEGORY_ID = 'all';
 
-const VIEW_MODE_KEY = 'pos-catalog-view-mode';
-
-function readViewMode() {
-  try {
-    const v = localStorage.getItem(VIEW_MODE_KEY);
-    if (v === 'list' || v === 'grid') return v;
-  } catch {
-    /* ignore */
-  }
-  return 'grid';
-}
-
 const PosCatalogPanel = forwardRef(function PosCatalogPanel(
   {
     search,
@@ -29,22 +17,20 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
     selectedCategoryId,
     onSelectCategory,
     searchActive,
+    catalogBrowse,
+    onBrowseChange,
     products,
     productsLoading,
     onAddProduct,
-    onBrowseChange,
+    viewMode = 'grid',
   },
   searchInputRef
 ) {
   const { t } = useTranslation();
   const [narrowSearch, setNarrowSearch] = useState(false);
-  const [screen, setScreen] = useState('categories');
-  const [viewMode, setViewMode] = useState(readViewMode);
 
-  const setBrowseScreen = (next) => {
-    setScreen(next);
-    onBrowseChange?.(next);
-  };
+  const showCategories = !searchActive && catalogBrowse === 'categories';
+  const showProducts = searchActive || catalogBrowse === 'products';
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -56,47 +42,36 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
   }, []);
 
   useEffect(() => {
-    if (searchActive) {
-      setScreen('products');
+    if (searchActive && catalogBrowse !== 'products') {
       onBrowseChange?.('products');
     }
-  }, [searchActive, onBrowseChange]);
+  }, [searchActive, catalogBrowse, onBrowseChange]);
 
   const selectedCategory = useMemo(
-    () => categories.find((c) => c.id === selectedCategoryId),
+    () => categories?.find((c) => c.id === selectedCategoryId),
     [categories, selectedCategoryId]
   );
 
-  const productsTitle =
-    searchActive
-      ? t('pos.searchProducts')
-      : selectedCategoryId === ALL_CATEGORY_ID
-        ? t('pos.allProducts')
-        : selectedCategory?.name ?? t('pos.pickCategory');
+  const productsTitle = searchActive
+    ? t('pos.searchProducts')
+    : selectedCategoryId === ALL_CATEGORY_ID
+      ? t('pos.allProducts')
+      : selectedCategory?.name ?? t('pos.pickCategory');
 
   const openCategory = (categoryId) => {
     onSelectCategory(categoryId);
-    setBrowseScreen('products');
+    onBrowseChange?.('products');
   };
 
   const goBackToCategories = () => {
-    setBrowseScreen('categories');
+    onBrowseChange?.('categories');
     onSearchChange('');
   };
 
   const handleSearchInput = (value) => {
     onSearchChange(value);
-    if (!value.trim()) {
-      setBrowseScreen('categories');
-    }
-  };
-
-  const toggleViewMode = (mode) => {
-    setViewMode(mode);
-    try {
-      localStorage.setItem(VIEW_MODE_KEY, mode);
-    } catch {
-      /* ignore */
+    if (value.trim()) {
+      onBrowseChange?.('products');
     }
   };
 
@@ -153,105 +128,74 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
         </div>
       </header>
 
-      {screen === 'products' && !searchActive ? (
+      {showProducts && !searchActive ? (
         <div className="pos-catalog-toolbar">
           <button type="button" className="pos-catalog-toolbar__back" onClick={goBackToCategories}>
             <ArrowLeft size={18} aria-hidden />
             {t('pos.backToCategories')}
           </button>
           <h2 className="pos-catalog-toolbar__title">{productsTitle}</h2>
-          <div className="pos-catalog-toolbar__views" role="group" aria-label={t('pos.viewModeLabel')}>
-            <button
-              type="button"
-              className={`pos-catalog-toolbar__view-btn${viewMode === 'grid' ? ' is-active' : ''}`}
-              onClick={() => toggleViewMode('grid')}
-              title={t('pos.viewAsCards')}
-            >
-              <LayoutGrid size={18} aria-hidden />
-            </button>
-            <button
-              type="button"
-              className={`pos-catalog-toolbar__view-btn${viewMode === 'list' ? ' is-active' : ''}`}
-              onClick={() => toggleViewMode('list')}
-              title={t('pos.viewAsList')}
-            >
-              <List size={18} aria-hidden />
-            </button>
-          </div>
         </div>
       ) : null}
 
       {searchActive ? (
         <div className="pos-catalog-toolbar pos-catalog-toolbar--search">
           <h2 className="pos-catalog-toolbar__title">{t('pos.searchProducts')}</h2>
-          <div className="pos-catalog-toolbar__views" role="group" aria-label={t('pos.viewModeLabel')}>
-            <button
-              type="button"
-              className={`pos-catalog-toolbar__view-btn${viewMode === 'grid' ? ' is-active' : ''}`}
-              onClick={() => toggleViewMode('grid')}
-              title={t('pos.viewAsCards')}
-            >
-              <LayoutGrid size={18} aria-hidden />
-            </button>
-            <button
-              type="button"
-              className={`pos-catalog-toolbar__view-btn${viewMode === 'list' ? ' is-active' : ''}`}
-              onClick={() => toggleViewMode('list')}
-              title={t('pos.viewAsList')}
-            >
-              <List size={18} aria-hidden />
-            </button>
-          </div>
         </div>
       ) : null}
 
       <div className="pos-catalog-panel__body">
-        {screen === 'categories' && !searchActive ? (
+        {showCategories ? (
+          categoriesLoading ? (
+            <p className="pos-catalog-panel__empty">{t('common.loading')}</p>
+          ) : (
+            <div className="pos-category-browse">
+              <button
+                type="button"
+                className="pos-category-tile pos-category-tile--all"
+                onClick={() => openCategory(ALL_CATEGORY_ID)}
+              >
+                <span className="pos-category-tile__icon" aria-hidden>
+                  <Package size={28} strokeWidth={1.75} />
+                </span>
+                <span className="pos-category-tile__name">{t('pos.allProducts')}</span>
+                <span className="pos-category-tile__hint">{t('pos.openAllProductsHint')}</span>
+              </button>
+              {!categories?.length ? (
+                <p className="pos-catalog-panel__empty">{t('pos.noCategories')}</p>
+              ) : (
+                categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    className="pos-category-tile"
+                    onClick={() => openCategory(cat.id)}
+                  >
+                    <span className="pos-category-tile__icon" aria-hidden>
+                      <FolderOpen size={26} strokeWidth={1.75} />
+                    </span>
+                    <span className="pos-category-tile__name">{cat.name}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )
+        ) : showProducts ? (
           <>
-            {categoriesLoading ? (
+            {searchActive ? (
+              <p className="pos-catalog-panel__hint">{t('pos.searchAllCategories')}</p>
+            ) : null}
+            {productsLoading ? (
               <p className="pos-catalog-panel__empty">{t('common.loading')}</p>
+            ) : products.length === 0 ? (
+              <p className="pos-catalog-panel__empty">{t('pos.noProductsInCategory')}</p>
+            ) : viewMode === 'list' ? (
+              <div className="pos-product-list">{products.map(renderProduct)}</div>
             ) : (
-              <div className="pos-category-browse">
-                <button
-                  type="button"
-                  className="pos-category-tile pos-category-tile--all"
-                  onClick={() => openCategory(ALL_CATEGORY_ID)}
-                >
-                  <span className="pos-category-tile__icon" aria-hidden>
-                    <Package size={28} strokeWidth={1.75} />
-                  </span>
-                  <span className="pos-category-tile__name">{t('pos.allProducts')}</span>
-                  <span className="pos-category-tile__hint">{t('pos.openAllProductsHint')}</span>
-                </button>
-                {categories.length === 0 ? (
-                  <p className="pos-catalog-panel__empty">{t('pos.noCategories')}</p>
-                ) : (
-                  categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      className="pos-category-tile"
-                      onClick={() => openCategory(cat.id)}
-                    >
-                      <span className="pos-category-tile__icon" aria-hidden>
-                        <FolderOpen size={26} strokeWidth={1.75} />
-                      </span>
-                      <span className="pos-category-tile__name">{cat.name}</span>
-                    </button>
-                  ))
-                )}
-              </div>
+              <div className="pos-product-grid">{products.map(renderProduct)}</div>
             )}
           </>
-        ) : categoriesLoading || productsLoading ? (
-          <p className="pos-catalog-panel__empty">{t('common.loading')}</p>
-        ) : products.length === 0 ? (
-          <p className="pos-catalog-panel__empty">{t('pos.noProductsInCategory')}</p>
-        ) : viewMode === 'list' ? (
-          <div className="pos-product-list">{products.map(renderProduct)}</div>
-        ) : (
-          <div className="pos-product-grid">{products.map(renderProduct)}</div>
-        )}
+        ) : null}
       </div>
     </section>
   );
