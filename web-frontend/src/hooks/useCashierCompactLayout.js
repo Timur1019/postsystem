@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 
-/** Только телефон: вкладки «Товары» / «Чек». От 700px — две колонки (касса, планшет). */
-export const CASHIER_COMPACT_MEDIA = '(max-width: 699px)';
+/** Компактная вёрстка кассы только ниже 800px; от 800px — десктопная раскладка. */
+export const CASHIER_LAYOUT_MIN_WIDTH = 800;
+export const CASHIER_COMPACT_MEDIA = '(max-width: 799px)';
 
 export function useCashierCompactLayout() {
   const [compact, setCompact] = useState(

@@ -55,11 +55,11 @@ function CashierLayoutShell() {
   const location = useLocation();
   const isPosRoute = location.pathname.startsWith('/cashier/pos');
 
-  /** На экране кассы ≤1024px — сворачиваем боковое меню, остаётся верхняя навигация */
+  /** На экране кассы <800px — сворачиваем боковое меню, остаётся верхняя навигация */
   useEffect(() => {
     if (!isPosRoute) return;
     if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(max-width: 1024px)');
+    const mq = window.matchMedia('(max-width: 799px)');
     const apply = () => {
       if (mq.matches) {
         setSidebarOpen(false);

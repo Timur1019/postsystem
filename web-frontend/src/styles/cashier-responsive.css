@@ -189,8 +189,8 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* Телефон: вкладки «Товары» / «Чек» (см. useCashierCompactLayout, max-width: 699px) */
-@media (max-width: 699px) {
+/* Узкий экран <800px — компактная касса (см. useCashierCompactLayout) */
+@media (max-width: 799px) {
   .cashier-app {
     width: 100%;
     max-width: 100%;
@@ -379,8 +379,8 @@
   }
 }
 
-/* Широкий монитор / кассовый терминал */
-@media (min-width: 700px) {
+/* От 800px — десктопная раскладка футера и блоков кассы */
+@media (min-width: 800px) {
   .cashier-register__footer {
     min-height: clamp(168px, 22dvh, 260px);
     max-height: min(34dvh, 320px);
@@ -671,8 +671,8 @@
   font-size: 0.8125rem;
 }
 
-/* Планшет 768–1023: боковое меню скрыто — только верхняя навигация */
-@media (max-width: 1023px) {
+/* Узкий экран <800px: боковое меню скрыто — верхняя навигация */
+@media (max-width: 799px) {
   .cashier-app .cashier-sidebar {
     display: none !important;
   }
