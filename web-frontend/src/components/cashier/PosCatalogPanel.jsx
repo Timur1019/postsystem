@@ -1,6 +1,6 @@
 // src/components/cashier/PosCatalogPanel.jsx
 import { forwardRef, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, FolderOpen, LayoutGrid, List, Package, Search } from 'lucide-react';
+import { ArrowLeft, FolderOpen, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 
@@ -150,17 +150,6 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
             <p className="pos-catalog-panel__empty">{t('common.loading')}</p>
           ) : (
             <div className="pos-category-browse">
-              <button
-                type="button"
-                className="pos-category-tile pos-category-tile--all"
-                onClick={() => openCategory(ALL_CATEGORY_ID)}
-              >
-                <span className="pos-category-tile__icon" aria-hidden>
-                  <Package size={28} strokeWidth={1.75} />
-                </span>
-                <span className="pos-category-tile__name">{t('pos.allProducts')}</span>
-                <span className="pos-category-tile__hint">{t('pos.openAllProductsHint')}</span>
-              </button>
               {!categories?.length ? (
                 <p className="pos-catalog-panel__empty">{t('pos.noCategories')}</p>
               ) : (

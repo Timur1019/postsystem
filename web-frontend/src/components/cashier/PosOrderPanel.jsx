@@ -1,6 +1,6 @@
 // src/components/cashier/PosOrderPanel.jsx
 import { useEffect, useRef, useState } from 'react';
-import { Minus, Plus, Trash2, Percent, Banknote } from 'lucide-react';
+import { Minus, Plus, Trash2, Percent } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { lineDiscountAmount, lineSubtotal } from '../../store/cartStore';
 import { fmtMoney as fmt, fmtMoneyCompact as fmtCompact } from '../../utils/formatMoney';
@@ -13,12 +13,6 @@ export default function PosOrderPanel({
   onUpdatePrice,
   onUpdateDiscountPercent,
   onRemove,
-  onClear,
-  onReturn,
-  total,
-  discountTotal,
-  onCheckout,
-  checkoutDisabled,
   className = '',
 }) {
   const { t } = useTranslation();
@@ -31,14 +25,6 @@ export default function PosOrderPanel({
     if (!selectedLineId) return;
     rowRefs.current[selectedLineId]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [selectedLineId, items]);
-
-  const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
-  const discountPct =
-    items.length > 0
-      ? Math.round(
-          (items.reduce((s, i) => s + lineDiscountAmount(i), 0) / Math.max(1, subtotal)) * 100
-        )
-      : 0;
 
   const commitPrice = (productId) => {
     const num = Number(String(priceDraft).replace(',', '.'));
@@ -55,33 +41,30 @@ export default function PosOrderPanel({
             <span className="pos-order-panel__badge">{t('pos.orderPositions', { count: items.length })}</span>
           ) : null}
         </h2>
-        <div className="pos-order-panel__actions">
-          {onReturn && (
-            <button type="button" className="pos-order-panel__btn pos-order-panel__btn--warn" onClick={onReturn}>
-              {t('pos.return')}
-            </button>
-          )}
-          {items.length > 0 && (
-            <button type="button" className="pos-order-panel__btn pos-order-panel__btn--clear" onClick={onClear}>
-              {t('pos.clearCart')}
-            </button>
-          )}
-        </div>
       </header>
 
       <div className="pos-order-panel__list">
-        {items.length === 0 ? (
-          <p className="pos-order-panel__empty">{t('pos.cartEmpty')}</p>
-        ) : (
-          <div className="pos-cart-table">
-            <div className="pos-cart-table__head" role="row">
-              <span className="pos-cart-table__col pos-cart-table__col--name">{t('pos.colName')}</span>
-              <span className="pos-cart-table__col pos-cart-table__col--price">{t('pos.colPrice')}</span>
-              <span className="pos-cart-table__col pos-cart-table__col--qty">{t('pos.colQty')}</span>
-              <span className="pos-cart-table__col pos-cart-table__col--sum">{t('pos.colSum')}</span>
-            </div>
-            <ul className="pos-cart-table__body">
-              {items.map((item) => {
+        <div className="pos-cart-table">
+          <div className="pos-cart-table__head" role="row">
+            <span className="pos-cart-table__col pos-cart-table__col--name">{t('pos.colName')}</span>
+            <span className="pos-cart-table__col pos-cart-table__col--price">{t('pos.colPrice')}</span>
+            <span className="pos-cart-table__col pos-cart-table__col--qty">{t('pos.colQty')}</span>
+            <span className="pos-cart-table__col pos-cart-table__col--sum">{t('pos.colSum')}</span>
+            <span className="pos-cart-table__col pos-cart-table__col--remove" aria-hidden />
+          </div>
+          <ul className="pos-cart-table__body">
+            {items.length === 0 ? (
+              <li className="pos-cart-table__row pos-cart-table__row--empty" role="row">
+                <div className="pos-cart-table__col pos-cart-table__col--name">
+                  <span className="pos-cart-table__empty-hint">{t('pos.cartEmpty')}</span>
+                </div>
+                <div className="pos-cart-table__col pos-cart-table__col--price" aria-hidden />
+                <div className="pos-cart-table__col pos-cart-table__col--qty" aria-hidden />
+                <div className="pos-cart-table__col pos-cart-table__col--sum" aria-hidden />
+                <div className="pos-cart-table__col pos-cart-table__col--remove" aria-hidden />
+              </li>
+            ) : (
+              items.map((item) => {
                 const active = selectedLineId === item.productId;
                 const lineSum = lineSubtotal(item);
                 return (
@@ -151,6 +134,18 @@ export default function PosOrderPanel({
                       </span>
                     </div>
 
+                    <div className="pos-cart-table__col pos-cart-table__col--remove" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        className="pos-cart-table__remove-btn"
+                        onClick={() => onRemove(item.productId)}
+                        aria-label={t('pos.removeLine', { name: item.name })}
+                        title={t('common.delete')}
+                      >
+                        <Trash2 size={16} strokeWidth={2} />
+                      </button>
+                    </div>
+
                     {lineDiscountAmount(item) > 0 && (
                       <p className="pos-cart-table__disc">
                         −{fmt(lineDiscountAmount(item))} ({item.discountPercent ?? 0}%)
@@ -158,10 +153,10 @@ export default function PosOrderPanel({
                     )}
                   </li>
                 );
-              })}
-            </ul>
-          </div>
-        )}
+              })
+            )}
+          </ul>
+        </div>
       </div>
 
       <div className="pos-order-panel__bottom">
@@ -215,32 +210,6 @@ export default function PosOrderPanel({
             </button>
           </div>
         )}
-
-        <div className="pos-order-panel__checkout">
-          <div className="pos-order-panel__foot">
-          <div className="pos-order-panel__row">
-            <span>{t('pos.subtotal')}</span>
-            <span title={fmt(subtotal)}>{fmtCompact(subtotal)}</span>
-          </div>
-          <div className="pos-order-panel__row pos-order-panel__row--disc">
-            <span>
-              {t('pos.discount')}
-              {discountPct > 0 ? ` ${discountPct}%` : ''}
-            </span>
-            <span title={fmt(discountTotal)}>−{fmtCompact(discountTotal)}</span>
-            </div>
-          </div>
-          <div className="pos-order-panel__grand">
-            <span>{t('pos.grandTotal')}</span>
-            <span className="pos-order-panel__grand-sum" title={fmt(total)}>{fmtCompact(total)}</span>
-          </div>
-          <button type="button" className="pos-checkout-btn" disabled={checkoutDisabled} onClick={onCheckout}>
-            <Banknote size={22} strokeWidth={1.75} />
-            <span>
-              {t('pos.toPayment')} — <span title={fmt(total)}>{fmtCompact(total)}</span>
-            </span>
-          </button>
-        </div>
       </div>
     </section>
   );

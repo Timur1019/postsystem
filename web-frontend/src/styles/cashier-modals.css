@@ -652,6 +652,401 @@
   padding: 1.75rem 2rem 2rem;
 }
 
+/* Оплата чека — компактная центрированная модалка (перекрывает legacy .pos-pay-modal) */
+.pos-pay-modal.pos-pay-modal--checkout {
+  --pos-green: #006847;
+  --pos-green-hover: #005538;
+  --pos-green-soft: #e8f5ef;
+  --pos-border: #e5e7eb;
+  --pos-muted: #6b7280;
+  --pos-radius: 10px;
+  --pos-text: #111827;
+
+  display: flex;
+  flex-direction: column;
+  width: min(96vw, 680px);
+  max-width: 680px;
+  min-height: 0;
+  max-height: min(94dvh, 900px);
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgb(15 23 42 / 0.18);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout.is-keypad {
+  width: min(96vw, 720px);
+  max-width: 720px;
+  min-height: min(480px, 85dvh);
+  max-height: min(96dvh, 960px);
+}
+
+/* Верхняя панель: назад + шаг + закрыть */
+.pos-pay-modal__toolbar {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--pos-border, #e5e7eb);
+  background: #fff;
+}
+
+.pos-pay-modal__toolbar-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--pos-text, #111827);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-pay-modal__nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.pos-pay-modal__nav-btn:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+  color: #111827;
+}
+
+.pos-pay-modal__nav-btn--close:hover {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.pos-pay-modal__nav-btn--spacer {
+  visibility: hidden;
+  pointer-events: none;
+  border-color: transparent;
+  background: transparent;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-totals-block {
+  flex-shrink: 0;
+  margin: 0;
+  border: none;
+  border-bottom: 1px solid var(--pos-border);
+  border-radius: 0;
+  padding: 16px 18px 14px;
+  background: #fafbfc;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-totals-block__meta {
+  gap: 8px;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-totals-block__row {
+  font-size: 0.875rem;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-totals-block__row span:last-child {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-totals-block__hero {
+  padding-top: 14px;
+  margin-top: 10px;
+  border-top-color: #d1d5db;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-totals-block__hero-label {
+  font-size: 1rem;
+  color: #111827;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-totals-block__hero-value {
+  font-size: clamp(1.65rem, 5vw, 2.15rem);
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-modal__body {
+  flex: 0 0 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  overflow-y: auto;
+  padding: 12px 16px 16px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-modal__body:has(.pos-pay-cash-panel),
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-modal__body:has(.pos-pay-mixed-cards) {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16px 16px;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-panel__step {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  width: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-panel__step:has(.pos-pay-cash-panel),
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-panel__step:has(.pos-pay-mixed-cards),
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-panel__step:has(.pos-keypad) {
+  justify-content: flex-start;
+  gap: 14px;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-modal__foot {
+  flex-shrink: 0;
+  padding: 16px 16px 20px;
+  border-top: 1px solid var(--pos-border);
+  background: #fafbfc;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-modal__foot .pos-pay-panel__primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  min-height: 52px;
+  height: 52px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  background: var(--pos-green);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgb(0 104 71 / 0.2);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-modal__foot .pos-pay-panel__primary:hover:not(:disabled) {
+  background: var(--pos-green-hover);
+  box-shadow: 0 4px 14px rgb(0 104 71 / 0.28);
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-modal__foot .pos-pay-panel__primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Сброс legacy .pos-pay-modal .pos-pay-receipt-* (бирюзовые старые карточки) */
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-receipt-types,
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-receipt-types--footer-grid,
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-method-cards--footer-grid,
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-card-types--footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-receipt-type,
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-method-card--tile,
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-card-type--tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  position: relative;
+  width: 100%;
+  min-height: 152px;
+  height: auto;
+  padding: 22px 10px;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  text-align: center;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--pos-text);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
+  box-sizing: border-box;
+  transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-receipt-type__icon-wrap,
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-method-card--tile .pos-pay-method-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-receipt-type__icon-wrap svg,
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-method-card--tile .pos-pay-method-card__icon svg,
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-card-type--tile svg {
+  width: 30px;
+  height: 30px;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-receipt-type__label,
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-method-card--tile .pos-pay-method-card__label {
+  color: var(--pos-text);
+  max-width: 100%;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-receipt-type.is-active,
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-method-card--tile:hover,
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-card-type--tile:hover:not(:disabled) {
+  border-color: var(--pos-green);
+  border-width: 2px;
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+  box-shadow: 0 0 0 1px rgb(0 104 71 / 0.08);
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-receipt-type.is-active .pos-pay-receipt-type__icon-wrap {
+  background: #fff;
+  color: var(--pos-green);
+  border: 1px solid rgb(0 104 71 / 0.15);
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-receipt-type__check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  color: var(--pos-green);
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-card-type--tile svg:first-child {
+  color: #2563eb;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-cash-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-cash__due {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--pos-green-soft);
+  font-size: 0.9375rem;
+  color: var(--pos-muted);
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-cash__due-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--pos-green);
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-cash-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--pos-muted);
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-cash__display {
+  font-size: 1.75rem;
+  font-weight: 800;
+  text-align: center;
+  padding: 16px;
+  border: 1.5px solid var(--pos-border);
+  border-radius: 12px;
+  background: #f9fafb;
+  color: var(--pos-text);
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-change {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--pos-muted);
+  text-align: center;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-keypad__key {
+  min-height: 52px;
+  font-size: 1.15rem;
+  border-radius: 12px;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-mixed-cards--stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-amount-box {
+  padding: 18px 20px;
+  border-radius: 14px;
+  border-width: 2px;
+  min-height: 100px;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-amount-box__label {
+  font-size: 0.8125rem;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-amount-box__value {
+  font-size: 1.65rem;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-panel__error {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  font-size: 0.8rem;
+}
+
+.pos-pay-modal.pos-pay-modal--checkout .pos-pay-panel__spin {
+  animation: pos-spin 0.8s linear infinite;
+}
+
+@keyframes pos-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .dark .pos-pay-modal {
   background: rgb(15 23 42);
   border: 1px solid rgb(51 65 85);

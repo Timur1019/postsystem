@@ -1100,7 +1100,9 @@
   "pos": {
     "navSale": "Касса",
     "tabCatalog": "Товары",
+    "tabRegister": "Касса",
     "tabReceipt": "Чек",
+    "backToRegister": "К кассе",
     "navShift": "Смена кассира",
     "navMySales": "Мои продажи",
     "selectStore": "Магазин",
@@ -1154,6 +1156,7 @@
     "colPrice": "Цена",
     "colQty": "Кол-во",
     "colSum": "Сумма",
+    "removeLine": "Удалить: {{name}}",
     "colCost": "Себест.",
     "totalCost": "Себестоимость",
     "discount": "Скидка",

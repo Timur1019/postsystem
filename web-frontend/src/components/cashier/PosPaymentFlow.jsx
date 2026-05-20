@@ -15,6 +15,7 @@ import {
   Check,
 } from 'lucide-react';
 import NumericKeypad, { formatKeypadAmount } from './NumericKeypad';
+import PosModalPortal from './PosModalPortal';
 import PosOrderComposition from './PosOrderComposition';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import { clampPayAmount, exceedsPayAmount, round2 } from '../../utils/taxAmounts';
@@ -42,8 +43,35 @@ const PAY_METHODS = [
   { id: 'mixed', icon: Split, labelKey: 'pos.payMixed', action: 'mixed' },
 ];
 
-function PayStepHeader({ title, onBack, onClose }) {
+function PayStepHeader({ title, onBack, onClose, toolbar = false }) {
   const { t } = useTranslation();
+  if (toolbar) {
+    return (
+      <header className="pos-pay-modal__toolbar">
+        {onBack ? (
+          <button type="button" className="pos-pay-modal__nav-btn" onClick={onBack} aria-label={t('common.back')}>
+            <ArrowLeft size={22} strokeWidth={2.25} />
+          </button>
+        ) : (
+          <span className="pos-pay-modal__nav-btn pos-pay-modal__nav-btn--spacer" aria-hidden />
+        )}
+        <h2 className="pos-pay-modal__toolbar-title">{title}</h2>
+        {onClose ? (
+          <button
+            type="button"
+            className="pos-pay-modal__nav-btn pos-pay-modal__nav-btn--close"
+            onClick={onClose}
+            aria-label={t('common.close')}
+          >
+            <X size={22} strokeWidth={2.25} />
+          </button>
+        ) : (
+          <span className="pos-pay-modal__nav-btn pos-pay-modal__nav-btn--spacer" aria-hidden />
+        )}
+      </header>
+    );
+  }
+
   return (
     <header className="pos-pay-panel__step-head">
       {onBack ? (
@@ -74,6 +102,10 @@ export default function PosPaymentFlow({
   discountTotal = 0,
   onConfirm,
   isPending,
+  asModal = false,
+  hideComposition = false,
+  compactFooter = false,
+  className = '',
 }) {
   const { t } = useTranslation();
   const [step, setStep] = useState('receipt');
@@ -208,6 +240,10 @@ export default function PosPaymentFlow({
   };
 
   const showKeypad = step === 'cash' || step === 'mixedCash';
+  const isModal = asModal;
+  const isCompact = compactFooter && !isModal;
+  const useTileGrid = isCompact || isModal;
+  const pinPrimary = useTileGrid;
 
   let stepTitle = t('pos.receiptTypeTitle');
   if (step === 'method') stepTitle = t('pos.choosePaymentMethod');
@@ -232,31 +268,48 @@ export default function PosPaymentFlow({
               ? () => setStep(payMethod === 'mixed' ? 'mixedCard' : 'method')
               : null;
 
-  return (
-    <section
-      className={`pos-pay-panel${open ? ' is-open' : ''}`}
-      aria-label={t('pos.paymentTitle')}
-      aria-hidden={!open}
-    >
-      <PosOrderComposition
-        className="pos-pay-panel__composition"
-        items={items}
-        total={toPay}
-        discountTotal={discountTotal}
-        compact
-      />
+  const footerPrimary =
+    step === 'receipt' ? (
+      <button type="button" className="pos-pay-panel__primary" onClick={() => setStep('method')}>
+        {t('pos.continuePay')}
+        <ArrowRight size={18} />
+      </button>
+    ) : step === 'mixedCash' ? (
+      <button
+        type="button"
+        className="pos-pay-panel__primary"
+        disabled={isPending || cashExceeds}
+        onClick={proceedFromMixedCash}
+      >
+        {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
+        <span>{cardRemainder > 0.001 ? t('pos.continuePay') : t('pos.completeSale')}</span>
+      </button>
+    ) : step === 'mixedCard' ? (
+      <button type="button" className="pos-pay-panel__primary" onClick={proceedFromMixedCard}>
+        {t('pos.continuePay')}
+        <ArrowRight size={18} />
+      </button>
+    ) : step === 'cash' ? (
+      <button
+        type="button"
+        className="pos-pay-panel__primary"
+        disabled={isPending || Number(tendered) < toPay}
+        onClick={submitCash}
+      >
+        {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
+        <span>{t('pos.completeSale')}</span>
+      </button>
+    ) : null;
 
-      <div className="pos-pay-panel__body">
-        <PayStepHeader
-          title={stepTitle}
-          onBack={step !== 'receipt' ? stepBack : null}
-          onClose={handleClose}
-        />
-
-        <div className="pos-pay-panel__scroll">
-          {step === 'receipt' && (
+  const stepScroll = (
+    <>
+      {step === 'receipt' && (
             <div className="pos-pay-panel__step">
-              <div className="pos-pay-receipt-types pos-pay-receipt-types--stack">
+              <div
+                className={`pos-pay-receipt-types${
+                  useTileGrid ? ' pos-pay-receipt-types--footer-grid' : ' pos-pay-receipt-types--stack'
+                }`}
+              >
                 {RECEIPT_TYPES.map(({ id, icon: Icon }) => {
                   const active = receiptType === id;
                   return (
@@ -267,36 +320,52 @@ export default function PosPaymentFlow({
                       onClick={() => setReceiptType(id)}
                     >
                       <span className="pos-pay-receipt-type__icon-wrap">
-                        <Icon size={22} strokeWidth={1.5} />
+                        <Icon size={isModal ? 30 : 22} strokeWidth={1.5} />
                       </span>
                       <span className="pos-pay-receipt-type__label">{t(`pos.receiptType.${id}`)}</span>
-                      {active ? <Check size={20} strokeWidth={2.5} className="pos-pay-receipt-type__check" /> : null}
+                      {active ? (
+                        <Check
+                          size={isModal ? 22 : 20}
+                          strokeWidth={2.5}
+                          className="pos-pay-receipt-type__check"
+                        />
+                      ) : null}
                     </button>
                   );
                 })}
               </div>
-              <button type="button" className="pos-pay-panel__primary" onClick={() => setStep('method')}>
-                {t('pos.continuePay')}
-                <ArrowRight size={18} />
-              </button>
+              {!pinPrimary ? (
+                <button type="button" className="pos-pay-panel__primary" onClick={() => setStep('method')}>
+                  {t('pos.continuePay')}
+                  <ArrowRight size={18} />
+                </button>
+              ) : null}
             </div>
           )}
 
           {step === 'method' && (
             <div className="pos-pay-panel__step">
-              <div className="pos-pay-method-cards pos-pay-method-cards--stack">
+              <div
+                className={`pos-pay-method-cards${
+                  useTileGrid ? ' pos-pay-method-cards--footer-grid' : ' pos-pay-method-cards--stack'
+                }`}
+              >
                 {PAY_METHODS.map(({ id, icon: Icon, labelKey, action }) => (
                   <button
                     key={id}
                     type="button"
-                    className="pos-pay-method-card pos-pay-method-card--row"
+                    className={`pos-pay-method-card${
+                      useTileGrid ? ' pos-pay-method-card--tile' : ' pos-pay-method-card--row'
+                    }`}
                     onClick={() => handleMethod(action)}
                   >
                     <span className="pos-pay-method-card__icon">
-                      <Icon size={24} strokeWidth={1.5} />
+                      <Icon size={isModal ? 30 : useTileGrid ? 20 : 24} strokeWidth={1.5} />
                     </span>
                     <span className="pos-pay-method-card__label">{t(labelKey)}</span>
-                    <ArrowRight size={18} className="pos-pay-method-card__arrow" />
+                    {!useTileGrid ? (
+                      <ArrowRight size={18} className="pos-pay-method-card__arrow" />
+                    ) : null}
                   </button>
                 ))}
               </div>
@@ -351,15 +420,17 @@ export default function PosPaymentFlow({
                   disabled={isPending}
                 />
               )}
-              <button
-                type="button"
-                className="pos-pay-panel__primary"
-                disabled={isPending || cashExceeds}
-                onClick={proceedFromMixedCash}
-              >
-                {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
-                <span>{cardRemainder > 0.001 ? t('pos.continuePay') : t('pos.completeSale')}</span>
-              </button>
+              {!pinPrimary ? (
+                <button
+                  type="button"
+                  className="pos-pay-panel__primary"
+                  disabled={isPending || cashExceeds}
+                  onClick={proceedFromMixedCash}
+                >
+                  {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
+                  <span>{cardRemainder > 0.001 ? t('pos.continuePay') : t('pos.completeSale')}</span>
+                </button>
+              ) : null}
             </div>
           )}
 
@@ -375,28 +446,38 @@ export default function PosPaymentFlow({
                   <strong>{fmt(cardRemainder)}</strong>
                 </div>
               </div>
-              <button type="button" className="pos-pay-panel__primary" onClick={proceedFromMixedCard}>
-                {t('pos.continuePay')}
-                <ArrowRight size={18} />
-              </button>
+              {!pinPrimary ? (
+                <button type="button" className="pos-pay-panel__primary" onClick={proceedFromMixedCard}>
+                  {t('pos.continuePay')}
+                  <ArrowRight size={18} />
+                </button>
+              ) : null}
             </div>
           )}
 
           {step === 'cardType' && (
             <div className="pos-pay-panel__step">
-              <p className="pos-pay-card-type-hint">
-                {payMethod === 'mixed' ? fmt(cardRemainder) : `${fmt(toPay)} сум`}
-              </p>
-              <div className="pos-pay-card-types pos-pay-card-types--stack">
+              {!useTileGrid ? (
+                <p className="pos-pay-card-type-hint">
+                  {payMethod === 'mixed' ? fmt(cardRemainder) : `${fmt(toPay)} сум`}
+                </p>
+              ) : null}
+              <div
+                className={`pos-pay-card-types${
+                  useTileGrid ? ' pos-pay-card-types--footer-grid' : ' pos-pay-card-types--stack'
+                }`}
+              >
                 {CARD_TYPES.map((c) => (
                   <button
                     key={c.id}
                     type="button"
-                    className="pos-pay-card-type pos-pay-card-type--row"
+                    className={`pos-pay-card-type${
+                      useTileGrid ? ' pos-pay-card-type--tile' : ' pos-pay-card-type--row'
+                    }`}
                     disabled={isPending}
                     onClick={() => submitCard(c.id)}
                   >
-                    <CreditCard size={22} strokeWidth={1.5} />
+                    <CreditCard size={isModal ? 30 : useTileGrid ? 20 : 22} strokeWidth={1.5} />
                     <span>{t(c.labelKey)}</span>
                   </button>
                 ))}
@@ -430,18 +511,83 @@ export default function PosPaymentFlow({
               {showKeypad && (
                 <NumericKeypad value={tendered} onChange={setTendered} exactAmount={toPay} disabled={isPending} />
               )}
-              <button
-                type="button"
-                className="pos-pay-panel__primary"
-                disabled={isPending || Number(tendered) < toPay}
-                onClick={submitCash}
-              >
-                {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
-                <span>{t('pos.completeSale')}</span>
-              </button>
+              {!pinPrimary ? (
+                <button
+                  type="button"
+                  className="pos-pay-panel__primary"
+                  disabled={isPending || Number(tendered) < toPay}
+                  onClick={submitCash}
+                >
+                  {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
+                  <span>{t('pos.completeSale')}</span>
+                </button>
+              ) : null}
             </div>
           )}
+    </>
+  );
+
+  if (isModal) {
+    if (!open) return null;
+
+    return (
+      <PosModalPortal open onClose={handleClose}>
+        <div
+          className={`pos-pay-modal pos-pay-modal--checkout${showKeypad ? ' is-keypad' : ''}`}
+          onMouseDown={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-label={t('pos.paymentTitle')}
+        >
+          <PayStepHeader
+            toolbar
+            title={stepTitle}
+            onBack={step !== 'receipt' ? stepBack : null}
+            onClose={handleClose}
+          />
+
+          <div className="pos-pay-modal__body">{stepScroll}</div>
+
+          {pinPrimary && footerPrimary ? (
+            <div className="pos-pay-modal__foot">{footerPrimary}</div>
+          ) : null}
         </div>
+      </PosModalPortal>
+    );
+  }
+
+  if (!open) return null;
+
+  return (
+    <section
+      className={`pos-pay-panel${open ? ' is-open' : ''}${className ? ` ${className}` : ''}`}
+      aria-label={t('pos.paymentTitle')}
+      aria-hidden={!open}
+    >
+      {!hideComposition ? (
+        <PosOrderComposition
+          className="pos-pay-panel__composition"
+          items={items}
+          total={toPay}
+          discountTotal={discountTotal}
+          compact
+        />
+      ) : (
+        <div className="pos-pay-panel__total-bar">
+          <span className="pos-pay-panel__total-label">{t('pos.grandTotal')}</span>
+          <span className="pos-pay-panel__total-value">{fmt(toPay)}</span>
+        </div>
+      )}
+
+      <div className="pos-pay-panel__body">
+        <PayStepHeader
+          title={stepTitle}
+          onBack={step !== 'receipt' ? stepBack : null}
+          onClose={handleClose}
+        />
+        <div className="pos-pay-panel__scroll">{stepScroll}</div>
+        {pinPrimary && footerPrimary ? (
+          <div className="pos-pay-panel__actions">{footerPrimary}</div>
+        ) : null}
       </div>
     </section>
   );

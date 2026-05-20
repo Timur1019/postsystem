@@ -1,4 +1,4 @@
-import { FolderOpen, LayoutGrid, List, Package } from 'lucide-react';
+import { ArrowLeft, FolderOpen, LayoutGrid, List, Package } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { usePosShell } from '../../contexts/PosShellContext';
 
@@ -9,6 +9,9 @@ export default function PosTopbarStrip() {
   if (!shell) return null;
 
   const {
+    posPane,
+    onGoToRegister,
+    onGoToCatalog,
     catalogBrowse,
     onOpenCategories,
     onOpenProducts,
@@ -17,12 +20,35 @@ export default function PosTopbarStrip() {
     onViewModeChange,
   } = shell;
 
+  if (posPane === 'register') {
+    return (
+      <div className="pos-topbar-strip">
+        <button
+          type="button"
+          className="pos-topbar-nav__btn pos-topbar-nav__btn--catalog"
+          onClick={onGoToCatalog}
+        >
+          <Package size={18} aria-hidden />
+          <span>{t('pos.tabCatalog')}</span>
+        </button>
+      </div>
+    );
+  }
+
   const onCategories = catalogBrowse === 'categories' && !searchActive;
   const onProducts = catalogBrowse === 'products' || searchActive;
   const showViewToggle = onProducts;
 
   return (
     <div className="pos-topbar-strip">
+      <button
+        type="button"
+        className="pos-topbar-nav__btn pos-topbar-nav__btn--back"
+        onClick={onGoToRegister}
+      >
+        <ArrowLeft size={18} aria-hidden />
+        <span>{t('pos.backToRegister')}</span>
+      </button>
       <div className="pos-topbar-nav" role="group" aria-label={t('pos.catalogNavLabel')}>
         <button
           type="button"

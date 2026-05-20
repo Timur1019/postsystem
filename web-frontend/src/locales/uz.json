@@ -1100,7 +1100,9 @@
   "pos": {
     "navSale": "Kassa",
     "tabCatalog": "Tovarlar",
+    "tabRegister": "Kassa",
     "tabReceipt": "Chek",
+    "backToRegister": "Kassaga",
     "navShift": "Kassir smenasi",
     "navMySales": "Mening savdolarim",
     "selectStore": "Do'kon",
@@ -1154,6 +1156,7 @@
     "colPrice": "Narx",
     "colQty": "Soni",
     "colSum": "Summa",
+    "removeLine": "O‘chirish: {{name}}",
     "colCost": "Tan narxi",
     "totalCost": "Tan narxi jami",
     "discount": "Chegirma",

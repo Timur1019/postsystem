@@ -8,10 +8,9 @@
   --cashier-font: 14px;
   --cashier-gap: clamp(8px, 1vw, 14px);
   --cashier-pad: clamp(8px, 1.2vw, 16px);
-  /* Ширина колонки чека (справа) */
-  --cashier-left-w: clamp(600px, 42vw, 940px);
-  --cashier-receipt-w: clamp(600px, 42vw, 940px);
-  --cashier-cart-cols: minmax(0, 1.65fr) minmax(0, 0.85fr) minmax(4.75rem, 0.72fr) minmax(0, 0.95fr);
+  /* Правая колонка оплаты */
+  --cashier-pay-w: clamp(280px, 26vw, 400px);
+  --cashier-cart-cols: minmax(0, 1.65fr) minmax(0, 0.85fr) minmax(4.75rem, 0.72fr) minmax(0, 0.95fr) minmax(3.75rem, 4.25rem);
   --cashier-sidebar-w: clamp(212px, 15vw, 248px);
   --cashier-sidebar-w-collapsed: 64px;
 
@@ -37,30 +36,13 @@
   min-width: var(--cashier-sidebar-w-collapsed);
 }
 
-.cashier-register__split {
-  grid-template-columns: minmax(0, 1fr) minmax(0, var(--cashier-receipt-w, var(--cashier-left-w)));
+.cashier-register__workspace {
   gap: var(--cashier-gap);
-}
-
-.cashier-register__split > .pos-catalog-panel {
-  grid-column: 1;
-  grid-row: 1;
-  min-height: 0;
-  min-width: 0;
-  height: 100%;
-  max-height: 100%;
   overflow: hidden;
-  align-self: stretch;
 }
 
-.cashier-register__split > .cashier-register__receipt {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.cashier-register__receipt {
-  min-height: 0;
-  min-width: 0;
+.cashier-pos-tabs {
+  flex-shrink: 0;
 }
 
 @container order-panel (max-width: 520px) {
@@ -255,21 +237,15 @@
     font-size: 0.75rem;
   }
 
-  /* Сначала каталог, чек ниже — удобнее на телефоне */
-  .cashier-register__split:not(.cashier-register__split--tabbed) {
-    grid-template-rows: minmax(0, 1fr) minmax(clamp(180px, 32dvh, 300px), auto);
-    gap: 10px;
+  .cashier-register__footer {
+    grid-template-columns: minmax(120px, 0.9fr) minmax(0, 1.35fr);
+    min-height: clamp(140px, 24dvh, 220px);
+    max-height: min(36dvh, 300px);
   }
 
-  .cashier-register__split:not(.cashier-register__split--tabbed) .cashier-register__receipt {
-    order: 2;
-    min-height: clamp(180px, 32dvh, 300px);
-    max-height: min(42dvh, 360px);
-  }
-
-  .cashier-register__split:not(.cashier-register__split--tabbed) > .pos-catalog-panel {
-    order: 1;
-    min-height: 0;
+  .cashier-register__footer--pay-open {
+    min-height: clamp(280px, 52dvh, 480px);
+    max-height: min(68dvh, 520px);
   }
 
   .pos-order-panel__head,
@@ -288,8 +264,8 @@
     padding-right: 12px;
   }
 
-  /* Оплата на маленьком экране — на весь блок чека */
-  .cashier-register__receipt .pos-pay-panel.is-open {
+  /* Оплата на маленьком экране — на весь экран */
+  .cashier-register__footer-cell--pay .pos-pay-panel--footer {
     position: fixed;
     inset: 0;
     z-index: 1050;
@@ -297,11 +273,6 @@
     height: 100%;
     max-height: none;
     border-radius: 0;
-    transform: translateX(0);
-  }
-
-  .cashier-register__receipt .pos-order-panel.is-slide-away {
-    transform: translateX(100%);
   }
 
   .cashier-app .pos-pay-panel__order {
@@ -333,13 +304,14 @@
     justify-content: space-between;
   }
 
-  .cashier-register__split:not(.cashier-register__split--tabbed) {
-    grid-template-rows: minmax(0, 1fr) minmax(150px, 28dvh);
+  .cashier-register__footer {
+    min-height: 140px;
+    max-height: min(40dvh, 280px);
   }
 
-  .cashier-register__split:not(.cashier-register__split--tabbed) .cashier-register__receipt {
-    min-height: 150px;
-    max-height: min(34dvh, 280px);
+  .cashier-register__footer--pay-open {
+    min-height: 0;
+    max-height: none;
   }
 
   .cashier-app .pos-catalog-panel__head,
@@ -408,19 +380,24 @@
 }
 
 /* Широкий монитор / кассовый терминал */
+@media (min-width: 700px) {
+  .cashier-register__footer {
+    min-height: clamp(168px, 22dvh, 260px);
+    max-height: min(34dvh, 320px);
+  }
+}
+
 @media (min-width: 1400px) {
   .cashier-app {
-    --cashier-left-w: clamp(870px, 40vw, 1010px);
-    --cashier-receipt-w: clamp(870px, 40vw, 1010px);
-    --cashier-cart-cols: minmax(0, 2.2fr) minmax(0, 1fr) minmax(5.75rem, 0.85fr) minmax(0, 1.1fr);
+    --cashier-pay-w: clamp(300px, 22vw, 420px);
+    --cashier-cart-cols: minmax(0, 2.2fr) minmax(0, 1fr) minmax(5.75rem, 0.85fr) minmax(0, 1.1fr) minmax(3.75rem, 4.25rem);
   }
 }
 
 @media (min-width: 1920px) {
   .cashier-app {
-    --cashier-left-w: 1010px;
-    --cashier-receipt-w: 1010px;
-    --cashier-cart-cols: minmax(0, 2.3fr) minmax(0, 1.05fr) minmax(6rem, 0.85fr) minmax(0, 1.15fr);
+    --cashier-pay-w: 420px;
+    --cashier-cart-cols: minmax(0, 2.3fr) minmax(0, 1.05fr) minmax(6rem, 0.85fr) minmax(0, 1.15fr) minmax(3.75rem, 4.25rem);
   }
 }
 
@@ -430,13 +407,8 @@
     --cashier-sidebar-w: 188px;
     --cashier-gap: 8px;
     --cashier-pad: 8px;
-    --cashier-receipt-w: minmax(600px, 1fr);
-    --cashier-left-w: minmax(600px, 1fr);
-    --cashier-cart-cols: minmax(0, 2.5fr) minmax(3.5rem, 0.72fr) minmax(5rem, 0.68fr) minmax(4.25rem, 0.92fr);
-  }
-
-  .cashier-app.cashier-app--pos-screen .cashier-register__split {
-    grid-template-columns: minmax(0, 1fr) minmax(600px, 1.05fr);
+    --cashier-pay-w: clamp(260px, 28vw, 340px);
+    --cashier-cart-cols: minmax(0, 2.5fr) minmax(3.5rem, 0.72fr) minmax(5rem, 0.68fr) minmax(4.25rem, 0.92fr) minmax(3.5rem, 4rem);
   }
 
   .cashier-app.cashier-app--pos-screen .pos-product-grid {
@@ -530,8 +502,7 @@
 /* Средние экраны (широкий но не ultrawide) */
 @media (min-width: 1024px) and (max-width: 1279px) {
   .cashier-app:not(.cashier-app--pos-screen) {
-    --cashier-left-w: clamp(640px, 40vw, 820px);
-    --cashier-receipt-w: clamp(640px, 40vw, 820px);
+    --cashier-pay-w: clamp(280px, 26vw, 360px);
   }
 }
 
@@ -721,24 +692,16 @@
   }
 }
 
-/* Компактный режим кассы: вкладки «Товары» / «Чек» */
-.cashier-register__split--tabbed {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-  gap: 0;
-}
-
+/* Вкладки «Касса» / «Товары» */
 .cashier-pos-tabs {
   display: flex;
   flex-shrink: 0;
   gap: 6px;
-  padding: 4px;
+  padding: 5px;
   margin-bottom: var(--cashier-gap, 8px);
-  background: var(--pos-surface, #fff);
-  border: 1px solid var(--pos-border, #e5e7eb);
-  border-radius: var(--pos-radius-lg, 12px);
+  background: #eceef1;
+  border: 1px solid var(--pos-border, #d1d5db);
+  border-radius: var(--cashier-block-radius, var(--pos-radius-lg, 16px));
 }
 
 .cashier-pos-tabs__btn {
@@ -760,9 +723,9 @@
 }
 
 .cashier-pos-tabs__btn.is-active {
-  background: var(--pos-green-soft, #e8f5ef);
+  background: #fff;
   color: var(--pos-green, #006847);
-  box-shadow: inset 0 0 0 1px rgb(0 104 71 / 0.15);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
 }
 
 .cashier-pos-tabs__badge {
@@ -776,60 +739,9 @@
   line-height: 1.35;
 }
 
-.cashier-register__split--tabbed > .pos-catalog-panel,
-.cashier-register__split--tabbed > .cashier-register__receipt {
-  grid-column: unset;
-  grid-row: unset;
-  order: unset;
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: none;
-  width: 100%;
-  display: none;
-}
-
-.cashier-register__split--tabbed.cashier-register__split--catalog > .pos-catalog-panel {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.cashier-register__split--tabbed.cashier-register__split--receipt > .cashier-register__receipt {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* absolute-дети без высоты родителя давали пустой «Чек» — в табах чек на всю область */
-.cashier-register__split--tabbed .cashier-register__receipt .pos-order-panel {
-  position: relative;
-  inset: auto;
-  flex: 1 1 auto;
-  min-height: 0;
-  height: auto;
-  width: 100%;
-}
-
-.cashier-register__split--tabbed .cashier-register__receipt .pos-order-panel.is-slide-away {
-  position: absolute;
-  inset: 0;
-  transform: translateX(-100%);
-  pointer-events: none;
-}
-
-.cashier-register__split--tabbed .cashier-register__receipt .pos-pay-panel {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  height: 100%;
-  max-height: 100%;
-}
-
-.cashier-register__split--tabbed .cashier-register__receipt .pos-pay-panel.is-open {
-  transform: translateX(0);
-  pointer-events: auto;
+.pos-topbar-nav__btn--back,
+.pos-topbar-nav__btn--catalog {
+  font-weight: 700;
 }
 
 /* Очень узкий / низкий экран (телефон, 450×200, мини-окно) */
