@@ -34,14 +34,13 @@ public class CashierShiftServiceImpl implements CashierShiftService {
     private final ZReportFromShiftService zReportFromShiftService;
 
     @Override
-    @Transactional
-    public CashierShiftResponse getOrOpenCurrent(Integer storeId) {
+    public CashierShiftResponse getCurrent(Integer storeId) {
         User cashier = currentUserProvider.requireCurrentUser();
         Store store = cashierSaleSupport.requireStoreForSale(cashier, storeId);
         return cashierShiftRepository
             .findByCashierIdAndStoreIdAndStatus(cashier.getId(), store.getId(), CashierShift.ShiftStatus.OPEN)
             .map(s -> toResponse(s, store.getName()))
-            .orElseGet(() -> openShift(storeId));
+            .orElseThrow(() -> new ResourceNotFoundException("Открытая смена не найдена"));
     }
 
     @Override
@@ -105,17 +104,21 @@ public class CashierShiftServiceImpl implements CashierShiftService {
         return toResponse(saved, saved.getStore().getName());
     }
 
-    private ShiftReportResponse buildReport(String type, CashierShift shift, Instant reportAt) {
-        List<Object[]> rows = saleRepository.aggregateByShiftId(shift.getId());
-        if (rows.isEmpty() || isEmptyAggregate(rows.get(0))) {
-            rows = saleRepository.aggregateShiftSales(
+    private Object[] aggregateShiftRow(CashierShift shift, Instant reportAt) {
+        List<Object[]> rows = saleRepository.aggregateShiftBannerByShiftId(shift.getId());
+        if (rows.isEmpty() || isEmptyBannerAggregate(rows.get(0))) {
+            rows = saleRepository.aggregateShiftBannerByCashierAndTime(
                 shift.getCashier().getId(),
                 shift.getStore().getId(),
                 shift.getOpenedAt(),
                 reportAt
             );
         }
-        Object[] row = rows.isEmpty() ? new Object[6] : unwrapAggregateRow(rows.get(0));
+        return rows.isEmpty() ? new Object[6] : unwrapAggregateRow(rows.get(0));
+    }
+
+    private ShiftReportResponse buildReport(String type, CashierShift shift, Instant reportAt) {
+        Object[] row = aggregateShiftRow(shift, reportAt);
         int saleCount = toInt(row[0]);
         BigDecimal total = toBigDecimal(row[1]);
         BigDecimal vat = toBigDecimal(row[2]);
@@ -150,7 +153,7 @@ public class CashierShiftServiceImpl implements CashierShiftService {
         return shift;
     }
 
-    private static boolean isEmptyAggregate(Object[] raw) {
+    private static boolean isEmptyBannerAggregate(Object[] raw) {
         Object[] row = unwrapAggregateRow(raw);
         return toInt(row[0]) == 0 && toBigDecimal(row[1]).signum() == 0;
     }
@@ -188,7 +191,22 @@ public class CashierShiftServiceImpl implements CashierShiftService {
         return new BigDecimal(value.toString());
     }
 
-    private static CashierShiftResponse toResponse(CashierShift shift, String storeName) {
+    private CashierShiftResponse toResponse(CashierShift shift, String storeName) {
+        int saleCount = shift.getSaleCount();
+        BigDecimal totalAmount = shift.getTotalAmount();
+        BigDecimal cashAmount = shift.getCashAmount();
+        BigDecimal cardAmount = shift.getCardAmount();
+        BigDecimal vatAmount = shift.getVatAmount();
+
+        if (shift.getStatus() == CashierShift.ShiftStatus.OPEN) {
+            Object[] row = aggregateShiftRow(shift, Instant.now());
+            saleCount = toInt(row[0]);
+            totalAmount = toBigDecimal(row[1]);
+            vatAmount = toBigDecimal(row[2]);
+            cashAmount = toBigDecimal(row[4]);
+            cardAmount = toBigDecimal(row[5]);
+        }
+
         return new CashierShiftResponse(
             shift.getId(),
             shift.getStore().getId(),
@@ -197,11 +215,11 @@ public class CashierShiftServiceImpl implements CashierShiftService {
             shift.getStatus().name(),
             shift.getOpenedAt(),
             shift.getClosedAt(),
-            shift.getSaleCount(),
-            shift.getTotalAmount(),
-            shift.getCashAmount(),
-            shift.getCardAmount(),
-            shift.getVatAmount(),
+            saleCount,
+            totalAmount,
+            cashAmount,
+            cardAmount,
+            vatAmount,
             shift.getZReport() != null ? shift.getZReport().getId() : null
         );
     }

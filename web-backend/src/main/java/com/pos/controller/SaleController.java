@@ -1,6 +1,7 @@
 package com.pos.controller;
 
 import com.pos.dto.sale.CreateSaleRequest;
+import com.pos.dto.sale.PartialReturnRequest;
 import com.pos.dto.sale.SaleResponse;
 import com.pos.dto.shared.PageResponse;
 import com.pos.exception.BadRequestException;
@@ -101,6 +102,15 @@ public class SaleController {
         @RequestParam(required = false) String reason
     ) {
         return ResponseEntity.ok(saleService.voidSale(id, reason));
+    }
+
+    @PostMapping("/{id}/return-items")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CASHIER')")
+    public ResponseEntity<SaleResponse> returnItems(
+        @PathVariable UUID id,
+        @Valid @RequestBody PartialReturnRequest request
+    ) {
+        return ResponseEntity.ok(saleService.returnItems(id, request));
     }
 
     @GetMapping("/my-sales")

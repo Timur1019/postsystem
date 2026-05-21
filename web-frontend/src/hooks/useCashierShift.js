@@ -1,19 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cashierShiftApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import {
-  isCashierShiftUiActive,
-  isCashierShiftUiClosed,
-  setCashierShiftUiActive,
-  setCashierShiftUiClosed,
-} from '../utils/cashierShiftUi';
 
-/** Текущая открытая смена; null — смена не открыта в UI. */
-export async function fetchCurrentCashierShift(storeId, userId) {
-  if (isCashierShiftUiClosed(storeId, userId)) return null;
-  if (!isCashierShiftUiActive(storeId, userId)) return null;
-  const res = await cashierShiftApi.current(storeId);
-  return res.data;
+/** Текущая открытая смена из БД; null — смена не открыта. */
+export async function fetchCurrentCashierShift(storeId) {
+  try {
+    const res = await cashierShiftApi.current(storeId);
+    return res.data;
+  } catch (e) {
+    if (e.response?.status === 404) return null;
+    throw e;
+  }
 }
 
 export function useCashierShift(storeId) {
@@ -21,16 +18,16 @@ export function useCashierShift(storeId) {
 
   return useQuery({
     queryKey: ['cashier-shift', storeId, userId],
-    queryFn: () => fetchCurrentCashierShift(storeId, userId),
+    queryFn: () => fetchCurrentCashierShift(storeId),
     enabled: storeId != null && userId != null,
     retry: false,
+    staleTime: 5_000,
+    refetchOnWindowFocus: false,
   });
 }
 
-/** Открыть смену (POST /open; если уже открыта в БД — GET /current). */
-export async function openCashierShift(storeId, userId) {
-  setCashierShiftUiClosed(storeId, userId, false);
-  setCashierShiftUiActive(storeId, userId, true);
+/** Открыть смену (POST /open; если уже открыта — GET /current). */
+export async function openCashierShift(storeId) {
   try {
     const res = await cashierShiftApi.open(storeId);
     return res.data;
@@ -40,7 +37,6 @@ export async function openCashierShift(storeId, userId) {
       const res = await cashierShiftApi.current(storeId);
       return res.data;
     }
-    setCashierShiftUiActive(storeId, userId, false);
     throw e;
   }
 }
@@ -50,7 +46,7 @@ export function useOpenCashierShift(storeId) {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: () => openCashierShift(storeId, userId),
+    mutationFn: () => openCashierShift(storeId),
     onSuccess: (data) => {
       qc.setQueryData(['cashier-shift', storeId, userId], data);
     },

@@ -325,6 +325,97 @@
   color: var(--pos-text);
 }
 
+.cashier-sidebar__lock {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--pos-border);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--pos-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cashier-sidebar__lock svg {
+  flex-shrink: 0;
+}
+
+.cashier-sidebar__lock:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: var(--pos-text);
+}
+
+.cashier-sidebar.is-collapsed .cashier-sidebar__lock {
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0 0 8px;
+}
+
+.cashier-lock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.cashier-lock-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.cashier-lock-overlay__card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 22rem);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
+  text-align: center;
+}
+
+.cashier-lock-overlay__icon {
+  color: #198754;
+  margin-bottom: 0.75rem;
+}
+
+.cashier-lock-overlay__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+}
+
+.cashier-lock-overlay__hint {
+  font-size: 0.875rem;
+  color: var(--pos-muted);
+  margin: 0 0 1rem;
+}
+
+.cashier-lock-overlay__input {
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
 .cashier-topbar {
   min-height: 48px;
   background: var(--pos-surface) !important;
@@ -364,6 +455,60 @@
   gap: 8px;
   flex-shrink: 0;
   margin-left: auto;
+}
+
+/* Переключатель RU / UZ в шапке кассы */
+.cashier-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.cashier-lang-switch {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--pos-border);
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.cashier-lang-switch__btn {
+  min-width: 2.25rem;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: var(--pos-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cashier-lang-switch__btn:hover:not(.is-active) {
+  color: var(--pos-text);
+  background: #eef2f6;
+}
+
+.cashier-lang-switch__btn.is-active {
+  background: var(--pos-green);
+  color: #fff;
+  box-shadow: 0 1px 3px rgb(0 104 71 / 0.28);
+}
+
+.cashier-lang-switch__btn:focus {
+  outline: none;
+}
+
+.cashier-lang-switch__btn:focus-visible {
+  outline: 2px solid var(--pos-green);
+  outline-offset: 1px;
 }
 
 .pos-topbar-strip {
@@ -635,7 +780,7 @@
 .cashier-register__footer {
   flex-shrink: 0;
   display: grid;
-  grid-template-columns: minmax(148px, 1fr) minmax(280px, 1.55fr);
+  grid-template-columns: minmax(128px, 0.82fr) minmax(260px, 1.68fr);
   gap: var(--cashier-gap, 8px);
   align-items: stretch;
   min-height: clamp(152px, 20dvh, 232px);
@@ -653,7 +798,7 @@
   position: relative;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   background: var(--pos-surface, #fff);
   border: 1px solid var(--pos-border, #d1d5db);
   border-radius: var(--cashier-block-radius, var(--pos-radius-lg));
@@ -664,8 +809,8 @@
   display: flex;
   flex-direction: column;
   justify-content: stretch;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px;
 }
 
 .cashier-register__footer--pay-open .cashier-register__footer-cell--actions {
@@ -678,8 +823,9 @@
   justify-content: center;
   width: 100%;
   flex: 1 1 auto;
-  min-height: 56px;
-  padding: 16px 18px;
+  min-height: 52px;
+  padding: 12px 10px;
+  font-size: 0.9375rem;
   border: 1px solid var(--pos-border, #d1d5db);
   border-radius: 14px;
   background: #fff;
@@ -708,7 +854,8 @@
 .cashier-register__footer-cell--pay {
   display: flex;
   flex-direction: column;
-  padding: 12px;
+  padding: 10px;
+  overflow: visible;
 }
 
 /* До оплаты: итог + кнопка «К оплате» */
@@ -721,8 +868,8 @@
 
 .pos-checkout-rail__card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: minmax(96px, 28%) minmax(0, 1fr);
+  gap: 8px;
   height: 100%;
   min-height: 0;
   padding: 0;
@@ -730,7 +877,7 @@
   border: none;
   border-radius: 0;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
   align-items: stretch;
 }
 
@@ -739,10 +886,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   height: 100%;
   min-height: 0;
-  padding: 14px 12px;
+  min-width: 0;
+  padding: 10px 8px;
   text-align: center;
   background: #fff;
   border: 1px solid var(--pos-border, #d1d5db);
@@ -752,10 +900,10 @@
 
 .pos-checkout-rail__pay-label {
   display: block;
-  max-width: 12ch;
-  font-size: 0.9375rem;
+  max-width: 10ch;
+  font-size: 0.8125rem;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 .pos-checkout-rail__totals {
@@ -781,7 +929,9 @@
 
 /* Правая половина футера — подытог, скидка, итого */
 .pos-totals-block--rail {
-  padding: 16px 18px;
+  padding: 10px 12px;
+  min-width: 0;
+  overflow: visible;
 }
 
 .pos-totals-block--rail .pos-totals-block__meta {
@@ -796,7 +946,10 @@
 .pos-totals-block--rail .pos-totals-block__row span:last-child {
   color: #9ca3af;
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: nowrap;
 }
 
 .pos-totals-block--rail .pos-totals-block__row--disc,
@@ -809,21 +962,43 @@
 }
 
 .pos-totals-block--rail .pos-totals-block__hero {
-  padding-top: 14px;
-  margin-top: 10px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding-top: 10px;
+  margin-top: 8px;
   border-top: 1px solid #e5e7eb;
+  min-width: 0;
+  overflow: visible;
 }
 
 .pos-totals-block--rail .pos-totals-block__hero-label {
-  font-size: 1rem;
+  font-size: 0.75rem;
   font-weight: 800;
   color: #111827;
+  flex-shrink: 0;
 }
 
 .pos-totals-block--rail .pos-totals-block__hero-value {
-  font-size: clamp(1.65rem, 5.5vw, 2.25rem);
+  width: 100%;
+  max-width: 100%;
+  font-size: 1.375rem;
   font-weight: 800;
   color: var(--pos-green, #006847);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  text-align: right;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: nowrap;
+}
+
+.pos-totals-block--rail .pos-totals-block__hero-value--fit-sm {
+  font-size: 1.15rem;
+}
+
+.pos-totals-block--rail .pos-totals-block__hero-value--fit-xs {
+  font-size: 1rem;
 }
 
 /* Подытог / скидка / итого — чек и футер */
@@ -921,7 +1096,12 @@
 }
 
 .cashier-register__footer-cell--pay .pos-checkout-rail .pos-checkout-rail__pay-label {
-  font-size: 1.0625rem;
+  font-size: 0.875rem;
+}
+
+.cashier-register__footer-cell--pay .pos-checkout-rail .pos-checkout-btn svg {
+  width: 28px;
+  height: 28px;
 }
 
 /* Оплата — правая ячейка низа */
@@ -2844,7 +3024,7 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  padding: 0 18px 18px;
+  padding: 8px 16px 16px;
 }
 
 .pos-catalog-panel__hint {
@@ -2942,7 +3122,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 10px;
-  padding: 0 14px 10px;
+  padding: 0 16px 10px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--pos-border);
 }
@@ -3016,7 +3196,9 @@
 .pos-product-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pos-product-row {
@@ -3071,6 +3253,8 @@
 
 .pos-product-grid {
   display: grid;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pos-product-card {

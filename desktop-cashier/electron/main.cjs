@@ -214,14 +214,71 @@ function waitForReceiptReady(webContents, timeoutMs = 12000) {
   `);
 }
 
+/** Подготовка DOM и размер листа для термопринтера (мм → микроны для Chromium). */
+function prepareThermalPrintInPage(webContents, extraClasses = []) {
+  const classes = ['print-thermal-only', 'electron-silent-print', ...extraClasses];
+  const classList = classes.map((c) => `'${c}'`).join(', ');
+  return webContents.executeJavaScript(`
+    (async () => {
+      const add = [${classList}];
+      add.forEach((c) => document.documentElement.classList.add(c));
+      const paper = getComputedStyle(document.documentElement).getPropertyValue('--print-paper-w-mm').trim() || '80';
+      const margin = getComputedStyle(document.documentElement).getPropertyValue('--print-page-margin-mm').trim() || '0';
+      let el = document.getElementById('pos-print-job-page');
+      if (!el) {
+        el = document.createElement('style');
+        el.id = 'pos-print-job-page';
+        document.head.appendChild(el);
+      }
+      el.textContent = '@page { size: ' + paper + 'mm auto; margin: ' + margin + '; }';
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const area =
+        document.getElementById('receipt-print-area') ||
+        document.getElementById('fiscal-print-shell');
+      const h = area ? Math.max(area.scrollHeight, area.offsetHeight) : document.body.scrollHeight;
+      const heightMm = Math.max(50, Math.ceil((h / 96) * 25.4) + 8);
+      return { paperMm: parseFloat(paper) || 80, heightMm };
+    })()
+  `);
+}
+
+function runSilentPrint(webContents, dims) {
+  const paperMm = dims?.paperMm || 80;
+  const heightMm = dims?.heightMm || 200;
+  return new Promise((resolve, reject) => {
+    webContents.print(
+      {
+        silent: true,
+        printBackground: true,
+        margins: { marginType: 'none' },
+        pageSize: {
+          width: Math.round(paperMm * 1000),
+          height: Math.round(heightMm * 1000),
+        },
+      },
+      (success, failureReason) => {
+        if (success) resolve();
+        else reject(new Error(failureReason || 'Печать отменена'));
+      }
+    );
+  });
+}
+
+function paperWidthPx(paperMm) {
+  return Math.max(280, Math.round((paperMm / 25.4) * 96) + 48);
+}
+
 function printReceiptInHiddenWindow(receiptNumber) {
   const encoded = encodeURIComponent(String(receiptNumber).trim());
   const url = `${config.cashierUrl}/receipt/${encoded}?silent=1`;
-
+  const paperMm = 80;
   const printWin = new BrowserWindow({
     show: false,
-    width: 640,
-    height: 1200,
+    width: paperWidthPx(paperMm),
+    height: 1600,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -245,41 +302,17 @@ function printReceiptInHiddenWindow(receiptNumber) {
     printWin
       .loadURL(url)
       .then(() => waitForReceiptReady(printWin.webContents))
-      .then(() => new Promise((r) => setTimeout(r, 400)))
-      .then(() =>
-        printWin.webContents.executeJavaScript(`
-          (() => {
-            document.documentElement.classList.add('print-thermal-only');
-            const paper = getComputedStyle(document.documentElement).getPropertyValue('--print-paper-w-mm').trim() || '80';
-            const margin = getComputedStyle(document.documentElement).getPropertyValue('--print-page-margin-mm').trim() || '0';
-            let el = document.getElementById('pos-print-job-page');
-            if (!el) {
-              el = document.createElement('style');
-              el.id = 'pos-print-job-page';
-              document.head.appendChild(el);
-            }
-            el.textContent = '@page { size: ' + paper + 'mm auto; margin: ' + margin + '; }';
-            return true;
-          })()
-        `)
-      )
-      .then(
-        () =>
-          new Promise((res, rej) => {
-            printWin.webContents.print(
-              {
-                silent: true,
-                printBackground: true,
-                margins: { marginType: 'none' },
-              },
-              (success, failureReason) => {
-                cleanup();
-                if (success) res();
-                else rej(new Error(failureReason || 'Печать отменена'));
-              }
-            );
-          })
-      )
+      .then((ready) => {
+        if (!ready) {
+          throw new Error('Чек не успел загрузиться для печати');
+        }
+      })
+      .then(() => new Promise((r) => setTimeout(r, 500)))
+      .then(() => prepareThermalPrintInPage(printWin.webContents))
+      .then((dims) => runSilentPrint(printWin.webContents, dims))
+      .then(() => {
+        cleanup();
+      })
       .then(resolve)
       .catch((err) => {
         cleanup();
@@ -304,19 +337,13 @@ ipcMain.handle('print-current-page', async (event) => {
   if (!wc || wc.isDestroyed()) {
     throw new Error('Окно печати недоступно');
   }
-  return new Promise((resolve, reject) => {
-    wc.print(
-      {
-        silent: true,
-        printBackground: true,
-        margins: { marginType: 'none' },
-      },
-      (success, failureReason) => {
-        if (success) resolve({ ok: true });
-        else reject(new Error(failureReason || 'Печать отменена'));
-      }
-    );
-  });
+  const hasModal = await wc.executeJavaScript(
+    'Boolean(document.getElementById("fiscal-print-shell"))'
+  );
+  const extra = hasModal ? ['print-thermal-modal'] : [];
+  const dims = await prepareThermalPrintInPage(wc, extra);
+  await runSilentPrint(wc, dims);
+  return { ok: true };
 });
 
 function createWindow() {

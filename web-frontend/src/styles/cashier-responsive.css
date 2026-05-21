@@ -144,7 +144,7 @@
 }
 
 .cashier-app .pos-catalog-panel__body {
-  padding: 0 14px 14px;
+  padding: 8px 16px 14px;
 }
 
 .cashier-app .pos-product-card {
@@ -263,8 +263,13 @@
   }
 
   .pos-catalog-panel__body {
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .pos-catalog-toolbar {
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
   .pos-category-nav {
@@ -324,9 +329,10 @@
 
   .cashier-app .pos-catalog-panel__head,
   .cashier-app .pos-category-nav,
-  .cashier-app .pos-catalog-panel__body {
-    padding-left: 10px;
-    padding-right: 10px;
+  .cashier-app .pos-catalog-panel__body,
+  .cashier-app .pos-catalog-toolbar {
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
   .cashier-app .pos-search-bar__field {

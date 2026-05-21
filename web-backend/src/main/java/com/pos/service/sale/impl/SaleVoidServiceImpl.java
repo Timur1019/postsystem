@@ -43,24 +43,37 @@ public class SaleVoidServiceImpl implements SaleVoidService {
             throw new BadRequestException("Sale already voided");
         }
 
-        sale.setStatus(Sale.SaleStatus.VOIDED);
         String r = reason != null ? reason : "";
-        String prev = sale.getNotes();
-        sale.setNotes(prev != null && !prev.isBlank() ? prev + " | VOID: " + r : "VOID: " + r);
+        boolean anyRemaining = false;
 
-        sale.getItems().forEach(item -> {
+        for (var item : sale.getItems()) {
+            int remaining = item.getQuantity() - item.getReturnedQuantity();
+            if (remaining <= 0) {
+                continue;
+            }
+            anyRemaining = true;
             Product product = item.getProduct();
-            product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
+            product.setStockQuantity(product.getStockQuantity() + remaining);
             productRepository.save(product);
+
+            item.setReturnedQuantity(item.getQuantity());
 
             stockMovementRepository.save(StockMovement.builder()
                 .product(product)
                 .movementType("RETURN")
-                .quantity(item.getQuantity())
+                .quantity(remaining)
                 .referenceId(sale.getId())
                 .notes("Void: " + r)
                 .build());
-        });
+        }
+
+        if (!anyRemaining && SalePartialReturnServiceImpl.allItemsFullyReturned(sale)) {
+            throw new BadRequestException("Чек уже полностью возвращён");
+        }
+
+        sale.setStatus(Sale.SaleStatus.VOIDED);
+        String prev = sale.getNotes();
+        sale.setNotes(prev != null && !prev.isBlank() ? prev + " | VOID: " + r : "VOID: " + r);
 
         Sale saved = saleRepository.save(sale);
         salesLedgerCacheService.onSaleChanged(saved);

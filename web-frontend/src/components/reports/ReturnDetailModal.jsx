@@ -69,7 +69,8 @@ export default function ReturnDetailModal({ open, returnId, reasonPreview, onClo
                     <thead>
                       <tr className="border-b border-slate-200 bg-slate-50 text-left dark:border-slate-700 dark:bg-slate-800/50">
                         <th className="px-3 py-2">{t('products.colName')}</th>
-                        <th className="px-3 py-2 text-right">Qty</th>
+                        <th className="px-3 py-2 text-right">{t('pos.returnSold')}</th>
+                        <th className="px-3 py-2 text-right">{t('pos.returnAlready')}</th>
                         <th className="px-3 py-2 text-right">{t('returnsModule.colAmount')}</th>
                       </tr>
                     </thead>
@@ -78,6 +79,7 @@ export default function ReturnDetailModal({ open, returnId, reasonPreview, onClo
                         <tr key={i} className="border-b border-slate-100 dark:border-slate-800">
                           <td className="px-3 py-2">{line.productName}</td>
                           <td className="px-3 py-2 text-right">{line.quantity}</td>
+                          <td className="px-3 py-2 text-right">{line.returnedQuantity ?? 0}</td>
                           <td className="px-3 py-2 text-right">{fmtMoney(line.lineTotal)}</td>
                         </tr>
                       ))}

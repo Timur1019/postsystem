@@ -6,8 +6,32 @@ const LANGS = [
   { code: 'uz', label: 'UZ' },
 ];
 
-export default function LanguageSwitcher({ className = '' }) {
+export default function LanguageSwitcher({ className = '', variant = 'default' }) {
   const { i18n } = useTranslation();
+
+  if (variant === 'cashier') {
+    return (
+      <div
+        className={clsx('cashier-lang-switch', className)}
+        role="group"
+        aria-label="Language"
+      >
+        {LANGS.map(({ code, label }) => (
+          <button
+            key={code}
+            type="button"
+            onClick={() => i18n.changeLanguage(code)}
+            className={clsx(
+              'cashier-lang-switch__btn',
+              i18n.language?.startsWith(code) && 'is-active'
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className={clsx(

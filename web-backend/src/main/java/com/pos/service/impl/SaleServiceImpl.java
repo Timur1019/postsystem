@@ -1,12 +1,14 @@
 package com.pos.service.impl;
 
 import com.pos.dto.sale.CreateSaleRequest;
+import com.pos.dto.sale.PartialReturnRequest;
 import com.pos.dto.sale.SaleResponse;
 import com.pos.dto.shared.PageResponse;
 import com.pos.service.SaleService;
 import com.pos.service.export.SaleExportService;
 import com.pos.service.sale.SaleCheckoutService;
 import com.pos.service.sale.SaleQueryService;
+import com.pos.service.sale.SalePartialReturnService;
 import com.pos.service.sale.SaleVoidService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +29,7 @@ public class SaleServiceImpl implements SaleService {
     private final SaleCheckoutService checkoutService;
     private final SaleQueryService queryService;
     private final SaleVoidService voidService;
+    private final SalePartialReturnService partialReturnService;
     private final SaleExportService saleExportService;
 
     @Override
@@ -88,6 +91,12 @@ public class SaleServiceImpl implements SaleService {
     @Transactional
     public SaleResponse voidSale(UUID id, String reason) {
         return voidService.voidSale(id, reason);
+    }
+
+    @Override
+    @Transactional
+    public SaleResponse returnItems(UUID id, PartialReturnRequest request) {
+        return partialReturnService.returnItems(id, request);
     }
 
     @Override

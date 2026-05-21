@@ -21,7 +21,7 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
 
     long countByReceiptNumberStartingWith(String prefix);
 
-    @EntityGraph(attributePaths = {"cashier", "store"})
+    @EntityGraph(attributePaths = {"cashier", "store", "cashierShift", "cashierShift.zReport"})
     @Query(
         value = """
         SELECT s FROM Sale s
@@ -196,10 +196,13 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
     );
 
     @Query("""
-        SELECT s FROM Sale s
+        SELECT DISTINCT s FROM Sale s
         JOIN FETCH s.cashier
         LEFT JOIN FETCH s.store
         LEFT JOIN FETCH s.customer
+        LEFT JOIN FETCH s.cashierShift sh
+        LEFT JOIN FETCH sh.zReport
+        LEFT JOIN FETCH s.items
         WHERE s.createdAt >= :start AND s.createdAt < :end
         ORDER BY s.createdAt DESC
         """)
@@ -258,6 +261,88 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
           AND status = 'COMPLETED'
         """, nativeQuery = true)
     List<Object[]> aggregateByShiftId(@Param("shiftId") UUID shiftId);
+
+    /**
+     * Статистика смены для баннера и Z-отчёта: число чеков (все статусы) и чистая выручка
+     * (COMPLETED + остаток по REFUNDED после частичных возвратов; VOIDED не входят в сумму).
+     */
+    @Query(value = """
+        SELECT CAST(COUNT(*) AS INTEGER),
+               COALESCE(SUM(
+                   CASE s.status
+                       WHEN 'COMPLETED' THEN s.total_amount
+                       WHEN 'VOIDED' THEN 0
+                       WHEN 'REFUNDED' THEN GREATEST(
+                           0,
+                           s.total_amount - COALESCE((
+                               SELECT SUM(
+                                   CASE
+                                       WHEN si.quantity <= 0 THEN 0
+                                       WHEN si.returned_quantity >= si.quantity THEN si.line_total
+                                       ELSE ROUND(
+                                           si.line_total * CAST(si.returned_quantity AS DECIMAL) / si.quantity,
+                                           2
+                                       )
+                                   END
+                               )
+                               FROM sale_items si
+                               WHERE si.sale_id = s.id
+                           ), 0)
+                       )
+                       ELSE 0
+                   END
+               ), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.tax_total ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.discount_total ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.cash_amount ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.card_amount ELSE 0 END), 0)
+        FROM sales s
+        WHERE s.cashier_shift_id = :shiftId
+        """, nativeQuery = true)
+    List<Object[]> aggregateShiftBannerByShiftId(@Param("shiftId") UUID shiftId);
+
+    @Query(value = """
+        SELECT CAST(COUNT(*) AS INTEGER),
+               COALESCE(SUM(
+                   CASE s.status
+                       WHEN 'COMPLETED' THEN s.total_amount
+                       WHEN 'VOIDED' THEN 0
+                       WHEN 'REFUNDED' THEN GREATEST(
+                           0,
+                           s.total_amount - COALESCE((
+                               SELECT SUM(
+                                   CASE
+                                       WHEN si.quantity <= 0 THEN 0
+                                       WHEN si.returned_quantity >= si.quantity THEN si.line_total
+                                       ELSE ROUND(
+                                           si.line_total * CAST(si.returned_quantity AS DECIMAL) / si.quantity,
+                                           2
+                                       )
+                                   END
+                               )
+                               FROM sale_items si
+                               WHERE si.sale_id = s.id
+                           ), 0)
+                       )
+                       ELSE 0
+                   END
+               ), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.tax_total ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.discount_total ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.cash_amount ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.card_amount ELSE 0 END), 0)
+        FROM sales s
+        WHERE s.cashier_id = :cashierId
+          AND s.store_id = :storeId
+          AND s.created_at >= :from
+          AND s.created_at < :to
+        """, nativeQuery = true)
+    List<Object[]> aggregateShiftBannerByCashierAndTime(
+        @Param("cashierId") UUID cashierId,
+        @Param("storeId") Integer storeId,
+        @Param("from") Instant from,
+        @Param("to") Instant to
+    );
 
     @Query(value = """
         SELECT COUNT(*),

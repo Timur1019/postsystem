@@ -70,6 +70,14 @@ public class SaleExportServiceImpl implements SaleExportService {
             String cashier = sale.getCashier() != null ? sale.getCashier().getFullName() : "";
             String store = sale.getStore() != null ? sale.getStore().getName() : "";
             String pay = sale.getPaymentMethod() != null ? sale.getPaymentMethod().name() : "";
+            var shift = sale.getCashierShift();
+            String shiftId = shift != null && shift.getId() != null ? shift.getId().toString() : "";
+            String shiftOpened = shift != null && shift.getOpenedAt() != null ? DT.format(shift.getOpenedAt()) : "";
+            String shiftClosed = shift != null && shift.getClosedAt() != null ? DT.format(shift.getClosedAt()) : "";
+            String shiftStatus = shift != null && shift.getStatus() != null ? shift.getStatus().name() : "";
+            String shiftZReportId = shift != null && shift.getZReport() != null && shift.getZReport().getId() != null
+                ? shift.getZReport().getId().toString()
+                : "";
             for (SaleItem line : sale.getItems()) {
                 Product p = line.getProduct();
                 BigDecimal rate = p != null && p.getTaxRate() != null ? p.getTaxRate() : new BigDecimal("12");
@@ -80,6 +88,11 @@ public class SaleExportServiceImpl implements SaleExportService {
                 row.put("status", sale.getStatus().name());
                 row.put("cashier", cashier);
                 row.put("store", store);
+                row.put("shift_id", shiftId);
+                row.put("shift_opened_at", shiftOpened);
+                row.put("shift_closed_at", shiftClosed);
+                row.put("shift_status", shiftStatus);
+                row.put("shift_z_report_id", shiftZReportId);
                 row.put("payment_method", pay);
                 row.put("product_sku", p != null && p.getSku() != null ? p.getSku() : "");
                 row.put("product_name", line.getProductName());

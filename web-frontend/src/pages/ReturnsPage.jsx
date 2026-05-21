@@ -1,7 +1,7 @@
 // src/pages/ReturnsPage.jsx
 import { useMemo, useState, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { Search, Filter, Info, Download } from 'lucide-react';
+import { Search, Filter, Info, Download, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -10,6 +10,8 @@ import ReturnsFiltersDrawer from '../components/reports/ReturnsFiltersDrawer';
 import TableRowActionsMenu from '../components/shared/TableRowActionsMenu';
 import ReturnDetailModal from '../components/reports/ReturnDetailModal';
 import ReturnReasonModal from '../components/reports/ReturnReasonModal';
+import PosReturnModal from '../components/cashier/PosReturnModal';
+import SalePartialReturnModal from '../components/sales/SalePartialReturnModal';
 
 import { fmtMoney } from '../utils/formatMoney';
 import TablePagination from '../components/shared/TablePagination';
@@ -34,7 +36,15 @@ export default function ReturnsPage() {
   const [detailReason, setDetailReason] = useState('');
   const [editRow, setEditRow] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [createReturnOpen, setCreateReturnOpen] = useState(false);
+  const [continueReturnSaleId, setContinueReturnSaleId] = useState(null);
   const qc = useQueryClient();
+
+  const invalidateReturnQueries = useCallback(() => {
+    qc.invalidateQueries({ queryKey: ['returns'] });
+    qc.invalidateQueries({ queryKey: ['sales-ledger'] });
+    qc.invalidateQueries({ queryKey: ['my-sales'] });
+  }, [qc]);
 
   const { data: stores = [] } = useQuery({
     queryKey: ['stores'],
@@ -145,15 +155,25 @@ export default function ReturnsPage() {
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t('returnsModule.title')}</h1>
-        <button
-          type="button"
-          onClick={handleExportExcel}
-          disabled={exporting}
-          className="flex shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-        >
-          <Download size={16} />
-          {exporting ? t('returnsModule.exporting') : t('returnsModule.downloadExcel')}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCreateReturnOpen(true)}
+            className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 dark:bg-emerald-600"
+          >
+            <RotateCcw size={16} />
+            {t('returnsModule.createReturn')}
+          </button>
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            disabled={exporting}
+            className="flex shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+          >
+            <Download size={16} />
+            {exporting ? t('returnsModule.exporting') : t('returnsModule.downloadExcel')}
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -243,6 +263,17 @@ export default function ReturnsPage() {
                             label: t('returnsModule.editReason'),
                             onClick: () => setEditRow(row),
                           },
+                          ...(row.status === 'REFUNDED'
+                            ? [
+                                {
+                                  label: t('returnsModule.returnMore'),
+                                  onClick: () => {
+                                    setContinueReturnSaleId(row.id);
+                                    setMenuOpenId(null);
+                                  },
+                                },
+                              ]
+                            : []),
                           ...(row.status === 'VOIDED'
                             ? [
                                 {
@@ -310,6 +341,19 @@ export default function ReturnsPage() {
         saving={updateReasonMutation.isPending}
         onClose={() => setEditRow(null)}
         onSave={(reason) => updateReasonMutation.mutate({ id: editRow.id, reason })}
+      />
+
+      <PosReturnModal
+        open={createReturnOpen}
+        onClose={() => setCreateReturnOpen(false)}
+        onSuccess={invalidateReturnQueries}
+      />
+
+      <SalePartialReturnModal
+        open={!!continueReturnSaleId}
+        saleId={continueReturnSaleId}
+        onClose={() => setContinueReturnSaleId(null)}
+        onSuccess={invalidateReturnQueries}
       />
     </div>
   );

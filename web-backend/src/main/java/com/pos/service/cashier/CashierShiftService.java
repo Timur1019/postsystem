@@ -7,7 +7,8 @@ import java.util.UUID;
 
 public interface CashierShiftService {
 
-    CashierShiftResponse getOrOpenCurrent(Integer storeId);
+    /** Текущая открытая смена; null — открытой смены нет (без автоматического открытия). */
+    CashierShiftResponse getCurrent(Integer storeId);
 
     CashierShiftResponse openShift(Integer storeId);
 

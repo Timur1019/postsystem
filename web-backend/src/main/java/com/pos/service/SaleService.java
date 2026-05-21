@@ -1,6 +1,7 @@
 package com.pos.service;
 
 import com.pos.dto.sale.CreateSaleRequest;
+import com.pos.dto.sale.PartialReturnRequest;
 import com.pos.dto.sale.SaleResponse;
 import com.pos.dto.shared.PageResponse;
 import org.springframework.data.domain.Pageable;
@@ -58,4 +59,6 @@ public interface SaleService {
     );
 
     SaleResponse voidSale(UUID id, String reason);
+
+    SaleResponse returnItems(UUID id, PartialReturnRequest request);
 }

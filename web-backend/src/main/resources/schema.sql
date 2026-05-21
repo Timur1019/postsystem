@@ -320,6 +320,7 @@ CREATE TABLE sale_items (
     product_name    VARCHAR(255) NOT NULL,  -- snapshot at time of sale
     unit_price      NUMERIC(18, 2) NOT NULL,
     quantity        INT NOT NULL,
+    returned_quantity INT NOT NULL DEFAULT 0,
     discount        NUMERIC(18, 2) DEFAULT 0,
     tax_amount      NUMERIC(18, 2) DEFAULT 0,
     line_total      NUMERIC(18, 2) NOT NULL

@@ -77,6 +77,7 @@ api.interceptors.response.use(
 export const authApi = {
   login:   (data) => api.post('/auth/login', data),
   register:(data) => api.post('/auth/register', data),
+  verifyPassword: (data) => api.post('/auth/verify-password', data),
 };
 
 export const tasnifApi = {
@@ -192,6 +193,7 @@ export const saleApi = {
     api.get(`/sales/receipt/${encodeURIComponent(String(num).trim())}`),
   voidSale:   (id, reason) =>
     api.post(`/sales/${id}/void`, null, { params: { reason } }),
+  returnItems: (id, body) => api.post(`/sales/${id}/return-items`, body),
   mySales:    (params) => api.get('/sales/my-sales', { params }),
 };
 

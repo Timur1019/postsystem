@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { Clock, Filter, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { saleApi } from '../../services/api';
+import SalePartialReturnModal from '../../components/sales/SalePartialReturnModal';
 import { useCashierShift } from '../../hooks/useCashierShift';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -453,6 +454,7 @@ export default function CashierMySalesPage() {
   const { storeId } = useCashierStore();
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [returnSaleId, setReturnSaleId] = useState(null);
 
   const debouncedReceipt = useDebouncedValue(filters.receiptNumber, RECEIPT_DEBOUNCE_MS);
   const appliedFilters = useMemo(
@@ -465,12 +467,18 @@ export default function CashierMySalesPage() {
   const shiftId = shift?.id;
 
   useEffect(() => {
+    if (storeId) {
+      qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
+    }
+  }, [storeId, qc]);
+
+  useEffect(() => {
     setPage(0);
   }, [appliedFilters]);
 
   const salesQueryParams = useMemo(
-    () => buildQueryParams(appliedFilters, page),
-    [appliedFilters, page]
+    () => ({ ...buildQueryParams(appliedFilters, page), shiftId }),
+    [appliedFilters, page, shiftId]
   );
 
   const {
@@ -483,23 +491,10 @@ export default function CashierMySalesPage() {
     enabled: !!shiftId,
   });
 
-  const voidMutation = useMutation({
-    mutationFn: ({ id, reason }) => saleApi.voidSale(id, reason),
-    onSuccess: () => {
-      toast.success(t('pos.returnSuccess'));
-      qc.invalidateQueries({ queryKey: ['my-sales'] });
-      qc.invalidateQueries({ queryKey: ['sales-ledger'] });
-      qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
-    },
-    onError: (e) => toast.error(e.response?.data?.message ?? t('pos.returnFailed')),
-  });
-
   const handleReturn = (row, e) => {
     e.stopPropagation();
     if (row.status === 'VOIDED') return;
-    const reason = window.prompt(t('pos.returnReason'), t('pos.returnDefaultReason'));
-    if (reason == null) return;
-    voidMutation.mutate({ id: row.id, reason });
+    setReturnSaleId(row.id);
   };
 
   const patchFilters = (patch) => {
@@ -547,13 +542,25 @@ export default function CashierMySalesPage() {
               totalElements={sales?.totalElements ?? 0}
               onPageChange={setPage}
               onReturn={handleReturn}
-              voidPending={voidMutation.isPending}
+              voidPending={!!returnSaleId}
               onRowClick={(row) => navigate(`/receipt/${row.receiptNumber}`)}
               t={t}
             />
           </>
         )}
       </div>
+
+      <SalePartialReturnModal
+        open={!!returnSaleId}
+        saleId={returnSaleId}
+        onClose={() => setReturnSaleId(null)}
+        onSuccess={() => {
+          qc.invalidateQueries({ queryKey: ['my-sales'] });
+          qc.invalidateQueries({ queryKey: ['sales-ledger'] });
+          qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
+          qc.invalidateQueries({ queryKey: ['returns'] });
+        }}
+      />
     </div>
   );
 }

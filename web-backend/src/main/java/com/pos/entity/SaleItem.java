@@ -36,6 +36,10 @@ public class SaleItem {
     @Column(nullable = false)
     private int quantity;
 
+    @Column(name = "returned_quantity", nullable = false)
+    @Builder.Default
+    private int returnedQuantity = 0;
+
     @Column(precision = 18, scale = 2)
     private BigDecimal discount = BigDecimal.ZERO;
 

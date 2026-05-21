@@ -25,7 +25,7 @@ public class CashierShiftController {
     @GetMapping("/current")
     @PreAuthorize("hasRole('CASHIER')")
     public ResponseEntity<CashierShiftResponse> current(@RequestParam Integer storeId) {
-        return ResponseEntity.ok(cashierShiftService.getOrOpenCurrent(storeId));
+        return ResponseEntity.ok(cashierShiftService.getCurrent(storeId));
     }
 
     @PostMapping("/open")

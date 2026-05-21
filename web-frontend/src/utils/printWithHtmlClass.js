@@ -1,6 +1,10 @@
 import { syncPrintCssVars } from './syncPrintCssVars';
 import { usePrintSettingsStore } from '../store/printSettingsStore';
 
+function isDesktopSilentPrintAvailable() {
+  return typeof window !== 'undefined' && typeof window.desktopCashier?.printReceipt === 'function';
+}
+
 export const POS_RECEIPT_PRINT_EVENT = 'pos-request-receipt-print';
 
 /** Класс на `<html>` для печати фискального чека. */
@@ -9,9 +13,13 @@ export const PRINT_THERMAL_CLASS = 'print-thermal-only';
 /** Доп. класс: печать из модалки журнала (скрывает #root). */
 export const PRINT_THERMAL_MODAL_CLASS = 'print-thermal-modal';
 
+/** Electron: стили чека на экране (silent print не всегда применяет @media print). */
+export const ELECTRON_SILENT_PRINT_CLASS = 'electron-silent-print';
+
 const THERMAL_PRINT_CLASSES = new Set([
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
+  ELECTRON_SILENT_PRINT_CLASS,
   'print-z-report-only',
   'print-shift-report-only',
 ]);
@@ -43,6 +51,9 @@ function removeThermalPageRule() {
  */
 export function prepareThermalPrint(className) {
   const classes = (Array.isArray(className) ? className : [className]).filter(Boolean);
+  if (isDesktopSilentPrintAvailable()) {
+    classes.push(ELECTRON_SILENT_PRINT_CLASS);
+  }
   const state = usePrintSettingsStore.getState();
   syncPrintCssVars(state);
   const useThermalPage = classes.some((c) => THERMAL_PRINT_CLASSES.has(c));

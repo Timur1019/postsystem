@@ -24,7 +24,9 @@ export async function printReceipt(receiptNumber, { preferSilent = true } = {}) 
     if (typeof window.desktopCashier.printCurrentPage === 'function' && isOnReceiptPage()) {
       const cleanup = prepareThermalPrint(PRINT_THERMAL_CLASS);
       try {
+        await document.fonts?.ready;
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        await new Promise((r) => setTimeout(r, 200));
         await window.desktopCashier.printCurrentPage();
         return 'silent';
       } finally {

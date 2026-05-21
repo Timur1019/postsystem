@@ -19,14 +19,17 @@ export default function ThermalReportPrintPortal({ open, printToken, children, o
     let cancelled = false;
 
     const run = async () => {
+      await document.fonts?.ready;
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, 250));
       if (cancelled) return;
       if (!document.getElementById('fiscal-print-shell')) return;
 
       try {
-        await printThermalReport();
-        await waitForPrintDialogClose();
+        const mode = await printThermalReport();
+        if (mode !== 'silent') {
+          await waitForPrintDialogClose();
+        }
         if (!cancelled) {
           onPrintedRef.current?.();
           onCloseRef.current?.();

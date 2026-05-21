@@ -21,7 +21,7 @@ export default function PosCheckoutRail({
           disabled={checkoutDisabled}
           onClick={onCheckout}
         >
-          <Banknote size={32} strokeWidth={1.75} />
+          <Banknote size={28} strokeWidth={1.75} aria-hidden />
           <span className="pos-checkout-rail__pay-label">{t('pos.toPayment')}</span>
         </button>
         <div className="pos-checkout-rail__totals">

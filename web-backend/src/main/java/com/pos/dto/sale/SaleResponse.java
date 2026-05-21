@@ -26,11 +26,20 @@ public record SaleResponse(
     String receiptType,
     BigDecimal amountTendered,
     BigDecimal changeGiven,
-    String status
+    String status,
+    /** Смена кассира, в которой оформлен чек (для журнала продаж и передачи кассы). */
+    UUID shiftId,
+    Instant shiftOpenedAt,
+    Instant shiftClosedAt,
+    String shiftStatus,
+    Long shiftZReportId
 ) {
     public record SaleLineDto(
+        UUID id,
         String productName,
         int quantity,
+        int returnedQuantity,
+        int returnableQuantity,
         BigDecimal unitPrice,
         BigDecimal lineTotal,
         BigDecimal taxAmount,

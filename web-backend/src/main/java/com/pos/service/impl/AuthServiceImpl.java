@@ -9,6 +9,7 @@ import com.pos.exception.BadRequestException;
 import com.pos.mapper.AuthMapper;
 import com.pos.repository.RoleRepository;
 import com.pos.repository.UserRepository;
+import com.pos.security.CurrentUserProvider;
 import com.pos.security.JwtService;
 import com.pos.service.AuditService;
 import com.pos.service.AuthService;
@@ -33,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuditService auditService;
     private final AuthMapper authMapper;
     private final ModuleAccessService moduleAccessService;
+    private final CurrentUserProvider currentUserProvider;
 
     @Override
     @Transactional
@@ -79,6 +81,15 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtService.generateToken(user);
         LogUtil.info(AuthServiceImpl.class, "User authenticated: username={}", user.getUsername());
         return buildResponse(user, token);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void verifyPassword(String password) {
+        User user = currentUserProvider.requireCurrentUser();
+        authManager.authenticate(
+            new UsernamePasswordAuthenticationToken(user.getUsername(), password)
+        );
     }
 
     @Override

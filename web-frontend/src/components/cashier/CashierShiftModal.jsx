@@ -9,7 +9,6 @@ import PosModalPortal from './PosModalPortal';
 import ShiftReportPrintBody from './ShiftReportPrintBody';
 import ThermalReportPrintPortal from '../reports/ThermalReportPrintPortal';
 import { useAuthStore } from '../../store/authStore';
-import { setCashierShiftUiClosed } from '../../utils/cashierShiftUi';
 import { useOpenCashierShift } from '../../hooks/useCashierShift';
 
 export default function CashierShiftModal({
@@ -67,7 +66,6 @@ export default function CashierShiftModal({
   const closeMutation = useMutation({
     mutationFn: () => cashierShiftApi.close(shiftId).then((r) => r.data),
     onSuccess: (closedShift) => {
-      setCashierShiftUiClosed(storeId, userId, true);
       toast.success(t('pos.shiftClosed'));
       qc.setQueryData(['cashier-shift', storeId, userId], null);
       qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });

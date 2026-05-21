@@ -1,12 +1,17 @@
 // src/components/cashier/PosReturnModal.jsx
 import { useEffect, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { X, Loader, Search, RotateCcw, Receipt, CheckCircle2 } from 'lucide-react';
 import { saleApi } from '../../services/api';
 import PosModalPortal from './PosModalPortal';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
+import SaleReturnLinesEditor, {
+  buildReturnPayload,
+  getReturnableLines,
+  useReturnQtyState,
+} from '../sales/SaleReturnLinesEditor';
 
 function normalizeReceiptCode(raw) {
   return String(raw ?? '')
@@ -44,10 +49,12 @@ function paymentLabel(method, t) {
 
 export default function PosReturnModal({ open, onClose, onSuccess }) {
   const { t } = useTranslation();
+  const qc = useQueryClient();
   const [receipt, setReceipt] = useState('');
   const [reason, setReason] = useState('');
   const [sale, setSale] = useState(null);
   const [lookupPending, setLookupPending] = useState(false);
+  const { qtyByItemId, setQty, selectAllMax, totalSelected } = useReturnQtyState(sale, open && !!sale);
 
   const reset = () => {
     setReceipt('');
@@ -81,6 +88,10 @@ export default function PosReturnModal({ open, onClose, onSuccess }) {
         toast.error(t('pos.returnAlreadyVoided'));
         return;
       }
+      if (getReturnableLines(res.data).length === 0) {
+        toast.error(t('pos.returnNoItems'));
+        return;
+      }
       setSale(res.data);
       toast.success(t('pos.returnFound', { receipt: res.data.receiptNumber }));
     } catch (e) {
@@ -90,15 +101,29 @@ export default function PosReturnModal({ open, onClose, onSuccess }) {
     }
   };
 
-  const voidMutation = useMutation({
-    mutationFn: () => saleApi.voidSale(sale.id, reason.trim() || t('pos.returnDefaultReason')),
+  const returnMutation = useMutation({
+    mutationFn: () => {
+      const payload = buildReturnPayload(
+        sale,
+        qtyByItemId,
+        reason.trim() || t('pos.returnDefaultReason')
+      );
+      if (!payload.lines.length) {
+        return Promise.reject(new Error(t('pos.returnSelectQty')));
+      }
+      return saleApi.returnItems(sale.id, payload).then((r) => r.data);
+    },
     onSuccess: () => {
       toast.success(t('pos.returnSuccess'));
+      qc.invalidateQueries({ queryKey: ['my-sales'] });
+      qc.invalidateQueries({ queryKey: ['sales-ledger'] });
+      qc.invalidateQueries({ queryKey: ['returns'] });
+      qc.invalidateQueries({ queryKey: ['cashier-shift'] });
       reset();
       onClose();
       onSuccess?.();
     },
-    onError: (e) => toast.error(e.response?.data?.message ?? t('pos.returnFailed')),
+    onError: (e) => toast.error(e.response?.data?.message ?? e?.message ?? t('pos.returnFailed')),
   });
 
   return (
@@ -178,21 +203,15 @@ export default function PosReturnModal({ open, onClose, onSuccess }) {
                 </span>
                 <span>{paymentLabel(sale.paymentMethod, t)}</span>
               </div>
-              <ul className="pos-return-modal__lines">
-                {(sale.items ?? []).length === 0 ? (
-                  <li className="pos-return-modal__lines-empty">{t('pos.cartEmpty')}</li>
-                ) : (
-                  (sale.items ?? []).map((line) => (
-                    <li key={line.id ?? `${line.productName}-${line.quantity}`}>
-                      <span className="pos-return-modal__line-name">{line.productName}</span>
-                      <span className="pos-return-modal__line-qty">
-                        ×{line.quantity}
-                      </span>
-                      <span className="pos-return-modal__line-sum">{fmt(line.lineTotal)}</span>
-                    </li>
-                  ))
-                )}
-              </ul>
+              <p className="pos-return-modal__preview-total">
+                {t('pos.returnSelectedTotal')}: <strong>{fmt(totalSelected)}</strong>
+              </p>
+              <div className="pos-return-modal__select-all-wrap">
+                <button type="button" className="pos-return-modal__select-all" onClick={selectAllMax}>
+                  {t('pos.returnSelectAll')}
+                </button>
+              </div>
+              <SaleReturnLinesEditor sale={sale} qtyByItemId={qtyByItemId} onQtyChange={setQty} />
             </section>
           ) : (
             <div className="pos-return-modal__placeholder">
@@ -223,10 +242,10 @@ export default function PosReturnModal({ open, onClose, onSuccess }) {
           <button
             type="button"
             className="pos-return-modal__submit"
-            disabled={!sale || voidMutation.isPending}
-            onClick={() => voidMutation.mutate()}
+            disabled={!sale || returnMutation.isPending}
+            onClick={() => returnMutation.mutate()}
           >
-            {voidMutation.isPending ? (
+            {returnMutation.isPending ? (
               <Loader size={18} className="pos-return-modal__spin" />
             ) : (
               <RotateCcw size={18} />

@@ -1,15 +1,17 @@
 // src/pages/SalesLedgerPage.jsx
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, Download, Filter, MoreVertical, Banknote, CreditCard, Smartphone, Wallet } from 'lucide-react';
+import { Search, Download, Filter, MoreVertical, Banknote, CreditCard, Smartphone, Wallet, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import { saleApi, storeApi } from '../services/api';
 import SalesLedgerFiltersDrawer from '../components/reports/SalesLedgerFiltersDrawer';
 import SaleFiscalPrintModal from '../components/reports/SaleFiscalPrintModal';
+import SalePartialReturnModal from '../components/sales/SalePartialReturnModal';
+import PosReturnModal from '../components/cashier/PosReturnModal';
 
 import { fmtMoney } from '../utils/formatMoney';
 import TablePagination from '../components/shared/TablePagination';
@@ -31,6 +33,35 @@ function PaymentIcon({ method }) {
   return <Icon size={14} className="text-slate-600 dark:text-slate-400" />;
 }
 
+function ShiftCell({ row, t, fmtAt }) {
+  if (!row.shiftId) {
+    return <span className="text-slate-400">{t('salesLedger.shiftNoData')}</span>;
+  }
+  const opened = row.shiftOpenedAt ? fmtAt(row.shiftOpenedAt) : '—';
+  const closed = row.shiftClosedAt
+    ? fmtAt(row.shiftClosedAt)
+    : row.shiftStatus === 'OPEN'
+      ? t('salesLedger.shiftStillOpen')
+      : '—';
+  return (
+    <div className="min-w-[10.5rem] text-slate-800 dark:text-slate-200">
+      <div className="text-xs">
+        <span className="text-slate-500">{t('salesLedger.shiftOpened')}: </span>
+        {opened}
+      </div>
+      <div className="text-xs">
+        <span className="text-slate-500">{t('salesLedger.shiftClosed')}: </span>
+        {closed}
+      </div>
+      {row.shiftZReportId ? (
+        <div className="mt-0.5 font-mono text-[0.65rem] text-emerald-700 dark:text-emerald-400">
+          {t('salesLedger.shiftZReport', { id: row.shiftZReportId })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function SalesLedgerPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -43,6 +74,8 @@ export default function SalesLedgerPage() {
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [rowMenu, setRowMenu] = useState(null);
   const [printSaleId, setPrintSaleId] = useState(null);
+  const [returnSaleId, setReturnSaleId] = useState(null);
+  const [createReturnOpen, setCreateReturnOpen] = useState(false);
   const selectAllRef = useRef(null);
 
   const { data: stores = [] } = useQuery({
@@ -85,16 +118,6 @@ export default function SalesLedgerPage() {
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['sales-ledger', queryParams],
     queryFn: () => saleApi.getAll(queryParams).then((r) => r.data),
-  });
-
-  const voidMutation = useMutation({
-    mutationFn: ({ id, reason }) => saleApi.voidSale(id, reason),
-    onSuccess: () => {
-      toast.success(t('salesLedger.voidSaleSuccess'));
-      qc.invalidateQueries({ queryKey: ['sales-ledger'] });
-      setRowMenu(null);
-    },
-    onError: (e) => toast.error(e.response?.data?.message ?? t('salesLedger.voidSaleFailed')),
   });
 
   const rows = data?.content ?? [];
@@ -197,6 +220,14 @@ export default function SalesLedgerPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            onClick={() => setCreateReturnOpen(true)}
+            className="flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800 dark:bg-emerald-600"
+          >
+            <RotateCcw size={16} />
+            {t('returnsModule.createReturn')}
+          </button>
+          <button
+            type="button"
             onClick={handleExportSalesExcel}
             className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           >
@@ -229,7 +260,7 @@ export default function SalesLedgerPage() {
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px] text-sm">
+          <table className="w-full min-w-[1120px] text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400">
                 <th className="w-10 px-3 py-3">
@@ -244,6 +275,7 @@ export default function SalesLedgerPage() {
                 <th className="px-3 py-3">{t('salesLedger.colDateReceipt')}</th>
                 <th className="px-3 py-3">{t('salesLedger.colStore')}</th>
                 <th className="px-3 py-3">{t('salesLedger.colEmployee')}</th>
+                <th className="px-3 py-3">{t('salesLedger.colShift')}</th>
                 <th className="px-3 py-3 text-right">{t('salesLedger.colTotal')}</th>
                 <th className="px-3 py-3 text-right">{t('salesLedger.colCreditAdvance')}</th>
                 <th className="px-3 py-3">{t('salesLedger.colPayment')}</th>
@@ -255,13 +287,13 @@ export default function SalesLedgerPage() {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="px-3 py-10 text-center text-slate-500">
+                  <td colSpan={11} className="px-3 py-10 text-center text-slate-500">
                     {t('common.loading')}
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-3 py-10 text-center text-slate-500">
+                  <td colSpan={11} className="px-3 py-10 text-center text-slate-500">
                     {t('salesLedger.empty')}
                   </td>
                 </tr>
@@ -282,6 +314,9 @@ export default function SalesLedgerPage() {
                     </td>
                     <td className="px-3 py-2 text-slate-800 dark:text-slate-200">{row.storeName ?? '—'}</td>
                     <td className="px-3 py-2 text-slate-800 dark:text-slate-200">{row.cashierName ?? '—'}</td>
+                    <td className="px-3 py-2">
+                      <ShiftCell row={row} t={t} fmtAt={fmtAt} />
+                    </td>
                     <td className="px-3 py-2 text-right font-medium text-slate-900 dark:text-white">
                       {fmtMoney(row.totalAmount)}
                     </td>
@@ -395,9 +430,8 @@ export default function SalesLedgerPage() {
                   type="button"
                   className="block w-full px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                   onClick={() => {
-                    const reason = window.prompt(t('pos.returnReason'), t('pos.returnDefaultReason'));
-                    if (reason == null) return;
-                    voidMutation.mutate({ id: rowMenu.row.id, reason });
+                    setReturnSaleId(rowMenu.row.id);
+                    setRowMenu(null);
                   }}
                 >
                   {t('salesLedger.voidSale')}
@@ -414,6 +448,25 @@ export default function SalesLedgerPage() {
             document.body
           )
         : null}
+
+      <PosReturnModal
+        open={createReturnOpen}
+        onClose={() => setCreateReturnOpen(false)}
+        onSuccess={() => {
+          qc.invalidateQueries({ queryKey: ['sales-ledger'] });
+          qc.invalidateQueries({ queryKey: ['returns'] });
+        }}
+      />
+
+      <SalePartialReturnModal
+        open={!!returnSaleId}
+        saleId={returnSaleId}
+        onClose={() => setReturnSaleId(null)}
+        onSuccess={() => {
+          qc.invalidateQueries({ queryKey: ['sales-ledger'] });
+          qc.invalidateQueries({ queryKey: ['returns'] });
+        }}
+      />
     </div>
   );
 }

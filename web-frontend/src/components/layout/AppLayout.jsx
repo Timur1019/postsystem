@@ -37,6 +37,7 @@ import LanguageSwitcher from '../shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 import BrandMark from '../shared/BrandMark';
 import { useModuleAccess } from '../../hooks/useModuleAccess';
+import '../../styles/cashier-modals.css';
 
 const GOODS_ROUTES = ['/products', '/categories'];
 

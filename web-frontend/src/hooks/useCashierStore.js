@@ -21,19 +21,21 @@ export function useCashierStore() {
     return { storeId: storeIds[0], noAssignment: false, multipleAssignment: false };
   }, [storeIds]);
 
-  const { data: stores, isPending } = useQuery({
-    queryKey: ['cashier-stores'],
-    queryFn: () => storeApi.getAll().then((r) => r.data),
-    enabled: assignment.storeId != null,
+  const storeId = assignment.storeId;
+
+  const { data: store, isPending, isError } = useQuery({
+    queryKey: ['cashier-store', storeId],
+    queryFn: () => storeApi.getById(storeId).then((r) => r.data),
+    enabled: storeId != null,
     staleTime: 60_000,
+    retry: 2,
   });
 
-  const store = stores?.find((s) => s.id === assignment.storeId);
-
   return {
-    storeId: assignment.storeId,
+    storeId,
     storeName: store?.name ?? null,
-    storeLoading: isPending && assignment.storeId != null,
+    storeLoading: isPending && storeId != null,
+    storeError: isError,
     noAssignment: assignment.noAssignment,
     multipleAssignment: assignment.multipleAssignment,
     isReady: assignment.storeId != null && !!store?.name,

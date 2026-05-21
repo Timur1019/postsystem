@@ -3,6 +3,7 @@ package com.pos.controller;
 import com.pos.dto.auth.AuthRequest;
 import com.pos.dto.auth.AuthResponse;
 import com.pos.dto.auth.RegisterRequest;
+import com.pos.dto.auth.VerifyPasswordRequest;
 import com.pos.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,5 +30,11 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(@RequestHeader("Authorization") String bearerToken) {
         return ResponseEntity.ok(authService.refreshToken(bearerToken.substring(7)));
+    }
+
+    @PostMapping("/verify-password")
+    public ResponseEntity<Void> verifyPassword(@Valid @RequestBody VerifyPasswordRequest request) {
+        authService.verifyPassword(request.password());
+        return ResponseEntity.noContent().build();
     }
 }

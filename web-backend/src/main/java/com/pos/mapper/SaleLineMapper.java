@@ -12,6 +12,7 @@ import java.util.List;
 @Mapper(config = PosMapperConfig.class)
 public interface SaleLineMapper {
 
+    @Mapping(target = "returnableQuantity", source = "item", qualifiedByName = "returnableQty")
     @Mapping(target = "productName", source = "productName")
     @Mapping(target = "lineDiscount", source = "discount", qualifiedByName = "orZero")
     @Mapping(target = "taxAmount", source = "taxAmount", qualifiedByName = "orZero")
@@ -21,6 +22,14 @@ public interface SaleLineMapper {
     SaleResponse.SaleLineDto toLineDto(SaleItem item);
 
     List<SaleResponse.SaleLineDto> toLineDtoList(List<SaleItem> items);
+
+    @Named("returnableQty")
+    default int returnableQty(SaleItem item) {
+        if (item == null) {
+            return 0;
+        }
+        return Math.max(0, item.getQuantity() - item.getReturnedQuantity());
+    }
 
     @Named("orZero")
     default BigDecimal orZero(BigDecimal value) {
