@@ -28,6 +28,8 @@ import StockAdjustmentsReportPage from './pages/reports/StockAdjustmentsReportPa
 import DeadStockReportPage from './pages/reports/DeadStockReportPage';
 import StockInventoriesReportPage from './pages/reports/StockInventoriesReportPage';
 import StockTransfersReportPage from './pages/reports/StockTransfersReportPage';
+import ProductLifecycleReportPage from './pages/reports/ProductLifecycleReportPage';
+import ReportsHubPage from './pages/reports/ReportsHubPage';
 import StockReceiptCreatePage from './pages/stock/StockReceiptCreatePage';
 import StockInventoryCreatePage from './pages/stock/StockInventoryCreatePage';
 import StockTransferCreatePage from './pages/stock/StockTransferCreatePage';
@@ -234,10 +236,15 @@ export default function App() {
             <Route path="reports/stock/transfers" element={
               <ProtectedRoute requiredRole="MANAGER" module="reportsStockTransfers"><StockTransfersReportPage /></ProtectedRoute>
             } />
+            <Route path="reports/stock/lifecycle" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockLifecycle"><ProductLifecycleReportPage /></ProtectedRoute>
+            } />
             <Route path="reports/stock" element={
               <ProtectedRoute requiredRole="MANAGER" module="reportsStockDashboard"><StockDashboardPage /></ProtectedRoute>
             } />
-            <Route path="reports" element={<Navigate to="/reports/stock" replace />} />
+            <Route path="reports" element={
+              <ProtectedRoute requiredRole="MANAGER"><ReportsHubPage /></ProtectedRoute>
+            } />
             <Route path="cash-registers/list" element={
               <ProtectedRoute requiredRole="MANAGER" module="registersList"><CashRegistersListPage /></ProtectedRoute>
             } />

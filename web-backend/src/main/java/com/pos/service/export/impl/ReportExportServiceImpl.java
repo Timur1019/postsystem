@@ -159,6 +159,8 @@ public class ReportExportServiceImpl implements ReportExportService {
         row.put("revenue", s.totalRevenue());
         row.put("receipt_count", s.transactionCount());
         row.put("items_sold", s.itemsSold());
+        row.put("cost_estimate", s.totalCostEstimate());
+        row.put("gross_profit", s.grossProfit());
         return excelWriter.write(ExcelTemplate.DAILY_SUMMARY, List.of(row));
     }
 

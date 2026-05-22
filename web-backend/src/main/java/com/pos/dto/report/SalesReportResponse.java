@@ -8,5 +8,7 @@ public record SalesReportResponse(
     long transactionCount,
     long totalItemsSold,
     BigDecimal averageTransactionValue,
+    BigDecimal totalCostEstimate,
+    BigDecimal grossProfit,
     List<DailyPoint> dailyBreakdown
 ) {}

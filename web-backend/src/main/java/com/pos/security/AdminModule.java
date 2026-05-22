@@ -27,6 +27,7 @@ public enum AdminModule {
     REPORTS_STOCK_LOW("reportsStockLow", "reports", Set.of("ADMIN", "MANAGER")),
     REPORTS_STOCK_TURNOVER("reportsStockTurnover", "reports", Set.of("ADMIN", "MANAGER")),
     REPORTS_STOCK_MOVEMENTS("reportsStockMovements", "reports", Set.of("ADMIN", "MANAGER")),
+    REPORTS_STOCK_LIFECYCLE("reportsStockLifecycle", "reports", Set.of("ADMIN", "MANAGER")),
     REPORTS_STOCK_RECEIPTS("reportsStockReceipts", "reports", Set.of("ADMIN", "MANAGER")),
     REPORTS_SALES_BY_CATEGORIES("reportsSalesByCategories", "reports", Set.of("ADMIN", "MANAGER")),
     REPORTS_SALES_BY_STORES("reportsSalesByStores", "reports", Set.of("ADMIN", "MANAGER")),

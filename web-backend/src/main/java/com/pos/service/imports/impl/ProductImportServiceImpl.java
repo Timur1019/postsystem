@@ -13,6 +13,7 @@ import com.pos.repository.CategoryRepository;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.service.ProductService;
+import com.pos.service.imports.ProductImportParseOptions;
 import com.pos.service.imports.ProductImportService;
 import com.pos.service.imports.ProductImportSource;
 import com.pos.service.imports.ProductImportSupport;
@@ -20,6 +21,7 @@ import com.pos.spreadsheet.ExcelSpreadsheetReader;
 import com.pos.spreadsheet.ExcelTemplate;
 import com.pos.spreadsheet.parser.CatalogJsonParser;
 import com.pos.spreadsheet.parser.HtmlExcelTableParser;
+import com.pos.spreadsheet.parser.UzInvoiceDocumentIdExtractor;
 import com.pos.spreadsheet.parser.UzInvoiceJsonParser;
 import com.pos.spreadsheet.parser.UzInvoiceSpreadsheetParser;
 import com.pos.util.ProductImportParseUtil;
@@ -77,8 +79,14 @@ public class ProductImportServiceImpl implements ProductImportService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProductImportPreviewResponse preview(MultipartFile file, String source) {
+    public ProductImportPreviewResponse preview(
+        MultipartFile file,
+        String source,
+        ProductImportParseOptions options
+    ) {
         ProductImportSource importSource = ProductImportSource.fromParam(source);
+        ProductImportParseOptions parseOpts =
+            options != null ? options : ProductImportParseOptions.defaults();
         List<Map<String, String>> rows = parseRows(file, importSource);
         List<ProductImportPreviewRow> preview = new ArrayList<>();
         int rowNum = 2;
@@ -86,13 +94,25 @@ public class ProductImportServiceImpl implements ProductImportService {
             if (ProductImportParseUtil.isRowEmpty(row)) {
                 continue;
             }
-            preview.add(ProductImportSupport.toPreviewRow(rowNum++, row, productRepository, importSource));
+            preview.add(
+                ProductImportSupport.toPreviewRow(rowNum++, row, productRepository, importSource, parseOpts)
+            );
         }
         int dup = (int) preview.stream().filter(r -> ProductImportPreviewRow.STATUS_DUPLICATE.equals(r.status())).count();
         int invalid = (int) preview.stream().filter(r -> ProductImportPreviewRow.STATUS_INVALID.equals(r.status())).count();
         int newRows = (int) preview.stream().filter(r -> ProductImportPreviewRow.STATUS_NEW.equals(r.status())).count();
+        String fileInvoiceId = resolveFileInvoiceDocumentId(rows, importSource);
+        boolean invoiceAlreadyImported =
+            StringUtils.hasText(fileInvoiceId)
+                && productRepository.existsByUzInvoiceDocumentIdAndIsActiveTrue(fileInvoiceId);
+        if (!invoiceAlreadyImported && StringUtils.hasText(fileInvoiceId)) {
+            invoiceAlreadyImported =
+                productRepository.existsBySkuStartingWithAndIsActiveTrue(fileInvoiceId + "-L-");
+        }
         return new ProductImportPreviewResponse(
             importSource.name(),
+            fileInvoiceId,
+            invoiceAlreadyImported,
             preview.size(),
             newRows,
             dup,
@@ -107,8 +127,9 @@ public class ProductImportServiceImpl implements ProductImportService {
         ProductImportConfirmRequest opts = options != null ? options : defaultOptions();
         String source = opts.source() != null ? opts.source() : "CATALOG";
         boolean skipDuplicates = opts.skipDuplicates() == null || opts.skipDuplicates();
+        ProductImportParseOptions parseOpts = ProductImportParseOptions.fromConfirm(opts);
 
-        ProductImportPreviewResponse preview = preview(file, source);
+        ProductImportPreviewResponse preview = preview(file, source, parseOpts);
         String raw = opts.strategy() != null ? opts.strategy().trim().toUpperCase(Locale.ROOT) : "AS_FILE";
         boolean pushToAllStores = "TO_STORES".equals(raw);
 
@@ -133,9 +154,6 @@ public class ProductImportServiceImpl implements ProductImportService {
                 continue;
             }
             if (ProductImportPreviewRow.STATUS_DUPLICATE.equals(row.status())) {
-                if (skipDuplicates) {
-                    errors.add("Строка " + row.rowNum() + ": " + row.message());
-                }
                 skipped++;
                 continue;
             }
@@ -153,7 +171,10 @@ public class ProductImportServiceImpl implements ProductImportService {
 
             ProductImportConfirmRequest.ImportRowConfirm rowOpts = overrides.get(row.rowNum());
             try {
-                createFromPreview(row, rowOpts, defaultCategoryId, defaultStoreId, pushToAllStores, activeStores);
+                createFromPreview(
+                    row, rowOpts, defaultCategoryId, defaultStoreId, opts.defaultStorageLocation(),
+                    pushToAllStores, activeStores
+                );
                 created++;
             } catch (BadRequestException | ResourceNotFoundException ex) {
                 errors.add("Строка " + row.rowNum() + ": " + ex.getMessage());
@@ -168,7 +189,7 @@ public class ProductImportServiceImpl implements ProductImportService {
     }
 
     private static ProductImportConfirmRequest defaultOptions() {
-        return new ProductImportConfirmRequest("AS_FILE", "CATALOG", true, null, null, List.of());
+        return new ProductImportConfirmRequest("AS_FILE", "CATALOG", true, null, null, null, List.of());
     }
 
     private static Map<Integer, ProductImportConfirmRequest.ImportRowConfirm> buildOverrideMap(
@@ -211,6 +232,7 @@ public class ProductImportServiceImpl implements ProductImportService {
         ProductImportConfirmRequest.ImportRowConfirm rowOpts,
         Integer defaultCategoryId,
         Integer defaultStoreId,
+        String defaultStorageLocation,
         boolean pushToAllStores,
         List<Store> activeStores
     ) {
@@ -248,6 +270,13 @@ public class ProductImportServiceImpl implements ProductImportService {
                 .toList();
         }
 
+        String storageLocation = row.storageLocation();
+        if (rowOpts != null && StringUtils.hasText(rowOpts.storageLocation())) {
+            storageLocation = rowOpts.storageLocation().trim();
+        } else if (!StringUtils.hasText(storageLocation) && StringUtils.hasText(defaultStorageLocation)) {
+            storageLocation = defaultStorageLocation.trim();
+        }
+
         CreateProductRequest req = new CreateProductRequest(
             row.sku(),
             row.name(),
@@ -269,7 +298,7 @@ public class ProductImportServiceImpl implements ProductImportService {
             null,
             null,
             null,
-            null,
+            storageLocation,
             null,
             null,
             null,
@@ -278,6 +307,19 @@ public class ProductImportServiceImpl implements ProductImportService {
             null
         );
         productService.createProduct(req);
+    }
+
+    private static String resolveFileInvoiceDocumentId(List<Map<String, String>> rows, ProductImportSource source) {
+        if (source != ProductImportSource.UZ_INVOICE || rows == null) {
+            return null;
+        }
+        for (Map<String, String> row : rows) {
+            String raw = ProductImportParseUtil.cell(row, UzInvoiceDocumentIdExtractor.ROW_KEY_UZ_INVOICE_DOCUMENT_ID);
+            if (StringUtils.hasText(raw)) {
+                return raw.trim().toUpperCase(Locale.ROOT);
+            }
+        }
+        return null;
     }
 
     private List<Map<String, String>> parseRows(MultipartFile file, ProductImportSource source) {
@@ -312,7 +354,14 @@ public class ProductImportServiceImpl implements ProductImportService {
         } catch (BadRequestException e) {
             throw e;
         } catch (Exception e) {
-            throw new BadRequestException("Не удалось прочитать файл: " + e.getMessage());
+            throw new BadRequestException(
+                "Не удалось прочитать файл: " + e.getMessage(),
+                java.util.Map.of(
+                    "source", source.name(),
+                    "cause", e.getClass().getSimpleName()
+                ),
+                e
+            );
         }
     }
 }

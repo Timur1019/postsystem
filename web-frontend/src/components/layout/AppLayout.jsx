@@ -35,6 +35,7 @@ import {
   Plus,
   ArrowLeftRight,
   TrendingUp,
+  History,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -68,28 +69,38 @@ const ORDER_CHILDREN = [
   { to: '/orders/list', key: 'ordersList', icon: ClipboardList, moduleId: 'ordersList' },
 ];
 
-const REPORT_ROUTES = [
-  '/reports/stock',
-  '/reports/stock/balances',
-  '/reports/stock/write-offs',
-  '/reports/stock/low',
-  '/reports/stock/dead',
-  '/reports/stock/turnover',
-  '/reports/stock/movements',
-  '/reports/stock/adjustments',
-  '/reports/stock/receipts',
-  '/reports/stock/inventories',
-  '/reports/stock/transfers',
-  '/reports/sales/by-products',
-  '/reports/sales/by-categories',
-  '/reports/sales/by-stores',
-  '/reports/sales/period-compare',
-  '/reports/sales/daily',
-  '/reports/sales/cashiers',
-  '/reports/sales',
-  '/reports/returns',
-  '/reports/analytics',
+const REPORT_HUB = { to: '/reports', key: 'reportsHub', icon: BarChart2 };
+
+const REPORT_SALES_CHILDREN = [
+  { to: '/reports/analytics', key: 'reportsAnalytics', icon: BarChart2, moduleId: 'reportsAnalytics' },
+  { to: '/reports/sales/daily', key: 'reportsSalesDaily', icon: Calculator, moduleId: 'reportsSalesDaily' },
+  { to: '/reports/sales/period-compare', key: 'reportsSalesPeriodCompare', icon: ArrowLeftRight, moduleId: 'reportsSalesPeriodCompare' },
+  { to: '/reports/sales/by-stores', key: 'reportsSalesByStores', icon: Store, moduleId: 'reportsSalesByStores' },
+  { to: '/reports/sales/by-categories', key: 'reportsSalesByCategories', icon: Tags, moduleId: 'reportsSalesByCategories' },
+  { to: '/reports/sales/by-products', key: 'reportsSalesByProducts', icon: Package, moduleId: 'reportsSalesByProducts' },
+  { to: '/reports/sales', key: 'reportsSales', icon: Receipt, moduleId: 'reportsSales' },
+  { to: '/reports/sales/cashiers', key: 'reportsCashierPerformance', icon: UserCog, moduleId: 'reportsCashierPerformance' },
+  { to: '/reports/returns', key: 'reportsReturns', icon: RotateCcw, moduleId: 'reportsReturns' },
 ];
+
+const REPORT_STOCK_CHILDREN = [
+  { to: '/reports/stock', key: 'reportsStockDashboard', icon: Warehouse, moduleId: 'reportsStockDashboard' },
+  { to: '/reports/stock/balances', key: 'reportsStockBalances', icon: Package, moduleId: 'reportsStockBalances' },
+  { to: '/reports/stock/low', key: 'reportsStockLow', icon: AlertTriangle, moduleId: 'reportsStockLow' },
+  { to: '/reports/stock/dead', key: 'reportsStockDead', icon: AlertTriangle, moduleId: 'reportsStockDead' },
+  { to: '/reports/stock/turnover', key: 'reportsStockTurnover', icon: ArrowLeftRight, moduleId: 'reportsStockTurnover' },
+  { to: '/reports/stock/lifecycle', key: 'reportsStockLifecycle', icon: History, moduleId: 'reportsStockLifecycle' },
+  { to: '/reports/stock/movements', key: 'reportsStockMovements', icon: ClipboardList, moduleId: 'reportsStockMovements' },
+  { to: '/reports/stock/adjustments', key: 'reportsStockAdjustments', icon: SlidersHorizontal, moduleId: 'reportsStockAdjustments' },
+  { to: '/reports/stock/receipts', key: 'reportsStockReceipts', icon: TrendingUp, moduleId: 'reportsStockReceipts' },
+  { to: '/reports/stock/write-offs', key: 'reportsStockWriteOffs', icon: TrendingDown, moduleId: 'reportsStockWriteOffs' },
+  { to: '/reports/stock/inventories', key: 'reportsStockInventories', icon: ClipboardList, moduleId: 'reportsStockInventories' },
+  { to: '/reports/stock/transfers', key: 'reportsStockTransfers', icon: Truck, moduleId: 'reportsStockTransfers' },
+];
+
+const REPORT_SALES_ROUTES = REPORT_SALES_CHILDREN.map((item) => item.to);
+const REPORT_STOCK_ROUTES = REPORT_STOCK_CHILDREN.map((item) => item.to);
+const REPORT_ROUTES = ['/reports', ...REPORT_SALES_ROUTES, ...REPORT_STOCK_ROUTES];
 
 const REGISTER_ROUTES = ['/cash-registers/list', '/cash-registers/z-reports', '/cash-registers/transfer', '/cash-registers/config'];
 
@@ -109,29 +120,6 @@ const USER_CHILDREN = [
   { to: '/users/barcode-print', key: 'usersBarcodePrint', icon: Barcode, moduleId: 'usersBarcodePrint' },
 ];
 
-const REPORT_CHILDREN = [
-  { to: '/reports/analytics', key: 'reportsAnalytics', icon: BarChart2, moduleId: 'reportsAnalytics' },
-  { to: '/reports/sales/daily', key: 'reportsSalesDaily', icon: Calculator, moduleId: 'reportsSalesDaily' },
-  { to: '/reports/sales/period-compare', key: 'reportsSalesPeriodCompare', icon: ArrowLeftRight, moduleId: 'reportsSalesPeriodCompare' },
-  { to: '/reports/sales/by-stores', key: 'reportsSalesByStores', icon: Store, moduleId: 'reportsSalesByStores' },
-  { to: '/reports/sales/by-categories', key: 'reportsSalesByCategories', icon: Tags, moduleId: 'reportsSalesByCategories' },
-  { to: '/reports/sales/by-products', key: 'reportsSalesByProducts', icon: Package, moduleId: 'reportsSalesByProducts' },
-  { to: '/reports/sales', key: 'reportsSales', icon: Receipt, moduleId: 'reportsSales' },
-  { to: '/reports/sales/cashiers', key: 'reportsCashierPerformance', icon: UserCog, moduleId: 'reportsCashierPerformance' },
-  { to: '/reports/returns', key: 'reportsReturns', icon: RotateCcw, moduleId: 'reportsReturns' },
-  { to: '/reports/stock', key: 'reportsStockDashboard', icon: Warehouse, moduleId: 'reportsStockDashboard' },
-  { to: '/reports/stock/balances', key: 'reportsStockBalances', icon: Package, moduleId: 'reportsStockBalances' },
-  { to: '/reports/stock/low', key: 'reportsStockLow', icon: AlertTriangle, moduleId: 'reportsStockLow' },
-  { to: '/reports/stock/dead', key: 'reportsStockDead', icon: AlertTriangle, moduleId: 'reportsStockDead' },
-  { to: '/reports/stock/turnover', key: 'reportsStockTurnover', icon: ArrowLeftRight, moduleId: 'reportsStockTurnover' },
-  { to: '/reports/stock/movements', key: 'reportsStockMovements', icon: ClipboardList, moduleId: 'reportsStockMovements' },
-  { to: '/reports/stock/adjustments', key: 'reportsStockAdjustments', icon: SlidersHorizontal, moduleId: 'reportsStockAdjustments' },
-  { to: '/reports/stock/receipts', key: 'reportsStockReceipts', icon: TrendingUp, moduleId: 'reportsStockReceipts' },
-  { to: '/reports/stock/write-offs', key: 'reportsStockWriteOffs', icon: TrendingDown, moduleId: 'reportsStockWriteOffs' },
-  { to: '/reports/stock/inventories', key: 'reportsStockInventories', icon: ClipboardList, moduleId: 'reportsStockInventories' },
-  { to: '/reports/stock/transfers', key: 'reportsStockTransfers', icon: Truck, moduleId: 'reportsStockTransfers' },
-];
-
 const REST_NAV = [{ to: '/stores', icon: Store, key: 'stores', roles: ['ADMIN'], moduleId: 'stores' }];
 
 export default function AppLayout() {
@@ -147,6 +135,8 @@ export default function AppLayout() {
   const [goodsOpen, setGoodsOpen] = useState(true);
   const [stockOpen, setStockOpen] = useState(true);
   const [reportsOpen, setReportsOpen] = useState(true);
+  const [reportsSalesOpen, setReportsSalesOpen] = useState(true);
+  const [reportsStockOpen, setReportsStockOpen] = useState(true);
   const [registersOpen, setRegistersOpen] = useState(true);
   const [usersOpen, setUsersOpen] = useState(true);
   const [ordersOpen, setOrdersOpen] = useState(true);
@@ -160,7 +150,9 @@ export default function AppLayout() {
   const stockNav = filterByModule(STOCK_CHILDREN);
   const ordersNav = filterByModule(ORDER_CHILDREN);
   const registersNav = filterByModule(REGISTER_CHILDREN);
-  const reportsNav = filterByModule(REPORT_CHILDREN);
+  const reportsSalesNav = filterByModule(REPORT_SALES_CHILDREN);
+  const reportsStockNav = filterByModule(REPORT_STOCK_CHILDREN);
+  const reportsNavFlat = [...reportsSalesNav, ...reportsStockNav];
   const usersNav = filterByModule(USER_CHILDREN);
 
   useEffect(() => {
@@ -188,6 +180,13 @@ export default function AppLayout() {
     if (GOODS_ROUTES.includes(location.pathname)) setGoodsOpen(true);
     if (STOCK_ROUTES.includes(location.pathname)) setStockOpen(true);
     if (REPORT_ROUTES.includes(location.pathname)) setReportsOpen(true);
+    if (REPORT_SALES_ROUTES.includes(location.pathname)) setReportsSalesOpen(true);
+    if (REPORT_STOCK_ROUTES.includes(location.pathname)) setReportsStockOpen(true);
+    if (location.pathname === '/reports') {
+      setReportsOpen(true);
+      setReportsSalesOpen(true);
+      setReportsStockOpen(true);
+    }
     if (REGISTER_ROUTES.includes(location.pathname)) setRegistersOpen(true);
     if (USER_ROUTES.includes(location.pathname)) setUsersOpen(true);
     if (ORDER_ROUTES.includes(location.pathname)) setOrdersOpen(true);
@@ -226,13 +225,18 @@ export default function AppLayout() {
   const showStock = stockNav.length > 0;
   const showRegisters = registersNav.length > 0;
   const showOrders = ordersNav.length > 0;
-  const showReports = reportsNav.length > 0;
+  const showReports = reportsSalesNav.length > 0 || reportsStockNav.length > 0;
+  const showReportsSales = reportsSalesNav.length > 0;
+  const showReportsStock = reportsStockNav.length > 0;
   const showUsers = usersNav.length > 0;
   const showDashboard = hasModule('dashboard');
   const roleLabel = user?.role ? t(`roles.${user.role}`, user.role) : '';
   const inGoodsSection = GOODS_ROUTES.includes(location.pathname);
   const inStockSection = STOCK_ROUTES.includes(location.pathname);
   const inReportsSection = REPORT_ROUTES.includes(location.pathname);
+  const inReportsSalesSection = REPORT_SALES_ROUTES.includes(location.pathname);
+  const inReportsStockSection = REPORT_STOCK_ROUTES.includes(location.pathname);
+  const reportsHubActive = location.pathname === '/reports';
   const inRegistersSection = REGISTER_ROUTES.includes(location.pathname);
   const inUsersSection = USER_ROUTES.includes(location.pathname);
   const inOrdersSection = ORDER_ROUTES.includes(location.pathname);
@@ -533,19 +537,101 @@ export default function AppLayout() {
                   />
                 </button>
                 {reportsOpen && (
-                  <div className="ml-4 mt-1 space-y-0.5 border-l border-slate-300 pl-1 dark:border-emerald-800/50">
-                    {reportsNav.map(({ to, key, icon: Icon }) => (
-                      <NavLink key={to} to={to} className={subLinkClass}>
-                        <Icon size={16} className="flex-shrink-0 opacity-80" />
-                        {t(`nav.${key}`)}
-                      </NavLink>
-                    ))}
+                  <div className="ml-4 mt-1 space-y-1 border-l border-slate-300 pl-1 dark:border-emerald-800/50">
+                    <NavLink
+                      to={REPORT_HUB.to}
+                      end
+                      className={({ isActive }) =>
+                        `ml-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                          isActive || reportsHubActive
+                            ? 'border-emerald-500 bg-white text-emerald-900 shadow-sm dark:border-sky-500 dark:bg-slate-950 dark:text-white'
+                            : 'border-transparent text-slate-700 hover:bg-slate-200/80 dark:text-slate-300 dark:hover:bg-emerald-900/30'
+                        }`
+                      }
+                    >
+                      <REPORT_HUB.icon size={16} className="flex-shrink-0 opacity-80" />
+                      {t(`nav.${REPORT_HUB.key}`)}
+                    </NavLink>
+
+                    {showReportsSales ? (
+                      <div className="space-y-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setReportsSalesOpen((o) => !o)}
+                          className={`ml-2 flex w-[calc(100%-0.5rem)] items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide transition-colors ${
+                            inReportsSalesSection
+                              ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-200'
+                              : 'text-slate-600 hover:bg-slate-200/80 dark:text-slate-400 dark:hover:bg-emerald-900/20'
+                          }`}
+                        >
+                          <span className="truncate">{t('nav.reportsSalesGroup')}</span>
+                          <ChevronDown
+                            size={14}
+                            className={`flex-shrink-0 transition-transform ${reportsSalesOpen ? '' : '-rotate-90'}`}
+                          />
+                        </button>
+                        {reportsSalesOpen ? (
+                          <div className="ml-3 space-y-0.5 border-l border-slate-200 pl-1 dark:border-emerald-900/40">
+                            {reportsSalesNav.map(({ to, key, icon: Icon }) => (
+                              <NavLink key={to} to={to} className={subLinkClass}>
+                                <Icon size={16} className="flex-shrink-0 opacity-80" />
+                                {t(`nav.${key}`)}
+                              </NavLink>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {showReportsStock ? (
+                      <div className="space-y-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setReportsStockOpen((o) => !o)}
+                          className={`ml-2 flex w-[calc(100%-0.5rem)] items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide transition-colors ${
+                            inReportsStockSection
+                              ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-200'
+                              : 'text-slate-600 hover:bg-slate-200/80 dark:text-slate-400 dark:hover:bg-emerald-900/20'
+                          }`}
+                        >
+                          <span className="truncate">{t('nav.reportsStockGroup')}</span>
+                          <ChevronDown
+                            size={14}
+                            className={`flex-shrink-0 transition-transform ${reportsStockOpen ? '' : '-rotate-90'}`}
+                          />
+                        </button>
+                        {reportsStockOpen ? (
+                          <div className="ml-3 space-y-0.5 border-l border-slate-200 pl-1 dark:border-emerald-900/40">
+                            {reportsStockNav.map(({ to, key, icon: Icon }) => (
+                              <NavLink key={to} to={to} className={subLinkClass}>
+                                <Icon size={16} className="flex-shrink-0 opacity-80" />
+                                {t(`nav.${key}`)}
+                              </NavLink>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>
             ) : (
               <div className="space-y-1 pt-1">
-                {reportsNav.map(({ to, key, icon: Icon }) => (
+                <NavLink
+                  to={REPORT_HUB.to}
+                  end
+                  title={t(`nav.${REPORT_HUB.key}`)}
+                  className={({ isActive }) =>
+                    `flex items-center justify-center rounded-lg px-3 py-2.5 transition-colors ${
+                      isActive || reportsHubActive
+                        ? 'bg-emerald-200 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-300'
+                        : 'text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-emerald-900/40'
+                    }`
+                  }
+                >
+                  <REPORT_HUB.icon size={18} />
+                </NavLink>
+                {reportsNavFlat.map(({ to, key, icon: Icon }) => (
                   <NavLink
                     key={to}
                     to={to}

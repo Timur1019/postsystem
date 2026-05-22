@@ -5,6 +5,7 @@ import com.pos.dto.sale.SaleResponse;
 import com.pos.dto.shared.PageResponse;
 import com.pos.entity.Product;
 import com.pos.entity.Sale;
+import com.pos.domain.StockMovementType;
 import com.pos.entity.StockMovement;
 import com.pos.exception.BadRequestException;
 import com.pos.exception.ResourceNotFoundException;
@@ -114,9 +115,11 @@ public class ReturnServiceImpl implements ReturnService {
 
             stockMovementRepository.save(StockMovement.builder()
                 .product(product)
-                .movementType("SALE")
+                .store(sale.getStore())
+                .movementType(StockMovementType.SALE)
                 .quantity(-item.getQuantity())
                 .referenceId(sale.getId())
+                .createdBy(sale.getCashier())
                 .notes("Отмена возврата, восстановление продажи")
                 .build());
         });

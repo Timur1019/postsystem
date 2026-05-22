@@ -240,6 +240,10 @@ html.dark .receipt-page__card {
   word-break: break-word;
   hyphens: auto;
 }
+.receipt-print-root .receipt-items-table__vat {
+  margin: 0.15rem 0 0;
+  font-variant-numeric: tabular-nums;
+}
 
 @media print {
   body {

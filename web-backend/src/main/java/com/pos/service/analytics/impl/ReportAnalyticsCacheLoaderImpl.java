@@ -137,18 +137,33 @@ public class ReportAnalyticsCacheLoaderImpl implements ReportAnalyticsCacheLoade
             LocalDate day = toLocalDate(row[0], zone);
             BigDecimal revenue = toBigDecimal(row[1]);
             long txCount = row[2] != null ? ((Number) row[2]).longValue() : 0L;
-            map.put(day, new DailySalesAggregate(day, revenue, txCount, 0L));
+            map.put(day, new DailySalesAggregate(day, revenue, txCount, 0L, BigDecimal.ZERO));
         }
 
         for (Object[] row : saleItemRepository.dailyItemsSoldAggregates(start, end)) {
             LocalDate day = toLocalDate(row[0], zone);
             long items = row[1] != null ? ((Number) row[1]).longValue() : 0L;
-            map.merge(day, new DailySalesAggregate(day, BigDecimal.ZERO, 0L, items), (a, b) ->
+            map.merge(day, new DailySalesAggregate(day, BigDecimal.ZERO, 0L, items, BigDecimal.ZERO), (a, b) ->
                 new DailySalesAggregate(
                     day,
                     a.revenue(),
                     a.transactionCount(),
-                    b.itemsSold()
+                    b.itemsSold(),
+                    a.costEstimate()
+                )
+            );
+        }
+
+        for (Object[] row : saleItemRepository.dailyCostEstimateAggregates(start, end)) {
+            LocalDate day = toLocalDate(row[0], zone);
+            BigDecimal cost = toBigDecimal(row[1]);
+            map.merge(day, new DailySalesAggregate(day, BigDecimal.ZERO, 0L, 0L, cost), (a, b) ->
+                new DailySalesAggregate(
+                    day,
+                    a.revenue(),
+                    a.transactionCount(),
+                    a.itemsSold(),
+                    b.costEstimate()
                 )
             );
         }

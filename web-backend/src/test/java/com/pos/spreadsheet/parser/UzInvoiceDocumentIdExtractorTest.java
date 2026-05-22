@@ -27,6 +27,14 @@ class UzInvoiceDocumentIdExtractorTest {
     }
 
     @Test
+    void matchesLongIsNumber() {
+        assertEquals(
+            "IS-00012026",
+            UzInvoiceDocumentIdExtractor.extractFromPlainText("2026 даги IS-00012026-сонли")
+        );
+    }
+
+    @Test
     void normalizesCompactIsWithoutHyphen() {
         assertEquals("IS-00008429", UzInvoiceDocumentIdExtractor.extractFromPlainText("№ IS00008429 дата"));
     }
@@ -44,7 +52,7 @@ class UzInvoiceDocumentIdExtractorTest {
     @Test
     void buildsScopedSkuWhenDocumentIdPresent() {
         var row = UzInvoiceProductRowMapper.toCatalogRow(
-            "Сок", "02202002001544001 - Описание", "dona", "1", "1500", "12", 4, "IS-00008429"
+            "Сок", "02202002001544001 - Описание", null, "dona", "1", "1500", "12", 4, "IS-00008429"
         );
         assertNotNull(row);
         assertEquals("IS-00008429-L-4", row.get("sku"));

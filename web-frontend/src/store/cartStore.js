@@ -28,10 +28,6 @@ export function buildCheckoutLineItems(items) {
   }));
 }
 
-/** Сумма закупа по строке (себестоимость × кол-во) */
-export const lineCostTotal = (item) =>
-  round2((Number(item.costPrice) || 0) * (Number(item.quantity) || 0));
-
 const syncDiscountFromPercent = (item) => ({
   ...item,
   discount: lineDiscountAmount({ ...item, discount: 0 }),
@@ -101,21 +97,6 @@ export const useCartStore = create((set, get) => ({
     const nextItems = get().items.map((i) =>
       i.productId === productId ? syncDiscountFromPercent({ ...i, unitPrice: price }) : i
     );
-    set({
-      items: nextItems,
-      orderDiscountAmount: capOrderDiscount(nextItems, get().orderDiscountAmount),
-    });
-  },
-
-  updateLineSubtotal: (productId, subtotal) => {
-    const nextItems = get().items.map((i) => {
-      if (i.productId !== productId) return i;
-      const gross = lineGross(i);
-      const target = Math.max(0, Math.min(round2(subtotal), gross));
-      const discount = round2(gross - target);
-      const discountPercent = gross > 0 ? round2((discount / gross) * 100) : 0;
-      return { ...i, discount, discountPercent };
-    });
     set({
       items: nextItems,
       orderDiscountAmount: capOrderDiscount(nextItems, get().orderDiscountAmount),
@@ -193,6 +174,4 @@ export const useCartStore = create((set, get) => ({
 
   /** Итого к оплате (цена с учётом скидки, НДС внутри) */
   getTotal: () => round2(get().getLinesTotal() - get().getOrderDiscount()),
-
-  itemCount: () => get().items.reduce((acc, i) => acc + i.quantity, 0),
 }));

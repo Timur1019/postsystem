@@ -3,6 +3,7 @@ package com.pos.service.sale.impl;
 import com.pos.dto.sale.SaleResponse;
 import com.pos.entity.Product;
 import com.pos.entity.Sale;
+import com.pos.domain.StockMovementType;
 import com.pos.entity.StockMovement;
 import com.pos.exception.BadRequestException;
 import com.pos.exception.ResourceNotFoundException;
@@ -60,9 +61,11 @@ public class SaleVoidServiceImpl implements SaleVoidService {
 
             stockMovementRepository.save(StockMovement.builder()
                 .product(product)
-                .movementType("RETURN")
+                .store(sale.getStore())
+                .movementType(StockMovementType.RETURN)
                 .quantity(remaining)
                 .referenceId(sale.getId())
+                .createdBy(sale.getCashier())
                 .notes("Void: " + r)
                 .build());
         }

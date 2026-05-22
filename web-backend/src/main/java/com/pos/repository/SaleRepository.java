@@ -376,4 +376,18 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         @Param("zReportId") Long zReportId,
         @Param("status") Sale.SaleStatus status
     );
+
+    @EntityGraph(attributePaths = {"cashier", "store", "items", "items.product"})
+    @Query("""
+        SELECT DISTINCT s FROM Sale s
+        JOIN s.items si
+        WHERE si.product.id = :productId
+          AND s.createdAt >= :start AND s.createdAt < :end
+        ORDER BY s.createdAt ASC
+        """)
+    List<Sale> findSalesWithProductBetween(
+        @Param("productId") UUID productId,
+        @Param("start") Instant start,
+        @Param("end") Instant end
+    );
 }

@@ -12,13 +12,16 @@ public record ProductImportConfirmRequest(
     Boolean skipDuplicates,
     Integer defaultCategoryId,
     Integer defaultStoreId,
+    /** Расположение на складе для всех новых позиций, если в файле/строке не задано. */
+    String defaultStorageLocation,
     @Valid List<ImportRowConfirm> rows
 ) {
     public record ImportRowConfirm(
         int rowNum,
         @DecimalMin("0.01") BigDecimal sellingPrice,
         Integer categoryId,
-        Integer storeId
+        Integer storeId,
+        String storageLocation
     ) {
     }
 }

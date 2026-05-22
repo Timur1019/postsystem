@@ -21,15 +21,28 @@ public final class ReportAnalyticsReadSupport {
     public static DailySummaryResponse dailySummary(ReportAnalyticsSnapshot snapshot, LocalDate date) {
         DailySalesAggregate day = snapshot.dailyByDate().get(date);
         if (day == null) {
-            return new DailySummaryResponse(BigDecimal.ZERO, 0L, 0L);
+            return new DailySummaryResponse(BigDecimal.ZERO, 0L, 0L, BigDecimal.ZERO, BigDecimal.ZERO);
         }
-        return new DailySummaryResponse(day.revenue(), day.transactionCount(), day.itemsSold());
+        return toDailySummary(day.revenue(), day.transactionCount(), day.itemsSold(), day.costEstimate());
+    }
+
+    public static DailySummaryResponse toDailySummary(
+        BigDecimal revenue,
+        long transactionCount,
+        long itemsSold,
+        BigDecimal costEstimate
+    ) {
+        BigDecimal revenueSafe = revenue != null ? revenue : BigDecimal.ZERO;
+        BigDecimal costSafe = costEstimate != null ? costEstimate : BigDecimal.ZERO;
+        BigDecimal profit = revenueSafe.subtract(costSafe).setScale(2, RoundingMode.HALF_UP);
+        return new DailySummaryResponse(revenueSafe, transactionCount, itemsSold, costSafe, profit);
     }
 
     public static SalesReportResponse salesReport(ReportAnalyticsSnapshot snapshot, LocalDate from, LocalDate to) {
         Map<LocalDate, DailySalesAggregate> daily = snapshot.dailyByDate();
         List<DailyPoint> breakdown = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
+        BigDecimal totalCost = BigDecimal.ZERO;
         long transactions = 0L;
         long itemsSold = 0L;
 
@@ -39,16 +52,21 @@ public final class ReportAnalyticsReadSupport {
             if (agg != null) {
                 transactions += agg.transactionCount();
                 itemsSold += agg.itemsSold();
+                totalCost = totalCost.add(agg.costEstimate() != null ? agg.costEstimate() : BigDecimal.ZERO);
             }
             total = total.add(rev);
             breakdown.add(new DailyPoint(d.toString(), rev));
         }
+
+        BigDecimal profit = total.subtract(totalCost).setScale(2, RoundingMode.HALF_UP);
 
         return new SalesReportResponse(
             total,
             transactions,
             itemsSold,
             averageValue(total, transactions),
+            totalCost.setScale(2, RoundingMode.HALF_UP),
+            profit,
             breakdown
         );
     }

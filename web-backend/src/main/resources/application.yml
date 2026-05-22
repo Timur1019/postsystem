@@ -30,6 +30,9 @@ spring:
           time_zone: UTC
 
 app:
+  errors:
+    # В local можно APP_ERRORS_INCLUDE_CONTEXT=true — в ответе API будет context (entity, id…)
+    include-context: ${APP_ERRORS_INCLUDE_CONTEXT:false}
   cors:
     allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
   cache:

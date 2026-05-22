@@ -353,6 +353,7 @@
 }
 
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--row,
+.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--register,
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--row,
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--tile {
   background: #fff;
@@ -362,6 +363,7 @@
 }
 
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--row:hover,
+.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--register:hover,
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--row:hover,
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--tile:hover {
   background: var(--pos-green-soft);
@@ -369,6 +371,7 @@
 }
 
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--row svg,
+.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--register svg,
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--row svg {
   color: var(--pos-green);
 }
@@ -436,6 +439,14 @@
   color: var(--pos-money);
 }
 
+.cashier-app.cashier-app--light .pos-pay-cash-panel--terminal .pos-pay-cash__hint {
+  color: var(--pos-text-muted);
+}
+
+.cashier-app.cashier-app--light .pos-pay-cash-panel--terminal .pos-pay-cash__shortfall {
+  color: #b91c1c;
+}
+
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-keypad__key,
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-keypad__quick-btn {
   background: #fff;
@@ -455,20 +466,6 @@
   color: #b45309;
 }
 
-.cashier-app.cashier-app--light .pos-order-composition--terminal .pos-order-composition__card,
-.cashier-app.cashier-app--light .pos-order-composition__card {
-  background: #fff;
-  border-color: var(--pos-border);
-}
-
-.cashier-app.cashier-app--light .pos-order-composition__head {
-  color: var(--pos-muted);
-}
-
-.cashier-app.cashier-app--light .pos-order-composition__grand strong {
-  color: var(--pos-money);
-}
-
 .cashier-app.cashier-app--light .pos-keypad__key {
   background: #fff;
   border-color: var(--pos-border);
@@ -480,17 +477,6 @@
   background: var(--pos-green-soft);
 }
 
-.cashier-app.cashier-app--light .pos-pay-modal--split-layout .pos-pay-modal__check {
-  background: var(--pos-surface);
-}
-
-.cashier-app.cashier-app--light .pos-pay-modal--split-layout .pos-pay-modal__pay-side {
-  background: var(--pos-bg);
-}
-
-.cashier-app.cashier-app--light .pos-pay-modal--split-layout .pos-pay-method-card--row {
-  border-left-color: var(--pos-green);
-}
 
 /* —— Скидка на чек (портал в body) —— */
 .cashier-theme--light .pos-pay-modal--discount-terminal,

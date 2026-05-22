@@ -9,6 +9,20 @@ import {
   fmtQty,
   splitDateTime,
 } from '../../utils/fiscalReceiptFormat';
+import { extractVatFromInclusive } from '../../utils/taxAmounts';
+
+function lineVatRatePercent(item) {
+  const rate = item?.taxRatePercent != null ? Number(item.taxRatePercent) : 12;
+  return Number.isFinite(rate) && rate > 0 ? rate : 0;
+}
+
+function lineVatAmount(item) {
+  const stored = Number(item?.taxAmount);
+  if (Number.isFinite(stored) && stored >= 0.001) return stored;
+  const rate = lineVatRatePercent(item);
+  const lineTotal = Number(item?.lineTotal) || 0;
+  return extractVatFromInclusive(lineTotal, rate);
+}
 
 const PAYMENT_I18N = {
   CASH: 'sales.paymentCash',
@@ -185,6 +199,14 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
                     {isOn('itemIkpu') && item.ikpu ? (
                       <p className="break-all receipt-secondary">
                         {t('receipt.ikpuLine')}: {item.ikpu}
+                      </p>
+                    ) : null}
+                    {isOn('itemVatLine') ? (
+                      <p className="receipt-secondary receipt-items-table__vat">
+                        {t('fiscalReceipt.vatLineShort', {
+                          rate: lineVatRatePercent(item).toFixed(0),
+                        })}
+                        : {fmtMoney(lineVatAmount(item))} {t('fiscalReceipt.currency')}
                       </p>
                     ) : null}
                   </div>

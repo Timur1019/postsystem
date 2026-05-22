@@ -7,6 +7,7 @@ import com.pos.dto.product.ProductExportRequest;
 import com.pos.dto.product.ProductImportConfirmRequest;
 import com.pos.dto.product.ProductImportPreviewResponse;
 import com.pos.dto.product.ProductImportResponse;
+import com.pos.dto.product.ProductLifecycleResponse;
 import com.pos.dto.product.ProductResponse;
 import com.pos.dto.product.UpdateProductRequest;
 import com.pos.dto.shared.PageResponse;
@@ -15,6 +16,7 @@ import com.pos.service.ProductService;
 import com.pos.service.export.ProductExportService;
 import com.pos.service.imports.ProductImportService;
 import com.pos.service.product.ProductCommandService;
+import com.pos.service.product.ProductLifecycleService;
 import com.pos.service.product.ProductQueryService;
 import com.pos.service.product.ProductStockService;
 import com.pos.util.LogUtil;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,6 +44,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductStockService stockService;
     private final ProductExportService productExportService;
     private final ProductImportService productImportService;
+    private final ProductLifecycleService productLifecycleService;
 
     @Override
     public PageResponse<ProductResponse> getProducts(
@@ -74,6 +78,18 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponse getProduct(UUID id) {
         return queryService.getProduct(id);
+    }
+
+    @Override
+    public ProductLifecycleResponse getProductLifecycle(
+        UUID id,
+        LocalDate from,
+        LocalDate to,
+        String movementType,
+        Integer storeId,
+        Pageable pageable
+    ) {
+        return productLifecycleService.lifecycle(id, from, to, movementType, storeId, pageable);
     }
 
     @Override
@@ -149,8 +165,16 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductImportPreviewResponse previewProductsImport(MultipartFile file, String source) {
-        return productImportService.preview(file, source);
+    public ProductImportPreviewResponse previewProductsImport(
+        MultipartFile file,
+        String source,
+        String defaultStorageLocation
+    ) {
+        return productImportService.preview(
+            file,
+            source,
+            com.pos.service.imports.ProductImportParseOptions.forPreview(defaultStorageLocation)
+        );
     }
 
     @Override

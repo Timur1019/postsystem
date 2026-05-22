@@ -7,10 +7,12 @@ import com.pos.dto.product.ProductExportRequest;
 import com.pos.dto.product.ProductImportConfirmRequest;
 import com.pos.dto.product.ProductImportPreviewResponse;
 import com.pos.dto.product.ProductImportResponse;
+import com.pos.dto.product.ProductLifecycleResponse;
 import com.pos.dto.product.ProductResponse;
 import com.pos.dto.product.UpdateProductRequest;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import com.pos.dto.shared.PageResponse;
 import com.pos.dto.warehouse.WarehouseReceiveRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +45,15 @@ public interface ProductService {
 
     ProductResponse getProduct(UUID id);
 
+    ProductLifecycleResponse getProductLifecycle(
+        UUID id,
+        LocalDate from,
+        LocalDate to,
+        String movementType,
+        Integer storeId,
+        Pageable pageable
+    );
+
     ProductResponse getByBarcode(String barcode);
 
     ProductResponse getByBarcode(String barcode, Integer storeId);
@@ -69,7 +80,11 @@ public interface ProductService {
 
     byte[] buildImportTemplateExcel();
 
-    ProductImportPreviewResponse previewProductsImport(MultipartFile file, String source);
+    ProductImportPreviewResponse previewProductsImport(
+        MultipartFile file,
+        String source,
+        String defaultStorageLocation
+    );
 
     ProductImportResponse importFromFile(MultipartFile file, ProductImportConfirmRequest options);
 }

@@ -89,6 +89,7 @@ export const tasnifApi = {
 export const productApi = {
   getAll:     (params) => api.get('/products', { params }),
   getById:    (id)     => api.get(`/products/${id}`),
+  lifecycle: (id, params) => api.get(`/products/${id}/lifecycle`, { params }),
   getByBarcode: (barcode, storeId) =>
     api.get(`/products/barcode/${encodeURIComponent(barcode)}`, {
       params: storeId != null ? { storeId } : undefined,
@@ -103,9 +104,14 @@ export const productApi = {
   bulkDeactivate: (body) => api.patch('/products/bulk/deactivate', body),
   importTemplate: () =>
     api.get('/products/import/template', { responseType: 'blob' }),
-  importPreview: (formData, source = 'CATALOG') =>
+  importPreview: (formData, source = 'CATALOG', options = {}) =>
     api.post('/products/import/preview', formData, {
-      params: { source },
+      params: {
+        source,
+        ...(options.defaultStorageLocation
+          ? { defaultStorageLocation: options.defaultStorageLocation }
+          : {}),
+      },
       headers: { 'Content-Type': undefined },
     }),
   importUpload: (formData, options) => {

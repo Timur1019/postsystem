@@ -227,6 +227,9 @@ public class UzInvoiceJsonParser {
             "ikpu", "ikpuCode", "ikpu_code", "catalogCode", "catalog_code", "mxik", "mxikCode",
             "identificationCode", "identification_code", "packageCode", "package_code"
         );
+        String barcode = firstText(item,
+            "barcode", "bar_code", "ean", "shtrixCode", "shtrix_code", "internalCode"
+        );
         String unit = firstText(item,
             "unit", "unitOfMeasure", "unit_of_measure", "measurement_unit", "measure", "olchov", "uom"
         );
@@ -243,7 +246,9 @@ public class UzInvoiceJsonParser {
             price = firstText(item, "subtotal", "sum", "total", "lineTotal");
         }
         String vat = firstVat(item);
-        return UzInvoiceProductRowMapper.toCatalogRow(name, ikpu, unit, qty, price, vat, rowNum, uzInvoiceDocumentId);
+        return UzInvoiceProductRowMapper.toCatalogRow(
+            name, ikpu, barcode, unit, qty, price, vat, rowNum, uzInvoiceDocumentId
+        );
     }
 
     private Map<String, String> mapDidoxItemRow(JsonNode item, int rowNum, String uzInvoiceDocumentId) {
@@ -253,6 +258,7 @@ public class UzInvoiceJsonParser {
         }
         String name = null;
         String ikpu = null;
+        String barcode = null;
         String unit = null;
         String qty = null;
         String price = null;
@@ -283,6 +289,8 @@ public class UzInvoiceJsonParser {
                     name = value;
                 } else if (key.contains("ikpu") || key.contains("catalog") || key.contains("mxik")) {
                     ikpu = value;
+                } else if (key.contains("shtrix") || key.contains("barcode") || key.contains("ean")) {
+                    barcode = value;
                 } else if (key.contains("quantity") || key.contains("miqdor") || key.contains("volume")) {
                     qty = value;
                 } else if (key.contains("price") || key.contains("narx")) {
@@ -294,7 +302,9 @@ public class UzInvoiceJsonParser {
                 }
             }
         }
-        return UzInvoiceProductRowMapper.toCatalogRow(name, ikpu, unit, qty, price, vat, rowNum, uzInvoiceDocumentId);
+        return UzInvoiceProductRowMapper.toCatalogRow(
+            name, ikpu, barcode, unit, qty, price, vat, rowNum, uzInvoiceDocumentId
+        );
     }
 
     private static String extractUzInvoiceDocumentId(JsonNode root) {

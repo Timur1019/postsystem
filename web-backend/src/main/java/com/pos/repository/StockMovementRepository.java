@@ -43,16 +43,21 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, UU
         @Param("storeId") Integer storeId
     );
 
-    @Query("""
+    @Query(
+        value = """
         SELECT sm FROM StockMovement sm
-        JOIN FETCH sm.product
-        LEFT JOIN FETCH sm.store
-        LEFT JOIN FETCH sm.createdBy
         WHERE sm.movementType = 'WRITE_OFF'
           AND sm.createdAt >= :start AND sm.createdAt < :end
           AND (:storeId IS NULL OR sm.store.id = :storeId)
         ORDER BY sm.createdAt DESC
-        """)
+        """,
+        countQuery = """
+        SELECT COUNT(sm) FROM StockMovement sm
+        WHERE sm.movementType = 'WRITE_OFF'
+          AND sm.createdAt >= :start AND sm.createdAt < :end
+          AND (:storeId IS NULL OR sm.store.id = :storeId)
+        """
+    )
     org.springframework.data.domain.Page<StockMovement> findWriteOffsBetween(
         @Param("start") Instant start,
         @Param("end") Instant end,
@@ -104,11 +109,10 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, UU
         """)
     long sumDispatchedByProductId(@Param("productId") UUID productId);
 
-    @Query("""
+    @Query(
+        value = """
         SELECT sm FROM StockMovement sm
-        JOIN FETCH sm.product p
-        LEFT JOIN FETCH sm.store
-        LEFT JOIN FETCH sm.createdBy
+        JOIN sm.product p
         WHERE sm.createdAt >= :start AND sm.createdAt < :end
           AND (:movementType IS NULL OR sm.movementType = :movementType)
           AND (:storeId IS NULL OR sm.store.id = :storeId)
@@ -119,7 +123,21 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, UU
             OR LOWER(COALESCE(p.barcode, '')) LIKE LOWER(CONCAT('%', :search, '%'))
           )
         ORDER BY sm.createdAt DESC
-        """)
+        """,
+        countQuery = """
+        SELECT COUNT(sm) FROM StockMovement sm
+        JOIN sm.product p
+        WHERE sm.createdAt >= :start AND sm.createdAt < :end
+          AND (:movementType IS NULL OR sm.movementType = :movementType)
+          AND (:storeId IS NULL OR sm.store.id = :storeId)
+          AND (
+            :search = ''
+            OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%'))
+            OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :search, '%'))
+            OR LOWER(COALESCE(p.barcode, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+          )
+        """
+    )
     org.springframework.data.domain.Page<StockMovement> findMovementJournal(
         @Param("start") Instant start,
         @Param("end") Instant end,
@@ -127,5 +145,54 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, UU
         @Param("storeId") Integer storeId,
         @Param("search") String search,
         org.springframework.data.domain.Pageable pageable
+    );
+
+    @Query(
+        value = """
+        SELECT sm FROM StockMovement sm
+        LEFT JOIN FETCH sm.store
+        LEFT JOIN FETCH sm.createdBy
+        WHERE sm.product.id = :productId
+          AND sm.createdAt >= :start AND sm.createdAt < :end
+          AND (:movementType IS NULL OR sm.movementType = :movementType)
+          AND (:storeId IS NULL OR sm.store.id = :storeId)
+        ORDER BY sm.createdAt DESC
+        """,
+        countQuery = """
+        SELECT COUNT(sm) FROM StockMovement sm
+        WHERE sm.product.id = :productId
+          AND sm.createdAt >= :start AND sm.createdAt < :end
+          AND (:movementType IS NULL OR sm.movementType = :movementType)
+          AND (:storeId IS NULL OR sm.store.id = :storeId)
+        """
+    )
+    org.springframework.data.domain.Page<StockMovement> findProductMovements(
+        @Param("productId") UUID productId,
+        @Param("start") Instant start,
+        @Param("end") Instant end,
+        @Param("movementType") String movementType,
+        @Param("storeId") Integer storeId,
+        org.springframework.data.domain.Pageable pageable
+    );
+
+    @Query("""
+        SELECT sm.id, sm.createdAt, sm.quantity FROM StockMovement sm
+        WHERE sm.product.id = :productId
+        ORDER BY sm.createdAt ASC, sm.id ASC
+        """)
+    List<Object[]> findProductMovementTimeline(@Param("productId") UUID productId);
+
+    @Query("""
+        SELECT sm.movementType, COALESCE(SUM(sm.quantity), 0) FROM StockMovement sm
+        WHERE sm.product.id = :productId
+          AND sm.createdAt >= :start AND sm.createdAt < :end
+          AND (:storeId IS NULL OR sm.store.id = :storeId)
+        GROUP BY sm.movementType
+        """)
+    List<Object[]> sumQuantitiesByTypeForProduct(
+        @Param("productId") UUID productId,
+        @Param("start") Instant start,
+        @Param("end") Instant end,
+        @Param("storeId") Integer storeId
     );
 }

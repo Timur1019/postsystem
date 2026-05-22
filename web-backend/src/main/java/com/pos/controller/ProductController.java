@@ -8,6 +8,7 @@ import com.pos.dto.product.ProductExportRequest;
 import com.pos.dto.product.ProductImportConfirmRequest;
 import com.pos.dto.product.ProductImportPreviewResponse;
 import com.pos.dto.product.ProductImportResponse;
+import com.pos.dto.product.ProductLifecycleResponse;
 import com.pos.dto.product.ProductResponse;
 import com.pos.dto.product.UpdateProductRequest;
 
@@ -30,6 +31,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
@@ -81,6 +83,20 @@ public class ProductController {
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getProduct(@PathVariable UUID id) {
         return ResponseEntity.ok(productService.getProduct(id));
+    }
+
+    @GetMapping("/{id}/lifecycle")
+    public ResponseEntity<ProductLifecycleResponse> getProductLifecycle(
+        @PathVariable UUID id,
+        @RequestParam(required = false) LocalDate from,
+        @RequestParam(required = false) LocalDate to,
+        @RequestParam(required = false) String movementType,
+        @RequestParam(required = false) Integer storeId,
+        @PageableDefault(size = 30) Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+            productService.getProductLifecycle(id, from, to, movementType, storeId, pageable)
+        );
     }
 
     @GetMapping("/barcode/{barcode}")
@@ -157,9 +173,12 @@ public class ProductController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ProductImportPreviewResponse> importPreview(
         @RequestPart("file") MultipartFile file,
-        @RequestParam(value = "source", defaultValue = "CATALOG") String source
+        @RequestParam(value = "source", defaultValue = "CATALOG") String source,
+        @RequestParam(value = "defaultStorageLocation", required = false) String defaultStorageLocation
     ) {
-        return ResponseEntity.ok(productService.previewProductsImport(file, source));
+        return ResponseEntity.ok(
+            productService.previewProductsImport(file, source, defaultStorageLocation)
+        );
     }
 
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -1,5 +1,6 @@
 // src/pages/ProductsPage.jsx
 import { useMemo, useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -35,6 +36,7 @@ const canManage = (role) => role === 'ADMIN' || role === 'MANAGER';
 
 export default function ProductsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuthStore();
   const manage = canManage(user?.role);
@@ -58,6 +60,7 @@ export default function ProductsPage() {
   const [receiveProduct, setReceiveProduct] = useState(null);
   const [deleteProduct, setDeleteProduct] = useState(null);
   const [infoProductId, setInfoProductId] = useState(null);
+  const [infoTab, setInfoTab] = useState('details');
   const selectAllRef = useRef(null);
 
   const queryParams = useMemo(() => {
@@ -385,6 +388,7 @@ export default function ProductsPage() {
       <ProductInfoModal
         open={!!infoProductId}
         productId={infoProductId}
+        initialTab={infoTab}
         onClose={() => setInfoProductId(null)}
         onEdit={(p) => {
           if (!p) return;
@@ -469,12 +473,36 @@ export default function ProductsPage() {
                 type="button"
                 className="block w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
                 onClick={() => {
+                  setInfoTab('details');
                   setInfoProductId(rowMenu.product.id);
                   setRowMenu(null);
                 }}
               >
                 {t('products.info.open')}
               </button>
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
+                onClick={() => {
+                  setInfoTab('lifecycle');
+                  setInfoProductId(rowMenu.product.id);
+                  setRowMenu(null);
+                }}
+              >
+                {t('products.info.openLifecycle')}
+              </button>
+              {manage && (
+                <button
+                  type="button"
+                  className="block w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
+                  onClick={() => {
+                    navigate(`/reports/stock/lifecycle?productId=${rowMenu.product.id}`);
+                    setRowMenu(null);
+                  }}
+                >
+                  {t('products.rowLifecycleReport')}
+                </button>
+              )}
               {manage && (
                 <button
                   type="button"

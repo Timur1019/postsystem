@@ -6,6 +6,7 @@ import com.pos.dto.sale.SaleResponse;
 import com.pos.entity.Product;
 import com.pos.entity.Sale;
 import com.pos.entity.SaleItem;
+import com.pos.domain.StockMovementType;
 import com.pos.entity.StockMovement;
 import com.pos.exception.BadRequestException;
 import com.pos.exception.ResourceNotFoundException;
@@ -72,7 +73,7 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
             }
 
             item.setReturnedQuantity(item.getReturnedQuantity() + line.quantity());
-            restoreStock(item, line.quantity(), sale.getId(), reason);
+            restoreStock(sale, item, line.quantity(), reason);
             anyReturned = true;
         }
 
@@ -126,16 +127,18 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
         return sum;
     }
 
-    private void restoreStock(SaleItem item, int qty, UUID saleId, String reason) {
+    private void restoreStock(Sale sale, SaleItem item, int qty, String reason) {
         Product product = item.getProduct();
         product.setStockQuantity(product.getStockQuantity() + qty);
         productRepository.save(product);
 
         stockMovementRepository.save(StockMovement.builder()
             .product(product)
-            .movementType("RETURN")
+            .store(sale.getStore())
+            .movementType(StockMovementType.RETURN)
             .quantity(qty)
-            .referenceId(saleId)
+            .referenceId(sale.getId())
+            .createdBy(sale.getCashier())
             .notes("Return: " + reason)
             .build());
     }

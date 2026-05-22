@@ -23,6 +23,7 @@ public enum ExcelTemplate {
             col("ikpu", "ИКПУ"),
             col("unit_of_measure", "Ед. изм."),
             col("barcode", "Штрихкод"),
+            col("storage_location", "Расположение"),
             col("stock_quantity", "Остаток"),
             col("active", "Активен (1/0)")
         ),
@@ -199,7 +200,9 @@ public enum ExcelTemplate {
             col("date", "Дата"),
             col("revenue", "Выручка"),
             col("receipt_count", "Чеков"),
-            col("items_sold", "Продано, шт.")
+            col("items_sold", "Продано, шт."),
+            col("cost_estimate", "Себестоимость"),
+            col("gross_profit", "Валовая прибыль")
         ),
         null
     ),
@@ -334,6 +337,7 @@ public enum ExcelTemplate {
         row.put("ikpu", "");
         row.put("unit_of_measure", "шт");
         row.put("barcode", "");
+        row.put("storage_location", "");
         row.put("stock_quantity", "0");
         row.put("active", "1");
         return row;

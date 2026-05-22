@@ -7,7 +7,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface ProductImportService {
 
-    ProductImportPreviewResponse preview(MultipartFile file, String source);
+    ProductImportPreviewResponse preview(
+        MultipartFile file,
+        String source,
+        ProductImportParseOptions options
+    );
 
     ProductImportResponse importFile(MultipartFile file, ProductImportConfirmRequest options);
 }

@@ -23,6 +23,7 @@ public final class UzInvoiceProductRowMapper {
     public static Map<String, String> toCatalogRow(
         String name,
         String ikpuRaw,
+        String barcodeRaw,
         String unit,
         String qtyRaw,
         String priceRaw,
@@ -62,6 +63,9 @@ public final class UzInvoiceProductRowMapper {
         map.put("sku", sku);
         map.put("name", name.trim());
         map.put("ikpu", ikpu != null ? ikpu : "");
+        if (StringUtils.hasText(barcodeRaw)) {
+            map.put("barcode", barcodeRaw.trim());
+        }
         map.put("unit_of_measure", unit.trim());
         map.put("stock_quantity", String.valueOf(Math.max(0, qty)));
         map.put("selling_price", price.toPlainString());

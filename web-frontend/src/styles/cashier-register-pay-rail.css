@@ -215,8 +215,68 @@
   color: var(--pos-money, #f5c842);
 }
 
+/* Способы оплаты: три одинаковые кнопки на всю ширину колонки */
+.pos-pay-panel--register-rail .pos-pay-method-cards--register-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.pos-pay-panel--register-rail .pos-pay-method-cards--terminal .pos-pay-method-card--register,
 .pos-pay-panel--register-rail .pos-pay-method-cards--terminal .pos-pay-method-card--row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
   min-height: 64px;
+  padding: 14px 16px;
+  gap: 12px;
+  border: 1px solid var(--pos-border, #2a3548);
+  border-left: 4px solid var(--pos-green, #3dffa8);
+  border-radius: 12px;
+  background: var(--pos-surface-elevated, #1c2433);
+  color: var(--pos-text, #f1f5f9);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pos-pay-panel--register-rail .pos-pay-method-cards--terminal .pos-pay-method-card--register:hover,
+.pos-pay-panel--register-rail .pos-pay-method-cards--terminal .pos-pay-method-card--row:hover {
+  border-color: var(--pos-green, #3dffa8);
+  background: rgb(61 255 168 / 0.08);
+}
+
+.pos-pay-panel--register-rail .pos-pay-method-card--register .pos-pay-method-card__icon,
+.pos-pay-panel--register-rail .pos-pay-method-card--row .pos-pay-method-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--pos-green-soft, rgb(61 255 168 / 0.12));
+  color: var(--pos-green, #3dffa8);
+}
+
+.pos-pay-panel--register-rail .pos-pay-method-card--register .pos-pay-method-card__label,
+.pos-pay-panel--register-rail .pos-pay-method-card--row .pos-pay-method-card__label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.pos-pay-panel--register-rail .pos-pay-method-card--register .pos-pay-method-card__arrow,
+.pos-pay-panel--register-rail .pos-pay-method-card--row .pos-pay-method-card__arrow {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--pos-green, #3dffa8);
+  opacity: 0.85;
 }
 
 /* Наличные + numpad */

@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import { Package, TrendingDown, TrendingUp, AlertTriangle, Warehouse } from 'lucide-react';
 import { stockReportApi, storeApi } from '../../services/api';
+import { getApiErrorMessage } from '../../utils/apiError';
 import ReportDateBar from '../../components/reports/ReportDateBar';
 import { fmtMoney } from '../../utils/formatMoney';
 
@@ -22,7 +23,7 @@ export default function StockDashboardPage() {
     queryFn: () => storeApi.getAll().then((r) => r.data),
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['stock-dashboard', from, to, storeId],
     queryFn: () =>
       stockReportApi.dashboard({
@@ -32,6 +33,12 @@ export default function StockDashboardPage() {
       }).then((r) => r.data),
     enabled: !!from && !!to,
   });
+
+  const formatUnits = (units) => {
+    if (isLoading) return '…';
+    if (isError) return '—';
+    return units ?? 0;
+  };
 
   const cards = [
     { icon: TrendingUp, label: t('stockReports.kpiReceived'), units: data?.receivedUnits, money: data?.receivedCostEstimate, color: 'emerald' },
@@ -78,9 +85,9 @@ export default function StockDashboardPage() {
                 <p className="text-xs">{label}</p>
               </div>
               <p className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
-                {isLoading ? '…' : `${units ?? '—'} ${t('stockReports.unitsSuffix')}`}
+                {`${formatUnits(units)} ${t('stockReports.unitsSuffix')}`}
               </p>
-              {money != null && !isLoading && (
+              {money != null && !isLoading && !isError && (
                 <p className="text-xs text-slate-500">{fmtMoney(money)}</p>
               )}
             </div>
@@ -88,6 +95,12 @@ export default function StockDashboardPage() {
           return link ? <Link key={label} to={link}>{inner}</Link> : <div key={label}>{inner}</div>;
         })}
       </div>
+
+      {isError && (
+        <p className="text-sm text-red-600 dark:text-red-400">
+          {getApiErrorMessage(error, t('stockReports.loadError'))}
+        </p>
+      )}
 
       {chartData.length > 0 && (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -116,6 +129,9 @@ export default function StockDashboardPage() {
         </Link>
         <Link to="/reports/stock/turnover" className="text-emerald-700 hover:underline dark:text-emerald-400">
           {t('stockReports.linkTurnover')}
+        </Link>
+        <Link to="/reports/stock/lifecycle" className="text-emerald-700 hover:underline dark:text-emerald-400">
+          {t('stockReports.linkLifecycle')}
         </Link>
         <Link to="/reports/stock/movements" className="text-emerald-700 hover:underline dark:text-emerald-400">
           {t('stockReports.linkMovements')}

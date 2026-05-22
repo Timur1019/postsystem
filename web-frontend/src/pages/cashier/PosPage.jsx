@@ -1,6 +1,6 @@
 // src/pages/cashier/PosPage.jsx
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
@@ -10,7 +10,7 @@ import { clampPayAmount, round2 } from '../../utils/taxAmounts';
 import { resolveProductUnitPrice } from '../../utils/productPrice';
 import { categoryApi, productApi, saleApi } from '../../services/api';
 import { useCashierShift, useOpenCashierShift } from '../../hooks/useCashierShift';
-import { useCartStore } from '../../store/cartStore';
+import { lineSubtotal, useCartStore } from '../../store/cartStore';
 import PosOrderDiscountModal from '../../components/cashier/PosOrderDiscountModal';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 import { useCashierStore } from '../../hooks/useCashierStore';
@@ -36,7 +36,7 @@ function readViewMode() {
   return 'grid';
 }
 
-const PRODUCT_PAGE_SIZE = 120;
+const PRODUCT_PAGE_SIZE = 80;
 
 export default function PosPage() {
   const { t } = useTranslation();
@@ -62,7 +62,6 @@ export default function PosPage() {
   const addItem = useCartStore((s) => s.addItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const updateUnitPrice = useCartStore((s) => s.updateUnitPrice);
-  const updateLineSubtotal = useCartStore((s) => s.updateLineSubtotal);
   const updateDiscountPercent = useCartStore((s) => s.updateDiscountPercent);
   const removeItem = useCartStore((s) => s.removeItem);
   const clearCart = useCartStore((s) => s.clearCart);
@@ -76,7 +75,6 @@ export default function PosPage() {
   const getCheckoutLineItems = useCartStore((s) => s.getCheckoutLineItems);
   const getCheckoutOrderDiscountAmount = useCartStore((s) => s.getCheckoutOrderDiscountAmount);
   const getCheckoutOrderDiscountPercent = useCartStore((s) => s.getCheckoutOrderDiscountPercent);
-  const itemCount = useCartStore((s) => s.itemCount);
 
   const { data: shift } = useCashierShift(storeId);
   const openShiftMutation = useOpenCashierShift(storeId);
@@ -110,23 +108,39 @@ export default function PosPage() {
       ? undefined
       : selectedCategoryId;
 
-  const { data: productsData, isPending: productsLoading } = useQuery({
-    queryKey: ['pos-products', storeId, categoryFilterId, search],
-    queryFn: () =>
+  const productsEnabled =
+    !!storeId && posPane === 'catalog' && (searchActive || catalogBrowse === 'products');
+
+  const {
+    data: productsPages,
+    isPending: productsLoading,
+    isFetchingNextPage: productsLoadingMore,
+    hasNextPage: productsHasMore,
+    fetchNextPage: fetchMoreProducts,
+  } = useInfiniteQuery({
+    queryKey: ['pos-products', storeId, categoryFilterId, search.trim()],
+    queryFn: ({ pageParam }) =>
       productApi
         .getAll({
           storeId,
           categoryId: categoryFilterId,
           search: search.trim() || undefined,
-          page: 0,
+          page: pageParam,
           size: PRODUCT_PAGE_SIZE,
           activeOnly: true,
         })
         .then((r) => r.data),
-    enabled: !!storeId && posPane === 'catalog' && (searchActive || catalogBrowse === 'products'),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      const next = (lastPage?.number ?? 0) + 1;
+      const total = lastPage?.totalPages ?? 0;
+      return next < total ? next : undefined;
+    },
+    enabled: productsEnabled,
   });
 
-  const products = productsData?.content ?? [];
+  const products =
+    productsPages?.pages.flatMap((page) => page?.content ?? []) ?? [];
 
   const handleSelectCategory = useCallback((id) => {
     setSelectedCategoryId(id);
@@ -216,8 +230,18 @@ export default function PosPage() {
       const line = useCartStore.getState().items.find((i) => i.productId === product.id);
       if (line) {
         toast.success(
-          t('pos.itemAdded', { name: product.name, sum: fmt(lineSubtotal(line)) }),
-          { duration: 2200 }
+          <div className="pos-item-added-toast">
+            <p className="pos-item-added-toast__name">{product.name}</p>
+            <p className="pos-item-added-toast__sum">{fmt(lineSubtotal(line))}</p>
+          </div>,
+          {
+            duration: 2600,
+            className: 'pos-item-added-toast-host',
+            ariaLabel: t('pos.itemAdded', {
+              name: product.name,
+              sum: fmt(lineSubtotal(line)),
+            }),
+          }
         );
       }
       setSelectedLineId(product.id);
@@ -396,6 +420,9 @@ export default function PosPage() {
                     onBrowseChange={setCatalogBrowse}
                     products={products}
                     productsLoading={productsLoading}
+                    productsLoadingMore={productsLoadingMore}
+                    productsHasMore={Boolean(productsHasMore)}
+                    onLoadMoreProducts={() => fetchMoreProducts()}
                     onAddProduct={addProductToCart}
                     viewMode={viewMode}
                   />
@@ -421,17 +448,11 @@ export default function PosPage() {
                 >
                   {payOpen ? (
                     <PosPaymentFlow
-                      terminal
                       open
                       onClose={handleClosePayment}
-                      items={items}
                       total={total}
-                      discountTotal={discountTotal}
                       isPending={checkoutMutation.isPending}
                       onConfirm={handleConfirmPayment}
-                      className="pos-pay-panel--register-rail"
-                      showBackToCheck
-                      compactFooter
                     />
                   ) : (
                     <PosRegisterFooter

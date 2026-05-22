@@ -7,5 +7,6 @@ public record DailySalesAggregate(
     LocalDate day,
     BigDecimal revenue,
     long transactionCount,
-    long itemsSold
+    long itemsSold,
+    BigDecimal costEstimate
 ) {}

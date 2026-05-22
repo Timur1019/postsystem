@@ -17,7 +17,7 @@ export default function StockMovementsPage() {
   const [movementType, setMovementType] = useState('ALL');
   const [storeId, setStoreId] = useState('');
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(30);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data: stores = [] } = useQuery({
     queryKey: ['stores'],

@@ -1,0 +1,14 @@
+/* Импорт товаров — дубликаты счёт-фактуры */
+.product-import-row--duplicate td {
+  color: rgb(120 53 15 / 0.95);
+}
+
+.dark .product-import-row--duplicate td {
+  color: rgb(253 230 138 / 0.95);
+}
+
+.product-import-row--duplicate input,
+.product-import-row--duplicate select {
+  pointer-events: none;
+  opacity: 0.45;
+}

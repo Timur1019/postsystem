@@ -131,6 +131,8 @@ public class UzInvoiceSpreadsheetParser {
                 map.name = c;
             } else if (containsAny(h, "идентификация", "икпу", "ikpu", "каталог", "миллий каталог")) {
                 map.ikpu = c;
+            } else if (containsAny(h, "штрих", "shtrix", "barcode", "ean", "штрихкод")) {
+                map.barcode = c;
             } else if (containsAny(h, "ўлчов", "olchov", "ед.", "единица", "бирлиги")) {
                 map.unit = c;
             } else if (containsAny(h, "миқдор", "miqdor", "колич")) {
@@ -190,6 +192,7 @@ public class UzInvoiceSpreadsheetParser {
         return UzInvoiceProductRowMapper.toCatalogRow(
             name.trim(),
             cell(row, cols.ikpu),
+            cell(row, cols.barcode),
             cell(row, cols.unit),
             cell(row, cols.qty),
             cell(row, cols.unitPrice),
@@ -258,6 +261,7 @@ public class UzInvoiceSpreadsheetParser {
     private static final class ColumnMap {
         int name = -1;
         int ikpu = -1;
+        int barcode = -1;
         int unit = -1;
         int qty = -1;
         int unitPrice = -1;

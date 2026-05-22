@@ -223,11 +223,13 @@ public class ReportServiceImpl implements ReportService {
         BigDecimal revenue = saleRepository.sumTotalBetween(start, end, status, null);
         long transactions = saleRepository.countSalesBetween(start, end, status, null);
         long itemsSold = saleItemRepository.sumQuantitySoldBetween(start, end, status, null);
+        BigDecimal cost = saleItemRepository.sumCostEstimateBetween(start, end, null);
 
-        return new DailySummaryResponse(
+        return ReportAnalyticsReadSupport.toDailySummary(
             revenue != null ? revenue : BigDecimal.ZERO,
             transactions,
-            itemsSold
+            itemsSold,
+            cost
         );
     }
 
@@ -253,12 +255,15 @@ public class ReportServiceImpl implements ReportService {
 
         long transactions = saleRepository.countSalesBetween(rangeStart, rangeEnd, status, null);
         long itemsSold = saleItemRepository.sumQuantitySoldBetween(rangeStart, rangeEnd, status, null);
+        BigDecimal cost = saleItemRepository.sumCostEstimateBetween(rangeStart, rangeEnd, null);
+        BigDecimal costSafe = cost != null ? cost : BigDecimal.ZERO;
+        BigDecimal profit = totalRevenue.subtract(costSafe).setScale(2, RoundingMode.HALF_UP);
         BigDecimal avg = transactions > 0
             ? totalRevenue.divide(BigDecimal.valueOf(transactions), 2, RoundingMode.HALF_UP)
             : BigDecimal.ZERO;
 
         LogUtil.debug(ReportServiceImpl.class, "Sales report loaded from DB for {} .. {}", from, to);
-        return new SalesReportResponse(totalRevenue, transactions, itemsSold, avg, breakdown);
+        return new SalesReportResponse(totalRevenue, transactions, itemsSold, avg, costSafe, profit, breakdown);
     }
 
     private List<TopProductRow> loadTopProductsFromDb(int limit, LocalDate from, LocalDate to) {

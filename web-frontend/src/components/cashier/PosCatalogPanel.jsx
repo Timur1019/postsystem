@@ -1,10 +1,12 @@
 // src/components/cashier/PosCatalogPanel.jsx
-import { forwardRef, useEffect, useMemo, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, FolderOpen, LayoutGrid, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 
 export const ALL_CATEGORY_ID = 'all';
+
+const SCROLL_LOAD_THRESHOLD_PX = 96;
 
 const PosCatalogPanel = forwardRef(function PosCatalogPanel(
   {
@@ -21,6 +23,9 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
     onBrowseChange,
     products,
     productsLoading,
+    productsLoadingMore = false,
+    productsHasMore = false,
+    onLoadMoreProducts,
     onAddProduct,
     viewMode = 'grid',
   },
@@ -28,6 +33,7 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
 ) {
   const { t } = useTranslation();
   const [narrowSearch, setNarrowSearch] = useState(false);
+  const catalogBodyRef = useRef(null);
 
   const showCategories = !searchActive && catalogBrowse === 'categories';
   const showProducts = searchActive || catalogBrowse === 'products';
@@ -67,6 +73,36 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
     onBrowseChange?.('categories');
     onSearchChange('');
   };
+
+  useEffect(() => {
+    catalogBodyRef.current?.scrollTo(0, 0);
+  }, [selectedCategoryId, search, catalogBrowse, searchActive]);
+
+  const handleCatalogScroll = useCallback(() => {
+    const el = catalogBodyRef.current;
+    if (!el || productsLoading || productsLoadingMore || !productsHasMore) return;
+    const nearBottom =
+      el.scrollTop + el.clientHeight >= el.scrollHeight - SCROLL_LOAD_THRESHOLD_PX;
+    if (nearBottom) onLoadMoreProducts?.();
+  }, [productsLoading, productsLoadingMore, productsHasMore, onLoadMoreProducts]);
+
+  /** Если первая порция не заполняет экран — догружаем следующие страницы. */
+  useEffect(() => {
+    if (!showProducts || productsLoading || productsLoadingMore || !productsHasMore) return;
+    const el = catalogBodyRef.current;
+    if (!el) return;
+    if (el.scrollHeight <= el.clientHeight + SCROLL_LOAD_THRESHOLD_PX) {
+      onLoadMoreProducts?.();
+    }
+  }, [
+    showProducts,
+    products.length,
+    productsLoading,
+    productsLoadingMore,
+    productsHasMore,
+    onLoadMoreProducts,
+    viewMode,
+  ]);
 
   const handleSearchInput = (value) => {
     onSearchChange(value);
@@ -140,7 +176,7 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
         </div>
       ) : null}
 
-      <div className="pos-catalog-panel__body">
+      <div ref={catalogBodyRef} className="pos-catalog-panel__body" onScroll={handleCatalogScroll}>
         {showCategories ? (
           categoriesLoading ? (
             <p className="pos-catalog-panel__empty">{t('common.loading')}</p>
@@ -190,6 +226,14 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
             ) : (
               <div className="pos-product-grid">{products.map(renderProduct)}</div>
             )}
+            {productsLoadingMore ? (
+              <p className="pos-catalog-panel__load-more" role="status">
+                {t('pos.loadingMoreProducts')}
+              </p>
+            ) : null}
+            {!productsLoadingMore && productsHasMore && products.length > 0 ? (
+              <p className="pos-catalog-panel__load-more-hint">{t('pos.scrollForMoreProducts')}</p>
+            ) : null}
           </>
         ) : null}
       </div>

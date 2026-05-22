@@ -21,13 +21,18 @@ public final class ProductImportSupport {
         int rowNum,
         Map<String, String> row,
         ProductRepository productRepository,
-        ProductImportSource source
+        ProductImportSource source,
+        ProductImportParseOptions options
     ) {
+        ProductImportParseOptions opts = options != null ? options : ProductImportParseOptions.defaults();
+
         String sku = ProductImportParseUtil.cell(row, "sku");
         String name = ProductImportParseUtil.cell(row, "name");
 
         String ikpuRaw = ProductImportParseUtil.cell(row, "ikpu");
         String ikpu = StringUtils.hasText(ikpuRaw) ? ikpuRaw.trim() : null;
+
+        String storageLocation = resolveStorageLocation(row, opts.defaultStorageLocation());
 
         String uzDocRaw = ProductImportParseUtil.cell(row, UzInvoiceDocumentIdExtractor.ROW_KEY_UZ_INVOICE_DOCUMENT_ID);
         String uzInvoiceDocumentId =
@@ -87,6 +92,7 @@ public final class ProductImportSupport {
                 sku,
                 name,
                 ikpu,
+                storageLocation,
                 uzInvoiceDocumentId,
                 unit,
                 qty,
@@ -105,6 +111,7 @@ public final class ProductImportSupport {
             sku,
             name,
             ikpu,
+            storageLocation,
             uzInvoiceDocumentId,
             unit,
             qty,
@@ -116,6 +123,14 @@ public final class ProductImportSupport {
             null,
             null
         );
+    }
+
+    public static String resolveStorageLocation(Map<String, String> row, String defaultLocation) {
+        String fromFile = ProductImportParseUtil.cell(row, "storage_location");
+        if (StringUtils.hasText(fromFile)) {
+            return fromFile.trim();
+        }
+        return StringUtils.hasText(defaultLocation) ? defaultLocation.trim() : null;
     }
 
     /**
@@ -132,7 +147,14 @@ public final class ProductImportSupport {
     ) {
         if (source == ProductImportSource.UZ_INVOICE) {
             if (uzInvoiceDocumentId != null) {
-                return repo.findFirstByUzInvoiceDocumentIdAndIsActiveTrue(uzInvoiceDocumentId);
+                Optional<Product> byDoc = repo.findFirstByUzInvoiceDocumentIdAndIsActiveTrue(uzInvoiceDocumentId);
+                if (byDoc.isPresent()) {
+                    return byDoc;
+                }
+                String skuPrefix = uzInvoiceDocumentId + "-L-";
+                if (repo.existsBySkuStartingWithAndIsActiveTrue(skuPrefix)) {
+                    return repo.findFirstBySkuStartingWithAndIsActiveTrueOrderBySkuAsc(skuPrefix);
+                }
             }
             return Optional.empty();
         }
@@ -160,7 +182,7 @@ public final class ProductImportSupport {
 
     private static ProductImportPreviewRow invalid(int rowNum, String message) {
         return new ProductImportPreviewRow(
-            rowNum, "", "", null, null, "", 0,
+            rowNum, "", "", null, null, null, "", 0,
             BigDecimal.ZERO, null, BigDecimal.ZERO,
             ProductImportPreviewRow.STATUS_INVALID,
             null, null, message

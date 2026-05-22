@@ -5,5 +5,7 @@ import java.math.BigDecimal;
 public record DailySummaryResponse(
     BigDecimal totalRevenue,
     long transactionCount,
-    long itemsSold
+    long itemsSold,
+    BigDecimal totalCostEstimate,
+    BigDecimal grossProfit
 ) {}

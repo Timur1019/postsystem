@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
@@ -101,5 +102,36 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         @Param("start") Instant start,
         @Param("end") Instant end,
         @Param("storeId") Integer storeId
+    );
+
+    @Query(value = """
+        SELECT COALESCE(SUM(p.cost_price * (si.quantity - si.returned_quantity)), 0)
+        FROM sale_items si
+        INNER JOIN sales s ON s.id = si.sale_id
+        INNER JOIN products p ON p.id = si.product_id
+        WHERE s.created_at >= :start AND s.created_at < :end
+          AND s.status = 'COMPLETED'
+          AND (:storeId IS NULL OR s.store_id = :storeId)
+        """, nativeQuery = true)
+    java.math.BigDecimal sumCostEstimateBetween(
+        @Param("start") Instant start,
+        @Param("end") Instant end,
+        @Param("storeId") Integer storeId
+    );
+
+    @Query(value = """
+        SELECT CAST(s.created_at AS date) AS day,
+               COALESCE(SUM(p.cost_price * (si.quantity - si.returned_quantity)), 0) AS cost_estimate
+        FROM sale_items si
+        INNER JOIN sales s ON s.id = si.sale_id
+        INNER JOIN products p ON p.id = si.product_id
+        WHERE s.created_at >= :start AND s.created_at < :end
+          AND s.status = 'COMPLETED'
+        GROUP BY CAST(s.created_at AS date)
+        ORDER BY day
+        """, nativeQuery = true)
+    List<Object[]> dailyCostEstimateAggregates(
+        @Param("start") Instant start,
+        @Param("end") Instant end
     );
 }

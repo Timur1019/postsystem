@@ -74,11 +74,9 @@ public class StockReportServiceImpl implements StockReportService {
             soldUnits += ((Number) row[1]).longValue();
         }
 
-        Object[] stockTotals = productRepository.sumActiveStockUnitsAndCost();
-        long currentUnits = stockTotals[0] != null ? ((Number) stockTotals[0]).longValue() : 0;
-        BigDecimal currentCost = stockTotals[1] instanceof BigDecimal bd
-            ? bd
-            : BigDecimal.valueOf(((Number) stockTotals[1]).doubleValue());
+        Object[] stockTotals = unwrapAggregateRow(productRepository.sumActiveStockUnitsAndCost());
+        long currentUnits = toLong(stockTotals[0]);
+        BigDecimal currentCost = toBigDecimal(stockTotals[1]);
 
         long lowStockCount = productRepository.countLowStock();
 
@@ -459,6 +457,41 @@ public class StockReportServiceImpl implements StockReportService {
         );
     }
 
+    /** Hibernate/Spring Data иногда возвращают вложенные Object[] для multi-column aggregate. */
+    private static Object[] unwrapAggregateRow(Object raw) {
+        if (raw == null) {
+            return new Object[] { 0L, BigDecimal.ZERO };
+        }
+        Object[] row = raw instanceof Object[] arr ? arr : new Object[] { raw };
+        while (row.length == 1 && row[0] instanceof Object[] nested) {
+            row = nested;
+        }
+        Object[] flat = new Object[row.length];
+        for (int i = 0; i < row.length; i++) {
+            flat[i] = unwrapAggregateCell(row[i]);
+        }
+        return flat;
+    }
+
+    private static Object unwrapAggregateCell(Object cell) {
+        Object v = cell;
+        while (v instanceof Object[] nested && nested.length == 1) {
+            v = nested[0];
+        }
+        return v;
+    }
+
+    private long toLong(Object value) {
+        value = unwrapAggregateCell(value);
+        if (value == null) {
+            return 0L;
+        }
+        if (value instanceof Number n) {
+            return n.longValue();
+        }
+        return Long.parseLong(value.toString());
+    }
+
     private long positiveSum(long raw) {
         return raw > 0 ? raw : 0;
     }
@@ -472,12 +505,16 @@ public class StockReportServiceImpl implements StockReportService {
     }
 
     private BigDecimal toBigDecimal(Object v) {
+        v = unwrapAggregateCell(v);
         if (v == null) {
             return BigDecimal.ZERO;
         }
         if (v instanceof BigDecimal bd) {
             return bd.setScale(2, RoundingMode.HALF_UP);
         }
-        return BigDecimal.valueOf(((Number) v).doubleValue()).setScale(2, RoundingMode.HALF_UP);
+        if (v instanceof Number n) {
+            return BigDecimal.valueOf(n.doubleValue()).setScale(2, RoundingMode.HALF_UP);
+        }
+        return new BigDecimal(v.toString()).setScale(2, RoundingMode.HALF_UP);
     }
 }

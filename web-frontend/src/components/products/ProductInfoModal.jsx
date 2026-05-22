@@ -1,9 +1,11 @@
 // src/components/products/ProductInfoModal.jsx
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { productApi } from '../../services/api';
 import { fmtMoney } from '../../utils/formatMoney';
+import ProductLifecycleSection from './ProductLifecycleSection';
 
 const rowCls = 'flex items-center justify-between gap-4 border-b border-slate-200 py-2 text-sm dark:border-slate-800';
 const labelCls = 'text-slate-500 dark:text-slate-400';
@@ -11,8 +13,28 @@ const valueCls = 'text-slate-900 dark:text-slate-100 font-medium';
 
 const boolLabel = (v, t) => (v ? t('products.markingYes') : '—');
 
-export default function ProductInfoModal({ open, productId, onClose, onEdit, onReceive, onDelete }) {
+const tabBtn = (active) =>
+  `rounded-lg px-4 py-2 text-sm font-medium transition ${
+    active
+      ? 'bg-emerald-600 text-white'
+      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+  }`;
+
+export default function ProductInfoModal({
+  open,
+  productId,
+  initialTab = 'details',
+  onClose,
+  onEdit,
+  onReceive,
+  onDelete,
+}) {
   const { t } = useTranslation();
+  const [tab, setTab] = useState(initialTab);
+
+  useEffect(() => {
+    if (open) setTab(initialTab);
+  }, [open, productId, initialTab]);
 
   const { data: p, isPending, isError } = useQuery({
     queryKey: ['product', productId],
@@ -24,9 +46,14 @@ export default function ProductInfoModal({ open, productId, onClose, onEdit, onR
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('products.info.title')}</h2>
+      <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('products.info.title')}</h2>
+            {p?.name && (
+              <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400 line-clamp-1">{p.name}</p>
+            )}
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -37,98 +64,41 @@ export default function ProductInfoModal({ open, productId, onClose, onEdit, onR
           </button>
         </div>
 
-        <div className="p-5">
-          {isPending && (
-            <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</div>
-          )}
-          {isError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
-              {t('products.info.loadFail')}
-            </div>
-          )}
-
-          {p && (
-            <div className="space-y-6">
-              <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
-                <div className="text-sm text-slate-500 dark:text-slate-400">{t('productCatalog.externalId')}:</div>
-                <div className="font-mono text-sm text-slate-900 dark:text-slate-100">{p.id}</div>
-                <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">{t('productCatalog.ikpu')}:</div>
-                <div className="font-mono text-sm text-slate-900 dark:text-slate-100">{p.ikpu || '—'}</div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
-                <div className={rowCls}>
-                  <span className={labelCls}>{t('products.colName')}:</span>
-                  <span className={valueCls}>{p.name}</span>
-                </div>
-                <div className={rowCls}>
-                  <span className={labelCls}>{t('products.colCategory')}:</span>
-                  <span className={valueCls}>{p.categoryName ?? '—'}</span>
-                </div>
-                <div className={rowCls}>
-                  <span className={labelCls}>{t('productCatalog.unit')}:</span>
-                  <span className={valueCls}>{p.unitOfMeasure ?? '—'}</span>
-                </div>
-                <div className={rowCls}>
-                  <span className={labelCls}>{t('productCatalog.unitCode')}:</span>
-                  <span className={valueCls}>{p.unitMeasureCode ?? '—'}</span>
-                </div>
-                <div className={rowCls}>
-                  <span className={labelCls}>{t('productCatalog.packageCode')}:</span>
-                  <span className={valueCls}>{p.packageCode ?? '—'}</span>
-                </div>
-                <div className={rowCls}>
-                  <span className={labelCls}>{t('productCatalog.soldByPiece')}:</span>
-                  <span className={valueCls}>{p.soldIndividually ? t('products.markingYes') : '—'}</span>
-                </div>
-                <div className={rowCls}>
-                  <span className={labelCls}>{t('productCatalog.marked')}:</span>
-                  <span className={valueCls}>{boolLabel(p.markedProduct, t)}</span>
-                </div>
-                <div className={rowCls}>
-                  <span className={labelCls}>{t('productCatalog.active')}:</span>
-                  <span className={valueCls}>{p.active ? t('products.markingYes') : '—'}</span>
-                </div>
-                <div className={rowCls}>
-                  <span className={labelCls}>{t('productCatalog.commissionTin')}:</span>
-                  <span className={valueCls}>{p.commissionTin ?? '—'}</span>
-                </div>
-                <div className={rowCls}>
-                  <span className={labelCls}>{t('productCatalog.commissionPinfl')}:</span>
-                  <span className={valueCls}>{p.commissionPinfl ?? '—'}</span>
-                </div>
-                <div className="flex items-center justify-between gap-4 pt-2 text-sm">
-                  <span className={labelCls}>{t('productCatalog.vat')}:</span>
-                  <span className={valueCls}>{p.taxRate != null ? `${Number(p.taxRate).toFixed(2)} %` : '—'}</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-4 text-sm">
-                  <span className={labelCls}>{t('productCatalog.ownerType')}:</span>
-                  <span className={valueCls}>{t(`productCatalog.owner.${p.ownerType ?? 'OWN'}`)}</span>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
-                <div className="mb-2 text-sm font-semibold text-slate-900 dark:text-white">{t('productCatalog.sectionPrices')}:</div>
-                {(p.storePrices?.length ?? 0) === 0 ? (
-                  <div className="text-sm text-slate-500 dark:text-slate-400">—</div>
-                ) : (
-                  <div className="space-y-2">
-                    {p.storePrices.map((sp) => (
-                      <div key={sp.storeId} className="flex items-center justify-between gap-4 text-sm">
-                        <span className="text-slate-700 dark:text-slate-200">{sp.storeName}</span>
-                        <span className="font-semibold text-slate-900 dark:text-white">
-                          {fmtMoney(sp.price)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+        <div className="flex shrink-0 gap-2 border-b border-slate-200 px-5 py-3 dark:border-slate-800">
+          <button type="button" className={tabBtn(tab === 'details')} onClick={() => setTab('details')}>
+            {t('products.info.tabDetails')}
+          </button>
+          <button
+            type="button"
+            className={tabBtn(tab === 'lifecycle')}
+            onClick={() => setTab('lifecycle')}
+            disabled={!productId}
+          >
+            {t('products.info.tabLifecycle')}
+          </button>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 px-5 py-4 dark:border-slate-800">
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          {tab === 'details' && (
+            <>
+              {isPending && (
+                <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                  {t('common.loading')}
+                </div>
+              )}
+              {isError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+                  {t('products.info.loadFail')}
+                </div>
+              )}
+              {p && <ProductDetailsBody p={p} t={t} />}
+            </>
+          )}
+
+          {tab === 'lifecycle' && productId && <ProductLifecycleSection productId={productId} />}
+        </div>
+
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-slate-200 px-5 py-4 dark:border-slate-800">
           <button
             type="button"
             onClick={() => onEdit?.(p)}
@@ -166,3 +136,86 @@ export default function ProductInfoModal({ open, productId, onClose, onEdit, onR
   );
 }
 
+function ProductDetailsBody({ p, t }) {
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+        <div className="text-sm text-slate-500 dark:text-slate-400">{t('productCatalog.externalId')}:</div>
+        <div className="font-mono text-sm text-slate-900 dark:text-slate-100">{p.id}</div>
+        <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">{t('productCatalog.ikpu')}:</div>
+        <div className="font-mono text-sm text-slate-900 dark:text-slate-100">{p.ikpu || '—'}</div>
+        {p.storageLocation && (
+          <>
+            <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">{t('stockModule.modal.location')}:</div>
+            <div className="text-sm text-slate-900 dark:text-slate-100">{p.storageLocation}</div>
+          </>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+        <div className={rowCls}>
+          <span className={labelCls}>{t('products.colName')}:</span>
+          <span className={valueCls}>{p.name}</span>
+        </div>
+        <div className={rowCls}>
+          <span className={labelCls}>{t('products.colCategory')}:</span>
+          <span className={valueCls}>{p.categoryName ?? '—'}</span>
+        </div>
+        <div className={rowCls}>
+          <span className={labelCls}>{t('productCatalog.unit')}:</span>
+          <span className={valueCls}>{p.unitOfMeasure ?? '—'}</span>
+        </div>
+        <div className={rowCls}>
+          <span className={labelCls}>{t('productCatalog.unitCode')}:</span>
+          <span className={valueCls}>{p.unitMeasureCode ?? '—'}</span>
+        </div>
+        <div className={rowCls}>
+          <span className={labelCls}>{t('productCatalog.packageCode')}:</span>
+          <span className={valueCls}>{p.packageCode ?? '—'}</span>
+        </div>
+        <div className={rowCls}>
+          <span className={labelCls}>{t('productCatalog.soldByPiece')}:</span>
+          <span className={valueCls}>{p.soldIndividually ? t('products.markingYes') : '—'}</span>
+        </div>
+        <div className={rowCls}>
+          <span className={labelCls}>{t('productCatalog.marked')}:</span>
+          <span className={valueCls}>{boolLabel(p.markedProduct, t)}</span>
+        </div>
+        <div className={rowCls}>
+          <span className={labelCls}>{t('productCatalog.active')}:</span>
+          <span className={valueCls}>{p.active ? t('products.markingYes') : '—'}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4 border-b border-slate-200 py-2 text-sm dark:border-slate-800">
+          <span className={labelCls}>{t('products.colStock')}:</span>
+          <span className={valueCls}>{p.stockQuantity}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4 border-b border-slate-200 py-2 text-sm dark:border-slate-800">
+          <span className={labelCls}>{t('products.lifecycle.dispatched')}:</span>
+          <span className={valueCls}>{p.stockDispatched ?? 0}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4 pt-2 text-sm">
+          <span className={labelCls}>{t('productCatalog.vat')}:</span>
+          <span className={valueCls}>{p.taxRate != null ? `${Number(p.taxRate).toFixed(2)} %` : '—'}</span>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+        <div className="mb-2 text-sm font-semibold text-slate-900 dark:text-white">
+          {t('productCatalog.sectionPrices')}:
+        </div>
+        {(p.storePrices?.length ?? 0) === 0 ? (
+          <div className="text-sm text-slate-500 dark:text-slate-400">—</div>
+        ) : (
+          <div className="space-y-2">
+            {p.storePrices.map((sp) => (
+              <div key={sp.storeId} className="flex items-center justify-between gap-4 text-sm">
+                <span className="text-slate-700 dark:text-slate-200">{sp.storeName}</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{fmtMoney(sp.price)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

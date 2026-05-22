@@ -102,6 +102,9 @@ public class CatalogJsonParser {
         put(map, "ikpu", firstText(node, "ikpu", "ikpu_code", "ikpuCode"));
         put(map, "unit_of_measure", firstText(node, "unit_of_measure", "unitOfMeasure", "unit", "uom"));
         put(map, "barcode", firstText(node, "barcode", "bar_code", "ean"));
+        put(map, "storage_location", firstText(
+            node, "storage_location", "storageLocation", "location", "расположение"
+        ));
         put(map, "stock_quantity", firstText(node, "stock_quantity", "stockQuantity", "quantity", "qty", "stock"));
         put(map, "active", firstText(node, "active", "is_active", "enabled"));
         if (!map.containsKey("active") || !StringUtils.hasText(map.get("active"))) {

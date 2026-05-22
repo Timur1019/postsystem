@@ -8,6 +8,7 @@ import com.pos.entity.Customer;
 import com.pos.entity.Product;
 import com.pos.entity.Sale;
 import com.pos.entity.SaleItem;
+import com.pos.domain.StockMovementType;
 import com.pos.entity.StockMovement;
 import com.pos.entity.Store;
 import com.pos.entity.User;
@@ -114,12 +115,6 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
 
             product.setStockQuantity(product.getStockQuantity() - itemReq.quantity());
             productRepository.save(product);
-
-            stockMovementRepository.save(StockMovement.builder()
-                .product(product)
-                .movementType("SALE")
-                .quantity(-itemReq.quantity())
-                .build());
         }
 
         BigDecimal grossTotal = subtotal.add(taxTotal).setScale(2, RoundingMode.HALF_UP);
@@ -168,6 +163,17 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
         sale.setItems(items);
 
         Sale saved = saleRepository.save(sale);
+        for (SaleItem item : saved.getItems()) {
+            stockMovementRepository.save(StockMovement.builder()
+                .product(item.getProduct())
+                .store(store)
+                .movementType(StockMovementType.SALE)
+                .quantity(-item.getQuantity())
+                .referenceId(saved.getId())
+                .createdBy(cashier)
+                .notes("Продажа " + saved.getReceiptNumber())
+                .build());
+        }
         salesLedgerCacheService.onSaleChanged(saved);
         LogUtil.info(SaleCheckoutServiceImpl.class, "Sale completed: id={}, receipt={}", saved.getId(), saved.getReceiptNumber());
         return saleMapper.toResponse(saved);

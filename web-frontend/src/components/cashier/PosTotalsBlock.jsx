@@ -7,17 +7,8 @@ export default function PosTotalsBlock({ items = [], total, discountTotal = 0, c
   const discountPct =
     subtotal > 0 && discountTotal > 0 ? Math.round((discountTotal / subtotal) * 100) : 0;
   const hasDiscount = discountTotal > 0.001;
-  const showAllRows =
-    className.includes('pos-totals-block--rail') || className.includes('pos-totals-block--checkout');
-  const showDiscountRow = showAllRows || hasDiscount;
-  const isRail = className.includes('pos-totals-block--rail');
+  const showDiscountRow = hasDiscount;
   const totalDisplay = fmtCompact(total);
-  const heroFitClass =
-    isRail && totalDisplay.length >= 12
-      ? 'pos-totals-block__hero-value--fit-xs'
-      : isRail && totalDisplay.length >= 10
-        ? 'pos-totals-block__hero-value--fit-sm'
-        : '';
 
   return (
     <div className={`pos-totals-block${className ? ` ${className}` : ''}`}>
@@ -38,7 +29,7 @@ export default function PosTotalsBlock({ items = [], total, discountTotal = 0, c
       </div>
       <div className="pos-totals-block__hero">
         <span className="pos-totals-block__hero-label">{t('pos.grandTotal')}</span>
-        <span className={`pos-totals-block__hero-value${heroFitClass ? ` ${heroFitClass}` : ''}`}>
+        <span className="pos-totals-block__hero-value">
           {totalDisplay}
         </span>
       </div>
