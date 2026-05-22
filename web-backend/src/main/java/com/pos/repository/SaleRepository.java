@@ -164,21 +164,25 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         SELECT COALESCE(SUM(s.totalAmount), 0)
         FROM Sale s
         WHERE s.createdAt >= :start AND s.createdAt < :end AND s.status = :status
+        AND (:storeId IS NULL OR s.store.id = :storeId)
         """)
     BigDecimal sumTotalBetween(
         @Param("start") Instant start,
         @Param("end") Instant end,
-        @Param("status") Sale.SaleStatus status
+        @Param("status") Sale.SaleStatus status,
+        @Param("storeId") Integer storeId
     );
 
     @Query("""
         SELECT COUNT(s) FROM Sale s
         WHERE s.createdAt >= :start AND s.createdAt < :end AND s.status = :status
+        AND (:storeId IS NULL OR s.store.id = :storeId)
         """)
     long countSalesBetween(
         @Param("start") Instant start,
         @Param("end") Instant end,
-        @Param("status") Sale.SaleStatus status
+        @Param("status") Sale.SaleStatus status,
+        @Param("storeId") Integer storeId
     );
 
     @Query("""

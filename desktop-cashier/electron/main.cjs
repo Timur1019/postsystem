@@ -1,8 +1,10 @@
 const { app, BrowserWindow, dialog, shell, Menu, ipcMain } = require('electron');
 const fs = require('fs');
 const http = require('http');
+const https = require('https');
 const path = require('path');
 const { loadConfig } = require('./config.cjs');
+const { buildOrigin, buildHealthUrl } = require('./server-url.cjs');
 const { startEmbeddedUi, stopEmbeddedUi } = require('./embedded-server.cjs');
 const { showSetupWindow, configPath } = require('./setup-window.cjs');
 
@@ -73,7 +75,15 @@ function isAllowedLocation(urlString) {
 
 function httpOk(url) {
   return new Promise((resolve) => {
-    const req = http.get(url, (res) => {
+    let parsed;
+    try {
+      parsed = new URL(url);
+    } catch {
+      resolve(false);
+      return;
+    }
+    const client = parsed.protocol === 'https:' ? https : http;
+    const req = client.get(url, (res) => {
       res.resume();
       resolve(res.statusCode >= 200 && res.statusCode < 400);
     });
@@ -85,7 +95,7 @@ function httpOk(url) {
   });
 }
 
-/** Пробуем health на :80 (nginx) и :8080 (прямой API) — на Windows часто открыт только 80. */
+/** Health: HTTPS :443, HTTP :80, прямой API :8080. */
 function collectApiHealthUrls(cfg) {
   const urls = [];
   const push = (base) => {
@@ -96,7 +106,7 @@ function collectApiHealthUrls(cfg) {
     if (!/^https?:\/\//i.test(b)) {
       b = `http://${b}`;
     }
-    urls.push(`${b}/api/v1/actuator/health`);
+    urls.push(buildHealthUrl(b));
   };
   if (cfg.useEmbedded && cfg.cashierUrl) {
     push(cfg.cashierUrl);
@@ -111,8 +121,8 @@ function collectApiHealthUrls(cfg) {
     const host = u.hostname;
     if (host && host !== '127.0.0.1' && host !== 'localhost') {
       const seen = new Set(urls);
-      for (const port of ['80', '8080']) {
-        const line = `http://${host}:${port}/api/v1/actuator/health`;
+      for (const port of ['443', '80', '8080']) {
+        const line = buildHealthUrl(buildOrigin(host, port));
         if (!seen.has(line)) urls.push(line);
       }
     }
@@ -186,9 +196,9 @@ async function waitForServices() {
         `Проверялись адреса:\n${tried}\n\n` +
         'Что сделать:\n' +
         '• Укажите IP сервера без http://\n' +
-        '• Порт: обычно **80** (если админ не дал другой)\n' +
+        '• HTTPS (aurent.uz): порт **443**, HTTP — **80**\n' +
         '• В браузере на этом ПК откройте:\n' +
-        `  http://ВАШ_IP/api/v1/actuator/health\n` +
+        `  https://ВАШ_ДОМЕН/api/v1/actuator/health\n` +
         '  Должно быть: {"status":"UP"}\n' +
         '• На сервере: bash deploy/git-update.sh',
     };

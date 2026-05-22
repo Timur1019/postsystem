@@ -8,6 +8,7 @@ import com.pos.dto.report.DailyPoint;
 import com.pos.dto.report.DailySummaryResponse;
 import com.pos.dto.report.SalesReportResponse;
 import com.pos.dto.report.TopProductRow;
+import com.pos.dto.report.sales.PeriodCompareResponse;
 import com.pos.entity.Sale;
 import com.pos.mapper.ReportMapper;
 import com.pos.repository.SaleItemRepository;
@@ -100,6 +101,80 @@ public class ReportServiceImpl implements ReportService {
         return loadCashierPerformanceFromDb(start, end);
     }
 
+    @Override
+    public PeriodCompareResponse getPeriodCompare(LocalDate from, LocalDate to, Integer storeId) {
+        LocalDate end = to != null ? to : LocalDate.now(zone());
+        LocalDate start = from != null ? from : end.minusDays(6);
+        long days = ChronoUnit.DAYS.between(start, end) + 1;
+        LocalDate prevEnd = start.minusDays(1);
+        LocalDate prevStart = prevEnd.minusDays(days - 1);
+
+        PeriodCompareResponse.PeriodMetrics current = loadPeriodMetrics(start, end, storeId);
+        PeriodCompareResponse.PeriodMetrics previous = loadPeriodMetrics(prevStart, prevEnd, storeId);
+
+        return new PeriodCompareResponse(
+            start,
+            end,
+            prevStart,
+            prevEnd,
+            current,
+            previous,
+            buildDeltas(current, previous)
+        );
+    }
+
+    private PeriodCompareResponse.PeriodMetrics loadPeriodMetrics(
+        LocalDate from,
+        LocalDate to,
+        Integer storeId
+    ) {
+        ZoneId z = zone();
+        var rangeStart = from.atStartOfDay(z).toInstant();
+        var rangeEnd = to.plusDays(1).atStartOfDay(z).toInstant();
+        var status = Sale.SaleStatus.COMPLETED;
+
+        BigDecimal revenue = nz(saleRepository.sumTotalBetween(rangeStart, rangeEnd, status, storeId));
+        long receipts = saleRepository.countSalesBetween(rangeStart, rangeEnd, status, storeId);
+        long items = saleItemRepository.sumNetQuantitySoldBetween(rangeStart, rangeEnd, status, storeId);
+        return new PeriodCompareResponse.PeriodMetrics(revenue, receipts, items);
+    }
+
+    private PeriodCompareResponse.PeriodDeltas buildDeltas(
+        PeriodCompareResponse.PeriodMetrics current,
+        PeriodCompareResponse.PeriodMetrics previous
+    ) {
+        BigDecimal revDelta = current.revenue().subtract(previous.revenue());
+        long receiptDelta = current.receiptCount() - previous.receiptCount();
+        long itemsDelta = current.itemsSold() - previous.itemsSold();
+        return new PeriodCompareResponse.PeriodDeltas(
+            revDelta,
+            percentChange(previous.revenue(), current.revenue()),
+            receiptDelta,
+            percentChangeLong(previous.receiptCount(), current.receiptCount()),
+            itemsDelta,
+            percentChangeLong(previous.itemsSold(), current.itemsSold())
+        );
+    }
+
+    private BigDecimal percentChange(BigDecimal base, BigDecimal value) {
+        if (base == null || base.compareTo(BigDecimal.ZERO) == 0) {
+            return value != null && value.compareTo(BigDecimal.ZERO) > 0
+                ? BigDecimal.valueOf(100)
+                : BigDecimal.ZERO;
+        }
+        return value.subtract(base)
+            .multiply(BigDecimal.valueOf(100))
+            .divide(base, 2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal percentChangeLong(long base, long value) {
+        return percentChange(BigDecimal.valueOf(base), BigDecimal.valueOf(value));
+    }
+
+    private BigDecimal nz(BigDecimal v) {
+        return v != null ? v : BigDecimal.ZERO;
+    }
+
     private List<TopProductRow> resolveCachedTopProducts(
         ReportAnalyticsSnapshot snapshot,
         LocalDate from,
@@ -145,9 +220,9 @@ public class ReportServiceImpl implements ReportService {
         var end = date.plusDays(1).atStartOfDay(z).toInstant();
         var status = Sale.SaleStatus.COMPLETED;
 
-        BigDecimal revenue = saleRepository.sumTotalBetween(start, end, status);
-        long transactions = saleRepository.countSalesBetween(start, end, status);
-        long itemsSold = saleItemRepository.sumQuantitySoldBetween(start, end, status);
+        BigDecimal revenue = saleRepository.sumTotalBetween(start, end, status, null);
+        long transactions = saleRepository.countSalesBetween(start, end, status, null);
+        long itemsSold = saleItemRepository.sumQuantitySoldBetween(start, end, status, null);
 
         return new DailySummaryResponse(
             revenue != null ? revenue : BigDecimal.ZERO,
@@ -168,7 +243,7 @@ public class ReportServiceImpl implements ReportService {
         for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
             var start = d.atStartOfDay(z).toInstant();
             var end = d.plusDays(1).atStartOfDay(z).toInstant();
-            BigDecimal rev = saleRepository.sumTotalBetween(start, end, status);
+            BigDecimal rev = saleRepository.sumTotalBetween(start, end, status, null);
             if (rev == null) {
                 rev = BigDecimal.ZERO;
             }
@@ -176,8 +251,8 @@ public class ReportServiceImpl implements ReportService {
             breakdown.add(new DailyPoint(d.toString(), rev));
         }
 
-        long transactions = saleRepository.countSalesBetween(rangeStart, rangeEnd, status);
-        long itemsSold = saleItemRepository.sumQuantitySoldBetween(rangeStart, rangeEnd, status);
+        long transactions = saleRepository.countSalesBetween(rangeStart, rangeEnd, status, null);
+        long itemsSold = saleItemRepository.sumQuantitySoldBetween(rangeStart, rangeEnd, status, null);
         BigDecimal avg = transactions > 0
             ? totalRevenue.divide(BigDecimal.valueOf(transactions), 2, RoundingMode.HALF_UP)
             : BigDecimal.ZERO;

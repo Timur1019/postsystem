@@ -129,6 +129,161 @@ public enum ExcelTemplate {
             col("line_total", "Сумма строки")
         ),
         null
+    ),
+
+    SALES_BY_PRODUCTS(
+        "Продажи по товарам",
+        List.of(
+            col("product_name", "Товар"),
+            col("sku", "Артикул"),
+            col("barcode", "Штрихкод"),
+            col("category", "Категория"),
+            col("sold_qty", "Продано"),
+            col("returned_qty", "Возврат"),
+            col("net_qty", "Нетто"),
+            col("revenue", "Выручка"),
+            col("cost", "Себестоимость"),
+            col("margin", "Маржа")
+        ),
+        null
+    ),
+
+    SALES_BY_CATEGORIES(
+        "Продажи по категориям",
+        List.of(
+            col("category", "Категория"),
+            col("receipt_count", "Чеков"),
+            col("net_qty", "Нетто, шт."),
+            col("returned_qty", "Возврат, шт."),
+            col("revenue", "Выручка"),
+            col("cost", "Себестоимость"),
+            col("margin", "Маржа")
+        ),
+        null
+    ),
+
+    SALES_BY_STORES(
+        "Продажи по магазинам",
+        List.of(
+            col("store", "Магазин"),
+            col("receipt_count", "Чеков"),
+            col("net_qty", "Нетто, шт."),
+            col("returned_qty", "Возврат, шт."),
+            col("revenue", "Выручка"),
+            col("cost", "Себестоимость"),
+            col("margin", "Маржа")
+        ),
+        null
+    ),
+
+    PERIOD_COMPARE(
+        "Сравнение периодов",
+        List.of(
+            col("period", "Период"),
+            col("date_from", "С"),
+            col("date_to", "По"),
+            col("revenue", "Выручка"),
+            col("receipt_count", "Чеков"),
+            col("items_sold", "Продано, шт."),
+            col("revenue_delta", "Δ выручка"),
+            col("revenue_delta_pct", "Δ выручка %"),
+            col("receipt_delta", "Δ чеков"),
+            col("items_delta", "Δ штук")
+        ),
+        null
+    ),
+
+    DAILY_SUMMARY(
+        "Сводка за день",
+        List.of(
+            col("date", "Дата"),
+            col("revenue", "Выручка"),
+            col("receipt_count", "Чеков"),
+            col("items_sold", "Продано, шт.")
+        ),
+        null
+    ),
+
+    CASHIER_PERFORMANCE(
+        "Кассиры",
+        List.of(
+            col("cashier", "Кассир"),
+            col("revenue", "Выручка")
+        ),
+        null
+    ),
+
+    STOCK_BALANCES(
+        "Остатки",
+        List.of(
+            col("product_name", "Товар"),
+            col("sku", "Артикул"),
+            col("barcode", "Штрихкод"),
+            col("category", "Категория"),
+            col("stock_qty", "Остаток"),
+            col("min_qty", "Минимум"),
+            col("cost_price", "Себестоимость"),
+            col("stock_value", "Сумма остатка")
+        ),
+        null
+    ),
+
+    DEAD_STOCK(
+        "Залежалые",
+        List.of(
+            col("product_name", "Товар"),
+            col("sku", "Артикул"),
+            col("barcode", "Штрихкод"),
+            col("category", "Категория"),
+            col("stock_qty", "Остаток"),
+            col("stock_value", "Сумма остатка"),
+            col("last_sale_date", "Последняя продажа"),
+            col("days_idle", "Дней без продаж")
+        ),
+        null
+    ),
+
+    STOCK_ADJUSTMENTS(
+        "Корректировки",
+        List.of(
+            col("created_at", "Дата"),
+            col("product_name", "Товар"),
+            col("sku", "Артикул"),
+            col("quantity", "Кол-во"),
+            col("store", "Магазин"),
+            col("user", "Кто оформил"),
+            col("notes", "Комментарий"),
+            col("doc_no", "Документ")
+        ),
+        null
+    ),
+
+    STOCK_INVENTORIES(
+        "Инвентаризация",
+        List.of(
+            col("inventory_no", "№ акта"),
+            col("created_at", "Дата"),
+            col("store", "Магазин"),
+            col("lines", "Строк"),
+            col("diff_sum", "Σ |расх.|"),
+            col("user", "Кто оформил"),
+            col("notes", "Комментарий")
+        ),
+        null
+    ),
+
+    STOCK_TRANSFERS(
+        "Перемещения",
+        List.of(
+            col("transfer_no", "№"),
+            col("created_at", "Дата"),
+            col("from_store", "Откуда"),
+            col("to_store", "Куда"),
+            col("total_qty", "Кол-во"),
+            col("user", "Кто оформил"),
+            col("notes", "Комментарий")
+        ),
+        null
     );
 
     private final String sheetName;

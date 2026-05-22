@@ -23,8 +23,16 @@ public class StockMovement {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id")
+    private Store store;
+
     @Column(name = "movement_type", nullable = false, length = 20)
     private String movementType;
+
+    /** WRITE_OFF: DEFECT, EXPIRED, DAMAGE, SHORTAGE, OTHER */
+    @Column(name = "write_off_reason", length = 30)
+    private String writeOffReason;
 
     @Column(nullable = false)
     private int quantity;

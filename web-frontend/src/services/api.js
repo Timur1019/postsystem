@@ -214,11 +214,52 @@ export const returnApi = {
 };
 
 export const reportApi = {
-  daily:       (date)        => api.get('/reports/daily', { params: { date } }),
+  daily:       (params)      => api.get('/reports/daily', { params }),
   sales:       (from, to)    => api.get('/reports/sales', { params: { from, to } }),
   topProducts: (limit, from, to) =>
     api.get('/reports/top-products', { params: { limit, from, to } }),
   cashierPerf: (from, to)    => api.get('/reports/cashier-performance', { params: { from, to } }),
+  salesByProducts: (params) => api.get('/reports/sales/by-products', { params }),
+  salesByCategories: (params) => api.get('/reports/sales/by-categories', { params }),
+  salesByStores: (params) => api.get('/reports/sales/by-stores', { params }),
+  periodCompare: (params) => api.get('/reports/sales/period-compare', { params }),
+  exportSalesByProducts: (params) => api.get('/reports/sales/by-products/export', { params, responseType: 'blob' }),
+  exportSalesByCategories: (params) => api.get('/reports/sales/by-categories/export', { params, responseType: 'blob' }),
+  exportSalesByStores: (params) => api.get('/reports/sales/by-stores/export', { params, responseType: 'blob' }),
+  exportPeriodCompare: (params) => api.get('/reports/sales/period-compare/export', { params, responseType: 'blob' }),
+  exportDaily: (params) => api.get('/reports/daily/export', { params, responseType: 'blob' }),
+  exportCashierPerf: (from, to) => api.get('/reports/cashier-performance/export', { params: { from, to }, responseType: 'blob' }),
+};
+
+export const stockReportApi = {
+  dashboard: (params) => api.get('/reports/stock/dashboard', { params }),
+  lowStock: (params) => api.get('/reports/stock/low-stock', { params }),
+  writeOffs: (params) => api.get('/reports/stock/write-offs', { params }),
+  createWriteOff: (body) => api.post('/reports/stock/write-offs', body),
+  turnover: (params) => api.get('/reports/stock/turnover', { params }),
+  movements: (params) => api.get('/reports/stock/movements', { params }),
+  adjustments: (params) => api.get('/reports/stock/adjustments', { params }),
+  receipts: (params) => api.get('/reports/stock/receipts', { params }),
+  balances: (params) => api.get('/reports/stock/balances', { params }),
+  deadStock: (params) => api.get('/reports/stock/dead-stock', { params }),
+  inventories: (params) => api.get('/reports/stock/inventories', { params }),
+  transfers: (params) => api.get('/reports/stock/transfers', { params }),
+  exportBalances: (params) => api.get('/reports/stock/balances/export', { params, responseType: 'blob' }),
+  exportDeadStock: (params) => api.get('/reports/stock/dead-stock/export', { params, responseType: 'blob' }),
+  exportAdjustments: (params) => api.get('/reports/stock/adjustments/export', { params, responseType: 'blob' }),
+  exportInventories: (params) => api.get('/reports/stock/inventories/export', { params, responseType: 'blob' }),
+  exportTransfers: (params) => api.get('/reports/stock/transfers/export', { params, responseType: 'blob' }),
+};
+
+export const warehouseApi = {
+  getProducts: (params) => api.get('/warehouse/products', { params }),
+  receipt: (data) => api.post('/warehouse/receipt', data),
+  createReceipt: (data) => api.post('/warehouse/receipts', data),
+  getReceipt: (id) => api.get(`/warehouse/receipts/${id}`),
+  createInventory: (data) => api.post('/warehouse/inventories', data),
+  getInventory: (id) => api.get(`/warehouse/inventories/${id}`),
+  createTransfer: (data) => api.post('/warehouse/transfers', data),
+  getTransfer: (id) => api.get(`/warehouse/transfers/${id}`),
 };
 
 export const userApi = {
@@ -234,11 +275,6 @@ export const categoryApi = {
   create:  (data) => api.post('/categories', data),
   update:  (id, data) => api.put(`/categories/${id}`, data),
   delete:  (id) => api.delete(`/categories/${id}`),
-};
-
-export const warehouseApi = {
-  getProducts: (params) => api.get('/warehouse/products', { params }),
-  receipt: (data) => api.post('/warehouse/receipt', data),
 };
 
 export const supplierApi = {

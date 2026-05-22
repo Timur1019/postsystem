@@ -14,7 +14,10 @@ export function useModuleAccess() {
       if (!moduleId || !role) return false;
       if (role === 'SUPER_ADMIN') return true;
       if (custom && Array.isArray(allowed)) {
-        return allowed.includes(moduleId);
+        if (allowed.includes(moduleId)) return true;
+        // Новые модули до перелогина: как у роли (синхрон с бэкендом)
+        const def = ADMIN_MODULE_IDS.find((m) => m.id === moduleId);
+        return def ? def.roles.includes(role) : false;
       }
       const def = ADMIN_MODULE_IDS.find((m) => m.id === moduleId);
       return def ? def.roles.includes(role) : false;

@@ -1,5 +1,5 @@
 {
-  "host": "111.88.132.126",
-  "webPort": "80",
-  "apiPort": "80"
+  "host": "www.aurent.uz",
+  "webPort": "443",
+  "apiPort": "443"
 }

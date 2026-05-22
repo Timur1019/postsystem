@@ -11,6 +11,26 @@ import CategoriesPage    from './pages/CategoriesPage';
 import ReportsPage       from './pages/ReportsPage';
 import SalesLedgerPage   from './pages/SalesLedgerPage';
 import ReturnsPage       from './pages/ReturnsPage';
+import ProductSalesReportPage from './pages/reports/ProductSalesReportPage';
+import CategorySalesReportPage from './pages/reports/CategorySalesReportPage';
+import StoreSalesReportPage from './pages/reports/StoreSalesReportPage';
+import PeriodCompareReportPage from './pages/reports/PeriodCompareReportPage';
+import DailySummaryReportPage from './pages/reports/DailySummaryReportPage';
+import CashierPerformanceReportPage from './pages/reports/CashierPerformanceReportPage';
+import StockDashboardPage from './pages/reports/StockDashboardPage';
+import WriteOffsReportPage from './pages/reports/WriteOffsReportPage';
+import LowStockReportPage from './pages/reports/LowStockReportPage';
+import StockTurnoverPage from './pages/reports/StockTurnoverPage';
+import StockMovementsPage from './pages/reports/StockMovementsPage';
+import StockReceiptsReportPage from './pages/reports/StockReceiptsReportPage';
+import StockBalancesReportPage from './pages/reports/StockBalancesReportPage';
+import StockAdjustmentsReportPage from './pages/reports/StockAdjustmentsReportPage';
+import DeadStockReportPage from './pages/reports/DeadStockReportPage';
+import StockInventoriesReportPage from './pages/reports/StockInventoriesReportPage';
+import StockTransfersReportPage from './pages/reports/StockTransfersReportPage';
+import StockReceiptCreatePage from './pages/stock/StockReceiptCreatePage';
+import StockInventoryCreatePage from './pages/stock/StockInventoryCreatePage';
+import StockTransferCreatePage from './pages/stock/StockTransferCreatePage';
 import StockProductsPage from './pages/StockProductsPage';
 import SuppliersPage     from './pages/SuppliersPage';
 import UsersPage         from './pages/UsersPage';
@@ -140,6 +160,15 @@ export default function App() {
             <Route path="stock/products" element={
               <ProtectedRoute module="stockProducts"><StockProductsPage /></ProtectedRoute>
             } />
+            <Route path="stock/receipts/new" element={
+              <ProtectedRoute requiredRole="MANAGER" module="stockReceipts"><StockReceiptCreatePage /></ProtectedRoute>
+            } />
+            <Route path="stock/inventories/new" element={
+              <ProtectedRoute requiredRole="MANAGER" module="stockInventories"><StockInventoryCreatePage /></ProtectedRoute>
+            } />
+            <Route path="stock/transfers/new" element={
+              <ProtectedRoute requiredRole="MANAGER" module="stockTransfers"><StockTransferCreatePage /></ProtectedRoute>
+            } />
             <Route path="stock/suppliers" element={
               <ProtectedRoute module="stockSuppliers"><SuppliersPage /></ProtectedRoute>
             } />
@@ -148,6 +177,24 @@ export default function App() {
             } />
             <Route path="orders" element={<Navigate to="/orders/list" replace />} />
             <Route path="checkout" element={<CheckoutRedirect />} />
+            <Route path="reports/sales/by-products" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsSalesByProducts"><ProductSalesReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/sales/by-categories" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsSalesByCategories"><CategorySalesReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/sales/by-stores" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsSalesByStores"><StoreSalesReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/sales/period-compare" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsSalesPeriodCompare"><PeriodCompareReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/sales/daily" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsSalesDaily"><DailySummaryReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/sales/cashiers" element={
+              <ProtectedRoute requiredRole="ADMIN" module="reportsCashierPerformance"><CashierPerformanceReportPage /></ProtectedRoute>
+            } />
             <Route path="reports/sales" element={
               <ProtectedRoute requiredRole="MANAGER" module="reportsSales"><SalesLedgerPage /></ProtectedRoute>
             } />
@@ -157,7 +204,40 @@ export default function App() {
             <Route path="reports/analytics" element={
               <ProtectedRoute requiredRole="MANAGER" module="reportsAnalytics"><ReportsPage /></ProtectedRoute>
             } />
-            <Route path="reports" element={<Navigate to="/reports/sales" replace />} />
+            <Route path="reports/stock/write-offs" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockWriteOffs"><WriteOffsReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/stock/low" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockLow"><LowStockReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/stock/turnover" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockTurnover"><StockTurnoverPage /></ProtectedRoute>
+            } />
+            <Route path="reports/stock/movements" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockMovements"><StockMovementsPage /></ProtectedRoute>
+            } />
+            <Route path="reports/stock/receipts" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockReceipts"><StockReceiptsReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/stock/balances" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockBalances"><StockBalancesReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/stock/adjustments" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockAdjustments"><StockAdjustmentsReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/stock/dead" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockDead"><DeadStockReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/stock/inventories" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockInventories"><StockInventoriesReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/stock/transfers" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockTransfers"><StockTransfersReportPage /></ProtectedRoute>
+            } />
+            <Route path="reports/stock" element={
+              <ProtectedRoute requiredRole="MANAGER" module="reportsStockDashboard"><StockDashboardPage /></ProtectedRoute>
+            } />
+            <Route path="reports" element={<Navigate to="/reports/stock" replace />} />
             <Route path="cash-registers/list" element={
               <ProtectedRoute requiredRole="MANAGER" module="registersList"><CashRegistersListPage /></ProtectedRoute>
             } />

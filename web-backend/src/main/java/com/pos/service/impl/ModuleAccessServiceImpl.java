@@ -118,10 +118,25 @@ public class ModuleAccessServiceImpl implements ModuleAccessService {
             .collect(Collectors.toMap(UserModuleAccess::getModuleKey, UserModuleAccess::isAllowed, (a, b) -> b));
 
         return scope.stream()
-            .filter(m -> Boolean.TRUE.equals(stored.get(m.key())))
+            .filter(m -> moduleAllowedForCustomAccess(m, role, stored))
             .map(AdminModule::key)
             .sorted()
             .toList();
+    }
+
+    /**
+     * Для кастомного доступа: явно сохранённые ключи — как в БД;
+     * новые модули (ещё нет строки в user_module_access) — по умолчанию как у роли.
+     */
+    private boolean moduleAllowedForCustomAccess(
+        AdminModule module,
+        String role,
+        Map<String, Boolean> stored
+    ) {
+        if (!stored.containsKey(module.key())) {
+            return module.allowedForRole(role);
+        }
+        return Boolean.TRUE.equals(stored.get(module.key()));
     }
 
     private UserModuleAccessDetailResponse buildDetail(User user) {
@@ -136,7 +151,7 @@ public class ModuleAccessServiceImpl implements ModuleAccessService {
             .map(m -> {
                 boolean roleDefault = m.allowedForRole(role);
                 boolean allowed = user.isModuleAccessCustom()
-                    ? Boolean.TRUE.equals(stored.get(m.key()))
+                    ? moduleAllowedForCustomAccess(m, role, stored)
                     : roleDefault;
                 return new UserModuleAccessRow(m.key(), allowed, roleDefault);
             })

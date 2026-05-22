@@ -29,6 +29,12 @@ import {
   Store,
   BookOpen,
   Headphones,
+  Warehouse,
+  TrendingDown,
+  AlertTriangle,
+  Plus,
+  ArrowLeftRight,
+  TrendingUp,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -46,10 +52,13 @@ const GOODS_CHILDREN = [
   { to: '/categories', key: 'categories', icon: Tags, moduleId: 'categories' },
 ];
 
-const STOCK_ROUTES = ['/stock/products', '/stock/suppliers'];
+const STOCK_ROUTES = ['/stock/products', '/stock/receipts/new', '/stock/inventories/new', '/stock/transfers/new', '/stock/suppliers'];
 
 const STOCK_CHILDREN = [
   { to: '/stock/products', key: 'stockProducts', icon: Package, moduleId: 'stockProducts' },
+  { to: '/stock/receipts/new', key: 'stockReceipts', icon: Plus, moduleId: 'stockReceipts' },
+  { to: '/stock/inventories/new', key: 'stockInventories', icon: ClipboardList, moduleId: 'stockInventories' },
+  { to: '/stock/transfers/new', key: 'stockTransfers', icon: ArrowRightLeft, moduleId: 'stockTransfers' },
   { to: '/stock/suppliers', key: 'stockSuppliers', icon: Building2, moduleId: 'stockSuppliers' },
 ];
 
@@ -59,7 +68,28 @@ const ORDER_CHILDREN = [
   { to: '/orders/list', key: 'ordersList', icon: ClipboardList, moduleId: 'ordersList' },
 ];
 
-const REPORT_ROUTES = ['/reports/sales', '/reports/returns', '/reports/analytics'];
+const REPORT_ROUTES = [
+  '/reports/stock',
+  '/reports/stock/balances',
+  '/reports/stock/write-offs',
+  '/reports/stock/low',
+  '/reports/stock/dead',
+  '/reports/stock/turnover',
+  '/reports/stock/movements',
+  '/reports/stock/adjustments',
+  '/reports/stock/receipts',
+  '/reports/stock/inventories',
+  '/reports/stock/transfers',
+  '/reports/sales/by-products',
+  '/reports/sales/by-categories',
+  '/reports/sales/by-stores',
+  '/reports/sales/period-compare',
+  '/reports/sales/daily',
+  '/reports/sales/cashiers',
+  '/reports/sales',
+  '/reports/returns',
+  '/reports/analytics',
+];
 
 const REGISTER_ROUTES = ['/cash-registers/list', '/cash-registers/z-reports', '/cash-registers/transfer', '/cash-registers/config'];
 
@@ -80,9 +110,26 @@ const USER_CHILDREN = [
 ];
 
 const REPORT_CHILDREN = [
-  { to: '/reports/sales', key: 'reportsSales', icon: Receipt, moduleId: 'reportsSales' },
-  { to: '/reports/returns', key: 'reportsReturns', icon: RotateCcw, moduleId: 'reportsReturns' },
   { to: '/reports/analytics', key: 'reportsAnalytics', icon: BarChart2, moduleId: 'reportsAnalytics' },
+  { to: '/reports/sales/daily', key: 'reportsSalesDaily', icon: Calculator, moduleId: 'reportsSalesDaily' },
+  { to: '/reports/sales/period-compare', key: 'reportsSalesPeriodCompare', icon: ArrowLeftRight, moduleId: 'reportsSalesPeriodCompare' },
+  { to: '/reports/sales/by-stores', key: 'reportsSalesByStores', icon: Store, moduleId: 'reportsSalesByStores' },
+  { to: '/reports/sales/by-categories', key: 'reportsSalesByCategories', icon: Tags, moduleId: 'reportsSalesByCategories' },
+  { to: '/reports/sales/by-products', key: 'reportsSalesByProducts', icon: Package, moduleId: 'reportsSalesByProducts' },
+  { to: '/reports/sales', key: 'reportsSales', icon: Receipt, moduleId: 'reportsSales' },
+  { to: '/reports/sales/cashiers', key: 'reportsCashierPerformance', icon: UserCog, moduleId: 'reportsCashierPerformance' },
+  { to: '/reports/returns', key: 'reportsReturns', icon: RotateCcw, moduleId: 'reportsReturns' },
+  { to: '/reports/stock', key: 'reportsStockDashboard', icon: Warehouse, moduleId: 'reportsStockDashboard' },
+  { to: '/reports/stock/balances', key: 'reportsStockBalances', icon: Package, moduleId: 'reportsStockBalances' },
+  { to: '/reports/stock/low', key: 'reportsStockLow', icon: AlertTriangle, moduleId: 'reportsStockLow' },
+  { to: '/reports/stock/dead', key: 'reportsStockDead', icon: AlertTriangle, moduleId: 'reportsStockDead' },
+  { to: '/reports/stock/turnover', key: 'reportsStockTurnover', icon: ArrowLeftRight, moduleId: 'reportsStockTurnover' },
+  { to: '/reports/stock/movements', key: 'reportsStockMovements', icon: ClipboardList, moduleId: 'reportsStockMovements' },
+  { to: '/reports/stock/adjustments', key: 'reportsStockAdjustments', icon: SlidersHorizontal, moduleId: 'reportsStockAdjustments' },
+  { to: '/reports/stock/receipts', key: 'reportsStockReceipts', icon: TrendingUp, moduleId: 'reportsStockReceipts' },
+  { to: '/reports/stock/write-offs', key: 'reportsStockWriteOffs', icon: TrendingDown, moduleId: 'reportsStockWriteOffs' },
+  { to: '/reports/stock/inventories', key: 'reportsStockInventories', icon: ClipboardList, moduleId: 'reportsStockInventories' },
+  { to: '/reports/stock/transfers', key: 'reportsStockTransfers', icon: Truck, moduleId: 'reportsStockTransfers' },
 ];
 
 const REST_NAV = [{ to: '/stores', icon: Store, key: 'stores', roles: ['ADMIN'], moduleId: 'stores' }];

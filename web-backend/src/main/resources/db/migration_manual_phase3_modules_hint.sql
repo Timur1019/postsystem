@@ -1,0 +1,24 @@
+-- Не обязательна, если включён fix ModuleAccessService (новые ключи = по роли).
+-- Опционально: явно включить отчёты этапа 3 для пользователей с кастомным доступом,
+-- у которых уже был любой модуль reports*.
+
+-- INSERT INTO user_module_access (user_id, module_key, allowed)
+-- SELECT uma.user_id, m.key, true
+-- FROM user_module_access uma
+-- JOIN users u ON u.id = uma.user_id AND u.module_access_custom = true
+-- CROSS JOIN (VALUES
+--   ('reportsSalesByCategories'),
+--   ('reportsSalesByStores'),
+--   ('reportsSalesPeriodCompare'),
+--   ('reportsSalesDaily'),
+--   ('reportsCashierPerformance'),
+--   ('reportsStockBalances'),
+--   ('reportsStockAdjustments'),
+--   ('reportsStockDead'),
+--   ('reportsStockInventories'),
+--   ('reportsStockTransfers'),
+--   ('stockInventories'),
+--   ('stockTransfers')
+-- ) AS m(key)
+-- WHERE uma.module_key LIKE 'reports%' AND uma.allowed = true
+-- ON CONFLICT DO NOTHING;

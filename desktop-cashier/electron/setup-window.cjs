@@ -3,9 +3,10 @@ const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
 const { resolveWebDist } = require('./embedded-server.cjs');
+const { buildOrigin, buildHealthUrl, parseServerUrl } = require('./server-url.cjs');
 
-const DEFAULT_WEB_PORT = process.env.POS_WEB_PORT || '80';
-const DEFAULT_API_PORT = process.env.POS_API_PORT || '80';
+const DEFAULT_WEB_PORT = process.env.POS_WEB_PORT || '443';
+const DEFAULT_API_PORT = process.env.POS_API_PORT || '443';
 
 function configPath() {
   return path.join(app.getPath('userData'), 'config.json');
@@ -55,8 +56,8 @@ function buildSetupHtml(current) {
     : 'Укажите адрес сервера магазина. Интерфейс загрузится из сети — после обновления на сервере нажмите «Вид → Обновить».';
   const hint = hasEmbedded
     ? 'Порт: обычно 80 (сайт и API через один адрес). 8080 — только если администратор открыл его отдельно.'
-    : 'Касса откроет сайт http://адрес:' + webPort + '/ — нужен интернет и порт ' + webPort + '.';
-  const displayApiPort = apiPort === '8080' ? '80' : apiPort;
+    : 'Для HTTPS (aurent.uz): порт сайта и API — <strong>443</strong>. Для HTTP без шифрования — 80. Порты сайта и API обычно одинаковые.';
+  const displayApiPort = apiPort === '8080' ? '443' : apiPort;
   const portFields = hasEmbedded
     ? `<label for="apiPort">Порт сервера (обычно 80)</label>
     <input id="apiPort" name="apiPort" type="number" placeholder="80" value="${displayApiPort}" required />
@@ -64,11 +65,11 @@ function buildSetupHtml(current) {
     : `<div class="row">
       <div>
         <label for="webPort">Порт сайта</label>
-        <input id="webPort" name="webPort" type="number" placeholder="80" value="${webPort}" required />
+        <input id="webPort" name="webPort" type="number" placeholder="443" value="${webPort}" required />
       </div>
       <div>
         <label for="apiPort">Порт API</label>
-        <input id="apiPort" name="apiPort" type="number" placeholder="8080" value="${apiPort}" required />
+        <input id="apiPort" name="apiPort" type="number" placeholder="443" value="${apiPort}" required />
       </div>
     </div>`;
   return `data:text/html;charset=utf-8,${encodeURIComponent(`<!DOCTYPE html>
@@ -124,16 +125,12 @@ function buildSetupHtml(current) {
 }
 
 function parseOrigin(url) {
-  try {
-    const u = new URL(url.startsWith('http') ? url : `http://${url}`);
-    return {
-      host: u.hostname,
-      port: u.port || (u.protocol === 'https:' ? '443' : '80'),
-      webPort: u.port || DEFAULT_WEB_PORT,
-    };
-  } catch {
-    return { host: '', port: DEFAULT_API_PORT, webPort: DEFAULT_WEB_PORT };
-  }
+  const parsed = parseServerUrl(url);
+  return {
+    host: parsed.host,
+    port: parsed.port,
+    webPort: parsed.port || DEFAULT_WEB_PORT,
+  };
 }
 
 function normalizeHostPort(host, port) {
@@ -151,7 +148,8 @@ function saveConfig({ host, webPort, apiPort }) {
   const { host: h } = normalizeHostPort(host, apiPort);
   const web = String(webPort || DEFAULT_WEB_PORT).trim() || DEFAULT_WEB_PORT;
   const api = String(apiPort || DEFAULT_API_PORT).trim() || DEFAULT_API_PORT;
-  const backendOrigin = `http://${h}:${api}`;
+  const webOrigin = buildOrigin(h, web);
+  const backendOrigin = buildOrigin(h, api);
   const hasEmbedded = Boolean(resolveWebDist());
   const embeddedPort = 5199;
 
@@ -163,15 +161,15 @@ function saveConfig({ host, webPort, apiPort }) {
         webPort: web,
         apiPort: api,
         embeddedPort,
-        apiHealthUrl: `${backendOrigin}/api/v1/actuator/health`,
+        apiHealthUrl: buildHealthUrl(backendOrigin),
       }
     : {
         useRemoteUi: true,
-        cashierUrl: `http://${h}:${web}`,
+        cashierUrl: webOrigin,
         backendOrigin,
         webPort: web,
         apiPort: api,
-        apiHealthUrl: `http://${h}:${web}/api/v1/actuator/health`,
+        apiHealthUrl: buildHealthUrl(webOrigin),
       };
   fs.mkdirSync(path.dirname(configPath()), { recursive: true });
   fs.writeFileSync(configPath(), JSON.stringify(payload, null, 2), 'utf8');
