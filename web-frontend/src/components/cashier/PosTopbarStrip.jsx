@@ -1,4 +1,4 @@
-import { LayoutGrid, List, Package, X } from 'lucide-react';
+import { LayoutGrid, List, Package, Receipt } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { usePosShell } from '../../contexts/PosShellContext';
 
@@ -8,37 +8,54 @@ export default function PosTopbarStrip() {
 
   if (!shell) return null;
 
-  const { posPane, onGoToRegister, onGoToCatalog, catalogBrowse, searchActive, viewMode, onViewModeChange } =
-    shell;
+  const {
+    posPane,
+    payOpen,
+    onGoToRegister,
+    onGoToCatalog,
+    catalogBrowse,
+    searchActive,
+    viewMode,
+    onViewModeChange,
+  } = shell;
 
-  if (posPane === 'register') {
-    return (
-      <div className="pos-topbar-strip">
+  /** На чеке / в оплате: кнопка «Товары» → каталог */
+  const showProductsBtn = posPane === 'register';
+  /** На каталоге: кнопка «Касса» → чек */
+  const showCheckBtn = posPane === 'catalog' && !payOpen;
+  const showViewToggle = posPane === 'catalog' && !searchActive && catalogBrowse === 'products' && !payOpen;
+
+  if (!showProductsBtn && !showCheckBtn && !showViewToggle) {
+    return null;
+  }
+
+  return (
+    <div className="pos-topbar-strip pos-topbar-strip--nav">
+      {showProductsBtn ? (
         <button
           type="button"
           className="pos-topbar-nav__btn pos-topbar-nav__btn--catalog"
           onClick={onGoToCatalog}
+          aria-label={t('pos.tabCatalog')}
+          title={t('pos.backToProducts')}
         >
-          <Package size={18} aria-hidden />
+          <Package size={18} strokeWidth={2} aria-hidden />
           <span>{t('pos.tabCatalog')}</span>
         </button>
-      </div>
-    );
-  }
+      ) : null}
 
-  const showViewToggle = !searchActive && catalogBrowse === 'products';
-
-  return (
-    <div className="pos-topbar-strip pos-topbar-strip--catalog">
-      <button
-        type="button"
-        className="pos-topbar-close"
-        onClick={onGoToRegister}
-        aria-label={t('common.close')}
-        title={t('pos.backToRegister')}
-      >
-        <X size={20} strokeWidth={2} aria-hidden />
-      </button>
+      {showCheckBtn ? (
+        <button
+          type="button"
+          className="pos-topbar-nav__btn pos-topbar-nav__btn--register"
+          onClick={onGoToRegister}
+          aria-label={t('pos.tabRegister')}
+          title={t('pos.backToRegister')}
+        >
+          <Receipt size={18} strokeWidth={2} aria-hidden />
+          <span>{t('pos.tabRegister')}</span>
+        </button>
+      ) : null}
 
       {showViewToggle ? (
         <div className="pos-topbar-views" role="group" aria-label={t('pos.viewModeLabel')}>

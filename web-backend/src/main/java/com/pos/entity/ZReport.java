@@ -91,4 +91,13 @@ public class ZReport {
 
     @Column(name = "last_receipt_number", length = 50)
     private String lastReceiptNumber;
+
+    @Column(name = "discount_total", precision = 18, scale = 2)
+    private BigDecimal discountTotal = BigDecimal.ZERO;
+
+    @Column(name = "line_discount_total", precision = 18, scale = 2)
+    private BigDecimal lineDiscountTotal = BigDecimal.ZERO;
+
+    @Column(name = "order_discount_total", precision = 18, scale = 2)
+    private BigDecimal orderDiscountTotal = BigDecimal.ZERO;
 }

@@ -5,9 +5,21 @@ function normalizeBotUsername(raw) {
   return value || null;
 }
 
-export const supportPhone = (import.meta.env.VITE_SUPPORT_PHONE ?? '').trim() || null;
+/** Значения по умолчанию для npm run dev, если VITE_* не заданы */
+const DEV_DEFAULT_PHONE = '+998 90 123 45 67';
+const DEV_DEFAULT_TELEGRAM_BOT = 'pos_support_bot';
 
-export const supportTelegramBot = normalizeBotUsername(import.meta.env.VITE_SUPPORT_TELEGRAM_BOT);
+function envOrDevFallback(raw, devFallback) {
+  const value = (raw ?? '').trim();
+  if (value) return value;
+  return import.meta.env.DEV ? devFallback : null;
+}
+
+export const supportPhone = envOrDevFallback(import.meta.env.VITE_SUPPORT_PHONE, DEV_DEFAULT_PHONE);
+
+export const supportTelegramBot = normalizeBotUsername(
+  envOrDevFallback(import.meta.env.VITE_SUPPORT_TELEGRAM_BOT, DEV_DEFAULT_TELEGRAM_BOT)
+);
 
 export function supportTelegramUrl() {
   if (!supportTelegramBot) return null;

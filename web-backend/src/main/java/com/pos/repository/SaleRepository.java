@@ -299,7 +299,9 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
                COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.tax_total ELSE 0 END), 0),
                COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.discount_total ELSE 0 END), 0),
                COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.cash_amount ELSE 0 END), 0),
-               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.card_amount ELSE 0 END), 0)
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.card_amount ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.line_discount_total ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.order_discount_amount ELSE 0 END), 0)
         FROM sales s
         WHERE s.cashier_shift_id = :shiftId
         """, nativeQuery = true)
@@ -334,7 +336,9 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
                COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.tax_total ELSE 0 END), 0),
                COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.discount_total ELSE 0 END), 0),
                COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.cash_amount ELSE 0 END), 0),
-               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.card_amount ELSE 0 END), 0)
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.card_amount ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.line_discount_total ELSE 0 END), 0),
+               COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.order_discount_amount ELSE 0 END), 0)
         FROM sales s
         WHERE s.cashier_id = :cashierId
           AND s.store_id = :storeId

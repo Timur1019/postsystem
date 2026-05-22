@@ -114,7 +114,7 @@ public class CashierShiftServiceImpl implements CashierShiftService {
                 reportAt
             );
         }
-        return rows.isEmpty() ? new Object[6] : unwrapAggregateRow(rows.get(0));
+        return rows.isEmpty() ? new Object[8] : unwrapAggregateRow(rows.get(0));
     }
 
     private ShiftReportResponse buildReport(String type, CashierShift shift, Instant reportAt) {
@@ -125,6 +125,8 @@ public class CashierShiftServiceImpl implements CashierShiftService {
         BigDecimal discount = toBigDecimal(row[3]);
         BigDecimal cash = toBigDecimal(row[4]);
         BigDecimal card = toBigDecimal(row[5]);
+        BigDecimal lineDiscount = row.length > 6 ? toBigDecimal(row[6]) : BigDecimal.ZERO;
+        BigDecimal orderDiscount = row.length > 7 ? toBigDecimal(row[7]) : BigDecimal.ZERO;
 
         return new ShiftReportResponse(
             type,
@@ -139,7 +141,9 @@ public class CashierShiftServiceImpl implements CashierShiftService {
             cash,
             card,
             vat,
-            discount
+            discount,
+            lineDiscount,
+            orderDiscount
         );
     }
 
@@ -160,7 +164,7 @@ public class CashierShiftServiceImpl implements CashierShiftService {
 
     private static Object[] unwrapAggregateRow(Object[] raw) {
         if (raw == null) {
-            return new Object[6];
+            return new Object[8];
         }
         if (raw.length == 1 && raw[0] instanceof Object[] nested) {
             return nested;

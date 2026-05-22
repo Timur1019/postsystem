@@ -25,22 +25,6 @@ public final class ProductImportSupport {
     ) {
         String sku = ProductImportParseUtil.cell(row, "sku");
         String name = ProductImportParseUtil.cell(row, "name");
-        if (!StringUtils.hasText(name) && !StringUtils.hasText(sku)) {
-            return invalid(rowNum, "Пустая строка");
-        }
-        if (!StringUtils.hasText(sku)) {
-            return invalid(rowNum, "Не указан артикул (SKU)");
-        }
-        sku = sku.trim();
-        if (!StringUtils.hasText(name)) {
-            return invalid(rowNum, "Не указано наименование");
-        }
-        name = name.trim();
-
-        var sellingOpt = ProductImportParseUtil.parseDecimalOpt(ProductImportParseUtil.cell(row, "selling_price"));
-        if (sellingOpt.isEmpty() || sellingOpt.get().compareTo(BigDecimal.valueOf(0.01)) < 0) {
-            return invalid(rowNum, "Некорректная цена продажи");
-        }
 
         String ikpuRaw = ProductImportParseUtil.cell(row, "ikpu");
         String ikpu = StringUtils.hasText(ikpuRaw) ? ikpuRaw.trim() : null;
@@ -50,6 +34,38 @@ public final class ProductImportSupport {
             source == ProductImportSource.UZ_INVOICE && StringUtils.hasText(uzDocRaw)
                 ? uzDocRaw.trim().toUpperCase(Locale.ROOT)
                 : null;
+
+        if (source == ProductImportSource.UZ_INVOICE) {
+            if (!StringUtils.hasText(name)) {
+                if (!StringUtils.hasText(sku)) {
+                    return invalid(rowNum, "Пустая строка");
+                }
+                return invalid(rowNum, "Не указано наименование");
+            }
+            name = name.trim();
+            if (!StringUtils.hasText(sku)) {
+                sku = ProductImportParseUtil.resolveUzInvoiceSku(uzInvoiceDocumentId, rowNum);
+            } else {
+                sku = sku.trim();
+            }
+        } else {
+            if (!StringUtils.hasText(name) && !StringUtils.hasText(sku)) {
+                return invalid(rowNum, "Пустая строка");
+            }
+            if (!StringUtils.hasText(sku)) {
+                return invalid(rowNum, "Не указан артикул (SKU)");
+            }
+            sku = sku.trim();
+            if (!StringUtils.hasText(name)) {
+                return invalid(rowNum, "Не указано наименование");
+            }
+            name = name.trim();
+        }
+
+        var sellingOpt = ProductImportParseUtil.parseDecimalOpt(ProductImportParseUtil.cell(row, "selling_price"));
+        if (sellingOpt.isEmpty() || sellingOpt.get().compareTo(BigDecimal.valueOf(0.01)) < 0) {
+            return invalid(rowNum, "Некорректная цена продажи");
+        }
 
         BigDecimal taxRate = ProductImportParseUtil.normalizeTaxRatePercent(
             ProductImportParseUtil.parseDecimalOpt(ProductImportParseUtil.cell(row, "tax_rate_percent_nds")).orElse(null)
@@ -64,8 +80,7 @@ public final class ProductImportSupport {
             Product p = existing.get();
             String dupMsg =
                 source == ProductImportSource.UZ_INVOICE && uzInvoiceDocumentId != null
-                    ? ("Позиция уже импортирована из этой счёт-фактуры " + uzInvoiceDocumentId + ": "
-                    + p.getSku() + " — " + p.getName())
+                    ? ("Счёт-фактура " + uzInvoiceDocumentId + " уже импортирована")
                     : ("Товар уже есть в базе: " + p.getSku() + " — " + p.getName());
             return new ProductImportPreviewRow(
                 rowNum,
@@ -104,9 +119,8 @@ public final class ProductImportSupport {
     }
 
     /**
-     * Только счёт-фактура ({@link ProductImportSource#UZ_INVOICE}): совпадение строго по номеру e-фактуры + ИКПУ/SKU строки —
-     * без сравнения «как строка таблицы» по глобальному ИКПУ или наименованию.
-     * Если номер фактуры из файла не извлечён — дубликатов превью нет (старый товар в базе без этой пары не учитываем).
+     * Счёт-фактура: только номер e-фактуры (вся фактура один раз; ИКПУ/SKU/имя не сравниваем).
+     * Каталог: глобальный SKU / ИКПУ / имя.
      */
     private static Optional<Product> resolveDuplicateCandidate(
         ProductRepository repo,
@@ -116,26 +130,13 @@ public final class ProductImportSupport {
         String ikpu,
         String uzInvoiceDocumentId
     ) {
-        if (source != ProductImportSource.UZ_INVOICE) {
-            return findExistingLegacy(repo, sku, name, ikpu);
+        if (source == ProductImportSource.UZ_INVOICE) {
+            if (uzInvoiceDocumentId != null) {
+                return repo.findFirstByUzInvoiceDocumentIdAndIsActiveTrue(uzInvoiceDocumentId);
+            }
+            return Optional.empty();
         }
-        if (uzInvoiceDocumentId != null) {
-            return findExistingForUzInvoice(repo, uzInvoiceDocumentId, sku, ikpu);
-        }
-        return Optional.empty();
-    }
-
-    /** Дубликат строки счёт-фактуры только в паре номер счёта + ИКПУ (или SKU, если ИКПУ нет). */
-    private static Optional<Product> findExistingForUzInvoice(
-        ProductRepository repo,
-        String uzInvoiceDocumentId,
-        String sku,
-        String ikpu
-    ) {
-        if (StringUtils.hasText(ikpu)) {
-            return repo.findByUzInvoiceDocumentIdAndIkpuAndIsActiveTrue(uzInvoiceDocumentId, ikpu);
-        }
-        return repo.findByUzInvoiceDocumentIdAndSkuAndIsActiveTrue(uzInvoiceDocumentId, sku);
+        return findExistingLegacy(repo, sku, name, ikpu);
     }
 
     /** Каталог и старые импорты без номера счёта: глобальный SKU / ИКПУ / имя. */
@@ -150,6 +151,11 @@ public final class ProductImportSupport {
             return repo.findByNameIgnoreCaseAndIsActiveTrue(name);
         }
         return Optional.empty();
+    }
+
+    /** Ключ дедупликации строк внутри одного файла (не по номеру фактуры — фактура может содержать много строк). */
+    public static String rowDedupeKey(ProductImportPreviewRow row) {
+        return "row:" + row.rowNum();
     }
 
     private static ProductImportPreviewRow invalid(int rowNum, String message) {

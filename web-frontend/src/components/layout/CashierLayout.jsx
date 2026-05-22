@@ -1,7 +1,15 @@
 // src/components/layout/CashierLayout.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { format } from 'date-fns';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Receipt, LogOut, BookOpen, Clock, Store, Menu, PanelLeftClose, Headphones, Lock } from 'lucide-react';
+import CashierThemeToggle from '../cashier/CashierThemeToggle';
+import {
+  cashierThemeClassName,
+  readCashierTheme,
+  syncCashierThemeDocument,
+  writeCashierTheme,
+} from '../../utils/cashierTheme';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { useCashierStore } from '../../hooks/useCashierStore';
@@ -19,7 +27,12 @@ import { useCashierShift } from '../../hooks/useCashierShift';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../styles/cashier-modals.css';
 import '../../styles/cashier-bootstrap.css';
+import '../../styles/cashier-terminal-theme.css';
+import '../../styles/cashier-light-theme.css';
+import '../../styles/cashier-pos-layout.css';
+import '../../styles/cashier-register-pay-rail.css';
 import '../../styles/cashier-responsive.css';
+import '../../styles/cashier-secondary-pages.css';
 
 function displayName(user) {
   if (!user) return '';
@@ -29,6 +42,15 @@ function displayName(user) {
 }
 
 const CASHIER_SIDEBAR_KEY = 'cashier-sidebar-open';
+
+function formatShiftOpenedAt(openedAt) {
+  if (openedAt == null) return null;
+  try {
+    return format(new Date(openedAt), 'dd.MM.yyyy HH:mm');
+  } catch {
+    return null;
+  }
+}
 
 function readSidebarOpen() {
   try {
@@ -44,16 +66,27 @@ function readSidebarOpen() {
 function CashierLayoutShell() {
   const [sidebarOpen, setSidebarOpen] = useState(readSidebarOpen);
   const [sidebarNavExpanded, setSidebarNavExpanded] = useState(readSidebarOpen);
+  const [cashierTheme, setCashierTheme] = useState(readCashierTheme);
 
   useEffect(() => {
-    document.documentElement.classList.remove('pos-pay-screen-open', 'cashier-theme--light', 'cashier-theme--dark');
-    document.body.classList.remove('pos-pay-screen-open');
-    try {
-      localStorage.removeItem('pos-cashier-theme');
-    } catch {
-      /* ignore */
-    }
+    syncCashierThemeDocument(cashierTheme);
+  }, [cashierTheme]);
+
+  useEffect(() => {
+    return () => {
+      document.documentElement.classList.remove('pos-pay-screen-open', 'cashier-theme--light', 'cashier-theme--dark');
+      document.body.classList.remove('pos-pay-screen-open');
+      document.documentElement.style.colorScheme = '';
+    };
   }, []);
+
+  const toggleCashierTheme = () => {
+    setCashierTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      writeCashierTheme(next);
+      return next;
+    });
+  };
 
   const { t } = useTranslation();
   const { user, logout } = useAuthStore();
@@ -83,6 +116,12 @@ function CashierLayoutShell() {
 
   const { data: shift } = useCashierShift(storeId);
 
+  const shiftOpenBadge = useMemo(() => {
+    if (shift?.status !== 'OPEN') return null;
+    const time = formatShiftOpenedAt(shift.openedAt);
+    return time ? t('pos.shiftOpenedAt', { time }) : t('pos.shiftOpen');
+  }, [shift, t]);
+
   const navLinkClass = ({ isActive }) =>
     `nav-link d-flex align-items-center gap-2 ${isActive ? 'active' : ''}`;
 
@@ -105,9 +144,11 @@ function CashierLayoutShell() {
 
   const sidebarClass = `cashier-sidebar d-none d-lg-flex flex-column${sidebarOpen ? '' : ' is-collapsed'}`;
 
+  const themeClass = cashierThemeClassName(cashierTheme);
+
   return (
     <div
-      className={`cashier-app d-flex bg-light${sidebarOpen ? '' : ' cashier-app--sidebar-collapsed'}${
+      className={`cashier-app ${themeClass} d-flex${sidebarOpen ? '' : ' cashier-app--sidebar-collapsed'}${
         isPosRoute ? ' cashier-app--pos-screen' : ''
       }`}
     >
@@ -163,6 +204,7 @@ function CashierLayoutShell() {
         </nav>
 
         <div className="cashier-sidebar__foot">
+          <CashierThemeToggle theme={cashierTheme} onToggle={toggleCashierTheme} />
           <button
             type="button"
             className="cashier-sidebar__lock"
@@ -207,7 +249,25 @@ function CashierLayoutShell() {
                   >
                     {sidebarOpen ? <PanelLeftClose size={20} /> : <Menu size={20} />}
                   </button>
-                  <p className="cashier-topbar__pos-title mb-0 fw-semibold">{t('pos.navSale')}</p>
+                  <div className="cashier-topbar__terminal d-none d-md-flex flex-column gap-1 min-w-0">
+                    <p className="cashier-topbar__terminal-name mb-0">{displayAppName()}</p>
+                    <div className="d-flex flex-wrap gap-1">
+                      {storeName ? (
+                        <span className="cashier-topbar__terminal-badge" title={storeName}>
+                          {storeName}
+                        </span>
+                      ) : null}
+                      {shiftOpenBadge ? (
+                        <span
+                          className="cashier-topbar__terminal-badge"
+                          title={shift?.id ? `${t('pos.shiftOpen')} · ${shift.id}` : undefined}
+                        >
+                          {shiftOpenBadge}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <p className="cashier-topbar__pos-title mb-0 fw-semibold d-md-none">{t('pos.navSale')}</p>
                 </div>
                 <PosTopbarStrip />
                 <div className="cashier-topbar__actions">
@@ -233,6 +293,12 @@ function CashierLayoutShell() {
                       {t('nav.logout')}
                     </button>
                   </nav>
+                  <CashierThemeToggle
+                    theme={cashierTheme}
+                    onToggle={toggleCashierTheme}
+                    compact
+                    className="cashier-topbar__theme"
+                  />
                   <LanguageSwitcher variant="cashier" className="cashier-topbar__lang" />
                 </div>
               </div>
@@ -292,6 +358,12 @@ function CashierLayoutShell() {
                     {t('nav.logout')}
                   </button>
                 </nav>
+                <CashierThemeToggle
+                  theme={cashierTheme}
+                  onToggle={toggleCashierTheme}
+                  compact
+                  className="cashier-topbar__theme"
+                />
                 <LanguageSwitcher variant="cashier" className="cashier-topbar__lang" />
               </div>
             </header>

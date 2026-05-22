@@ -34,7 +34,7 @@ class UzInvoiceJsonParserTest {
         List<Map<String, String>> rows = parser.parse(json.getBytes(StandardCharsets.UTF_8));
         assertFalse(rows.isEmpty());
         Map<String, String> first = rows.get(0);
-        assertEquals("IKPU-08470001002000000", first.get("sku"));
+        assertEquals("INV-2", first.get("sku"));
         assertEquals("08470001002000000", first.get("ikpu"));
         assertTrue(first.get("name").toLowerCase().contains("pos terminal"));
         assertEquals("3125000.00", first.get("selling_price"));
@@ -59,7 +59,7 @@ class UzInvoiceJsonParserTest {
             """;
         List<Map<String, String>> rows = parser.parse(json.getBytes(StandardCharsets.UTF_8));
         assertEquals(1, rows.size());
-        assertEquals("IKPU-08470001002000000", rows.get(0).get("sku"));
+        assertEquals("INV-2", rows.get(0).get("sku"));
         assertEquals("1500000", rows.get(0).get("selling_price"));
         assertEquals("2", rows.get(0).get("stock_quantity"));
     }
@@ -87,7 +87,7 @@ class UzInvoiceJsonParserTest {
             """;
         List<Map<String, String>> rows = parser.parse(json.getBytes(StandardCharsets.UTF_8));
         assertEquals(1, rows.size());
-        assertEquals("IKPU-08470001002000000", rows.get(0).get("sku"));
+        assertEquals("INV-2", rows.get(0).get("sku"));
         assertEquals("3125000.00", rows.get(0).get("selling_price"));
     }
 

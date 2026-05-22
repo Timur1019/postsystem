@@ -105,6 +105,8 @@ export default function PosPaymentFlow({
   asModal = false,
   hideComposition = false,
   compactFooter = false,
+  showBackToCheck = false,
+  terminal = false,
   className = '',
 }) {
   const { t } = useTranslation();
@@ -185,6 +187,15 @@ export default function PosPaymentFlow({
     { label: t('pos.mixedKeypadAll'), amount: toPay },
   ];
 
+  const cashQuickActions = [
+    { label: '+500', amount: 500, mode: 'add' },
+    { label: '+1000', amount: 1000, mode: 'add' },
+    { label: '+5000', amount: 5000, mode: 'add' },
+  ];
+
+  const tenderedNum = Number(String(tendered).replace(',', '.')) || 0;
+  const changeDue = round2(Math.max(0, tenderedNum - toPay));
+
   const submitMixed = (type) => {
     if (isPending || cashExceeds) return;
     const cash = clampPayAmount(cashPartNum, toPay);
@@ -241,9 +252,28 @@ export default function PosPaymentFlow({
 
   const showKeypad = step === 'cash' || step === 'mixedCash';
   const isModal = asModal;
+  const isRegisterRail = className.includes('pos-pay-panel--register-rail');
+  const isTerminalModal = isModal && terminal;
+  const isSplit = className.includes('pos-pay-panel--split');
+  const isRail = className.includes('pos-pay-panel--rail');
   const isCompact = compactFooter && !isModal;
-  const useTileGrid = isCompact || isModal;
-  const pinPrimary = useTileGrid;
+  const useTileGrid =
+    isCompact && !isModal && !isSplit && !isRail && !isTerminalModal && !isRegisterRail;
+  const pinPrimary = useTileGrid || isSplit || isRail || isModal || isRegisterRail;
+  const showAmountHero =
+    !isTerminalModal &&
+    !isRegisterRail &&
+    (isRail || isSplit || (isModal && step !== 'receipt'));
+  const useMethodStack = isRail || isSplit || isModal || isRegisterRail;
+  const useReceiptRow = isTerminalModal && step === 'receipt' && !isRegisterRail;
+  const useRegisterStack = isRegisterRail;
+  const useCashTerminal = isTerminalModal || isRail || isRegisterRail;
+  const useTerminalSteps = isTerminalModal || isRegisterRail;
+
+  const selectReceiptType = (id) => {
+    setReceiptType(id);
+    if (isRegisterRail) setStep('method');
+  };
 
   let stepTitle = t('pos.receiptTypeTitle');
   if (step === 'method') stepTitle = t('pos.choosePaymentMethod');
@@ -307,7 +337,13 @@ export default function PosPaymentFlow({
             <div className="pos-pay-panel__step">
               <div
                 className={`pos-pay-receipt-types${
-                  useTileGrid ? ' pos-pay-receipt-types--footer-grid' : ' pos-pay-receipt-types--stack'
+                  useRegisterStack
+                    ? ' pos-pay-receipt-types--register-stack'
+                    : useReceiptRow
+                      ? ' pos-pay-receipt-types--terminal-row'
+                      : useTileGrid
+                        ? ' pos-pay-receipt-types--footer-grid'
+                        : ' pos-pay-receipt-types--stack'
                 }`}
               >
                 {RECEIPT_TYPES.map(({ id, icon: Icon }) => {
@@ -316,8 +352,10 @@ export default function PosPaymentFlow({
                     <button
                       key={id}
                       type="button"
-                      className={`pos-pay-receipt-type${active ? ' is-active' : ''}`}
-                      onClick={() => setReceiptType(id)}
+                      className={`pos-pay-receipt-type${
+                        active ? ' is-active' : ''
+                      }${useRegisterStack ? ' pos-pay-receipt-type--register' : ''}`}
+                      onClick={() => selectReceiptType(id)}
                     >
                       <span className="pos-pay-receipt-type__icon-wrap">
                         <Icon size={isModal ? 30 : 22} strokeWidth={1.5} />
@@ -334,7 +372,7 @@ export default function PosPaymentFlow({
                   );
                 })}
               </div>
-              {!pinPrimary ? (
+              {!pinPrimary && !isRegisterRail ? (
                 <button type="button" className="pos-pay-panel__primary" onClick={() => setStep('method')}>
                   {t('pos.continuePay')}
                   <ArrowRight size={18} />
@@ -345,9 +383,20 @@ export default function PosPaymentFlow({
 
           {step === 'method' && (
             <div className="pos-pay-panel__step">
+              {useTerminalSteps ? (
+                <div className="pos-pay-method-step__hero">
+                  <h3 className="pos-pay-method-step__title">{t('pos.choosePaymentMethod')}</h3>
+                  <div className="pos-pay-method-step__due">
+                    <span className="pos-pay-method-step__due-label">{t('pos.amountToPay')}</span>
+                    <span className="pos-pay-method-step__due-value">{fmt(toPay)}</span>
+                  </div>
+                </div>
+              ) : null}
               <div
                 className={`pos-pay-method-cards${
                   useTileGrid ? ' pos-pay-method-cards--footer-grid' : ' pos-pay-method-cards--stack'
+                }${useMethodStack ? ' pos-pay-method-cards--stack-vertical' : ''}${
+                  useTerminalSteps ? ' pos-pay-method-cards--terminal' : ''
                 }`}
               >
                 {PAY_METHODS.map(({ id, icon: Icon, labelKey, action }) => (
@@ -487,35 +536,60 @@ export default function PosPaymentFlow({
 
           {step === 'cash' && (
             <div className="pos-pay-panel__step">
-              <div className="pos-pay-cash-panel">
-                <p className="pos-pay-cash__due">
-                  <span className="pos-pay-cash__due-label">{t('pos.summaryToPay')}</span>
-                  <span className="pos-pay-cash__due-value">{fmt(toPay)}</span>
-                </p>
-                <label className="pos-pay-cash-label">{t('pos.amountTendered')}</label>
-                <div
-                  className={`pos-pay-cash__display${
-                    tendered && Number(tendered) >= toPay ? ' pos-pay-cash__display--ok' : ''
-                  }`}
-                  aria-live="polite"
-                >
-                  {formatKeypadAmount(tendered)}
-                  <span className="pos-pay-cash__currency">сум</span>
-                </div>
-                {tendered && Number(tendered) >= toPay && (
-                  <p className="pos-pay-change">
-                    {t('pos.change')}: <strong>{fmt(Number(tendered) - toPay)}</strong>
-                  </p>
+              <div className={`pos-pay-cash-panel${useCashTerminal ? ' pos-pay-cash-panel--terminal' : ''}`}>
+                {useCashTerminal ? (
+                  <>
+                    <div className="pos-pay-cash__summary-row">
+                      <span>{t('pos.amountToPay')}</span>
+                      <strong>{fmt(toPay)}</strong>
+                    </div>
+                    <div className="pos-pay-cash__received-box" aria-live="polite">
+                      <span className="pos-pay-cash__received-label">{t('pos.receivedLabel')}</span>
+                      <span className="pos-pay-cash__received-value">{formatKeypadAmount(tendered)}</span>
+                    </div>
+                    <div className="pos-pay-cash__change-row">
+                      <span>{t('pos.change')}</span>
+                      <strong>{fmt(changeDue)}</strong>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="pos-pay-cash__due">
+                      <span className="pos-pay-cash__due-label">{t('pos.summaryToPay')}</span>
+                      <span className="pos-pay-cash__due-value">{fmt(toPay)}</span>
+                    </p>
+                    <label className="pos-pay-cash-label">{t('pos.amountTendered')}</label>
+                    <div
+                      className={`pos-pay-cash__display${
+                        tendered && tenderedNum >= toPay ? ' pos-pay-cash__display--ok' : ''
+                      }`}
+                      aria-live="polite"
+                    >
+                      {formatKeypadAmount(tendered)}
+                      <span className="pos-pay-cash__currency">сум</span>
+                    </div>
+                    {tendered && tenderedNum >= toPay ? (
+                      <p className="pos-pay-change">
+                        {t('pos.change')}: <strong>{fmt(changeDue)}</strong>
+                      </p>
+                    ) : null}
+                  </>
                 )}
               </div>
-              {showKeypad && (
-                <NumericKeypad value={tendered} onChange={setTendered} exactAmount={toPay} disabled={isPending} />
-              )}
+              {showKeypad ? (
+                <NumericKeypad
+                  value={tendered}
+                  onChange={setTendered}
+                  exactAmount={isRail ? undefined : toPay}
+                  quickActions={useCashTerminal ? cashQuickActions : undefined}
+                  disabled={isPending}
+                />
+              ) : null}
               {!pinPrimary ? (
                 <button
                   type="button"
                   className="pos-pay-panel__primary"
-                  disabled={isPending || Number(tendered) < toPay}
+                  disabled={isPending || tenderedNum < toPay}
                   onClick={submitCash}
                 >
                   {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
@@ -530,10 +604,18 @@ export default function PosPaymentFlow({
   if (isModal) {
     if (!open) return null;
 
+    const showMethodBack = isTerminalModal && step === 'method';
+
     return (
-      <PosModalPortal open onClose={handleClose}>
+      <PosModalPortal
+        open
+        onClose={handleClose}
+        overlayClassName={isTerminalModal ? 'pos-pay-overlay--checkout-terminal' : ''}
+      >
         <div
-          className={`pos-pay-modal pos-pay-modal--checkout${showKeypad ? ' is-keypad' : ''}`}
+          className={`pos-pay-modal pos-pay-modal--checkout pos-pay-modal--split-layout${
+            isTerminalModal ? ' pos-pay-modal--terminal' : ''
+          }${showKeypad ? ' is-keypad' : ''} is-step-${step}`}
           onMouseDown={(e) => e.stopPropagation()}
           role="dialog"
           aria-label={t('pos.paymentTitle')}
@@ -545,17 +627,173 @@ export default function PosPaymentFlow({
             onClose={handleClose}
           />
 
-          <div className="pos-pay-modal__body">{stepScroll}</div>
-
-          {pinPrimary && footerPrimary ? (
-            <div className="pos-pay-modal__foot">{footerPrimary}</div>
-          ) : null}
+          <div className="pos-pay-modal__workspace">
+            <aside className="pos-pay-modal__check">
+              <PosOrderComposition
+                items={items}
+                total={toPay}
+                discountTotal={discountTotal}
+                compact
+                variant={isTerminalModal ? 'terminal' : 'default'}
+                headline={isTerminalModal && step === 'cash' ? 'saleSummary' : 'composition'}
+              />
+            </aside>
+            <div className="pos-pay-modal__pay-side">
+              {showAmountHero ? (
+                <div className="pos-pay-panel__amount-hero">
+                  <span className="pos-pay-panel__amount-hero-label">{t('pos.summaryToPay')}</span>
+                  <span className="pos-pay-panel__amount-hero-value">{fmt(toPay)}</span>
+                </div>
+              ) : null}
+              <div className="pos-pay-modal__body">{stepScroll}</div>
+              {pinPrimary && (footerPrimary || showMethodBack) ? (
+                <div className="pos-pay-modal__foot">
+                  {footerPrimary}
+                  {showMethodBack ? (
+                    <button type="button" className="pos-pay-panel__back-check" onClick={handleClose}>
+                      <ArrowLeft size={18} aria-hidden />
+                      {t('pos.backToCheck')}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
       </PosModalPortal>
     );
   }
 
   if (!open) return null;
+
+  if (isRegisterRail) {
+    const registerBack = step === 'receipt' ? handleClose : stepBack;
+    const showRegisterBackToCheck = step === 'method' || step === 'cash';
+
+    return (
+      <section
+        className={`pos-pay-panel pos-pay-panel--register-rail is-open is-step-${step}${
+          className ? ` ${className}` : ''}`}
+        aria-label={t('pos.paymentTitle')}
+      >
+        <header className="pos-pay-register-rail__head">
+          {registerBack ? (
+            <button
+              type="button"
+              className="pos-pay-register-rail__back"
+              onClick={registerBack}
+              aria-label={step === 'receipt' ? t('pos.backToCheck') : t('common.back')}
+            >
+              <ArrowLeft size={20} strokeWidth={2} aria-hidden />
+            </button>
+          ) : (
+            <span className="pos-pay-register-rail__back pos-pay-register-rail__back--spacer" aria-hidden />
+          )}
+          <h2 className="pos-pay-register-rail__title">{stepTitle}</h2>
+          {step === 'method' || step === 'cash' ? (
+            <span className="pos-pay-register-rail__amount">{fmt(toPay)}</span>
+          ) : (
+            <span className="pos-pay-register-rail__amount pos-pay-register-rail__amount--spacer" aria-hidden />
+          )}
+        </header>
+
+        <div className="pos-pay-panel__body">
+          {step === 'method' || step === 'receipt' ? (
+            <div className="pos-pay-panel__scroll">{stepScroll}</div>
+          ) : (
+            stepScroll
+          )}
+        </div>
+
+        <div className="pos-pay-panel__actions-wrap">
+          {pinPrimary && footerPrimary ? footerPrimary : null}
+          {showRegisterBackToCheck ? (
+            <button type="button" className="pos-pay-panel__back-check" onClick={handleClose}>
+              <ArrowLeft size={18} aria-hidden />
+              {t('pos.backToCheck')}
+            </button>
+          ) : null}
+        </div>
+      </section>
+    );
+  }
+
+  if (isRail) {
+    const railTitle =
+      step === 'method'
+        ? t('pos.choosePaymentMethod')
+        : step === 'cash'
+          ? null
+          : stepTitle;
+
+    return (
+      <section
+        className={`pos-pay-panel pos-pay-panel--rail is-open${className ? ` ${className}` : ''}`}
+        aria-label={t('pos.paymentTitle')}
+      >
+        {railTitle || (step !== 'cash' && showAmountHero) ? (
+          <div className="pos-pay-panel__rail-head">
+            {railTitle ? <h2 className="pos-pay-panel__rail-title">{railTitle}</h2> : null}
+            {step !== 'cash' && showAmountHero ? (
+              <div className="pos-pay-panel__amount-hero">
+                <span className="pos-pay-panel__amount-hero-label">{t('pos.amountToPay')}</span>
+                <span className="pos-pay-panel__amount-hero-value">{fmt(toPay)}</span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        <div className="pos-pay-panel__body">
+          {step !== 'method' && step !== 'receipt' && step !== 'cash' ? (
+            <PayStepHeader title={stepTitle} onBack={stepBack} onClose={null} />
+          ) : null}
+          {step === 'method' || step === 'receipt' ? (
+            <div className="pos-pay-panel__scroll">{stepScroll}</div>
+          ) : (
+            stepScroll
+          )}
+          <div className="pos-pay-panel__actions-wrap">
+            {pinPrimary && footerPrimary ? footerPrimary : null}
+            {showBackToCheck ? (
+              <button type="button" className="pos-pay-panel__back-check" onClick={handleClose}>
+                <ArrowLeft size={18} aria-hidden />
+                {t('pos.backToCheck')}
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (isSplit) {
+    return (
+      <section
+        className={`pos-pay-panel pos-pay-panel--split is-open${className ? ` ${className}` : ''}`}
+        aria-label={t('pos.paymentTitle')}
+      >
+        <aside className="pos-pay-panel__check-col">
+          <PosOrderComposition items={items} total={toPay} discountTotal={discountTotal} compact />
+        </aside>
+        <div className="pos-pay-panel__pay-col">
+          {showAmountHero ? (
+            <div className="pos-pay-panel__amount-hero">
+              <span className="pos-pay-panel__amount-hero-label">{t('pos.summaryToPay')}</span>
+              <span className="pos-pay-panel__amount-hero-value">{fmt(toPay)}</span>
+            </div>
+          ) : null}
+          <PayStepHeader
+            title={stepTitle}
+            onBack={step !== 'receipt' ? stepBack : null}
+            onClose={handleClose}
+          />
+          <div className="pos-pay-panel__scroll">{stepScroll}</div>
+          {pinPrimary && footerPrimary ? (
+            <div className="pos-pay-panel__actions-wrap">{footerPrimary}</div>
+          ) : null}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section

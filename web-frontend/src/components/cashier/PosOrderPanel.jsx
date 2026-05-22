@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Minus, Plus, Trash2, Percent } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { lineDiscountAmount, lineSubtotal } from '../../store/cartStore';
+import { lineDiscountAmount, lineSubtotal, useCartStore } from '../../store/cartStore';
 import { fmtMoney as fmt, fmtMoneyCompact as fmtCompact } from '../../utils/formatMoney';
 
 export default function PosOrderPanel({
@@ -13,9 +13,20 @@ export default function PosOrderPanel({
   onUpdatePrice,
   onUpdateDiscountPercent,
   onRemove,
+  total,
   className = '',
+  variant = 'default',
+  showTotalsFoot = false,
 }) {
   const { t } = useTranslation();
+  const getTaxTotal = useCartStore((s) => s.getTaxTotal);
+  const taxTotal = getTaxTotal();
+  const linesTotal = items.reduce((s, i) => s + lineSubtotal(i), 0);
+  const payableTotal = total ?? linesTotal;
+  const subtotalBeforeTax = Math.max(0, payableTotal - taxTotal);
+  const taxRateLabel =
+    items.length === 0 ? 0 : Math.round(items.reduce((s, i) => s + (i.taxRate ?? 0), 0) / items.length);
+  const isRegister = variant === 'register';
   const rowRefs = useRef({});
   const selected = items.find((i) => i.productId === selectedLineId);
   const [editingPriceId, setEditingPriceId] = useState(null);
@@ -33,10 +44,14 @@ export default function PosOrderPanel({
   };
 
   return (
-    <section className={`pos-order-panel${className ? ` ${className}` : ''}`}>
+    <section
+      className={`pos-order-panel${isRegister ? ' pos-order-panel--register' : ''}${
+        className ? ` ${className}` : ''
+      }`}
+    >
       <header className="pos-order-panel__head">
         <h2 className="pos-order-panel__title">
-          {t('pos.orderTitle')}
+          {isRegister ? t('pos.currentCheck') : t('pos.orderTitle')}
           {items.length > 0 ? (
             <span className="pos-order-panel__badge">{t('pos.orderPositions', { count: items.length })}</span>
           ) : null}
@@ -82,7 +97,11 @@ export default function PosOrderPanel({
                       <span className="pos-cart-table__name" title={item.name}>
                         {item.name}
                       </span>
-                      {item.sku ? <span className="pos-cart-table__sku">{item.sku}</span> : null}
+                      {item.sku ? (
+                        <span className="pos-cart-table__sku" title={item.sku}>
+                          {item.sku}
+                        </span>
+                      ) : null}
                     </div>
 
                     <div className="pos-cart-table__col pos-cart-table__col--price">
@@ -159,8 +178,25 @@ export default function PosOrderPanel({
         </div>
       </div>
 
+      {isRegister && showTotalsFoot && items.length > 0 ? (
+        <footer className="pos-order-panel__totals-foot">
+          <div className="pos-order-panel__totals-meta">
+            <p>
+              {t('pos.subtotal')}: <span>{fmt(subtotalBeforeTax)}</span>
+            </p>
+            <p>
+              {t('pos.taxLine', { rate: taxRateLabel })}: <span>{fmt(taxTotal)}</span>
+            </p>
+          </div>
+          <div className="pos-order-panel__totals-hero">
+            <span className="pos-order-panel__totals-hero-label">{t('pos.totalPayable')}</span>
+            <strong className="pos-order-panel__totals-hero-value">{fmt(payableTotal)}</strong>
+          </div>
+        </footer>
+      ) : null}
+
       <div className="pos-order-panel__bottom">
-        {selected && (
+        {selected && !isRegister && (
           <div className="pos-line-toolbar">
             <div className="pos-line-toolbar__discount">
               <Percent size={15} aria-hidden />

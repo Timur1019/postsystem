@@ -106,11 +106,21 @@ export default function CashierShiftModal({
   return (
     <>
       <PosModalPortal open={open && !printReport} onClose={onClose}>
-        <div className="pos-pay-modal pos-pay-modal--shift" onMouseDown={(e) => e.stopPropagation()}>
-          <button type="button" className="pos-pay-modal__close" onClick={onClose} aria-label={t('common.close')}>
-            <X size={20} />
-          </button>
-          <h2 className="pos-pay-modal__title">{t('pos.shiftTitle')}</h2>
+        <div
+          className="pos-pay-modal pos-pay-modal--shift pos-pay-modal--shift-terminal"
+          onMouseDown={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cashier-shift-modal-title"
+        >
+          <header className="cashier-shift-modal__head">
+            <h2 id="cashier-shift-modal-title" className="pos-pay-modal__title">
+              {t('pos.shiftTitle')}
+            </h2>
+            <button type="button" className="pos-pay-modal__close" onClick={onClose} aria-label={t('common.close')}>
+              <X size={20} />
+            </button>
+          </header>
           <p className="cashier-shift-modal__meta">
             {metaStore} · {metaCashier}
           </p>

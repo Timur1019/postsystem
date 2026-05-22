@@ -93,13 +93,9 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
     }
     return (
       <button key={p.id} type="button" className="pos-product-card" onClick={() => onAddProduct(p)}>
-        <span className="pos-product-card__name">{p.name}</span>
-        {p.sku ? (
-          <span className="pos-product-card__code">
-            {t('pos.productCode')}: {p.sku}
-          </span>
-        ) : null}
         <span className="pos-product-card__price">{fmt(p.sellingPrice)}</span>
+        {p.sku ? <span className="pos-product-card__code">{p.sku}</span> : null}
+        <span className="pos-product-card__name">{p.name}</span>
       </button>
     );
   };

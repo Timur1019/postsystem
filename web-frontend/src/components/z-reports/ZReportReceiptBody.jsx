@@ -59,6 +59,25 @@ export default function ZReportReceiptBody({ z }) {
         <Row label={t('zReports.saleCard')} value={`${fmtMoney(z.cardTotal)} ${currency}`} />
         <Row label={t('zReports.saleVat')} value={`${fmtMoney(z.vatAmount)} ${currency}`} />
         <Row label={t('zReports.saleCount')} value={String(z.salesCount ?? 0)} />
+        {Number(z.lineDiscountTotal ?? 0) > 0 ? (
+          <Row
+            label={t('fiscalReceipt.lineDiscountsSum')}
+            value={`${fmtMoney(z.lineDiscountTotal)} ${currency}`}
+          />
+        ) : null}
+        {Number(z.orderDiscountTotal ?? 0) > 0 ? (
+          <Row
+            label={t('fiscalReceipt.orderDiscountSum')}
+            value={`${fmtMoney(z.orderDiscountTotal)} ${currency}`}
+          />
+        ) : null}
+        {Number(z.discountTotal ?? 0) > 0 ? (
+          <Row
+            label={t('fiscalReceipt.discountsSum')}
+            value={`${fmtMoney(z.discountTotal)} ${currency}`}
+            bold
+          />
+        ) : null}
       </section>
 
       <div className="receipt-divider my-2 border-t border-dotted border-black" />

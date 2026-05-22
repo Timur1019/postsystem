@@ -17,6 +17,9 @@ public record SaleResponse(
     BigDecimal subtotal,
     BigDecimal taxTotal,
     BigDecimal discountTotal,
+    BigDecimal lineDiscountTotal,
+    BigDecimal orderDiscountAmount,
+    BigDecimal orderDiscountPercent,
     BigDecimal totalAmount,
     /** Сумма возврата (для VOIDED / REFUNDED — равна сумме чека). */
     BigDecimal returnAmount,

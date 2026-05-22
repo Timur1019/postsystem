@@ -72,7 +72,7 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
         List<SaleItem> items = new ArrayList<>();
         BigDecimal subtotal = BigDecimal.ZERO;
         BigDecimal taxTotal = BigDecimal.ZERO;
-        BigDecimal discountTotal = BigDecimal.ZERO;
+        BigDecimal lineDiscountTotal = BigDecimal.ZERO;
 
         for (SaleItemRequest itemReq : req.items()) {
             Product product = productRepository.findById(itemReq.productId())
@@ -110,7 +110,7 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
 
             subtotal = subtotal.add(netLine);
             taxTotal = taxTotal.add(taxAmt);
-            discountTotal = discountTotal.add(lineDiscount);
+            lineDiscountTotal = lineDiscountTotal.add(lineDiscount);
 
             product.setStockQuantity(product.getStockQuantity() - itemReq.quantity());
             productRepository.save(product);
@@ -122,7 +122,12 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
                 .build());
         }
 
-        BigDecimal total = subtotal.add(taxTotal).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal grossTotal = subtotal.add(taxTotal).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal orderDiscount = normalizeOrderDiscount(req.orderDiscountAmount(), grossTotal);
+        BigDecimal orderDiscountPercent = resolveOrderDiscountPercent(req.orderDiscountPercent(), orderDiscount, grossTotal);
+        BigDecimal total = grossTotal.subtract(orderDiscount).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal discountTotal = lineDiscountTotal.add(orderDiscount).setScale(2, RoundingMode.HALF_UP);
+        lineDiscountTotal = lineDiscountTotal.setScale(2, RoundingMode.HALF_UP);
 
         Sale.ReceiptType receiptType = SaleEnumParser.receiptType(req.receiptType());
         Sale.CardType cardType = SaleEnumParser.cardType(req.cardType());
@@ -143,7 +148,10 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
             .cashierShift(shift)
             .subtotal(subtotal.setScale(2, RoundingMode.HALF_UP))
             .taxTotal(taxTotal.setScale(2, RoundingMode.HALF_UP))
-            .discountTotal(discountTotal.setScale(2, RoundingMode.HALF_UP))
+            .discountTotal(discountTotal)
+            .lineDiscountTotal(lineDiscountTotal)
+            .orderDiscountAmount(orderDiscount)
+            .orderDiscountPercent(orderDiscountPercent)
             .totalAmount(total)
             .paymentMethod(paymentMethod)
             .cashAmount(amounts.cash())
@@ -163,5 +171,32 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
         salesLedgerCacheService.onSaleChanged(saved);
         LogUtil.info(SaleCheckoutServiceImpl.class, "Sale completed: id={}, receipt={}", saved.getId(), saved.getReceiptNumber());
         return saleMapper.toResponse(saved);
+    }
+
+    private static BigDecimal normalizeOrderDiscount(BigDecimal amount, BigDecimal grossTotal) {
+        if (amount == null || amount.signum() <= 0) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+        BigDecimal capped = amount.min(grossTotal.max(BigDecimal.ZERO));
+        return capped.max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static BigDecimal resolveOrderDiscountPercent(
+        BigDecimal requestedPercent,
+        BigDecimal orderDiscount,
+        BigDecimal grossTotal
+    ) {
+        if (orderDiscount.signum() <= 0) {
+            return null;
+        }
+        if (requestedPercent != null && requestedPercent.signum() > 0) {
+            return requestedPercent.min(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
+        }
+        if (grossTotal.signum() <= 0) {
+            return null;
+        }
+        return orderDiscount
+            .multiply(new BigDecimal("100"))
+            .divide(grossTotal, 2, RoundingMode.HALF_UP);
     }
 }

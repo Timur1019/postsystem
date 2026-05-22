@@ -1,6 +1,7 @@
 package com.pos.dto.sale;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 
@@ -20,5 +21,9 @@ public record CreateSaleRequest(
     String notes,
     UUID customerId,
     String receiptType,
-    String cardType
+    String cardType,
+    /** Скидка на весь чек (сумма), после скидок по строкам. */
+    @DecimalMin("0") BigDecimal orderDiscountAmount,
+    /** Скидка на чек, % (опционально, для отчётов). */
+    @DecimalMin("0") BigDecimal orderDiscountPercent
 ) {}

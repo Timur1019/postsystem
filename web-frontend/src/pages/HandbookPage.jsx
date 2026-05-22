@@ -42,7 +42,7 @@ export default function HandbookPage({ scope = 'admin' }) {
   }
 
   return (
-    <div className="handbook-page">
+    <div className={`handbook-page${scope === 'cashier' ? ' handbook-page--cashier' : ''}`}>
       <header className="handbook-page__header">
         <div className="handbook-page__header-icon">
           <BookOpen size={22} aria-hidden />

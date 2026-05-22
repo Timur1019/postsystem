@@ -1,16 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { lineDiscountAmount } from '../../store/cartStore';
 import { fmtMoney as fmt, fmtMoneyCompact as fmtCompact } from '../../utils/formatMoney';
 
 export default function PosTotalsBlock({ items = [], total, discountTotal = 0, className = '' }) {
   const { t } = useTranslation();
   const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
   const discountPct =
-    items.length > 0
-      ? Math.round(
-          (items.reduce((s, i) => s + lineDiscountAmount(i), 0) / Math.max(1, subtotal)) * 100
-        )
-      : 0;
+    subtotal > 0 && discountTotal > 0 ? Math.round((discountTotal / subtotal) * 100) : 0;
   const hasDiscount = discountTotal > 0.001;
   const showAllRows =
     className.includes('pos-totals-block--rail') || className.includes('pos-totals-block--checkout');

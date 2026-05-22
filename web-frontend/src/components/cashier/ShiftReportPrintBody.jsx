@@ -53,8 +53,24 @@ export default function ShiftReportPrintBody({ report }) {
         <Row label={t('pos.shiftCash')} value={`${fmtMoney(report.cashAmount)} ${currency}`} />
         <Row label={t('pos.shiftCard')} value={`${fmtMoney(report.cardAmount)} ${currency}`} />
         <Row label={t('pos.shiftVat')} value={`${fmtMoney(report.vatAmount)} ${currency}`} />
+        {Number(report.lineDiscountTotal ?? 0) > 0 ? (
+          <Row
+            label={t('fiscalReceipt.lineDiscountsSum')}
+            value={`${fmtMoney(report.lineDiscountTotal)} ${currency}`}
+          />
+        ) : null}
+        {Number(report.orderDiscountTotal ?? 0) > 0 ? (
+          <Row
+            label={t('fiscalReceipt.orderDiscountSum')}
+            value={`${fmtMoney(report.orderDiscountTotal)} ${currency}`}
+          />
+        ) : null}
         {Number(report.discountTotal) > 0 ? (
-          <Row label={t('pos.summaryDiscount')} value={`${fmtMoney(report.discountTotal)} ${currency}`} />
+          <Row
+            label={t('fiscalReceipt.discountsSum')}
+            value={`${fmtMoney(report.discountTotal)} ${currency}`}
+            bold
+          />
         ) : null}
       </section>
     </>

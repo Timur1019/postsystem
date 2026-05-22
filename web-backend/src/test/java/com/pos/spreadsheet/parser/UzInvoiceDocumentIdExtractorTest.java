@@ -47,7 +47,7 @@ class UzInvoiceDocumentIdExtractorTest {
             "Сок", "02202002001544001 - Описание", "dona", "1", "1500", "12", 4, "IS-00008429"
         );
         assertNotNull(row);
-        assertEquals("IS-00008429-IKPU-02202002001544001", row.get("sku"));
+        assertEquals("IS-00008429-L-4", row.get("sku"));
         assertEquals("IS-00008429", row.get(UzInvoiceDocumentIdExtractor.ROW_KEY_UZ_INVOICE_DOCUMENT_ID));
     }
 }

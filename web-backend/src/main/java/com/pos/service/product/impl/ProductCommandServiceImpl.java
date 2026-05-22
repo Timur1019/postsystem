@@ -50,12 +50,19 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
 
     @Override
     public ProductResponse createProduct(CreateProductRequest req) {
-        Optional<Product> bySku = productRepository.findBySku(req.sku());
-        if (bySku.isPresent()) {
-            if (bySku.get().isActive()) {
-                throw new BadRequestException("SKU already exists: " + req.sku());
+        if (!StringUtils.hasText(req.uzInvoiceDocumentId())) {
+            Optional<Product> bySku = productRepository.findBySku(req.sku());
+            if (bySku.isPresent()) {
+                if (bySku.get().isActive()) {
+                    throw new BadRequestException("SKU already exists: " + req.sku());
+                }
+                return reactivateFromCreate(req, bySku.get());
             }
-            return reactivateFromCreate(req, bySku.get());
+        } else {
+            Optional<Product> bySku = productRepository.findBySku(req.sku());
+            if (bySku.isPresent() && !bySku.get().isActive()) {
+                return reactivateFromCreate(req, bySku.get());
+            }
         }
 
         Category category = req.categoryId() != null

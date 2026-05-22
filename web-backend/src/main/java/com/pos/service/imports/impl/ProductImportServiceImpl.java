@@ -122,7 +122,7 @@ public class ProductImportServiceImpl implements ProductImportService {
         List<String> errors = new ArrayList<>();
         int created = 0;
         int skipped = 0;
-        Set<String> seenSkus = new HashSet<>();
+        Set<String> seenRowKeys = new HashSet<>();
 
         List<Store> activeStores = storeRepository.findAll().stream().filter(Store::isActive).toList();
 
@@ -144,9 +144,9 @@ public class ProductImportServiceImpl implements ProductImportService {
                 continue;
             }
 
-            String sku = row.sku().trim();
-            if (!seenSkus.add(sku.toLowerCase(Locale.ROOT))) {
-                errors.add("Строка " + row.rowNum() + ": дубликат SKU в файле");
+            String rowKey = ProductImportSupport.rowDedupeKey(row);
+            if (!seenRowKeys.add(rowKey)) {
+                errors.add("Строка " + row.rowNum() + ": дубликат позиции в файле");
                 skipped++;
                 continue;
             }

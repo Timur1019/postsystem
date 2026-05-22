@@ -10,7 +10,8 @@ import { clampPayAmount, round2 } from '../../utils/taxAmounts';
 import { resolveProductUnitPrice } from '../../utils/productPrice';
 import { categoryApi, productApi, saleApi } from '../../services/api';
 import { useCashierShift, useOpenCashierShift } from '../../hooks/useCashierShift';
-import { useCartStore, lineDiscountAmount, lineSubtotal } from '../../store/cartStore';
+import { useCartStore } from '../../store/cartStore';
+import PosOrderDiscountModal from '../../components/cashier/PosOrderDiscountModal';
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import PosOrderPanel from '../../components/cashier/PosOrderPanel';
@@ -20,6 +21,7 @@ import PosPaymentFlow from '../../components/cashier/PosPaymentFlow';
 import PosReturnModal from '../../components/cashier/PosReturnModal';
 import { useCashierShiftModal } from '../../contexts/CashierShiftModalContext';
 import { usePosShell } from '../../contexts/PosShellContext';
+import { useCashierCompactLayout } from '../../hooks/useCashierCompactLayout';
 import { DoorOpen } from 'lucide-react';
 
 const VIEW_MODE_KEY = 'pos-catalog-view-mode';
@@ -50,9 +52,11 @@ export default function PosPage() {
   const [selectedLineId, setSelectedLineId] = useState(null);
   const [payOpen, setPayOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
-  const [posPane, setPosPane] = useState('register');
+  const [discountOpen, setDiscountOpen] = useState(false);
+  const [posPane, setPosPane] = useState('catalog');
   const { setShell } = usePosShell() ?? {};
   const { open: shiftModalOpen, openShift: openShiftModal } = useCashierShiftModal();
+  const layoutCompact = useCashierCompactLayout();
 
   const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
@@ -63,7 +67,15 @@ export default function PosPage() {
   const removeItem = useCartStore((s) => s.removeItem);
   const clearCart = useCartStore((s) => s.clearCart);
   const getTotal = useCartStore((s) => s.getTotal);
+  const getLinesTotal = useCartStore((s) => s.getLinesTotal);
+  const getOrderDiscount = useCartStore((s) => s.getOrderDiscount);
   const getDiscountTotal = useCartStore((s) => s.getDiscountTotal);
+  const setOrderDiscountAmount = useCartStore((s) => s.setOrderDiscountAmount);
+  const setOrderDiscountPercent = useCartStore((s) => s.setOrderDiscountPercent);
+  const clearOrderDiscount = useCartStore((s) => s.clearOrderDiscount);
+  const getCheckoutLineItems = useCartStore((s) => s.getCheckoutLineItems);
+  const getCheckoutOrderDiscountAmount = useCartStore((s) => s.getCheckoutOrderDiscountAmount);
+  const getCheckoutOrderDiscountPercent = useCartStore((s) => s.getCheckoutOrderDiscountPercent);
   const itemCount = useCartStore((s) => s.itemCount);
 
   const { data: shift } = useCashierShift(storeId);
@@ -132,10 +144,15 @@ export default function PosPage() {
   }, []);
 
   const handleGoToCatalog = useCallback(() => {
+    setPayOpen(false);
     setPosPane('catalog');
     setCatalogBrowse('categories');
     setSelectedCategoryId(ALL_CATEGORY_ID);
     setSearch('');
+  }, []);
+
+  const handleClosePayment = useCallback(() => {
+    setPayOpen(false);
   }, []);
 
   const handleGoToRegister = useCallback(() => {
@@ -147,9 +164,12 @@ export default function PosPage() {
     if (!setShell) return undefined;
     setShell({
       posPane,
+      layoutCompact,
+      payOpen,
       catalogBrowse,
       onGoToCatalog: handleGoToCatalog,
       onGoToRegister: handleGoToRegister,
+      onClosePayment: handleClosePayment,
       searchActive,
       viewMode,
       onViewModeChange: handleViewModeChange,
@@ -164,6 +184,9 @@ export default function PosPage() {
     searchActive,
     viewMode,
     handleViewModeChange,
+    layoutCompact,
+    payOpen,
+    handleClosePayment,
   ]);
 
   const addProductToCart = useCallback(
@@ -257,11 +280,9 @@ export default function PosPage() {
         cashAmount: payment.cashAmount,
         cardAmount: payment.cardAmount,
         amountTendered: payment.amountTendered,
-        items: items.map((i) => ({
-          productId: i.productId,
-          quantity: i.quantity,
-          discount: lineDiscountAmount(i),
-        })),
+        items: getCheckoutLineItems(),
+        orderDiscountAmount: getCheckoutOrderDiscountAmount(),
+        orderDiscountPercent: getCheckoutOrderDiscountPercent(),
       }),
     onSuccess: async (res) => {
       clearCart();
@@ -315,6 +336,8 @@ export default function PosPage() {
     updateQuantity(productId, item.quantity + delta);
   };
 
+  const linesTotal = getLinesTotal();
+  const orderDiscount = getOrderDiscount();
   const total = getTotal();
   const discountTotal = getDiscountTotal();
   const storeBlocked = noAssignment || multipleAssignment;
@@ -352,10 +375,12 @@ export default function PosPage() {
               </div>
             </div>
           ) : null}
-          <div className={`cashier-register__split cashier-register__split--pane cashier-register__split--${posPane}`}>
+          <div
+            className={`cashier-register__split cashier-register__split--pane cashier-register__split--${posPane}`}
+          >
             <div className="cashier-register__workspace">
-              <div className="cashier-register__main">
-                <div className="cashier-register__pane cashier-register__pane--catalog">
+              <div className="cashier-register__stage">
+                <div className="cashier-register__catalog-col">
                   <PosCatalogPanel
                     ref={searchInputRef}
                     search={search}
@@ -375,9 +400,13 @@ export default function PosPage() {
                     viewMode={viewMode}
                   />
                 </div>
-                <div className="cashier-register__pane cashier-register__pane--register">
+
+                <div className="cashier-register__order-col">
                   <PosOrderPanel
+                    variant="register"
+                    showTotalsFoot={payOpen}
                     items={items}
+                    total={total}
                     selectedLineId={selectedLineId}
                     onSelectLine={setSelectedLineId}
                     onQtyDelta={handleQtyDelta}
@@ -386,37 +415,57 @@ export default function PosPage() {
                     onRemove={removeItem}
                   />
                 </div>
+
+                <aside
+                  className={`cashier-register__actions-col${payOpen ? ' cashier-register__actions-col--pay' : ''}`}
+                >
+                  {payOpen ? (
+                    <PosPaymentFlow
+                      terminal
+                      open
+                      onClose={handleClosePayment}
+                      items={items}
+                      total={total}
+                      discountTotal={discountTotal}
+                      isPending={checkoutMutation.isPending}
+                      onConfirm={handleConfirmPayment}
+                      className="pos-pay-panel--register-rail"
+                      showBackToCheck
+                      compactFooter
+                    />
+                  ) : (
+                    <PosRegisterFooter
+                      items={items}
+                      total={total}
+                      discountTotal={discountTotal}
+                      onReturn={() => setReturnOpen(true)}
+                      onClear={clearCart}
+                      canClear={items.length > 0}
+                      onDiscount={() => {
+                        if (items.length === 0) {
+                          toast.error(t('pos.cartEmpty'));
+                          return;
+                        }
+                        setDiscountOpen(true);
+                      }}
+                      onCheckout={() => {
+                        setPosPane('register');
+                        setPayOpen(true);
+                      }}
+                      checkoutDisabled={
+                        items.length === 0 || checkoutMutation.isPending || !shiftIsOpen
+                      }
+                    />
+                  )}
+                </aside>
               </div>
-              <PosRegisterFooter
-                items={items}
-                total={total}
-                discountTotal={discountTotal}
-                onReturn={() => setReturnOpen(true)}
-                onClear={clearCart}
-                canClear={items.length > 0}
-                onCheckout={() => {
-                  setPosPane('register');
-                  setPayOpen(true);
-                }}
-                checkoutDisabled={items.length === 0 || checkoutMutation.isPending || !shiftIsOpen}
-              />
             </div>
           </div>
         </>
       )}
 
-      <PosPaymentFlow
-        asModal
-        open={payOpen}
-        onClose={() => setPayOpen(false)}
-        items={items}
-        total={total}
-        discountTotal={discountTotal}
-        isPending={checkoutMutation.isPending}
-        onConfirm={handleConfirmPayment}
-      />
-
       <PosReturnModal
+        terminal
         open={returnOpen}
         onClose={() => setReturnOpen(false)}
         onSuccess={() => {
@@ -426,6 +475,16 @@ export default function PosPage() {
         }}
       />
 
+      <PosOrderDiscountModal
+        terminal
+        open={discountOpen}
+        onClose={() => setDiscountOpen(false)}
+        linesTotal={linesTotal}
+        orderDiscount={orderDiscount}
+        onApplyAmount={setOrderDiscountAmount}
+        onApplyPercent={setOrderDiscountPercent}
+        onClear={clearOrderDiscount}
+      />
     </div>
   );
 }

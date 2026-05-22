@@ -9,14 +9,21 @@ export default function PosOrderComposition({
   discountTotal = 0,
   className = '',
   compact = false,
+  variant = 'default',
+  headline = 'composition',
 }) {
   const { t } = useTranslation();
   const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+  const headlineKey = headline === 'saleSummary' ? 'pos.saleSummary' : 'pos.orderComposition';
 
   return (
-    <div className={`pos-order-composition${className ? ` ${className}` : ''}`}>
+    <div
+      className={`pos-order-composition${variant === 'terminal' ? ' pos-order-composition--terminal' : ''}${
+        className ? ` ${className}` : ''
+      }`}
+    >
       <div className="pos-order-composition__head">
-        <span className="pos-order-composition__label">{t('pos.orderComposition')}</span>
+        <span className="pos-order-composition__label">{t(headlineKey)}</span>
         <span className="pos-order-composition__badge">
           {t('pos.orderPositions', { count: items.length })}
         </span>

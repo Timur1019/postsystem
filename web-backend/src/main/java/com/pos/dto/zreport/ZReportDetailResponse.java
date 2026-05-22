@@ -28,5 +28,8 @@ public record ZReportDetailResponse(
     Integer salesCount,
     Integer returnsCount,
     String firstReceiptNumber,
-    String lastReceiptNumber
+    String lastReceiptNumber,
+    BigDecimal discountTotal,
+    BigDecimal lineDiscountTotal,
+    BigDecimal orderDiscountTotal
 ) {}

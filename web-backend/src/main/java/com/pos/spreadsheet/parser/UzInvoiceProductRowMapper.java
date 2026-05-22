@@ -56,16 +56,7 @@ public final class UzInvoiceProductRowMapper {
             normDoc = uzInvoiceDocumentId.trim().toUpperCase(Locale.ROOT);
         }
 
-        String sku;
-        if (normDoc != null) {
-            if (StringUtils.hasText(ikpu)) {
-                sku = normDoc + "-IKPU-" + ikpu;
-            } else {
-                sku = normDoc + "-INV-" + rowNum;
-            }
-        } else {
-            sku = StringUtils.hasText(ikpu) ? "IKPU-" + ikpu : "INV-" + rowNum;
-        }
+        String sku = ProductImportParseUtil.resolveUzInvoiceSku(normDoc, rowNum);
 
         Map<String, String> map = new LinkedHashMap<>();
         map.put("sku", sku);

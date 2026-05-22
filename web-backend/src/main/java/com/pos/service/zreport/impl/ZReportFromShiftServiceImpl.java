@@ -95,6 +95,9 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
             .returnsCount(bounds.returnsCount())
             .firstReceiptNumber(bounds.firstReceipt())
             .lastReceiptNumber(bounds.lastReceipt())
+            .discountTotal(report.discountTotal())
+            .lineDiscountTotal(report.lineDiscountTotal())
+            .orderDiscountTotal(report.orderDiscountTotal())
             .build();
 
         try {
@@ -136,6 +139,8 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
                 shift.getCashAmount(),
                 shift.getCardAmount(),
                 shift.getVatAmount(),
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 BigDecimal.ZERO
             );
             createForClosedShift(shift, report);

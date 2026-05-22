@@ -54,8 +54,14 @@ export default function NumericKeypad({
     onChange(toAmountString(exactAmount));
   };
 
-  const setQuick = (amount) => {
+  const applyQuick = (amount, mode = 'set') => {
     if (disabled || amount == null) return;
+    if (mode === 'add') {
+      const cur = Number(String(value).replace(',', '.')) || 0;
+      const next = Math.round((cur + Number(amount)) * 100) / 100;
+      onChange(toAmountString(next));
+      return;
+    }
     onChange(toAmountString(amount));
   };
 
@@ -71,7 +77,7 @@ export default function NumericKeypad({
               type="button"
               className="pos-keypad__quick-btn"
               disabled={disabled}
-              onClick={() => setQuick(action.amount)}
+              onClick={() => applyQuick(action.amount, action.mode)}
             >
               {action.label}
             </button>

@@ -175,6 +175,9 @@ CREATE TABLE z_reports (
     returns_count           INT DEFAULT 0,
     first_receipt_number    VARCHAR(50),
     last_receipt_number     VARCHAR(50),
+    discount_total          NUMERIC(18, 2) DEFAULT 0,
+    line_discount_total     NUMERIC(18, 2) DEFAULT 0,
+    order_discount_total    NUMERIC(18, 2) DEFAULT 0,
     UNIQUE (store_id, z_number)
 );
 
@@ -299,6 +302,9 @@ CREATE TABLE sales (
     subtotal        NUMERIC(18, 2) NOT NULL,
     tax_total       NUMERIC(18, 2) NOT NULL DEFAULT 0,
     discount_total  NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    line_discount_total NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    order_discount_amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
+    order_discount_percent NUMERIC(5, 2),
     total_amount    NUMERIC(18, 2) NOT NULL,
     payment_method  VARCHAR(20) NOT NULL,  -- CASH, CARD, MPESA, MIXED
     receipt_type    VARCHAR(20) DEFAULT 'SALE',

@@ -142,6 +142,10 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         String sku
     );
 
+    boolean existsByUzInvoiceDocumentIdAndIsActiveTrue(String uzInvoiceDocumentId);
+
+    Optional<Product> findFirstByUzInvoiceDocumentIdAndIsActiveTrue(String uzInvoiceDocumentId);
+
     @Query(value = """
         SELECT CAST(p.id AS varchar) AS product_id,
                p.name AS product_name,

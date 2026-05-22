@@ -1,0 +1,841 @@
+/* POS layout — каталог | чек | оплата */
+
+.cashier-register {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cashier-register__workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.cashier-register__stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cashier-gap, 10px);
+}
+
+.cashier-register__catalog-col,
+.cashier-register__order-col,
+.cashier-register__actions-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cashier-register__catalog-col > .pos-catalog-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.cashier-register__order-col > .pos-order-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.cashier-register__actions-col > .pos-order-rail {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+/* Каталог: только товары */
+.cashier-register__split--catalog .cashier-register__actions-col,
+.cashier-register__split--catalog .cashier-register__order-col {
+  display: none;
+}
+
+.cashier-register__split--catalog .cashier-register__catalog-col {
+  flex: 1 1 auto;
+}
+
+/* Чек: слева таблица, справа возврат / итоги / кнопки */
+.cashier-register__split--register .cashier-register__catalog-col {
+  display: none;
+}
+
+.cashier-register__split--register .cashier-register__stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, clamp(300px, 34vw, 420px));
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.cashier-register__split--register .cashier-register__actions-col,
+.cashier-register__split--register .cashier-register__order-col {
+  background: var(--pos-surface, #151b26);
+  border: 1px solid var(--pos-border, #2a3548);
+  border-radius: var(--cashier-block-radius, 14px);
+  box-shadow: 0 4px 24px rgb(0 0 0 / 0.35);
+}
+
+.cashier-register__split--register .cashier-register__order-col .pos-order-panel {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+@media (min-width: 800px) {
+  .cashier-register__split--catalog .cashier-register__catalog-col {
+    background: var(--pos-surface, #151b26);
+    border: 1px solid var(--pos-border, #2a3548);
+    border-radius: var(--cashier-block-radius, 14px);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.35);
+  }
+
+  .cashier-register__split--catalog .cashier-register__catalog-col > .pos-catalog-panel {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+}
+
+/* —— Текущий чек: таблица как на макете —— */
+.cashier-app .pos-order-panel {
+  border: none;
+  background: transparent;
+}
+
+.cashier-app .pos-order-panel__head {
+  background: var(--pos-surface-elevated, #1c2433);
+  border-bottom: 1px solid var(--pos-border, #2a3548);
+  padding: 12px 16px;
+}
+
+.cashier-app .pos-order-panel__title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pos-muted, #94a3b8);
+}
+
+.cashier-app .pos-order-panel__badge {
+  display: none;
+}
+
+.cashier-app .pos-cart-table__head {
+  background: var(--pos-surface-elevated, #1c2433);
+  border-bottom: 1px solid var(--pos-border, #2a3548);
+}
+
+.cashier-app .pos-cart-table__head .pos-cart-table__col {
+  color: var(--pos-muted, #94a3b8);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  border-right-color: var(--pos-border, #2a3548);
+  padding: 10px 12px;
+}
+
+.cashier-app .pos-cart-table__body {
+  background: var(--pos-surface, #151b26);
+}
+
+.cashier-app .pos-cart-table__row {
+  background: var(--pos-surface, #151b26);
+  border-bottom-color: var(--pos-border, #2a3548);
+}
+
+.cashier-app .pos-cart-table__col {
+  border-right-color: var(--pos-border, #2a3548);
+}
+
+.cashier-app .pos-cart-table__empty-hint {
+  padding: 24px 16px;
+  font-style: italic;
+  color: var(--pos-muted, #94a3b8);
+}
+
+/* Текущий чек — таблица и итоги (макет) */
+.cashier-app .pos-order-panel--register {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.cashier-app .pos-order-panel--register .pos-order-panel__list {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cashier-app .pos-order-panel--register .pos-cart-table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.cashier-app .pos-order-panel--register .pos-cart-table__row {
+  align-items: center;
+}
+
+.cashier-app.cashier-app--terminal .pos-order-panel--register .pos-cart-table__row.is-active {
+  background: rgb(61 255 168 / 0.06);
+  box-shadow: inset 3px 0 0 var(--pos-green, #3dffa8);
+}
+
+.cashier-app.cashier-app--light .pos-order-panel--register .pos-cart-table__row.is-active {
+  background: var(--pos-green-soft);
+  box-shadow: inset 3px 0 0 var(--pos-green);
+}
+
+.cashier-app .pos-order-panel--register .pos-cart-table__name {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pos-text, #f1f5f9);
+}
+
+.cashier-app .pos-order-panel--register .pos-cart-table__sku {
+  margin-top: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--pos-green, #3dffa8);
+  -webkit-line-clamp: 2;
+}
+
+.cashier-app .pos-order-panel--register .pos-cart-table__price-btn,
+.cashier-app .pos-order-panel--register .pos-cart-table__price-btn span {
+  color: var(--pos-text, #f1f5f9);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.cashier-app .pos-order-panel--register .pos-cart-table__sum {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--pos-money, #f5c842);
+}
+
+.cashier-app.cashier-app--terminal .pos-order-panel--register .pos-qty-control {
+  background: #243044;
+  border: 1px solid var(--pos-border, #2a3548);
+  border-radius: 10px;
+}
+
+.cashier-app.cashier-app--terminal .pos-order-panel--register .pos-qty-control__btn {
+  color: var(--pos-text, #f1f5f9);
+}
+
+.cashier-app.cashier-app--terminal .pos-order-panel--register .pos-qty-control__btn:hover {
+  background: rgb(61 255 168 / 0.12);
+  color: var(--pos-green, #3dffa8);
+}
+
+.cashier-app.cashier-app--terminal .pos-order-panel--register .pos-qty-control__val {
+  color: var(--pos-text, #f1f5f9);
+  font-weight: 800;
+}
+
+.cashier-app.cashier-app--terminal .pos-order-panel--register .pos-cart-table__remove-btn {
+  background: rgb(127 29 29 / 0.35);
+  border-color: rgb(248 113 113 / 0.45);
+  color: #fca5a5;
+}
+
+.cashier-app.cashier-app--terminal .pos-order-panel--register .pos-cart-table__remove-btn:hover {
+  background: rgb(185 28 28 / 0.5);
+  border-color: #f87171;
+  color: #fff;
+}
+
+.cashier-app .pos-order-panel--register .pos-cart-table__col--remove {
+  background: transparent;
+}
+
+.cashier-app.cashier-app--terminal .pos-order-panel__totals-foot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--pos-border, #2a3548);
+  background: #121820;
+}
+
+.cashier-app .pos-order-panel__totals-foot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--pos-border, #e5e7eb);
+  background: var(--pos-surface-elevated, #f8faf9);
+}
+
+.cashier-app .pos-order-panel__totals-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cashier-app .pos-order-panel__totals-meta p {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--pos-muted, #94a3b8);
+}
+
+.cashier-app .pos-order-panel__totals-meta span {
+  color: var(--pos-text, #f1f5f9);
+  font-weight: 600;
+}
+
+.cashier-app .pos-order-panel__totals-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.cashier-app .pos-order-panel__totals-hero-label {
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pos-money, #f5c842);
+}
+
+.cashier-app .pos-order-panel__totals-hero-value {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--pos-money, #f5c842);
+  line-height: 1;
+}
+
+.cashier-app .pos-order-panel--register .pos-order-panel__bottom {
+  display: none;
+}
+
+/* —— Каталог: поиск + «Все товары» + категории —— */
+.cashier-app .pos-catalog-panel {
+  border: none;
+  background: transparent;
+}
+
+.cashier-app .pos-search-bar__field {
+  background: var(--pos-surface-elevated, #1c2433);
+  border: 1px solid var(--pos-border, #2a3548);
+  border-radius: 12px;
+  height: 48px;
+}
+
+.cashier-app .pos-category-browse {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+.cashier-app.cashier-app--terminal .pos-category-tile--all {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  min-height: 72px;
+  padding: 14px 16px;
+  background: linear-gradient(90deg, rgb(61 255 168 / 0.1) 0%, var(--pos-surface-elevated, #1c2433) 55%);
+  border: 1px solid rgb(61 255 168 / 0.35);
+  border-radius: 12px;
+}
+
+.cashier-app.cashier-app--light .pos-category-tile--all {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  min-height: 72px;
+  padding: 14px 16px;
+  background: linear-gradient(90deg, var(--pos-green-soft) 0%, #fff 55%);
+  border: 1px solid rgb(0 104 71 / 0.2);
+  border-radius: 12px;
+}
+
+.cashier-app .pos-category-tile--all .pos-category-tile__hint {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--pos-muted, #94a3b8);
+}
+
+.cashier-app .pos-category-tile:not(.pos-category-tile--all) {
+  min-height: 100px;
+  justify-content: flex-end;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.cashier-app .pos-category-tile__name {
+  font-weight: 800;
+  font-size: 0.9375rem;
+}
+
+.cashier-app .pos-catalog-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Чек: правая колонка — возврат, итоги, скидка/очистить, оплата */
+.pos-order-rail {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--pos-border, #2a3548);
+  background: var(--pos-surface-elevated, #1c2433);
+}
+
+.pos-order-rail--side {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  border-top: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 16px 18px 18px;
+  gap: 12px;
+}
+
+.pos-order-rail__spacer {
+  flex: 1 1 auto;
+  min-height: 8px;
+}
+
+.pos-order-rail__return {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--pos-border, #2a3548);
+  background: var(--pos-surface, #151b26);
+  color: var(--pos-text, #f1f5f9);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.cashier-app.cashier-app--terminal .pos-order-rail__return:hover {
+  border-color: rgb(61 255 168 / 0.4);
+  color: var(--pos-green, #3dffa8);
+}
+
+.cashier-app.cashier-app--light .pos-order-rail__return:hover {
+  border-color: rgb(0 104 71 / 0.35);
+  color: var(--pos-green);
+  background: var(--pos-green-soft);
+}
+
+.cashier-app.cashier-app--terminal .pos-order-rail__btn--discount {
+  border-color: rgb(61 255 168 / 0.35);
+  color: var(--pos-green, #3dffa8);
+}
+
+.cashier-app.cashier-app--light .pos-order-rail__btn--discount {
+  border-color: rgb(0 104 71 / 0.25);
+  color: var(--pos-green);
+  background: var(--pos-green-soft);
+}
+
+.pos-totals-block--order-rail {
+  padding: 12px 14px;
+  border: 1px solid var(--pos-border, #2a3548);
+  border-radius: 12px;
+  background: var(--pos-surface, #151b26);
+}
+
+.pos-totals-block--order-rail .pos-totals-block__hero {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.pos-totals-block--order-rail .pos-totals-block__hero-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pos-muted, #94a3b8);
+}
+
+.pos-totals-block--order-rail .pos-totals-block__hero-value {
+  text-align: left;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  color: var(--pos-money, #f5c842);
+}
+
+.pos-order-rail__btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pos-order-rail__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--pos-border, #2a3548);
+  background: var(--pos-surface, #151b26);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pos-text, #f1f5f9);
+  cursor: pointer;
+}
+
+.pos-order-rail__btn--clear {
+  border-color: rgb(248 113 113 / 0.45);
+  background: rgb(248 113 113 / 0.12);
+  color: #fca5a5;
+}
+
+.pos-order-rail__btn--clear:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pos-order-rail__pay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 12px;
+  background: #3d4f3a;
+  color: rgb(255 255 255 / 0.65);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.cashier-app.cashier-app--terminal .pos-order-rail__pay:not(:disabled) {
+  background: var(--pos-green, #3dffa8);
+  color: #0a1218;
+  box-shadow: 0 0 24px rgb(61 255 168 / 0.22);
+}
+
+.cashier-app.cashier-app--light .pos-order-rail__pay:not(:disabled) {
+  background: var(--pos-green);
+  color: #fff;
+  box-shadow: 0 4px 14px rgb(0 104 71 / 0.25);
+}
+
+.pos-order-rail__pay:disabled {
+  cursor: not-allowed;
+}
+
+/* Оплата — левая колонка (numpad как на макете) */
+.pos-pay-panel--rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  background: var(--pos-bg, #0c1018);
+}
+
+.pos-pay-panel--rail .pos-pay-panel__rail-head {
+  flex-shrink: 0;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--pos-border, #2a3548);
+}
+
+.pos-pay-panel--rail .pos-pay-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pos-pay-panel--rail .pos-pay-panel__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.pos-pay-panel--rail .pos-pay-panel__step {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Наличные — терминальный блок */
+.pos-pay-cash-panel--terminal {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 0;
+  gap: 10px;
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: var(--pos-text, #f1f5f9);
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__summary-row strong {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__received-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid rgb(61 255 168 / 0.35);
+  background: rgb(61 255 168 / 0.08);
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__received-label {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pos-green, #3dffa8);
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__received-value {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--pos-green, #3dffa8);
+  line-height: 1;
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__change-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: var(--pos-money, #f5c842);
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__change-row strong {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--pos-money, #f5c842);
+}
+
+.pos-pay-cash-panel--terminal .pos-keypad {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+.pos-pay-cash-panel--terminal .pos-keypad__grid {
+  flex: 1 1 auto;
+  grid-template-rows: repeat(4, minmax(52px, 1fr));
+}
+
+.pos-pay-panel--rail .pos-pay-panel__actions-wrap {
+  flex-shrink: 0;
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--pos-border, #2a3548);
+  background: var(--pos-surface-elevated, #1c2433);
+}
+
+.pos-pay-panel--rail .pos-pay-panel__primary {
+  width: 100%;
+  min-height: 56px;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 12px;
+}
+
+.pos-pay-panel--rail .pos-pay-panel__primary:disabled {
+  background: #3d4f3a;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.pos-pay-panel--rail .pos-keypad__quick-btn {
+  min-height: 48px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.pos-pay-panel--rail .pos-keypad__key {
+  min-height: 52px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.pos-pay-panel--rail .pos-keypad__key--action {
+  color: #f9a8a8;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pos-pay-panel--rail .pos-pay-panel__rail-head {
+  flex-shrink: 0;
+  padding: 16px 16px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--pos-border, #2a3548);
+}
+
+.pos-pay-panel--rail .pos-pay-panel__rail-title {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pos-money, #f5c842);
+}
+
+.pos-pay-panel--rail .pos-pay-panel__amount-hero-value {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  color: var(--pos-money, #f5c842);
+}
+
+.pos-pay-panel--rail .pos-pay-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pos-pay-panel--rail .pos-pay-panel__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+.pos-pay-panel--rail .pos-pay-method-cards--stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pos-pay-panel--rail .pos-pay-method-card--row {
+  min-height: 76px;
+  border-left: 4px solid var(--pos-green, #3dffa8);
+}
+
+.pos-pay-panel__back-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  border: none;
+  border-radius: 12px;
+  background: #b91c1c;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.pos-pay-panel__back-check:hover {
+  background: #dc2626;
+}
+
+.pos-pay-modal--split-layout {
+  display: flex;
+  flex-direction: column;
+  width: min(96vw, 1080px) !important;
+  max-width: 1080px !important;
+  max-height: min(94dvh, 920px);
+}
+
+.pos-pay-modal--split-layout .pos-pay-modal__workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(320px, 1.2fr);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pos-pay-modal--split-layout .pos-pay-modal__check {
+  min-height: 0;
+  overflow: hidden;
+  padding: 14px 16px;
+  border-right: 1px solid var(--pos-border, #2a3548);
+  background: #151b26;
+}
+
+.pos-pay-modal--split-layout .pos-pay-modal__pay-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #0c1018;
+}
+
+.pos-pay-modal--split-layout .pos-pay-modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.pos-pay-modal--split-layout .pos-pay-method-cards--stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pos-pay-modal--split-layout .pos-pay-method-card--row {
+  min-height: 68px;
+  border-left: 4px solid #3dffa8;
+}
+
+@media (max-width: 640px) {
+  .pos-pay-modal--split-layout .pos-pay-modal__workspace {
+    grid-template-columns: 1fr;
+  }
+}

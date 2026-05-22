@@ -47,7 +47,7 @@ function paymentLabel(method, t) {
   }
 }
 
-export default function PosReturnModal({ open, onClose, onSuccess }) {
+export default function PosReturnModal({ open, onClose, onSuccess, terminal = false }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [receipt, setReceipt] = useState('');
@@ -128,7 +128,14 @@ export default function PosReturnModal({ open, onClose, onSuccess }) {
 
   return (
     <PosModalPortal open={open} onClose={handleClose}>
-      <div className="pos-return-modal" onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+      <div
+        className={`pos-return-modal${terminal ? ' pos-return-modal--terminal' : ''}${
+          sale ? ' pos-return-modal--partial' : ''
+        }`}
+        onMouseDown={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <header className="pos-return-modal__header">
           <div className="pos-return-modal__header-icon" aria-hidden>
             <RotateCcw size={22} strokeWidth={2} />

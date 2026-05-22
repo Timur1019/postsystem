@@ -40,6 +40,16 @@ public final class ProductImportParseUtil {
     }
 
     /**
+     * Внутренний артикул строки счёт-фактуры: номер фактуры + номер строки (ИКПУ в ключ не входит).
+     */
+    public static String resolveUzInvoiceSku(String uzInvoiceDocumentId, int rowNum) {
+        if (StringUtils.hasText(uzInvoiceDocumentId)) {
+            return uzInvoiceDocumentId.trim().toUpperCase(Locale.ROOT) + "-L-" + rowNum;
+        }
+        return "INV-" + rowNum;
+    }
+
+    /**
      * НДС в процентах (0–100). Значения &gt; 100 часто попадают из счёт-фактуры как сумма НДС, а не %.
      */
     public static BigDecimal normalizeTaxRatePercent(BigDecimal value) {

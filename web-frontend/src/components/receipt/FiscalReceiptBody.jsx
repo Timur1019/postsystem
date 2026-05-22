@@ -198,10 +198,27 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
         <>
           <ReceiptDivider />
           <section className="receipt-section space-y-0.5">
+            {isOn('discounts') && Number(sale.lineDiscountTotal ?? 0) > 0 ? (
+              <Row
+                label={t('fiscalReceipt.lineDiscountsSum')}
+                value={`${fmtMoney(sale.lineDiscountTotal)} ${t('fiscalReceipt.currency')}`}
+              />
+            ) : null}
+            {isOn('discounts') && Number(sale.orderDiscountAmount ?? 0) > 0 ? (
+              <Row
+                label={
+                  Number(sale.orderDiscountPercent ?? 0) > 0
+                    ? t('fiscalReceipt.orderDiscountPercent', { percent: sale.orderDiscountPercent })
+                    : t('fiscalReceipt.orderDiscountSum')
+                }
+                value={`${fmtMoney(sale.orderDiscountAmount)} ${t('fiscalReceipt.currency')}`}
+              />
+            ) : null}
             {isOn('discounts') && Number(sale.discountTotal) > 0 ? (
               <Row
                 label={t('fiscalReceipt.discountsSum')}
                 value={`${fmtMoney(sale.discountTotal)} ${t('fiscalReceipt.currency')}`}
+                bold
               />
             ) : null}
             {isOn('grandTotal') ? (

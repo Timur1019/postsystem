@@ -14,6 +14,20 @@ export const lineDiscountAmount = (item) => {
 
 export const lineSubtotal = (item) => round2(lineGross(item) - lineDiscountAmount(item));
 
+const capOrderDiscount = (items, orderDiscountAmount) => {
+  const linesTotal = round2(items.reduce((acc, item) => acc + lineSubtotal(item), 0));
+  return round2(Math.min(Math.max(0, orderDiscountAmount), linesTotal));
+};
+
+/** Позиции для API: только построчные скидки (скидка на чек — отдельными полями в sales). */
+export function buildCheckoutLineItems(items) {
+  return items.map((i) => ({
+    productId: i.productId,
+    quantity: i.quantity,
+    discount: lineDiscountAmount(i),
+  }));
+}
+
 /** Сумма закупа по строке (себестоимость × кол-во) */
 export const lineCostTotal = (item) =>
   round2((Number(item.costPrice) || 0) * (Number(item.quantity) || 0));
@@ -25,6 +39,8 @@ const syncDiscountFromPercent = (item) => ({
 
 export const useCartStore = create((set, get) => ({
   items: [],
+  /** Общая скидка на чек (от суммы после скидок по строкам). */
+  orderDiscountAmount: 0,
 
   addItem: (product, quantity = 1) => {
     const { items } = get();
@@ -40,6 +56,10 @@ export const useCartStore = create((set, get) => ({
         items: items.map((i) =>
           i.productId === product.id ? syncDiscountFromPercent(next) : i
         ),
+        orderDiscountAmount: capOrderDiscount(
+          items.map((i) => (i.productId === product.id ? syncDiscountFromPercent(next) : i)),
+          get().orderDiscountAmount
+        ),
       });
     } else {
       const draft = {
@@ -54,8 +74,10 @@ export const useCartStore = create((set, get) => ({
         discountPercent,
         discount: 0,
       };
+      const nextItems = [...items, syncDiscountFromPercent(draft)];
       set({
-        items: [...items, syncDiscountFromPercent(draft)],
+        items: nextItems,
+        orderDiscountAmount: capOrderDiscount(nextItems, get().orderDiscountAmount),
       });
     }
   },
@@ -65,54 +87,90 @@ export const useCartStore = create((set, get) => ({
       get().removeItem(productId);
       return;
     }
+    const nextItems = get().items.map((i) =>
+      i.productId === productId ? syncDiscountFromPercent({ ...i, quantity }) : i
+    );
     set({
-      items: get().items.map((i) =>
-        i.productId === productId
-          ? syncDiscountFromPercent({ ...i, quantity })
-          : i
-      ),
+      items: nextItems,
+      orderDiscountAmount: capOrderDiscount(nextItems, get().orderDiscountAmount),
     });
   },
 
   updateUnitPrice: (productId, unitPrice) => {
     const price = Math.max(0, round2(unitPrice));
+    const nextItems = get().items.map((i) =>
+      i.productId === productId ? syncDiscountFromPercent({ ...i, unitPrice: price }) : i
+    );
     set({
-      items: get().items.map((i) =>
-        i.productId === productId
-          ? syncDiscountFromPercent({ ...i, unitPrice: price })
-          : i
-      ),
+      items: nextItems,
+      orderDiscountAmount: capOrderDiscount(nextItems, get().orderDiscountAmount),
     });
   },
 
   updateLineSubtotal: (productId, subtotal) => {
+    const nextItems = get().items.map((i) => {
+      if (i.productId !== productId) return i;
+      const gross = lineGross(i);
+      const target = Math.max(0, Math.min(round2(subtotal), gross));
+      const discount = round2(gross - target);
+      const discountPercent = gross > 0 ? round2((discount / gross) * 100) : 0;
+      return { ...i, discount, discountPercent };
+    });
     set({
-      items: get().items.map((i) => {
-        if (i.productId !== productId) return i;
-        const gross = lineGross(i);
-        const target = Math.max(0, Math.min(round2(subtotal), gross));
-        const discount = round2(gross - target);
-        const discountPercent = gross > 0 ? round2((discount / gross) * 100) : 0;
-        return { ...i, discount, discountPercent };
-      }),
+      items: nextItems,
+      orderDiscountAmount: capOrderDiscount(nextItems, get().orderDiscountAmount),
     });
   },
 
   updateDiscountPercent: (productId, discountPercent) => {
     const pct = Math.max(0, Math.min(100, round2(discountPercent)));
+    const nextItems = get().items.map((i) =>
+      i.productId === productId ? syncDiscountFromPercent({ ...i, discountPercent: pct }) : i
+    );
     set({
-      items: get().items.map((i) =>
-        i.productId === productId
-          ? syncDiscountFromPercent({ ...i, discountPercent: pct })
-          : i
-      ),
+      items: nextItems,
+      orderDiscountAmount: capOrderDiscount(nextItems, get().orderDiscountAmount),
     });
   },
 
-  removeItem: (productId) =>
-    set({ items: get().items.filter((i) => i.productId !== productId) }),
+  removeItem: (productId) => {
+    const nextItems = get().items.filter((i) => i.productId !== productId);
+    set({
+      items: nextItems,
+      orderDiscountAmount: capOrderDiscount(nextItems, get().orderDiscountAmount),
+    });
+  },
 
-  clearCart: () => set({ items: [] }),
+  clearCart: () => set({ items: [], orderDiscountAmount: 0 }),
+
+  /** Сумма чека до общей скидки (после скидок по строкам). */
+  getLinesTotal: () =>
+    round2(get().items.reduce((acc, item) => acc + lineSubtotal(item), 0)),
+
+  getOrderDiscount: () => capOrderDiscount(get().items, get().orderDiscountAmount),
+
+  setOrderDiscountAmount: (amount) => {
+    set({ orderDiscountAmount: capOrderDiscount(get().items, amount) });
+  },
+
+  setOrderDiscountPercent: (discountPercent) => {
+    const pct = Math.max(0, Math.min(100, round2(discountPercent)));
+    const linesTotal = get().getLinesTotal();
+    set({ orderDiscountAmount: capOrderDiscount(get().items, round2(linesTotal * (pct / 100))) });
+  },
+
+  clearOrderDiscount: () => set({ orderDiscountAmount: 0 }),
+
+  getCheckoutLineItems: () => buildCheckoutLineItems(get().items),
+
+  getCheckoutOrderDiscountAmount: () => get().getOrderDiscount(),
+
+  getCheckoutOrderDiscountPercent: () => {
+    const linesTotal = get().getLinesTotal();
+    const orderDisc = get().getOrderDiscount();
+    if (orderDisc <= 0 || linesTotal <= 0) return 0;
+    return round2((orderDisc / linesTotal) * 100);
+  },
 
   /** Сумма без НДС (нетто) */
   getSubtotal: () =>
@@ -128,12 +186,13 @@ export const useCartStore = create((set, get) => ({
       0
     ),
 
-  getDiscountTotal: () =>
-    get().items.reduce((acc, item) => acc + lineDiscountAmount(item), 0),
+  getLineDiscountTotal: () =>
+    round2(get().items.reduce((acc, item) => acc + lineDiscountAmount(item), 0)),
+
+  getDiscountTotal: () => round2(get().getLineDiscountTotal() + get().getOrderDiscount()),
 
   /** Итого к оплате (цена с учётом скидки, НДС внутри) */
-  getTotal: () =>
-    round2(get().items.reduce((acc, item) => acc + lineSubtotal(item), 0)),
+  getTotal: () => round2(get().getLinesTotal() - get().getOrderDiscount()),
 
   itemCount: () => get().items.reduce((acc, i) => acc + i.quantity, 0),
 }));

@@ -49,6 +49,20 @@ public class Sale {
     @Column(name = "discount_total", precision = 18, scale = 2)
     private BigDecimal discountTotal = BigDecimal.ZERO;
 
+    /** Скидки только по позициям (без скидки на чек). */
+    @Column(name = "line_discount_total", precision = 18, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal lineDiscountTotal = BigDecimal.ZERO;
+
+    /** Скидка на весь чек, сумма. */
+    @Column(name = "order_discount_amount", precision = 18, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal orderDiscountAmount = BigDecimal.ZERO;
+
+    /** Скидка на чек, % (0–100), на момент продажи. */
+    @Column(name = "order_discount_percent", precision = 5, scale = 2)
+    private BigDecimal orderDiscountPercent;
+
     @Column(name = "total_amount", precision = 18, scale = 2, nullable = false)
     private BigDecimal totalAmount;
 
