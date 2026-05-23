@@ -165,24 +165,28 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         FROM Sale s
         WHERE s.createdAt >= :start AND s.createdAt < :end AND s.status = :status
         AND (:storeId IS NULL OR s.store.id = :storeId)
+        AND (:companyId IS NULL OR s.company.id = :companyId)
         """)
     BigDecimal sumTotalBetween(
         @Param("start") Instant start,
         @Param("end") Instant end,
         @Param("status") Sale.SaleStatus status,
-        @Param("storeId") Integer storeId
+        @Param("storeId") Integer storeId,
+        @Param("companyId") Integer companyId
     );
 
     @Query("""
         SELECT COUNT(s) FROM Sale s
         WHERE s.createdAt >= :start AND s.createdAt < :end AND s.status = :status
         AND (:storeId IS NULL OR s.store.id = :storeId)
+        AND (:companyId IS NULL OR s.company.id = :companyId)
         """)
     long countSalesBetween(
         @Param("start") Instant start,
         @Param("end") Instant end,
         @Param("status") Sale.SaleStatus status,
-        @Param("storeId") Integer storeId
+        @Param("storeId") Integer storeId,
+        @Param("companyId") Integer companyId
     );
 
     @Query("""
@@ -222,12 +226,14 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         FROM sales s
         WHERE s.created_at >= :start AND s.created_at < :end
           AND s.status = 'COMPLETED'
+          AND s.company_id = :companyId
         GROUP BY CAST(s.created_at AS date)
         ORDER BY day
         """, nativeQuery = true)
     List<Object[]> dailyRevenueAggregates(
         @Param("start") Instant start,
-        @Param("end") Instant end
+        @Param("end") Instant end,
+        @Param("companyId") Integer companyId
     );
 
     @Query(value = """

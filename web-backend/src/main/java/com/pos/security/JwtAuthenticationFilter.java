@@ -23,6 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final CurrentUserProvider currentUserProvider;
 
     @Override
     protected void doFilterInternal(
@@ -30,11 +31,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         @NonNull HttpServletResponse response,
         @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+        try {
+            authenticateIfPresent(request);
+            filterChain.doFilter(request, response);
+        } finally {
+            TenantContext.clear();
+        }
+    }
 
+    private void authenticateIfPresent(HttpServletRequest request) {
         final String authHeader = request.getHeader("Authorization");
 
         if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
             return;
         }
 
@@ -43,28 +51,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             username = jwtService.extractUsername(jwt);
         } catch (Exception ex) {
-            // If token is malformed/expired/etc., don't fail request with 500.
-            // Just proceed unauthenticated; security layer will return 401/403 where needed.
-            filterChain.doFilter(request, response);
             return;
         }
 
-        if (StringUtils.hasText(username) && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-            try {
-                if (jwtService.isTokenValid(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                    );
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
-            } catch (Exception ignored) {
-                // Treat as unauthenticated
-            }
+        if (!StringUtils.hasText(username) || SecurityContextHolder.getContext().getAuthentication() != null) {
+            return;
         }
 
-        filterChain.doFilter(request, response);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+        try {
+            if (!jwtService.isTokenValid(jwt, userDetails)) {
+                return;
+            }
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities()
+            );
+            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+
+            Integer companyId = jwtService.extractCompanyId(jwt);
+            if (companyId == null && userDetails instanceof com.pos.entity.User user && user.getCompany() != null) {
+                companyId = user.getCompany().getId();
+            }
+            boolean bypassRls = userDetails instanceof com.pos.entity.User user
+                && currentUserProvider.isSuperAdmin(user);
+            TenantContext.set(companyId, bypassRls);
+        } catch (Exception ignored) {
+            // Treat as unauthenticated
+        }
     }
 }

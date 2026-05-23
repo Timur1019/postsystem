@@ -4,7 +4,7 @@ import com.pos.dto.report.DailySummaryResponse;
 import com.pos.dto.report.SalesReportResponse;
 import com.pos.dto.report.sales.PeriodCompareResponse;
 import com.pos.service.ReportService;
-import com.pos.service.cache.PosCacheWarmupCoordinator;
+import com.pos.service.cache.PosCacheRefreshOrchestrator;
 import com.pos.service.export.ReportExportService;
 import com.pos.spreadsheet.SpreadsheetDownloadSupport;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ public class ReportController {
 
     private final ReportService reportService;
     private final ReportExportService reportExportService;
-    private final PosCacheWarmupCoordinator posCacheWarmupCoordinator;
+    private final PosCacheRefreshOrchestrator posCacheRefreshOrchestrator;
 
     @GetMapping("/daily")
     public ResponseEntity<DailySummaryResponse> dailySummary(
@@ -105,7 +105,7 @@ public class ReportController {
     @PostMapping("/cache/refresh")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> refreshCaches() {
-        posCacheWarmupCoordinator.refreshAllCaches();
+        posCacheRefreshOrchestrator.refreshAll();
         return ResponseEntity.noContent().build();
     }
 }

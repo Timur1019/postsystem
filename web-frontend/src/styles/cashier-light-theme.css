@@ -355,25 +355,34 @@
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--row,
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--register,
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--row,
-.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--tile {
+.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--tile,
+.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--register {
   background: #fff;
   border-color: var(--pos-border);
   border-left-color: var(--pos-green);
   color: var(--pos-text);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 0.06);
 }
 
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--row:hover,
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--register:hover,
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--row:hover,
-.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--tile:hover {
+.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--tile:hover,
+.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--register:hover {
   background: var(--pos-green-soft);
   border-color: rgb(0 104 71 / 0.3);
 }
 
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--row svg,
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-method-card--register svg,
-.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--row svg {
+.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--row svg,
+.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--register .pos-pay-card-type__icon {
   color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-card-type--register .pos-pay-card-type__icon {
+  background: var(--pos-green-soft);
+  border-color: rgb(0 104 71 / 0.2);
 }
 
 .cashier-app.cashier-app--light .pos-pay-panel--register-rail .pos-pay-panel__primary {

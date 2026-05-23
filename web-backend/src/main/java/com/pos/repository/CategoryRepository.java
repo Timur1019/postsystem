@@ -11,9 +11,15 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
 
     boolean existsByNameIgnoreCase(String name);
 
+    boolean existsByNameIgnoreCaseAndCompanyId(String name, Integer companyId);
+
     boolean existsByNameIgnoreCaseAndIdNot(String name, Integer id);
 
+    boolean existsByNameIgnoreCaseAndCompanyIdAndIdNot(String name, Integer companyId, Integer id);
+
     Optional<Category> findByNameIgnoreCase(String name);
+
+    List<Category> findByCompanyIdOrderByNameAsc(Integer companyId);
 
     @Query("""
         SELECT DISTINCT c FROM Category c

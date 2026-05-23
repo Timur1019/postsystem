@@ -20,6 +20,7 @@ public final class ProductSpecifications {
     }
 
     public static Specification<Product> catalogFilter(
+        Integer companyId,
         String search,
         Integer categoryId,
         String deletedScope,
@@ -32,6 +33,10 @@ public final class ProductSpecifications {
         return (root, query, cb) -> {
 
             List<Predicate> parts = new ArrayList<>();
+
+            if (companyId != null) {
+                parts.add(cb.equal(root.get("company").get("id"), companyId));
+            }
 
             String q = search != null ? search.trim() : "";
             if (StringUtils.hasText(q)) {

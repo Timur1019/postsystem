@@ -19,10 +19,16 @@ import com.pos.service.product.ProductCommandService;
 import com.pos.service.product.ProductResponseAssembler;
 import com.pos.service.support.AbstractProductCatalogSupport;
 import com.pos.service.support.ProductValueNormalizer;
+import com.pos.service.support.TenantAccessSupport;
+import com.pos.service.stock.StoreStockService;
+import com.pos.service.support.ProductValueNormalizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.pos.entity.ProductStorePrice;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +39,8 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
 
     private final StockMovementRepository stockMovementRepository;
     private final ProductResponseAssembler assembler;
+    private final TenantAccessSupport tenantAccess;
+    private final StoreStockService storeStockService;
 
     public ProductCommandServiceImpl(
         ProductRepository productRepository,
@@ -41,17 +49,22 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         ProductStorePriceRepository productStorePriceRepository,
         StoreRepository storeRepository,
         StockMovementRepository stockMovementRepository,
-        ProductResponseAssembler assembler
+        ProductResponseAssembler assembler,
+        TenantAccessSupport tenantAccess,
+        StoreStockService storeStockService
     ) {
         super(productRepository, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
         this.stockMovementRepository = stockMovementRepository;
         this.assembler = assembler;
+        this.tenantAccess = tenantAccess;
+        this.storeStockService = storeStockService;
     }
 
     @Override
     public ProductResponse createProduct(CreateProductRequest req) {
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
         if (!StringUtils.hasText(req.uzInvoiceDocumentId())) {
-            Optional<Product> bySku = productRepository.findBySku(req.sku());
+            Optional<Product> bySku = productRepository.findByCompanyIdAndSku(companyId, req.sku());
             if (bySku.isPresent()) {
                 if (bySku.get().isActive()) {
                     throw new BadRequestException("SKU already exists: " + req.sku());
@@ -59,7 +72,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
                 return reactivateFromCreate(req, bySku.get());
             }
         } else {
-            Optional<Product> bySku = productRepository.findBySku(req.sku());
+            Optional<Product> bySku = productRepository.findByCompanyIdAndSku(companyId, req.sku());
             if (bySku.isPresent() && !bySku.get().isActive()) {
                 return reactivateFromCreate(req, bySku.get());
             }
@@ -67,6 +80,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
 
         Category category = req.categoryId() != null
             ? categoryRepository.findById(req.categoryId())
+                .filter(c -> c.getCompany().getId().equals(companyId))
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"))
             : null;
 
@@ -75,6 +89,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         assertAdditionalBarcodesUnique(req.additionalBarcodes(), req.barcode(), null);
 
         Product product = Product.builder()
+            .company(tenantAccess.requireCompany(companyId))
             .sku(req.sku())
             .name(req.name())
             .description(req.description())
@@ -108,12 +123,15 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         Product saved = productRepository.save(product);
         applyStorePrices(saved, req.storePrices());
         applyExtraBarcodes(saved, req.additionalBarcodes(), saved.getBarcode());
-        saved = productRepository.save(saved);
+        Product persisted = productRepository.save(saved);
         int initialStock = req.initialStock() != null ? req.initialStock() : 0;
         if (initialStock > 0) {
-            recordStockMovement(saved, initialStock, "RESTOCK", "Начальный остаток при создании товара");
+            storeRepository.findByCompanyIdOrderByNameAsc(companyId).forEach(store ->
+                storeStockService.initializeForStore(persisted, store, initialStock)
+            );
+            recordStockMovement(persisted, initialStock, "RESTOCK", "Начальный остаток при создании товара");
         }
-        return assembler.toResponse(saved);
+        return assembler.toResponse(persisted);
     }
 
     @Override
@@ -167,6 +185,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         if (req.description() != null) {
             product.setDescription(req.description());
         }
+        BigDecimal previousSelling = product.getSellingPrice();
         if (req.sellingPrice() != null) {
             product.setSellingPrice(req.sellingPrice());
         }
@@ -239,8 +258,35 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
             assertAdditionalBarcodesUnique(req.additionalBarcodes(), primary, product.getId());
             applyExtraBarcodes(product, req.additionalBarcodes(), primary);
         }
-        if (req.storePrices() != null) {
+        if (req.storePrices() != null && !req.storePrices().isEmpty()) {
             applyStorePrices(product, req.storePrices());
+        } else if (req.sellingPrice() != null) {
+            syncStorePricesWithSelling(product, previousSelling, req.sellingPrice());
+        }
+    }
+
+    /**
+     * Если в запросе нет цен по магазинам, обновляет привязанные цены,
+     * совпадавшие с прежней ценой продажи или с себестоимостью.
+     */
+    private void syncStorePricesWithSelling(Product product, BigDecimal oldSelling, BigDecimal newSelling) {
+        if (newSelling == null || product.getStorePrices() == null) {
+            return;
+        }
+        BigDecimal cost = product.getCostPrice();
+        for (ProductStorePrice line : product.getStorePrices()) {
+            BigDecimal price = line.getPrice();
+            if (price == null) {
+                line.setPrice(newSelling);
+                continue;
+            }
+            boolean matchedOld = oldSelling != null && price.compareTo(oldSelling) == 0;
+            boolean matchedCost = cost != null
+                && price.compareTo(cost) == 0
+                && cost.compareTo(newSelling) != 0;
+            if (matchedOld || matchedCost) {
+                line.setPrice(newSelling);
+            }
         }
     }
 

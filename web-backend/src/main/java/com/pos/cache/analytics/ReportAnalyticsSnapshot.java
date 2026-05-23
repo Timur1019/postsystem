@@ -12,6 +12,7 @@ import java.util.Map;
  * Неизменяемый снимок аналитики за скользящее окно (по умолчанию 2 месяца).
  */
 public record ReportAnalyticsSnapshot(
+    Integer companyId,
     LocalDate windowStart,
     LocalDate windowEnd,
     Instant builtAt,

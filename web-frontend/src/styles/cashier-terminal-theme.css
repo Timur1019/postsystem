@@ -242,6 +242,12 @@
   letter-spacing: 0.02em;
 }
 
+.cashier-app.cashier-app--terminal .pos-order-panel--register .pos-cart-table__name {
+  text-transform: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
 .cashier-app.cashier-app--terminal .pos-cart-table__sku {
   color: var(--pos-green);
   font-size: 0.6875rem;

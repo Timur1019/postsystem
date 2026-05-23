@@ -38,7 +38,7 @@ public class StoreServiceImpl implements StoreService {
     private final TenantAccessSupport tenantAccess;
 
     @Override
-    @Cacheable(value = "stores", key = "'all'")
+    @Cacheable(value = "stores", key = "@tenantCacheKeyResolver.stores()")
     public List<StoreResponse> listStores() {
         User actor = tenantAccess.currentUser();
         if (tenantAccess.isSuperAdmin()) {

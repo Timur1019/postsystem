@@ -15,7 +15,8 @@ import com.pos.repository.SaleItemRepository;
 import com.pos.repository.SaleRepository;
 import com.pos.service.ReportService;
 import com.pos.service.analytics.ReportAnalyticsReadSupport;
-import com.pos.service.analytics.ReportAnalyticsWindowSupport;
+import com.pos.service.cache.support.PosCacheWindowSupport;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,11 +40,16 @@ public class ReportServiceImpl implements ReportService {
     private final ReportMapper reportMapper;
     private final ReportAnalyticsCache analyticsCache;
     private final PosCacheProperties cacheProperties;
+    private final TenantAccessSupport tenantAccess;
+
+    private Integer companyId() {
+        return tenantAccess.requireEffectiveCompanyId();
+    }
 
     @Override
     public DailySummaryResponse getDailySummary(LocalDate date) {
         LocalDate target = date != null ? date : LocalDate.now(zone());
-        return analyticsCache.current()
+        return analyticsCache.current(companyId())
             .filter(s -> s.covers(target))
             .map(s -> ReportAnalyticsReadSupport.dailySummary(s, target))
             .orElseGet(() -> loadDailySummaryFromDb(target));
@@ -54,7 +60,7 @@ public class ReportServiceImpl implements ReportService {
         LocalDate end = to != null ? to : LocalDate.now(zone());
         LocalDate start = from != null ? from : end.minusDays(6);
 
-        return analyticsCache.current()
+        return analyticsCache.current(companyId())
             .filter(s -> s.coversRange(start, end))
             .map(s -> ReportAnalyticsReadSupport.salesReport(s, start, end))
             .orElseGet(() -> loadSalesReportFromDb(start, end));
@@ -66,7 +72,7 @@ public class ReportServiceImpl implements ReportService {
         LocalDate start = from != null ? from : end.minus(30, ChronoUnit.DAYS);
 
         int cappedLimit = Math.max(1, limit);
-        var snapshotOpt = analyticsCache.current();
+        var snapshotOpt = analyticsCache.current(companyId());
         if (snapshotOpt.isPresent()) {
             ReportAnalyticsSnapshot snapshot = snapshotOpt.get();
             if (!snapshot.coversRange(start, end)) {
@@ -86,7 +92,7 @@ public class ReportServiceImpl implements ReportService {
         LocalDate end = to != null ? to : LocalDate.now(zone());
         LocalDate start = from != null ? from : end.minus(30, ChronoUnit.DAYS);
 
-        var snapshotOpt = analyticsCache.current();
+        var snapshotOpt = analyticsCache.current(companyId());
         if (snapshotOpt.isPresent()) {
             ReportAnalyticsSnapshot snapshot = snapshotOpt.get();
             if (!snapshot.coversRange(start, end)) {
@@ -133,9 +139,9 @@ public class ReportServiceImpl implements ReportService {
         var rangeEnd = to.plusDays(1).atStartOfDay(z).toInstant();
         var status = Sale.SaleStatus.COMPLETED;
 
-        BigDecimal revenue = nz(saleRepository.sumTotalBetween(rangeStart, rangeEnd, status, storeId));
-        long receipts = saleRepository.countSalesBetween(rangeStart, rangeEnd, status, storeId);
-        long items = saleItemRepository.sumNetQuantitySoldBetween(rangeStart, rangeEnd, status, storeId);
+        BigDecimal revenue = nz(saleRepository.sumTotalBetween(rangeStart, rangeEnd, status, storeId, companyId()));
+        long receipts = saleRepository.countSalesBetween(rangeStart, rangeEnd, status, storeId, companyId());
+        long items = saleItemRepository.sumNetQuantitySoldBetween(rangeStart, rangeEnd, status, storeId, companyId());
         return new PeriodCompareResponse.PeriodMetrics(revenue, receipts, items);
     }
 
@@ -183,10 +189,10 @@ public class ReportServiceImpl implements ReportService {
         if (isFullWindowQuery(snapshot, from, to)) {
             return snapshot.topProductsWindow();
         }
-        if (ReportAnalyticsWindowSupport.isLastCalendarDays(from, to, snapshot.windowEnd(), 7)) {
+        if (PosCacheWindowSupport.isLastCalendarDays(from, to, snapshot.windowEnd(), 7)) {
             return snapshot.topProductsLast7Days();
         }
-        if (ReportAnalyticsWindowSupport.isLastCalendarDays(from, to, snapshot.windowEnd(), 30)) {
+        if (PosCacheWindowSupport.isLastCalendarDays(from, to, snapshot.windowEnd(), 30)) {
             return snapshot.topProductsLast30Days();
         }
         return null;
@@ -200,7 +206,7 @@ public class ReportServiceImpl implements ReportService {
         if (isFullWindowQuery(snapshot, from, to)) {
             return snapshot.cashierStatsWindow();
         }
-        if (ReportAnalyticsWindowSupport.isLastCalendarDays(from, to, snapshot.windowEnd(), 30)) {
+        if (PosCacheWindowSupport.isLastCalendarDays(from, to, snapshot.windowEnd(), 30)) {
             return snapshot.cashierStatsLast30Days();
         }
         return null;
@@ -220,10 +226,10 @@ public class ReportServiceImpl implements ReportService {
         var end = date.plusDays(1).atStartOfDay(z).toInstant();
         var status = Sale.SaleStatus.COMPLETED;
 
-        BigDecimal revenue = saleRepository.sumTotalBetween(start, end, status, null);
-        long transactions = saleRepository.countSalesBetween(start, end, status, null);
-        long itemsSold = saleItemRepository.sumQuantitySoldBetween(start, end, status, null);
-        BigDecimal cost = saleItemRepository.sumCostEstimateBetween(start, end, null);
+        BigDecimal revenue = saleRepository.sumTotalBetween(start, end, status, null, companyId());
+        long transactions = saleRepository.countSalesBetween(start, end, status, null, companyId());
+        long itemsSold = saleItemRepository.sumQuantitySoldBetween(start, end, status, null, companyId());
+        BigDecimal cost = saleItemRepository.sumCostEstimateBetween(start, end, null, companyId());
 
         return ReportAnalyticsReadSupport.toDailySummary(
             revenue != null ? revenue : BigDecimal.ZERO,
@@ -245,7 +251,7 @@ public class ReportServiceImpl implements ReportService {
         for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
             var start = d.atStartOfDay(z).toInstant();
             var end = d.plusDays(1).atStartOfDay(z).toInstant();
-            BigDecimal rev = saleRepository.sumTotalBetween(start, end, status, null);
+            BigDecimal rev = saleRepository.sumTotalBetween(start, end, status, null, companyId());
             if (rev == null) {
                 rev = BigDecimal.ZERO;
             }
@@ -253,9 +259,9 @@ public class ReportServiceImpl implements ReportService {
             breakdown.add(new DailyPoint(d.toString(), rev));
         }
 
-        long transactions = saleRepository.countSalesBetween(rangeStart, rangeEnd, status, null);
-        long itemsSold = saleItemRepository.sumQuantitySoldBetween(rangeStart, rangeEnd, status, null);
-        BigDecimal cost = saleItemRepository.sumCostEstimateBetween(rangeStart, rangeEnd, null);
+        long transactions = saleRepository.countSalesBetween(rangeStart, rangeEnd, status, null, companyId());
+        long itemsSold = saleItemRepository.sumQuantitySoldBetween(rangeStart, rangeEnd, status, null, companyId());
+        BigDecimal cost = saleItemRepository.sumCostEstimateBetween(rangeStart, rangeEnd, null, companyId());
         BigDecimal costSafe = cost != null ? cost : BigDecimal.ZERO;
         BigDecimal profit = totalRevenue.subtract(costSafe).setScale(2, RoundingMode.HALF_UP);
         BigDecimal avg = transactions > 0
@@ -270,7 +276,7 @@ public class ReportServiceImpl implements ReportService {
         LocalDate clampedFrom = clampFrom(from);
         LocalDate clampedTo = clampTo(to);
         return reportMapper.toTopProductRowList(
-            saleItemRepository.topProductsRaw(clampedFrom, clampedTo, Math.max(1, limit))
+            saleItemRepository.topProductsRaw(clampedFrom, clampedTo, Math.max(1, limit), companyId())
         );
     }
 
@@ -278,21 +284,21 @@ public class ReportServiceImpl implements ReportService {
         LocalDate clampedFrom = clampFrom(from);
         LocalDate clampedTo = clampTo(to);
         return reportMapper.toCashierStatList(
-            saleItemRepository.cashierPerformanceRaw(clampedFrom, clampedTo)
+            saleItemRepository.cashierPerformanceRaw(clampedFrom, clampedTo, companyId())
         );
     }
 
     private LocalDate clampFrom(LocalDate from) {
         ZoneId z = zone();
-        LocalDate windowStart = ReportAnalyticsWindowSupport.windowStart(cacheProperties, z);
-        LocalDate windowEnd = ReportAnalyticsWindowSupport.windowEnd(z);
-        return ReportAnalyticsWindowSupport.clampFrom(from, windowStart, windowEnd);
+        LocalDate windowStart = PosCacheWindowSupport.windowStart(cacheProperties, z);
+        LocalDate windowEnd = PosCacheWindowSupport.windowEnd(z);
+        return PosCacheWindowSupport.clampFrom(from, windowStart, windowEnd);
     }
 
     private LocalDate clampTo(LocalDate to) {
         ZoneId z = zone();
-        LocalDate windowStart = ReportAnalyticsWindowSupport.windowStart(cacheProperties, z);
-        LocalDate windowEnd = ReportAnalyticsWindowSupport.windowEnd(z);
-        return ReportAnalyticsWindowSupport.clampTo(to, windowStart, windowEnd);
+        LocalDate windowStart = PosCacheWindowSupport.windowStart(cacheProperties, z);
+        LocalDate windowEnd = PosCacheWindowSupport.windowEnd(z);
+        return PosCacheWindowSupport.clampTo(to, windowStart, windowEnd);
     }
 }

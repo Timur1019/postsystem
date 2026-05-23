@@ -7,19 +7,22 @@ import com.pos.entity.Store;
 import com.pos.entity.User;
 import com.pos.exception.BadRequestException;
 import com.pos.exception.ResourceNotFoundException;
+import com.pos.mapper.CashierShiftMapper;
 import com.pos.repository.CashierShiftRepository;
-import com.pos.repository.SaleRepository;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.cashier.CashierShiftService;
+import com.pos.service.cashier.support.CashierShiftAccessPolicy;
+import com.pos.service.cashier.support.CashierShiftAggregateLoader;
+import com.pos.service.cashier.support.ShiftBannerAggregate;
 import com.pos.service.support.CashierSaleSupport;
 import com.pos.service.zreport.ZReportFromShiftService;
+import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -28,10 +31,12 @@ import java.util.UUID;
 public class CashierShiftServiceImpl implements CashierShiftService {
 
     private final CashierShiftRepository cashierShiftRepository;
-    private final SaleRepository saleRepository;
     private final CurrentUserProvider currentUserProvider;
     private final CashierSaleSupport cashierSaleSupport;
     private final ZReportFromShiftService zReportFromShiftService;
+    private final CashierShiftMapper cashierShiftMapper;
+    private final CashierShiftAggregateLoader aggregateLoader;
+    private final CashierShiftAccessPolicy accessPolicy;
 
     @Override
     public CashierShiftResponse getCurrent(Integer storeId) {
@@ -39,7 +44,7 @@ public class CashierShiftServiceImpl implements CashierShiftService {
         Store store = cashierSaleSupport.requireStoreForSale(cashier, storeId);
         return cashierShiftRepository
             .findByCashierIdAndStoreIdAndStatus(cashier.getId(), store.getId(), CashierShift.ShiftStatus.OPEN)
-            .map(s -> toResponse(s, store.getName()))
+            .map(shift -> toLiveResponse(shift, store.getName()))
             .orElseThrow(() -> new ResourceNotFoundException("Открытая смена не найдена"));
     }
 
@@ -66,32 +71,76 @@ public class CashierShiftServiceImpl implements CashierShiftService {
             .cardAmount(BigDecimal.ZERO)
             .vatAmount(BigDecimal.ZERO)
             .build();
-        return toResponse(cashierShiftRepository.save(shift), store.getName());
+        CashierShift saved = cashierShiftRepository.save(shift);
+        LogUtil.info(
+            CashierShiftServiceImpl.class,
+            "Shift opened: id={}, storeId={}, cashierId={}",
+            saved.getId(),
+            store.getId(),
+            cashier.getId()
+        );
+        return cashierShiftMapper.toResponse(saved, store.getName(), null);
     }
 
     @Override
     public ShiftReportResponse buildXReport(UUID shiftId) {
-        CashierShift shift = requireOwnedShift(shiftId);
+        CashierShift shift = accessPolicy.requireOwned(shiftId);
         if (shift.getStatus() != CashierShift.ShiftStatus.OPEN) {
             throw new BadRequestException("X-отчёт доступен только для открытой смены");
         }
-        return buildReport("X", shift, Instant.now());
+        ShiftReportResponse report = buildReport("X", shift, Instant.now());
+        LogUtil.debug(
+            CashierShiftServiceImpl.class,
+            "X-report built: shiftId={}, sales={}, total={}",
+            shiftId,
+            report.saleCount(),
+            report.totalAmount()
+        );
+        return report;
     }
 
     @Override
     public ShiftReportResponse buildZReportPreview(UUID shiftId) {
-        CashierShift shift = requireOwnedShift(shiftId);
-        return buildReport("Z", shift, shift.getClosedAt() != null ? shift.getClosedAt() : Instant.now());
+        CashierShift shift = accessPolicy.requireOwned(shiftId);
+        Instant reportAt = shift.getClosedAt() != null ? shift.getClosedAt() : Instant.now();
+        return buildReport("Z", shift, reportAt);
     }
 
     @Override
     @Transactional
     public CashierShiftResponse closeShift(UUID shiftId) {
-        CashierShift shift = requireOwnedShift(shiftId);
+        CashierShift shift = accessPolicy.requireOwned(shiftId);
         if (shift.getStatus() == CashierShift.ShiftStatus.CLOSED) {
             throw new BadRequestException("Смена уже закрыта");
         }
         ShiftReportResponse report = buildReport("Z", shift, Instant.now());
+        applyCloseTotals(shift, report);
+        zReportFromShiftService.createForClosedShift(shift, report);
+        CashierShift saved = cashierShiftRepository.save(shift);
+        LogUtil.info(
+            CashierShiftServiceImpl.class,
+            "Shift closed: id={}, storeId={}, sales={}, total={}",
+            saved.getId(),
+            saved.getStore().getId(),
+            report.saleCount(),
+            report.totalAmount()
+        );
+        return cashierShiftMapper.toResponse(saved, saved.getStore().getName(), null);
+    }
+
+    private ShiftReportResponse buildReport(String type, CashierShift shift, Instant reportAt) {
+        ShiftBannerAggregate aggregate = aggregateLoader.loadForShift(shift, reportAt);
+        return cashierShiftMapper.toReport(type, shift, reportAt, aggregate);
+    }
+
+    private CashierShiftResponse toLiveResponse(CashierShift shift, String storeName) {
+        ShiftBannerAggregate live = shift.getStatus() == CashierShift.ShiftStatus.OPEN
+            ? aggregateLoader.loadForShift(shift, Instant.now())
+            : null;
+        return cashierShiftMapper.toResponse(shift, storeName, live);
+    }
+
+    private static void applyCloseTotals(CashierShift shift, ShiftReportResponse report) {
         shift.setStatus(CashierShift.ShiftStatus.CLOSED);
         shift.setClosedAt(report.reportAt());
         shift.setSaleCount(report.saleCount());
@@ -99,132 +148,5 @@ public class CashierShiftServiceImpl implements CashierShiftService {
         shift.setCashAmount(report.cashAmount());
         shift.setCardAmount(report.cardAmount());
         shift.setVatAmount(report.vatAmount());
-        zReportFromShiftService.createForClosedShift(shift, report);
-        CashierShift saved = cashierShiftRepository.save(shift);
-        return toResponse(saved, saved.getStore().getName());
-    }
-
-    private Object[] aggregateShiftRow(CashierShift shift, Instant reportAt) {
-        List<Object[]> rows = saleRepository.aggregateShiftBannerByShiftId(shift.getId());
-        if (rows.isEmpty() || isEmptyBannerAggregate(rows.get(0))) {
-            rows = saleRepository.aggregateShiftBannerByCashierAndTime(
-                shift.getCashier().getId(),
-                shift.getStore().getId(),
-                shift.getOpenedAt(),
-                reportAt
-            );
-        }
-        return rows.isEmpty() ? new Object[8] : unwrapAggregateRow(rows.get(0));
-    }
-
-    private ShiftReportResponse buildReport(String type, CashierShift shift, Instant reportAt) {
-        Object[] row = aggregateShiftRow(shift, reportAt);
-        int saleCount = toInt(row[0]);
-        BigDecimal total = toBigDecimal(row[1]);
-        BigDecimal vat = toBigDecimal(row[2]);
-        BigDecimal discount = toBigDecimal(row[3]);
-        BigDecimal cash = toBigDecimal(row[4]);
-        BigDecimal card = toBigDecimal(row[5]);
-        BigDecimal lineDiscount = row.length > 6 ? toBigDecimal(row[6]) : BigDecimal.ZERO;
-        BigDecimal orderDiscount = row.length > 7 ? toBigDecimal(row[7]) : BigDecimal.ZERO;
-
-        return new ShiftReportResponse(
-            type,
-            shift.getId(),
-            shift.getStore().getId(),
-            shift.getStore().getName(),
-            shift.getCashier().getFullName(),
-            shift.getOpenedAt(),
-            reportAt,
-            saleCount,
-            total,
-            cash,
-            card,
-            vat,
-            discount,
-            lineDiscount,
-            orderDiscount
-        );
-    }
-
-    private CashierShift requireOwnedShift(UUID shiftId) {
-        User actor = currentUserProvider.requireCurrentUser();
-        CashierShift shift = cashierShiftRepository.findById(shiftId)
-            .orElseThrow(() -> new ResourceNotFoundException("Смена не найдена"));
-        if (!shift.getCashier().getId().equals(actor.getId())) {
-            throw new BadRequestException("Доступ к смене запрещён");
-        }
-        return shift;
-    }
-
-    private static boolean isEmptyBannerAggregate(Object[] raw) {
-        Object[] row = unwrapAggregateRow(raw);
-        return toInt(row[0]) == 0 && toBigDecimal(row[1]).signum() == 0;
-    }
-
-    private static Object[] unwrapAggregateRow(Object[] raw) {
-        if (raw == null) {
-            return new Object[8];
-        }
-        if (raw.length == 1 && raw[0] instanceof Object[] nested) {
-            return nested;
-        }
-        return raw;
-    }
-
-    private static int toInt(Object value) {
-        if (value == null) {
-            return 0;
-        }
-        if (value instanceof Number n) {
-            return n.intValue();
-        }
-        return Integer.parseInt(value.toString());
-    }
-
-    private static BigDecimal toBigDecimal(Object value) {
-        if (value == null) {
-            return BigDecimal.ZERO;
-        }
-        if (value instanceof BigDecimal bd) {
-            return bd;
-        }
-        if (value instanceof Number n) {
-            return BigDecimal.valueOf(n.doubleValue());
-        }
-        return new BigDecimal(value.toString());
-    }
-
-    private CashierShiftResponse toResponse(CashierShift shift, String storeName) {
-        int saleCount = shift.getSaleCount();
-        BigDecimal totalAmount = shift.getTotalAmount();
-        BigDecimal cashAmount = shift.getCashAmount();
-        BigDecimal cardAmount = shift.getCardAmount();
-        BigDecimal vatAmount = shift.getVatAmount();
-
-        if (shift.getStatus() == CashierShift.ShiftStatus.OPEN) {
-            Object[] row = aggregateShiftRow(shift, Instant.now());
-            saleCount = toInt(row[0]);
-            totalAmount = toBigDecimal(row[1]);
-            vatAmount = toBigDecimal(row[2]);
-            cashAmount = toBigDecimal(row[4]);
-            cardAmount = toBigDecimal(row[5]);
-        }
-
-        return new CashierShiftResponse(
-            shift.getId(),
-            shift.getStore().getId(),
-            storeName,
-            shift.getCashier().getFullName(),
-            shift.getStatus().name(),
-            shift.getOpenedAt(),
-            shift.getClosedAt(),
-            saleCount,
-            totalAmount,
-            cashAmount,
-            cardAmount,
-            vatAmount,
-            shift.getZReport() != null ? shift.getZReport().getId() : null
-        );
     }
 }

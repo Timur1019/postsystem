@@ -1,9 +1,10 @@
 # ============================================================
 #  Multi-stage Dockerfile — Spring Boot Backend
+#  (deb-based images: работает на Apple Silicon без alpine manifest)
 # ============================================================
 
 # Stage 1: Build
-FROM maven:3.9-eclipse-temurin-17-alpine AS build
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
 COPY pom.xml .
@@ -13,13 +14,15 @@ COPY src ./src
 RUN mvn clean package -DskipTests -q
 
 # Stage 2: Runtime
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-RUN apk add --no-cache curl \
-  && addgroup -S pos && adduser -S pos -G pos \
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl \
+  && groupadd -r pos && useradd -r -g pos pos \
   && mkdir -p /app/uploads/orders /app/logs \
-  && chown -R pos:pos /app/uploads /app/logs
+  && chown -R pos:pos /app/uploads /app/logs \
+  && rm -rf /var/lib/apt/lists/*
 
 USER pos
 

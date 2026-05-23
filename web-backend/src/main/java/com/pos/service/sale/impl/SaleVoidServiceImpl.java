@@ -14,6 +14,7 @@ import com.pos.repository.StockMovementRepository;
 import com.pos.service.sale.SaleAccessPolicy;
 import com.pos.service.sale.SaleVoidService;
 import com.pos.service.salesledger.SalesLedgerCacheService;
+import com.pos.service.stock.StoreStockService;
 import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class SaleVoidServiceImpl implements SaleVoidService {
     private final SaleMapper saleMapper;
     private final SalesLedgerCacheService salesLedgerCacheService;
     private final SaleAccessPolicy accessPolicy;
+    private final StoreStockService storeStockService;
 
     @Override
     public SaleResponse voidSale(UUID id, String reason) {
@@ -54,7 +56,9 @@ public class SaleVoidServiceImpl implements SaleVoidService {
             }
             anyRemaining = true;
             Product product = item.getProduct();
-            product.setStockQuantity(product.getStockQuantity() + remaining);
+            if (sale.getStore() != null) {
+                storeStockService.increase(product, sale.getStore(), remaining);
+            }
             productRepository.save(product);
 
             item.setReturnedQuantity(item.getQuantity());

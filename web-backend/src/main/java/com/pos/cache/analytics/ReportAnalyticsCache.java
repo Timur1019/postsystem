@@ -4,9 +4,11 @@ import java.util.Optional;
 
 public interface ReportAnalyticsCache {
 
-    Optional<ReportAnalyticsSnapshot> current();
+    Optional<ReportAnalyticsSnapshot> current(Integer companyId);
 
-    void replace(ReportAnalyticsSnapshot snapshot);
+    void replace(Integer companyId, ReportAnalyticsSnapshot snapshot);
 
-    void clear();
+    void clear(Integer companyId);
+
+    boolean hasAny();
 }

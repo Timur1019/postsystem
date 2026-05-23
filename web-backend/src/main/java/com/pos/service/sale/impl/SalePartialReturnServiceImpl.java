@@ -17,6 +17,7 @@ import com.pos.repository.StockMovementRepository;
 import com.pos.service.sale.SaleAccessPolicy;
 import com.pos.service.sale.SalePartialReturnService;
 import com.pos.service.salesledger.SalesLedgerCacheService;
+import com.pos.service.stock.StoreStockService;
 import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
     private final SaleMapper saleMapper;
     private final SalesLedgerCacheService salesLedgerCacheService;
     private final SaleAccessPolicy accessPolicy;
+    private final StoreStockService storeStockService;
 
     @Override
     public SaleResponse returnItems(UUID saleId, PartialReturnRequest request) {
@@ -129,7 +131,9 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
 
     private void restoreStock(Sale sale, SaleItem item, int qty, String reason) {
         Product product = item.getProduct();
-        product.setStockQuantity(product.getStockQuantity() + qty);
+        if (sale.getStore() != null) {
+            storeStockService.increase(product, sale.getStore(), qty);
+        }
         productRepository.save(product);
 
         stockMovementRepository.save(StockMovement.builder()

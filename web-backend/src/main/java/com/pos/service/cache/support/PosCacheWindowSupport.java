@@ -1,13 +1,16 @@
-package com.pos.service.analytics;
+package com.pos.service.cache.support;
 
 import com.pos.config.PosCacheProperties;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
 
-public final class ReportAnalyticsWindowSupport {
+/**
+ * Общее скользящее окно для кэшей отчётов (аналитика, журнал продаж).
+ */
+public final class PosCacheWindowSupport {
 
-    private ReportAnalyticsWindowSupport() {
+    private PosCacheWindowSupport() {
     }
 
     public static LocalDate windowStart(PosCacheProperties props, ZoneId zone) {
@@ -26,18 +29,18 @@ public final class ReportAnalyticsWindowSupport {
         return from.isAfter(windowEnd) ? windowEnd : from;
     }
 
+    public static LocalDate clampTo(LocalDate to, LocalDate windowStart, LocalDate windowEnd) {
+        if (to == null || to.isAfter(windowEnd)) {
+            return windowEnd;
+        }
+        return to.isBefore(windowStart) ? windowStart : to;
+    }
+
     /** Последние N календарных дней, включая {@code rangeEnd} (N=7 → 7 дней). */
     public static boolean isLastCalendarDays(LocalDate from, LocalDate to, LocalDate rangeEnd, int days) {
         if (from == null || to == null || rangeEnd == null || days < 1) {
             return false;
         }
         return to.equals(rangeEnd) && from.equals(rangeEnd.minusDays(days - 1L));
-    }
-
-    public static LocalDate clampTo(LocalDate to, LocalDate windowStart, LocalDate windowEnd) {
-        if (to == null || to.isAfter(windowEnd)) {
-            return windowEnd;
-        }
-        return to.isBefore(windowStart) ? windowStart : to;
     }
 }

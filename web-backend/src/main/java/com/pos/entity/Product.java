@@ -11,7 +11,12 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "products")
+@Table(
+    name = "products",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uq_products_company_sku", columnNames = {"company_id", "sku"})
+    }
+)
 @Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
 public class Product {
@@ -20,7 +25,11 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(unique = true, nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+
+    @Column(nullable = false)
     private String sku;
 
     @Column(nullable = false)

@@ -14,6 +14,7 @@ import com.pos.repository.spec.ProductSpecifications;
 import com.pos.service.product.ProductQueryService;
 import com.pos.service.product.ProductResponseAssembler;
 import com.pos.service.support.AbstractProductCatalogSupport;
+import com.pos.service.support.TenantAccessSupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 public class ProductQueryServiceImpl extends AbstractProductCatalogSupport implements ProductQueryService {
 
     private final ProductResponseAssembler assembler;
+    private final TenantAccessSupport tenantAccess;
 
     public ProductQueryServiceImpl(
         ProductRepository productRepository,
@@ -40,10 +42,12 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
         ProductBarcodeRepository productBarcodeRepository,
         ProductStorePriceRepository productStorePriceRepository,
         StoreRepository storeRepository,
-        ProductResponseAssembler assembler
+        ProductResponseAssembler assembler,
+        TenantAccessSupport tenantAccess
     ) {
         super(productRepository, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
         this.assembler = assembler;
+        this.tenantAccess = tenantAccess;
     }
 
     @Override
@@ -61,6 +65,7 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
     ) {
         String scope = deletedScope != null ? deletedScope : (activeOnly ? "ACTIVE" : "ALL");
         Specification<Product> spec = ProductSpecifications.catalogFilter(
+            tenantAccess.effectiveCompanyIdOrNull(),
             search, categoryId, scope, storeId, ikpuStatus, markedProduct, soldIndividually, barcodeExact
         );
         Page<Product> page = productRepository.findAll(spec, pageable);

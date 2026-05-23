@@ -35,6 +35,10 @@ public class Sale {
     @JoinColumn(name = "store_id")
     private Store store;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
     @BatchSize(size = 32)
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
@@ -106,6 +110,9 @@ public class Sale {
 
     @PrePersist void prePersist() {
         this.createdAt = Instant.now();
+        if (this.company == null && this.store != null && this.store.getCompany() != null) {
+            this.company = this.store.getCompany();
+        }
     }
 
     public enum PaymentMethod { CASH, CARD, MPESA, MIXED }

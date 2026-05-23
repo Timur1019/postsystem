@@ -11,17 +11,17 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PosCacheRefreshScheduler {
 
-    private final PosCacheWarmupCoordinator cacheWarmupCoordinator;
+    private final PosCacheRefreshOrchestrator cacheRefreshOrchestrator;
 
     @EventListener(ApplicationReadyEvent.class)
     public void warmOnStartup() {
-        LogUtil.info(PosCacheRefreshScheduler.class, "Warming POS caches on startup (analytics + sales ledger)");
-        cacheWarmupCoordinator.refreshAllCaches();
+        LogUtil.info(PosCacheRefreshScheduler.class, "Warming POS caches on startup");
+        cacheRefreshOrchestrator.refreshAll();
     }
 
     @Scheduled(cron = "${app.cache.refresh-cron:0 0 1 * * *}", zone = "${app.cache.zone-id:Asia/Tashkent}")
     public void nightlyRefresh() {
         LogUtil.info(PosCacheRefreshScheduler.class, "Nightly POS cache refresh started");
-        cacheWarmupCoordinator.refreshAllCaches();
+        cacheRefreshOrchestrator.refreshAll();
     }
 }

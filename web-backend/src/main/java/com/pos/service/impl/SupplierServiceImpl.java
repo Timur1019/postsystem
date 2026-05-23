@@ -9,6 +9,7 @@ import com.pos.mapper.SupplierMapper;
 import com.pos.repository.SupplierRepository;
 import com.pos.repository.spec.SupplierSpecifications;
 import com.pos.service.SupplierService;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,10 +31,12 @@ public class SupplierServiceImpl implements SupplierService {
 
     private final SupplierRepository supplierRepository;
     private final SupplierMapper supplierMapper;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public PageResponse<SupplierResponse> list(String search, LocalDate createdOn, Pageable pageable) {
-        Specification<Supplier> spec = SupplierSpecifications.filter(search, createdOn);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Specification<Supplier> spec = SupplierSpecifications.filter(companyId, search, createdOn);
         Page<Supplier> page = supplierRepository.findAll(spec, pageable);
         return PageResponse.from(page.map(supplierMapper::toResponse));
     }
@@ -41,8 +44,9 @@ public class SupplierServiceImpl implements SupplierService {
     @Override
     @Transactional
     public SupplierResponse create(CreateSupplierRequest req) {
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
         String taxId = req.taxId().trim();
-        if (supplierRepository.existsByTaxId(taxId)) {
+        if (supplierRepository.existsByCompanyIdAndTaxId(companyId, taxId)) {
             throw new BadRequestException("Поставщик с таким ИНН/ПИНФЛ уже существует");
         }
         if (StringUtils.hasText(req.email()) && !EMAIL_OK.matcher(req.email().trim()).matches()) {
@@ -50,6 +54,7 @@ public class SupplierServiceImpl implements SupplierService {
         }
 
         Supplier s = Supplier.builder()
+            .company(tenantAccess.requireCompany(companyId))
             .name(req.name().trim())
             .taxId(taxId)
             .address(StringUtils.hasText(req.address()) ? req.address().trim() : null)

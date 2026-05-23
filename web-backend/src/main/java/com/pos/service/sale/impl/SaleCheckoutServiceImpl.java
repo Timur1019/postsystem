@@ -27,7 +27,9 @@ import com.pos.service.sale.support.SalePaymentResolver;
 import com.pos.service.sale.support.SaleReceiptNumberGenerator;
 import com.pos.service.sale.support.SaleVatCalculator;
 import com.pos.service.salesledger.SalesLedgerCacheService;
+import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.CashierSaleSupport;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -54,6 +56,8 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
     private final SalesLedgerCacheService salesLedgerCacheService;
     private final SalePaymentResolver paymentResolver;
     private final SaleReceiptNumberGenerator receiptNumberGenerator;
+    private final StoreStockService storeStockService;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public SaleResponse processSale(CreateSaleRequest req, String cashierUsername) {
@@ -82,15 +86,11 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
             if (!product.isActive()) {
                 throw new BadRequestException("Product is inactive: " + product.getName());
             }
-            if (product.getStockQuantity() < itemReq.quantity()) {
-                throw new BadRequestException(
-                    "Insufficient stock for: " + product.getName() +
-                        ". Available: " + product.getStockQuantity()
-                );
-            }
+            tenantAccess.assertProductBelongsToTenant(product);
+            storeStockService.requireAvailable(product, store, itemReq.quantity());
 
             BigDecimal lineDiscount = itemReq.discount() != null ? itemReq.discount() : BigDecimal.ZERO;
-            BigDecimal unitPrice = cashierSaleSupport.resolveUnitPrice(product, store.getId());
+            BigDecimal unitPrice = resolveCheckoutUnitPrice(itemReq, product, store.getId());
             BigDecimal lineGross = unitPrice.multiply(BigDecimal.valueOf(itemReq.quantity())).subtract(lineDiscount);
             BigDecimal rate = product.getTaxRate() != null ? product.getTaxRate() : new BigDecimal("12");
             BigDecimal taxAmt = SaleVatCalculator.extractFromInclusive(lineGross, rate);
@@ -113,7 +113,7 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
             taxTotal = taxTotal.add(taxAmt);
             lineDiscountTotal = lineDiscountTotal.add(lineDiscount);
 
-            product.setStockQuantity(product.getStockQuantity() - itemReq.quantity());
+            storeStockService.decrease(product, store, itemReq.quantity());
             productRepository.save(product);
         }
 
@@ -177,6 +177,13 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
         salesLedgerCacheService.onSaleChanged(saved);
         LogUtil.info(SaleCheckoutServiceImpl.class, "Sale completed: id={}, receipt={}", saved.getId(), saved.getReceiptNumber());
         return saleMapper.toResponse(saved);
+    }
+
+    private BigDecimal resolveCheckoutUnitPrice(SaleItemRequest itemReq, Product product, Integer storeId) {
+        if (itemReq.unitPrice() != null && itemReq.unitPrice().signum() > 0) {
+            return itemReq.unitPrice().setScale(2, RoundingMode.HALF_UP);
+        }
+        return cashierSaleSupport.resolveUnitPrice(product, storeId);
     }
 
     private static BigDecimal normalizeOrderDiscount(BigDecimal amount, BigDecimal grossTotal) {

@@ -25,6 +25,7 @@ export function buildCheckoutLineItems(items) {
     productId: i.productId,
     quantity: i.quantity,
     discount: lineDiscountAmount(i),
+    unitPrice: round2(i.unitPrice),
   }));
 }
 

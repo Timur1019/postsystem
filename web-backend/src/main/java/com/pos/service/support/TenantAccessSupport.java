@@ -1,6 +1,7 @@
 package com.pos.service.support;
 
 import com.pos.entity.Company;
+import com.pos.entity.Product;
 import com.pos.entity.Store;
 import com.pos.entity.User;
 import com.pos.exception.BadRequestException;
@@ -8,6 +9,7 @@ import com.pos.exception.ResourceNotFoundException;
 import com.pos.repository.CompanyRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.security.CurrentUserProvider;
+import com.pos.security.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -81,5 +83,40 @@ public class TenantAccessSupport {
             stores.add(store);
         }
         return stores;
+    }
+
+    /** companyId для текущего запроса: JWT → user.company → ошибка. */
+    public Integer requireEffectiveCompanyId() {
+        User actor = currentUser();
+        if (currentUserProvider.isSuperAdmin(actor)) {
+            return TenantContext.companyId()
+                .orElseThrow(() -> new BadRequestException("Company context is required"));
+        }
+        if (actor.getCompany() == null) {
+            throw new BadRequestException("Your account is not linked to a company");
+        }
+        return actor.getCompany().getId();
+    }
+
+    /** Для read-only операций: null только у SUPER_ADMIN без company в JWT. */
+    public Integer effectiveCompanyIdOrNull() {
+        User actor = currentUser();
+        if (currentUserProvider.isSuperAdmin(actor)) {
+            return TenantContext.companyId().orElse(null);
+        }
+        if (actor.getCompany() == null) {
+            throw new BadRequestException("Your account is not linked to a company");
+        }
+        return actor.getCompany().getId();
+    }
+
+    public void assertProductBelongsToTenant(Product product) {
+        if (product == null || product.getCompany() == null) {
+            return;
+        }
+        Integer companyId = effectiveCompanyIdOrNull();
+        if (companyId != null && !product.getCompany().getId().equals(companyId)) {
+            throw new BadRequestException("Access denied to this product");
+        }
     }
 }

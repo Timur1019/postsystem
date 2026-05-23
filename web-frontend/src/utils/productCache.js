@@ -4,6 +4,7 @@
  */
 export function invalidateProductCaches(qc) {
   qc.invalidateQueries({ queryKey: ['products'] });
+  qc.invalidateQueries({ queryKey: ['product'] });
   qc.invalidateQueries({ queryKey: ['warehouse-products'] });
   qc.invalidateQueries({ queryKey: ['pos-products'] });
   qc.invalidateQueries({ queryKey: ['low-stock'] });

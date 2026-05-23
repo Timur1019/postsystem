@@ -7,29 +7,30 @@ cd "$ROOT"
 
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 ENV_FILE="${ENV_FILE:-.env}"
-MIGRATIONS_DIR="web-backend/src/main/resources/db"
 MANIFEST="${MANIFEST:-deploy/migrations-prod.txt}"
 
-if [[ ! -f "$ENV_FILE" ]]; then
-  echo "migrate-db: нет $ENV_FILE"
-  exit 1
+if [[ -f "$ENV_FILE" ]]; then
+  # shellcheck disable=SC1090
+  set -a
+  source "$ENV_FILE"
+  set +a
 fi
+
+PG_USER="${POSTGRES_USER:-pos_user}"
+PG_DB="${POSTGRES_DB:-pos_db}"
+MIGRATIONS_DIR="web-backend/src/main/resources/db"
 
 if [[ ! -f "$MANIFEST" ]]; then
   echo "migrate-db: нет манифеста $MANIFEST"
   exit 1
 fi
 
-# shellcheck disable=SC1090
-set -a
-source "$ENV_FILE"
-set +a
-
-PG_USER="${POSTGRES_USER:-pos_user}"
-PG_DB="${POSTGRES_DB:-pos_db}"
-
 compose() {
-  docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" "$@"
+  if [[ -f "$ENV_FILE" ]]; then
+    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" "$@"
+  else
+    docker compose -f "$COMPOSE_FILE" "$@"
+  fi
 }
 
 psql_exec() {

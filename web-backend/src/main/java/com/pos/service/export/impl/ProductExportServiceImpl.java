@@ -6,6 +6,7 @@ import com.pos.entity.Product;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.spec.ProductSpecifications;
 import com.pos.service.export.ProductExportService;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.ExcelSpreadsheetWriter;
 import com.pos.spreadsheet.ExcelTemplate;
 import com.pos.util.ProductImportParseUtil;
@@ -31,6 +32,7 @@ public class ProductExportServiceImpl implements ProductExportService {
 
     private final ProductRepository productRepository;
     private final ExcelSpreadsheetWriter excelWriter;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public List<ProductExportPreviewRow> previewExport(String storeIdsParam, BigDecimal markupPercent) {
@@ -96,6 +98,7 @@ public class ProductExportServiceImpl implements ProductExportService {
 
     private List<Product> loadProducts(String storeIdsParam) {
         Specification<Product> spec = ProductSpecifications.catalogFilter(
+            tenantAccess.effectiveCompanyIdOrNull(),
             null, null, "ACTIVE", null, null, null, null, null
         );
         List<Integer> storeIds = ProductImportParseUtil.parseStoreIdList(storeIdsParam);

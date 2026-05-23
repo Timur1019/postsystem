@@ -12,6 +12,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  Building2,
+  Heart,
 } from 'lucide-react';
 import NumericKeypad, { formatKeypadAmount } from './NumericKeypad';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -32,9 +34,9 @@ const RECEIPT_TYPES = [
 ];
 
 const CARD_TYPES = [
-  { id: 'PERSONAL', labelKey: 'pos.cardPersonal' },
-  { id: 'CORPORATE', labelKey: 'pos.cardCorporate' },
-  { id: 'SOCIAL', labelKey: 'pos.cardSocial' },
+  { id: 'PERSONAL', labelKey: 'pos.cardPersonal', icon: CreditCard },
+  { id: 'CORPORATE', labelKey: 'pos.cardCorporate', icon: Building2 },
+  { id: 'SOCIAL', labelKey: 'pos.cardSocial', icon: Heart },
 ];
 
 const PAY_METHODS = [
@@ -243,6 +245,17 @@ export default function PosPaymentFlow({
 
   if (!open) return null;
 
+  const headerPayAmount =
+    (step === 'cardType' && payMethod === 'mixed') || step === 'mixedCard'
+      ? cardRemainder
+      : toPay;
+  const showHeaderAmount =
+    step === 'method' ||
+    step === 'cash' ||
+    step === 'mixedCash' ||
+    step === 'cardType' ||
+    step === 'mixedCard';
+
   const registerBack = step === 'receipt' ? handleClose : stepBack;
   const showRegisterBackToCheck = step === 'method' || step === 'cash';
 
@@ -267,8 +280,8 @@ export default function PosPaymentFlow({
           <span className="pos-pay-register-rail__back pos-pay-register-rail__back--spacer" aria-hidden />
         )}
         <h2 className="pos-pay-register-rail__title">{stepTitle}</h2>
-        {step === 'method' || step === 'cash' ? (
-          <span className="pos-pay-register-rail__amount">{fmt(toPay)}</span>
+        {showHeaderAmount ? (
+          <span className="pos-pay-register-rail__amount">{fmt(headerPayAmount)}</span>
         ) : (
           <span className="pos-pay-register-rail__amount pos-pay-register-rail__amount--spacer" aria-hidden />
         )}
@@ -400,23 +413,27 @@ export default function PosPaymentFlow({
             )}
 
             {step === 'cardType' && (
-              <div className="pos-pay-panel__step">
-                <p className="pos-pay-card-type-hint">
-                  {payMethod === 'mixed' ? fmt(cardRemainder) : `${fmt(toPay)} сум`}
-                </p>
-                <div className="pos-pay-card-types pos-pay-card-types--stack">
-                  {CARD_TYPES.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      className="pos-pay-card-type pos-pay-card-type--row"
-                      disabled={isPending}
-                      onClick={() => submitCard(c.id)}
-                    >
-                      <CreditCard size={22} strokeWidth={1.5} />
-                      <span>{t(c.labelKey)}</span>
-                    </button>
-                  ))}
+              <div className="pos-pay-panel__step pos-pay-panel__step--card-type">
+                <p className="pos-pay-card-type-step__lead">{t('pos.cardTypeLead')}</p>
+                <div className="pos-pay-card-types pos-pay-card-types--register-stack">
+                  {CARD_TYPES.map((c) => {
+                    const Icon = c.icon;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="pos-pay-card-type pos-pay-card-type--register"
+                        disabled={isPending}
+                        onClick={() => submitCard(c.id)}
+                      >
+                        <span className="pos-pay-card-type__icon">
+                          <Icon size={22} strokeWidth={1.5} aria-hidden />
+                        </span>
+                        <span className="pos-pay-card-type__label">{t(c.labelKey)}</span>
+                        <ArrowRight size={18} className="pos-pay-card-type__arrow" aria-hidden />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

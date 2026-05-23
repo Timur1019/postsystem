@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import com.pos.entity.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +25,24 @@ public class JwtService {
     private long jwtExpiration;
 
     public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+        Map<String, Object> claims = new HashMap<>();
+        if (userDetails instanceof User user && user.getCompany() != null) {
+            claims.put("company_id", user.getCompany().getId());
+        }
+        return generateToken(claims, userDetails);
+    }
+
+    public Integer extractCompanyId(String token) {
+        return extractClaim(token, claims -> {
+            Object value = claims.get("company_id");
+            if (value == null) {
+                return null;
+            }
+            if (value instanceof Number n) {
+                return n.intValue();
+            }
+            return Integer.parseInt(value.toString());
+        });
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {

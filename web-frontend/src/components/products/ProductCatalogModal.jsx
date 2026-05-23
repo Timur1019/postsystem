@@ -1,5 +1,5 @@
 // src/components/products/ProductCatalogModal.jsx
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,6 +9,7 @@ import { X, Loader, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { productApi } from '../../services/api';
 import TasnifSearchPanel from './TasnifSearchPanel';
+import { buildStorePrices, syncStoreRowPrices } from '../../utils/productCatalogPrices';
 
 function Field({ label, required, error, children }) {
   return (
@@ -43,6 +44,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
 
   const [storeRows, setStoreRows] = useState([{ storeId: '', price: '' }]);
   const [extraBarcodes, setExtraBarcodes] = useState(['']);
+  const prevSellingRef = useRef(null);
 
   const schema = useMemo(
     () =>
@@ -83,7 +85,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
     [t]
   );
 
-  const { register, handleSubmit, reset, setValue, getValues, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, setValue, getValues, watch, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       taxRate: 0,
@@ -135,7 +137,19 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
     setStoreRows(prices);
     const extras = (full.barcodes || []).filter((b) => b && b !== full.barcode);
     setExtraBarcodes(extras.length ? extras : ['']);
+    prevSellingRef.current = full.sellingPrice ?? null;
   }, [full, reset, isEdit]);
+
+  const sellingPriceWatch = watch('sellingPrice');
+  const costPriceWatch = watch('costPrice');
+
+  useEffect(() => {
+    if (sellingPriceWatch == null || sellingPriceWatch === '') return;
+    setStoreRows((rows) =>
+      syncStoreRowPrices(rows, sellingPriceWatch, prevSellingRef.current, costPriceWatch)
+    );
+    prevSellingRef.current = sellingPriceWatch;
+  }, [sellingPriceWatch, costPriceWatch]);
 
   const { mutate, isPending } = useMutation({
     mutationFn: async ({ payload, stockDelta }) => {
@@ -160,9 +174,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
   });
 
   const onSubmit = (values) => {
-    const storePrices = storeRows
-      .filter((r) => r.storeId !== '' && r.storeId != null && r.price !== '' && !Number.isNaN(Number(r.price)))
-      .map((r) => ({ storeId: Number(r.storeId), price: Number(r.price) }));
+    const storePrices = buildStorePrices(storeRows, values.sellingPrice);
 
     const additionalBarcodes = extraBarcodes.map((b) => b.trim()).filter(Boolean);
 
@@ -310,8 +322,49 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
 
           <section className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+              {t('productCatalog.sectionAccounting')}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Field label={t('productModal.cost')} error={errors.costPrice?.message}>
+                <input {...register('costPrice', { valueAsNumber: true })} type="number" step="0.01" className={inputCls} />
+              </Field>
+              <Field label={t('productModal.price')} error={errors.sellingPrice?.message}>
+                <input {...register('sellingPrice', { valueAsNumber: true })} type="number" step="0.01" className={inputCls} />
+              </Field>
+              <Field label={t('productCatalog.defaultDiscount')} error={errors.defaultDiscountPercent?.message}>
+                <input
+                  {...register('defaultDiscountPercent', { valueAsNumber: true })}
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label={t('productModal.lowStock')} error={errors.lowStockAlert?.message}>
+                <input {...register('lowStockAlert', { valueAsNumber: true })} type="number" className={inputCls} />
+              </Field>
+              <Field label={t('productModal.initialStock')} error={errors.initialStock?.message}>
+                <input {...register('initialStock', { valueAsNumber: true })} type="number" min="0" className={inputCls} />
+              </Field>
+              <Field label={t('stockModule.modal.location')} error={errors.storageLocation?.message}>
+                <input
+                  {...register('storageLocation')}
+                  className={inputCls}
+                  placeholder={t('stockModule.modal.locationPh')}
+                />
+              </Field>
+            </div>
+            <Field label={t('productModal.description')} error={errors.description?.message}>
+              <textarea {...register('description')} rows={2} className={`${inputCls} resize-none`} />
+            </Field>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
               {t('productCatalog.sectionPrices')}
             </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('productCatalog.storePriceHint')}</p>
             <div className="space-y-2">
               {storeRows.map((row, idx) => (
                 <div key={idx} className="flex gap-2 items-end">
@@ -322,7 +375,17 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
                       value={row.storeId}
                       onChange={(e) => {
                         const v = e.target.value;
-                        setStoreRows((rs) => rs.map((r, i) => (i === idx ? { ...r, storeId: v } : r)));
+                        const sell = getValues('sellingPrice');
+                        setStoreRows((rs) =>
+                          rs.map((r, i) => {
+                            if (i !== idx) return r;
+                            const price =
+                              r.price === '' && sell != null && sell !== ''
+                                ? String(sell)
+                                : r.price;
+                            return { ...r, storeId: v, price };
+                          })
+                        );
                       }}
                     >
                       <option value="">{t('productCatalog.storePlaceholder')}</option>
@@ -334,11 +397,14 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
                     </select>
                   </div>
                   <div className="w-36">
-                    <label className="text-xs text-slate-600 dark:text-slate-500">{t('productCatalog.price')}</label>
+                    <label className="text-xs text-slate-600 dark:text-slate-500">
+                      {t('productCatalog.storeSellingPrice')}
+                    </label>
                     <input
                       type="number"
                       step="0.01"
                       className={inputCls}
+                      placeholder={sellingPriceWatch != null ? String(sellingPriceWatch) : ''}
                       value={row.price}
                       onChange={(e) => {
                         const v = e.target.value;
@@ -400,46 +466,6 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
             >
               <Plus size={14} /> {t('productCatalog.addBarcode')}
             </button>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-              {t('productCatalog.sectionAccounting')}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Field label={t('productModal.cost')} error={errors.costPrice?.message}>
-                <input {...register('costPrice', { valueAsNumber: true })} type="number" step="0.01" className={inputCls} />
-              </Field>
-              <Field label={t('productModal.price')} error={errors.sellingPrice?.message}>
-                <input {...register('sellingPrice', { valueAsNumber: true })} type="number" step="0.01" className={inputCls} />
-              </Field>
-              <Field label={t('productCatalog.defaultDiscount')} error={errors.defaultDiscountPercent?.message}>
-                <input
-                  {...register('defaultDiscountPercent', { valueAsNumber: true })}
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  className={inputCls}
-                />
-              </Field>
-              <Field label={t('productModal.lowStock')} error={errors.lowStockAlert?.message}>
-                <input {...register('lowStockAlert', { valueAsNumber: true })} type="number" className={inputCls} />
-              </Field>
-              <Field label={t('productModal.initialStock')} error={errors.initialStock?.message}>
-                <input {...register('initialStock', { valueAsNumber: true })} type="number" min="0" className={inputCls} />
-              </Field>
-              <Field label={t('stockModule.modal.location')} error={errors.storageLocation?.message}>
-                <input
-                  {...register('storageLocation')}
-                  className={inputCls}
-                  placeholder={t('stockModule.modal.locationPh')}
-                />
-              </Field>
-            </div>
-            <Field label={t('productModal.description')} error={errors.description?.message}>
-              <textarea {...register('description')} rows={2} className={`${inputCls} resize-none`} />
-            </Field>
           </section>
 
           <p className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:border-sky-800/50 dark:bg-sky-950/30 dark:text-sky-400/90">

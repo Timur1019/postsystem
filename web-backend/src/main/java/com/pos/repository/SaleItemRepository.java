@@ -20,12 +20,14 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         JOIN si.sale s
         WHERE s.createdAt >= :start AND s.createdAt < :end AND s.status = :status
         AND (:storeId IS NULL OR s.store.id = :storeId)
+        AND (:companyId IS NULL OR s.company.id = :companyId)
         """)
     long sumQuantitySoldBetween(
         @Param("start") Instant start,
         @Param("end") Instant end,
         @Param("status") Sale.SaleStatus status,
-        @Param("storeId") Integer storeId
+        @Param("storeId") Integer storeId,
+        @Param("companyId") Integer companyId
     );
 
     @Query("""
@@ -34,12 +36,14 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         JOIN si.sale s
         WHERE s.createdAt >= :start AND s.createdAt < :end AND s.status = :status
         AND (:storeId IS NULL OR s.store.id = :storeId)
+        AND (:companyId IS NULL OR s.company.id = :companyId)
         """)
     long sumNetQuantitySoldBetween(
         @Param("start") Instant start,
         @Param("end") Instant end,
         @Param("status") Sale.SaleStatus status,
-        @Param("storeId") Integer storeId
+        @Param("storeId") Integer storeId,
+        @Param("companyId") Integer companyId
     );
 
     @Query(value = """
@@ -48,6 +52,7 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         INNER JOIN sales s ON s.id = si.sale_id
         WHERE CAST(s.created_at AS date) BETWEEN :fromDate AND :toDate
         AND s.status = 'COMPLETED'
+        AND s.company_id = :companyId
         GROUP BY si.product_name
         ORDER BY SUM(si.quantity) DESC
         LIMIT :limit
@@ -55,7 +60,8 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
     java.util.List<Object[]> topProductsRaw(
         @Param("fromDate") java.time.LocalDate from,
         @Param("toDate") java.time.LocalDate to,
-        @Param("limit") int limit
+        @Param("limit") int limit,
+        @Param("companyId") Integer companyId
     );
 
     @Query(value = """
@@ -64,12 +70,14 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         INNER JOIN users u ON u.id = s.cashier_id
         WHERE CAST(s.created_at AS date) BETWEEN :fromDate AND :toDate
         AND s.status = 'COMPLETED'
+        AND s.company_id = :companyId
         GROUP BY u.id, u.full_name
         ORDER BY revenue DESC
         """, nativeQuery = true)
     java.util.List<Object[]> cashierPerformanceRaw(
         @Param("fromDate") java.time.LocalDate from,
-        @Param("toDate") java.time.LocalDate to
+        @Param("toDate") java.time.LocalDate to,
+        @Param("companyId") Integer companyId
     );
 
     @Query(value = """
@@ -79,12 +87,14 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         INNER JOIN sales s ON s.id = si.sale_id
         WHERE s.created_at >= :start AND s.created_at < :end
           AND s.status = 'COMPLETED'
+          AND s.company_id = :companyId
         GROUP BY CAST(s.created_at AS date)
         ORDER BY day
         """, nativeQuery = true)
     java.util.List<Object[]> dailyItemsSoldAggregates(
         @Param("start") Instant start,
-        @Param("end") Instant end
+        @Param("end") Instant end,
+        @Param("companyId") Integer companyId
     );
 
     @Query(value = """
@@ -112,11 +122,13 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         WHERE s.created_at >= :start AND s.created_at < :end
           AND s.status = 'COMPLETED'
           AND (:storeId IS NULL OR s.store_id = :storeId)
+          AND (:companyId IS NULL OR s.company_id = :companyId)
         """, nativeQuery = true)
     java.math.BigDecimal sumCostEstimateBetween(
         @Param("start") Instant start,
         @Param("end") Instant end,
-        @Param("storeId") Integer storeId
+        @Param("storeId") Integer storeId,
+        @Param("companyId") Integer companyId
     );
 
     @Query(value = """
@@ -127,11 +139,13 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         INNER JOIN products p ON p.id = si.product_id
         WHERE s.created_at >= :start AND s.created_at < :end
           AND s.status = 'COMPLETED'
+          AND s.company_id = :companyId
         GROUP BY CAST(s.created_at AS date)
         ORDER BY day
         """, nativeQuery = true)
     List<Object[]> dailyCostEstimateAggregates(
         @Param("start") Instant start,
-        @Param("end") Instant end
+        @Param("end") Instant end,
+        @Param("companyId") Integer companyId
     );
 }

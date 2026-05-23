@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface SupplierRepository extends JpaRepository<Supplier, UUID>, JpaSpecificationExecutor<Supplier> {
 
     boolean existsByTaxId(String taxId);
+
+    boolean existsByCompanyIdAndTaxId(Integer companyId, String taxId);
 }

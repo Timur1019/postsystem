@@ -16,9 +16,13 @@ public final class SupplierSpecifications {
     private SupplierSpecifications() {
     }
 
-    public static Specification<Supplier> filter(String search, LocalDate createdOn) {
+    public static Specification<Supplier> filter(Integer companyId, String search, LocalDate createdOn) {
         return (root, query, cb) -> {
             List<Predicate> parts = new ArrayList<>();
+
+            if (companyId != null) {
+                parts.add(cb.equal(root.get("company").get("id"), companyId));
+            }
 
             String q = search != null ? search.trim() : "";
             if (StringUtils.hasText(q)) {

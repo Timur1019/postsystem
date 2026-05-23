@@ -4,5 +4,5 @@ import com.pos.cache.analytics.ReportAnalyticsSnapshot;
 
 public interface ReportAnalyticsCacheLoader {
 
-    ReportAnalyticsSnapshot loadSnapshot();
+    ReportAnalyticsSnapshot loadSnapshot(Integer companyId);
 }
