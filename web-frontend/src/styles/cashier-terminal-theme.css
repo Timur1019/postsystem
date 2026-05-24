@@ -103,9 +103,14 @@
   color: var(--pos-text);
 }
 
-.cashier-app.cashier-app--terminal .cashier-desktop-menu__item:hover {
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__item:hover,
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__item--primary:hover {
   background: var(--pos-green-soft);
   color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__item--primary {
+  color: var(--pos-text);
 }
 
 .cashier-app.cashier-app--terminal .cashier-topbar__terminal-name {

@@ -266,7 +266,7 @@ function CashierLayoutShell() {
       <div className="d-flex flex-column flex-grow-1 min-vw-0 min-h-0">
         {isPosRoute ? (
           <PosShellProvider>
-            <header className="cashier-topbar cashier-topbar--pos border-bottom px-3 py-2">
+            <header className="cashier-topbar cashier-topbar--pos border-bottom">
               <div className="cashier-topbar__row cashier-topbar__row--main">
                 <div className="cashier-topbar__brand-block">
                   <button

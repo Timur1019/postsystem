@@ -76,7 +76,7 @@ export default function CashierDesktopMenu({ appName }) {
       <div className="cashier-desktop-menu__panel" role="menu">
         <button
           type="button"
-          className="cashier-desktop-menu__item"
+          className="cashier-desktop-menu__item cashier-desktop-menu__item--primary"
           role="menuitem"
           onClick={() => run(() => window.desktopCashier.openServerSetup())}
         >
