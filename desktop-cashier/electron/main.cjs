@@ -42,6 +42,7 @@ function buildAppMenu() {
       submenu: [
         {
           label: 'Настройка сервера…',
+          accelerator: 'CmdOrCtrl+,',
           click: async () => {
             try {
               await configureServerInteractive();
@@ -325,7 +326,8 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 768,
     title: 'Aurent — Касса',
-    autoHideMenuBar: true,
+    // macOS: меню в системной строке; Windows/Linux: показываем меню в окне (иначе «Aurent» не видно)
+    autoHideMenuBar: process.platform === 'darwin',
     backgroundColor: '#f1f5f9',
     webPreferences: {
       contextIsolation: true,
