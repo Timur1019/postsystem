@@ -55,6 +55,7 @@ html.electron-silent-print body {
   background: white !important;
 }
 html.electron-silent-print.print-thermal-only .receipt-page,
+html.electron-silent-print.print-thermal-only .receipt-page--silent,
 html.electron-silent-print.print-thermal-only .receipt-page__paper,
 html.electron-silent-print.print-thermal-only .receipt-page__card,
 html.electron-silent-print.print-thermal-only #receipt-print-area {

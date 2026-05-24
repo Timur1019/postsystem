@@ -7,6 +7,14 @@ const { loadConfig } = require('./config.cjs');
 const { buildOrigin, buildHealthUrl } = require('./server-url.cjs');
 const { startEmbeddedUi, stopEmbeddedUi } = require('./embedded-server.cjs');
 const { showSetupWindow, configPath } = require('./setup-window.cjs');
+const {
+  paperWidthPx,
+  waitForImages,
+  prepareThermalPrintInPage,
+  runSilentPrint,
+  createReceiptPrintWindow,
+  ensureWindowPainted,
+} = require('./print-thermal.cjs');
 
 const ALLOWED_PATH_PREFIXES = ['/login', '/cashier', '/receipt'];
 
@@ -224,69 +232,11 @@ function waitForReceiptReady(webContents, timeoutMs = 12000) {
   `);
 }
 
-/** Подготовка DOM и размер листа для термопринтера (мм → микроны для Chromium). */
-function prepareThermalPrintInPage(webContents, extraClasses = []) {
-  const classes = ['print-thermal-only', 'electron-silent-print', ...extraClasses];
-  const classList = classes.map((c) => `'${c}'`).join(', ');
-  return webContents.executeJavaScript(`
-    (async () => {
-      const add = [${classList}];
-      add.forEach((c) => document.documentElement.classList.add(c));
-      const paper = getComputedStyle(document.documentElement).getPropertyValue('--print-paper-w-mm').trim() || '80';
-      const margin = getComputedStyle(document.documentElement).getPropertyValue('--print-page-margin-mm').trim() || '0';
-      let el = document.getElementById('pos-print-job-page');
-      if (!el) {
-        el = document.createElement('style');
-        el.id = 'pos-print-job-page';
-        document.head.appendChild(el);
-      }
-      el.textContent = '@page { size: ' + paper + 'mm auto; margin: ' + margin + '; }';
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-      const area =
-        document.getElementById('receipt-print-area') ||
-        document.getElementById('fiscal-print-shell');
-      const h = area ? Math.max(area.scrollHeight, area.offsetHeight) : document.body.scrollHeight;
-      const heightMm = Math.max(50, Math.ceil((h / 96) * 25.4) + 8);
-      return { paperMm: parseFloat(paper) || 80, heightMm };
-    })()
-  `);
-}
-
-function runSilentPrint(webContents, dims) {
-  const paperMm = dims?.paperMm || 80;
-  const heightMm = dims?.heightMm || 200;
-  return new Promise((resolve, reject) => {
-    webContents.print(
-      {
-        silent: true,
-        printBackground: true,
-        margins: { marginType: 'none' },
-        pageSize: {
-          width: Math.round(paperMm * 1000),
-          height: Math.round(heightMm * 1000),
-        },
-      },
-      (success, failureReason) => {
-        if (success) resolve();
-        else reject(new Error(failureReason || 'Печать отменена'));
-      }
-    );
-  });
-}
-
-function paperWidthPx(paperMm) {
-  return Math.max(280, Math.round((paperMm / 25.4) * 96) + 48);
-}
-
 function printReceiptInHiddenWindow(receiptNumber) {
   const encoded = encodeURIComponent(String(receiptNumber).trim());
   const url = `${config.cashierUrl}/receipt/${encoded}?silent=1`;
   const paperMm = 80;
-  const printWin = new BrowserWindow({
-    show: false,
+  const printWin = createReceiptPrintWindow({
     width: paperWidthPx(paperMm),
     height: 1600,
     webPreferences: {
@@ -317,9 +267,16 @@ function printReceiptInHiddenWindow(receiptNumber) {
           throw new Error('Чек не успел загрузиться для печати');
         }
       })
-      .then(() => new Promise((r) => setTimeout(r, 500)))
+      .then(() => ensureWindowPainted(printWin))
+      .then(() => waitForImages(printWin.webContents))
+      .then(() => new Promise((r) => setTimeout(r, 400)))
       .then(() => prepareThermalPrintInPage(printWin.webContents))
-      .then((dims) => runSilentPrint(printWin.webContents, dims))
+      .then((dims) => {
+        if (!dims?.textLen || dims.contentHeightPx < 20) {
+          throw new Error('Чек пустой — проверьте вход в кассу и связь с сервером');
+        }
+        return runSilentPrint(printWin.webContents, dims);
+      })
       .then(() => {
         cleanup();
       })
@@ -351,7 +308,12 @@ ipcMain.handle('print-current-page', async (event) => {
     'Boolean(document.getElementById("fiscal-print-shell"))'
   );
   const extra = hasModal ? ['print-thermal-modal'] : [];
+  await waitForImages(wc);
+  await new Promise((r) => setTimeout(r, 200));
   const dims = await prepareThermalPrintInPage(wc, extra);
+  if (!dims?.textLen || dims.contentHeightPx < 20) {
+    throw new Error('Нет содержимого для печати');
+  }
   await runSilentPrint(wc, dims);
   return { ok: true };
 });

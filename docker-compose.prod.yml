@@ -25,7 +25,13 @@ services:
       - ./web-backend/src/main/resources/db/migration_manual_sale_payment_split.sql:/docker-entrypoint-initdb.d/09-sale_payment_split.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_user_module_access.sql:/docker-entrypoint-initdb.d/10-user_module_access.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_uz_invoice_document_id.sql:/docker-entrypoint-initdb.d/11-uz_invoice_document_id.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_tenant_isolation.sql:/docker-entrypoint-initdb.d/12-tenant_isolation.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_sale_item_returned_qty.sql:/docker-entrypoint-initdb.d/12-sale_item_returned_qty.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_stock_movements_enhanced.sql:/docker-entrypoint-initdb.d/13-stock_movements_enhanced.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_stock_receipts.sql:/docker-entrypoint-initdb.d/14-stock_receipts.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_stock_inventory_transfer.sql:/docker-entrypoint-initdb.d/15-stock_inventory_transfer.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_sale_order_discount.sql:/docker-entrypoint-initdb.d/16-sale_order_discount.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_z_report_discount.sql:/docker-entrypoint-initdb.d/17-z_report_discount.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_tenant_isolation.sql:/docker-entrypoint-initdb.d/18-tenant_isolation.sql:ro
     ports:
       # Только localhost сервера — для DBeaver/DataGrip через SSH (не в интернет)
       - '127.0.0.1:5432:5432'
