@@ -222,6 +222,10 @@
     row-gap: 8px;
   }
 
+  .cashier-app--desktop .cashier-topbar__brand-block {
+    max-width: 100%;
+  }
+
   .cashier-topbar__actions {
     margin-left: auto;
   }

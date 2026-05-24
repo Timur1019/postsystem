@@ -35,8 +35,8 @@ async function configureServerInteractive() {
   return config;
 }
 
-function buildAppMenu() {
-  const template = [
+function buildAppMenuTemplate() {
+  return [
     {
       label: 'Aurent',
       submenu: [
@@ -66,7 +66,37 @@ function buildAppMenu() {
       ],
     },
   ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+function buildAppMenu() {
+  Menu.setApplicationMenu(Menu.buildFromTemplate(buildAppMenuTemplate()));
+}
+
+function registerDesktopIpc() {
+  ipcMain.handle('desktop:open-server-setup', async () => {
+    await configureServerInteractive();
+    config = loadConfig();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadURL(`${config.cashierUrl}/login`);
+    }
+    return { ok: true };
+  });
+  ipcMain.handle('desktop:reload', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.reload();
+    }
+    return { ok: true };
+  });
+  ipcMain.handle('desktop:toggle-fullscreen', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setFullScreen(!mainWindow.isFullScreen());
+    }
+    return { ok: true };
+  });
+  ipcMain.handle('desktop:quit', () => {
+    app.quit();
+    return { ok: true };
+  });
 }
 
 function isAllowedLocation(urlString) {
@@ -326,8 +356,8 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 768,
     title: 'Aurent — Касса',
-    // macOS: меню в системной строке; Windows/Linux: показываем меню в окне (иначе «Aurent» не видно)
-    autoHideMenuBar: process.platform === 'darwin',
+    // Системное меню скрыто: на Win/Linux — кнопка «Aurent» в шапке кассы; на Mac — в системной строке
+    autoHideMenuBar: true,
     backgroundColor: '#f1f5f9',
     webPreferences: {
       contextIsolation: true,
@@ -353,11 +383,20 @@ function createWindow() {
   mainWindow.webContents.on('will-navigate', guardNavigation);
   mainWindow.webContents.on('will-redirect', guardNavigation);
 
+  if (process.platform === 'win32') {
+    mainWindow.setMenuBarVisibility(false);
+  }
+
   mainWindow.loadURL(`${config.cashierUrl}/login`);
 }
 
 app.whenReady().then(async () => {
-  buildAppMenu();
+  registerDesktopIpc();
+  if (process.platform === 'darwin') {
+    buildAppMenu();
+  } else {
+    Menu.setApplicationMenu(null);
+  }
   config = loadConfig();
 
   if (!hasUserServerConfig()) {

@@ -98,8 +98,14 @@
     "welcome": "Xush kelibsiz, {{name}}!",
     "failed": "Kirish xatosi",
     "badCredentials": "Login yoki parol noto‘g‘ri",
-    "networkError": "Server bilan aloqa yo‘q. IP, 8080 porti va Aurent → server sozlamalarini tekshiring",
+    "networkError": "Server bilan aloqa yo‘q. IP, port va sarlavhadagi Aurent → server sozlamalarini tekshiring",
     "footer": "Aurent · © {{year}}"
+  },
+  "desktop": {
+    "serverSetup": "Server sozlamalari…",
+    "reload": "Yangilash",
+    "fullscreen": "To‘liq ekran",
+    "quit": "Chiqish"
   },
   "validation": {
     "required": "Majburiy maydon",

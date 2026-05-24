@@ -80,6 +80,34 @@
   color: var(--pos-green);
 }
 
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__trigger {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .cashier-desktop-menu:hover .cashier-desktop-menu__trigger,
+.cashier-app.cashier-app--terminal .cashier-desktop-menu.is-open .cashier-desktop-menu__trigger {
+  background: var(--pos-green-soft);
+  border-color: rgb(61 255 168 / 0.35);
+  box-shadow: 0 2px 14px rgb(61 255 168 / 0.15);
+}
+
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__panel {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 0.45);
+}
+
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__item {
+  color: var(--pos-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__item:hover {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
 .cashier-app.cashier-app--terminal .cashier-topbar__terminal-name {
   font-size: 1.125rem;
   font-weight: 800;

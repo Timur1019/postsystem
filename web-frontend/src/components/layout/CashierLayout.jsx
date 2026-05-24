@@ -20,6 +20,7 @@ import { clearCashierScreenLocked } from '../../utils/cashierLock';
 import { PosShellProvider } from '../../contexts/PosShellContext';
 import CashierShiftModal from '../cashier/CashierShiftModal';
 import PosTopbarStrip from '../cashier/PosTopbarStrip';
+import CashierDesktopMenu from '../cashier/CashierDesktopMenu';
 import LanguageSwitcher from '../shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 import BrandMark from '../shared/BrandMark';
@@ -145,12 +146,39 @@ function CashierLayoutShell() {
   const sidebarClass = `cashier-sidebar d-none d-lg-flex flex-column${sidebarOpen ? '' : ' is-collapsed'}`;
 
   const themeClass = cashierThemeClassName(cashierTheme);
+  const isDesktopApp =
+    typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
+
+  useEffect(() => {
+    if (!isDesktopApp) return undefined;
+    document.documentElement.classList.add('cashier-shell--desktop');
+    return () => document.documentElement.classList.remove('cashier-shell--desktop');
+  }, [isDesktopApp]);
+
+  const topbarTerminalMeta =
+    storeName || shiftOpenBadge ? (
+      <div className="cashier-topbar__terminal-meta d-none d-md-flex">
+        {storeName ? (
+          <span className="cashier-topbar__terminal-badge" title={storeName}>
+            {storeName}
+          </span>
+        ) : null}
+        {shiftOpenBadge ? (
+          <span
+            className="cashier-topbar__terminal-badge"
+            title={shift?.id ? `${t('pos.shiftOpen')} · ${shift.id}` : undefined}
+          >
+            {shiftOpenBadge}
+          </span>
+        ) : null}
+      </div>
+    ) : null;
 
   return (
     <div
       className={`cashier-app ${themeClass} d-flex${sidebarOpen ? '' : ' cashier-app--sidebar-collapsed'}${
         isPosRoute ? ' cashier-app--pos-screen' : ''
-      }`}
+      }${isDesktopApp ? ' cashier-app--desktop' : ''}`}
     >
       <aside className={sidebarClass}>
         <div className="cashier-sidebar__head">
@@ -249,24 +277,11 @@ function CashierLayoutShell() {
                   >
                     {sidebarOpen ? <PanelLeftClose size={20} /> : <Menu size={20} />}
                   </button>
-                  <div className="cashier-topbar__terminal d-none d-md-flex flex-column gap-1 min-w-0">
-                    <p className="cashier-topbar__terminal-name mb-0">{displayAppName()}</p>
-                    <div className="d-flex flex-wrap gap-1">
-                      {storeName ? (
-                        <span className="cashier-topbar__terminal-badge" title={storeName}>
-                          {storeName}
-                        </span>
-                      ) : null}
-                      {shiftOpenBadge ? (
-                        <span
-                          className="cashier-topbar__terminal-badge"
-                          title={shift?.id ? `${t('pos.shiftOpen')} · ${shift.id}` : undefined}
-                        >
-                          {shiftOpenBadge}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
+                  <CashierDesktopMenu appName={displayAppName()} />
+                  {!isDesktopApp ? (
+                    <p className="cashier-topbar__terminal-name mb-0 d-none d-md-block">{displayAppName()}</p>
+                  ) : null}
+                  {topbarTerminalMeta}
                   <p className="cashier-topbar__pos-title mb-0 fw-semibold d-md-none">{t('pos.navSale')}</p>
                 </div>
                 <PosTopbarStrip />
@@ -319,6 +334,7 @@ function CashierLayoutShell() {
                 >
                   {sidebarOpen ? <PanelLeftClose size={20} /> : <Menu size={20} />}
                 </button>
+                <CashierDesktopMenu appName={displayAppName()} />
                 <div className="d-lg-none min-w-0">
                   <p className="fw-semibold mb-0">{displayAppName()}</p>
                   <p className="text-muted small mb-0">{displayName(user)}</p>
