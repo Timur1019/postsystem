@@ -35,32 +35,40 @@ async function configureServerInteractive() {
   return config;
 }
 
+async function openServerSettings() {
+  try {
+    await configureServerInteractive();
+    config = loadConfig();
+    if (config.useEmbedded) {
+      await startEmbeddedUi({
+        port: config.embeddedPort,
+        backendOrigin: config.backendOrigin,
+      });
+      config.cashierUrl = `http://127.0.0.1:${config.embeddedPort}`.replace(/\/$/, '');
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadURL(`${config.cashierUrl}/login`);
+    }
+  } catch {
+    // cancelled
+  }
+}
+
 function buildAppMenuTemplate() {
   return [
     {
       label: 'Aurent',
-      submenu: [
-        {
-          label: 'Настройка сервера…',
-          accelerator: 'CmdOrCtrl+,',
-          click: async () => {
-            try {
-              await configureServerInteractive();
-              if (mainWindow) {
-                mainWindow.loadURL(`${config.cashierUrl}/login`);
-              }
-            } catch {
-              // cancelled
-            }
-          },
-        },
-        { type: 'separator' },
-        { role: 'quit', label: 'Выход' },
-      ],
+      submenu: [{ role: 'quit', label: 'Выход' }],
     },
     {
       label: 'Вид',
       submenu: [
+        {
+          label: 'Настройка сервера…',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => openServerSettings(),
+        },
+        { type: 'separator' },
         { role: 'reload', label: 'Обновить' },
         { role: 'togglefullscreen', label: 'На весь экран' },
       ],
@@ -74,11 +82,7 @@ function buildAppMenu() {
 
 function registerDesktopIpc() {
   ipcMain.handle('desktop:open-server-setup', async () => {
-    await configureServerInteractive();
-    config = loadConfig();
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.loadURL(`${config.cashierUrl}/login`);
-    }
+    await openServerSettings();
     return { ok: true };
   });
   ipcMain.handle('desktop:reload', () => {
@@ -356,8 +360,8 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 768,
     title: 'Aurent — Касса',
-    // Системное меню скрыто: на Win/Linux — кнопка «Aurent» в шапке кассы; на Mac — в системной строке
-    autoHideMenuBar: true,
+    // Windows: строка меню в окне (Вид → Настройка сервера); Mac — в системной строке
+    autoHideMenuBar: process.platform === 'darwin',
     backgroundColor: '#f1f5f9',
     webPreferences: {
       contextIsolation: true,
