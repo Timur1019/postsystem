@@ -710,6 +710,32 @@
   font-weight: 700;
 }
 
+.cashier-desktop-menu__item--stacked {
+  align-items: flex-start;
+  min-height: 52px;
+}
+
+.cashier-desktop-menu__item--stacked svg {
+  margin-top: 2px;
+}
+
+.cashier-desktop-menu__item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cashier-desktop-menu__item-meta {
+  font-size: 11px;
+  color: var(--pos-muted, #64748b);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .cashier-desktop-menu__item--danger:hover {
   background: #fef2f2;
   color: #b91c1c;

@@ -34,6 +34,12 @@
         </rollingPolicy>
     </appender>
 
+    <appender name="UI_RING_BUFFER" class="com.pos.monitoring.log.LogEventCaptureAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
     <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${APP_NAME}-error.log</file>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -73,19 +79,21 @@
         <logger name="com.pos.cache.salesledger" level="DEBUG"/>
     </springProfile>
 
-    <!-- prod: только stdout (Docker) -->
+    <!-- prod: только stdout (Docker) + ring buffer для супер-админ панели -->
     <springProfile name="prod">
         <root level="${LOG_LEVEL_ROOT}">
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="UI_RING_BUFFER"/>
         </root>
     </springProfile>
 
-    <!-- local/dev: консоль + файлы с ротацией -->
+    <!-- local/dev: консоль + файлы с ротацией + ring buffer -->
     <springProfile name="!prod">
         <root level="${LOG_LEVEL_ROOT}">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
             <appender-ref ref="ERROR_FILE"/>
+            <appender-ref ref="UI_RING_BUFFER"/>
         </root>
     </springProfile>
 

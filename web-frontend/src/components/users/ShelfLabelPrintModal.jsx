@@ -2,10 +2,19 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 import JsBarcode from 'jsbarcode';
 import { fmtMoney } from '../../utils/formatMoney';
 
 import '../../styles/shelf-label-print.css';
+
+function isDesktopLabelPrintAvailable() {
+  return (
+    typeof window !== 'undefined' &&
+    Boolean(window.desktopCashier?.isDesktop) &&
+    typeof window.desktopCashier.printLabelPage === 'function'
+  );
+}
 
 function BarcodeBlock({ value }) {
   const svgRef = useRef(null);
@@ -114,7 +123,22 @@ export default function ShelfLabelPrintModal({
     ));
   }, [variant, productName, barcode, price, showName, showBarcode, showPrice, currency, copies]);
 
-  const doPrint = useCallback(() => {
+  const doPrint = useCallback(async () => {
+    document.body.classList.add('shelflabel-printing-active');
+    if (isDesktopLabelPrintAvailable()) {
+      try {
+        await document.fonts?.ready;
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        await new Promise((r) => setTimeout(r, 100));
+        await window.desktopCashier.printLabelPage();
+        toast.success(t('usersBarcodePrint.printSent'));
+      } catch (e) {
+        toast.error(e?.message ?? t('usersBarcodePrint.printFailed'));
+      } finally {
+        document.body.classList.remove('shelflabel-printing-active');
+      }
+      return;
+    }
     window.addEventListener(
       'afterprint',
       () => {
@@ -122,9 +146,8 @@ export default function ShelfLabelPrintModal({
       },
       { once: true }
     );
-    document.body.classList.add('shelflabel-printing-active');
     window.print();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void i18n.language;

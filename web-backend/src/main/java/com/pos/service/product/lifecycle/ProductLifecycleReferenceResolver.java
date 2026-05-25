@@ -4,14 +4,10 @@ import com.pos.domain.StockMovementType;
 import com.pos.dto.product.ProductLifecycleReferenceLabel;
 import com.pos.dto.product.ProductLifecycleReferences;
 import com.pos.entity.Sale;
-import com.pos.entity.StockInventory;
 import com.pos.entity.StockMovement;
-import com.pos.entity.StockReceipt;
-import com.pos.entity.StockTransfer;
-import com.pos.repository.SaleRepository;
-import com.pos.repository.StockInventoryRepository;
-import com.pos.repository.StockReceiptRepository;
-import com.pos.repository.StockTransferRepository;
+import com.pos.service.product.lifecycle.reference.LifecycleReferenceContributor;
+import com.pos.service.product.lifecycle.reference.SaleLifecycleReferenceLoader;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -24,26 +20,14 @@ import java.util.stream.Collectors;
 
 /**
  * Связь движения склада с документом-источником (чек, приёмка, инвентаризация, перемещение).
+ * Новый тип документа = новый {@link LifecycleReferenceContributor}, резолвер править не нужно.
  */
 @Component
+@RequiredArgsConstructor
 public class ProductLifecycleReferenceResolver {
 
-    private final SaleRepository saleRepository;
-    private final StockReceiptRepository stockReceiptRepository;
-    private final StockInventoryRepository stockInventoryRepository;
-    private final StockTransferRepository stockTransferRepository;
-
-    public ProductLifecycleReferenceResolver(
-        SaleRepository saleRepository,
-        StockReceiptRepository stockReceiptRepository,
-        StockInventoryRepository stockInventoryRepository,
-        StockTransferRepository stockTransferRepository
-    ) {
-        this.saleRepository = saleRepository;
-        this.stockReceiptRepository = stockReceiptRepository;
-        this.stockInventoryRepository = stockInventoryRepository;
-        this.stockTransferRepository = stockTransferRepository;
-    }
+    private final SaleLifecycleReferenceLoader saleLoader;
+    private final List<LifecycleReferenceContributor> contributors;
 
     public ProductLifecycleReferences resolveForMovements(List<StockMovement> movements) {
         Set<UUID> ids = movements.stream()
@@ -55,18 +39,15 @@ public class ProductLifecycleReferenceResolver {
         if (ids.isEmpty()) {
             return new ProductLifecycleReferences(labels, salesById);
         }
-        for (Sale sale : saleRepository.findAllById(ids)) {
-            labels.put(sale.getId(), new ProductLifecycleReferenceLabel("SALE", sale.getReceiptNumber()));
-            salesById.put(sale.getId(), sale);
-        }
-        for (StockReceipt receipt : stockReceiptRepository.findAllById(ids)) {
-            labels.putIfAbsent(receipt.getId(), new ProductLifecycleReferenceLabel("RECEIPT", receipt.getReceiptNumber()));
-        }
-        for (StockInventory inv : stockInventoryRepository.findAllById(ids)) {
-            labels.putIfAbsent(inv.getId(), new ProductLifecycleReferenceLabel("INVENTORY", inv.getInventoryNumber()));
-        }
-        for (StockTransfer tr : stockTransferRepository.findAllById(ids)) {
-            labels.putIfAbsent(tr.getId(), new ProductLifecycleReferenceLabel("TRANSFER", tr.getTransferNumber()));
+
+        SaleLifecycleReferenceLoader.Result sales = saleLoader.load(ids);
+        labels.putAll(sales.labels());
+        salesById.putAll(sales.sales());
+
+        for (LifecycleReferenceContributor contributor : contributors) {
+            for (Map.Entry<UUID, ProductLifecycleReferenceLabel> entry : contributor.resolve(ids).entrySet()) {
+                labels.putIfAbsent(entry.getKey(), entry.getValue());
+            }
         }
         return new ProductLifecycleReferences(labels, salesById);
     }
@@ -82,19 +63,33 @@ public class ProductLifecycleReferenceResolver {
         if (ref != null) {
             return ref;
         }
-        return fallbackByMovementType(movement.getMovementType());
+        return MovementTypeFallback.forType(movement.getMovementType());
     }
 
-    private static ProductLifecycleReferenceLabel fallbackByMovementType(String movementType) {
-        if (StockMovementType.SALE.equals(movementType) || StockMovementType.RETURN.equals(movementType)) {
-            return new ProductLifecycleReferenceLabel("SALE", null);
+    /**
+     * Резервный label по типу движения, если документ удалён/не найден. Закрыто для модификации:
+     * добавление нового типа = новая константа.
+     */
+    private enum MovementTypeFallback {
+        SALE_LIKE(Set.of(StockMovementType.SALE, StockMovementType.RETURN), "SALE"),
+        RESTOCK(Set.of(StockMovementType.RESTOCK), "RECEIPT"),
+        ADJUSTMENT(Set.of(StockMovementType.ADJUSTMENT), "ADJUSTMENT");
+
+        private final Set<String> types;
+        private final String label;
+
+        MovementTypeFallback(Set<String> types, String label) {
+            this.types = types;
+            this.label = label;
         }
-        if (StockMovementType.RESTOCK.equals(movementType)) {
-            return new ProductLifecycleReferenceLabel("RECEIPT", null);
+
+        static ProductLifecycleReferenceLabel forType(String movementType) {
+            for (MovementTypeFallback fallback : values()) {
+                if (fallback.types.contains(movementType)) {
+                    return new ProductLifecycleReferenceLabel(fallback.label, null);
+                }
+            }
+            return ProductLifecycleReferenceLabel.none();
         }
-        if (StockMovementType.ADJUSTMENT.equals(movementType)) {
-            return new ProductLifecycleReferenceLabel("ADJUSTMENT", null);
-        }
-        return ProductLifecycleReferenceLabel.none();
     }
 }

@@ -45,7 +45,7 @@ public enum AdminModule {
     USERS_LIST("usersList", "settings", Set.of("ADMIN")),
     USERS_PRINTER_SETTINGS("usersPrinterSettings", "settings", Set.of("ADMIN")),
     USERS_BRANDING_SETTINGS("usersBrandingSettings", "settings", Set.of("ADMIN")),
-    USERS_BARCODE_PRINT("usersBarcodePrint", "settings", Set.of("ADMIN")),
+    USERS_BARCODE_PRINT("usersBarcodePrint", "settings", Set.of("ADMIN", "MANAGER")),
     CHECKOUT("checkout", "main", Set.of("ADMIN", "MANAGER")),
     CASHIER_POS("cashierPos", "cashier", Set.of("CASHIER", "ADMIN", "MANAGER")),
     CASHIER_SALES("cashierSales", "cashier", Set.of("CASHIER", "ADMIN", "MANAGER"));

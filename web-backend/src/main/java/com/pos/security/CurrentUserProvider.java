@@ -20,14 +20,22 @@ public class CurrentUserProvider {
     }
 
     public boolean isSuperAdmin(User user) {
-        return user.getRole() != null && "SUPER_ADMIN".equals(user.getRole().getName());
+        return RoleName.SUPER_ADMIN.matches(user);
     }
 
     public boolean isTenantAdmin(User user) {
-        return user.getRole() != null && "ADMIN".equals(user.getRole().getName());
+        return RoleName.TENANT_ADMIN.matches(user);
     }
 
     public boolean isTenantAdmin() {
         return isTenantAdmin(requireCurrentUser());
+    }
+
+    public boolean isManager(User user) {
+        return RoleName.MANAGER.matches(user);
+    }
+
+    public boolean isCashier(User user) {
+        return RoleName.CASHIER.matches(user);
     }
 }

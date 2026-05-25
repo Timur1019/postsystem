@@ -4,6 +4,7 @@ const path = require('path');
 const { app } = require('electron');
 const { resolveWebDist } = require('./embedded-server.cjs');
 const { buildOrigin, buildHealthUrl, parseServerUrl } = require('./server-url.cjs');
+const { writeUserConfig } = require('./config.cjs');
 
 const DEFAULT_WEB_PORT = process.env.POS_WEB_PORT || '443';
 const DEFAULT_API_PORT = process.env.POS_API_PORT || '443';
@@ -171,9 +172,8 @@ function saveConfig({ host, webPort, apiPort }) {
         apiPort: api,
         apiHealthUrl: buildHealthUrl(webOrigin),
       };
-  fs.mkdirSync(path.dirname(configPath()), { recursive: true });
-  fs.writeFileSync(configPath(), JSON.stringify(payload, null, 2), 'utf8');
-  return payload;
+  // merge: чтобы не затирать настройки принтера и пр.
+  return writeUserConfig(payload);
 }
 
 function showSetupWindow(existing) {

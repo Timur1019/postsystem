@@ -105,7 +105,16 @@
     "serverSetup": "Настройка сервера…",
     "reload": "Обновить",
     "fullscreen": "На весь экран",
-    "quit": "Выход"
+    "quit": "Выход",
+    "receiptPrinter": "Принтер чека",
+    "receiptPrinterHint": "Текущий: {{name}}",
+    "receiptPrinterNotSet": "не выбран",
+    "testReceipt": "Печать тестового чека",
+    "testReceiptSent": "Тестовый чек отправлен на печать",
+    "testReceiptFailed": "Не удалось напечатать тестовый чек",
+    "printerSaved": "Принтер сохранён",
+    "labelPrinter": "Принтер штрих-кодов",
+    "barcodePrint": "Печать штрих-кодов"
   },
   "validation": {
     "required": "Обязательное поле",
@@ -958,7 +967,8 @@
       "orders": "Заказы",
       "registers": "Кассы",
       "reports": "Отчёты",
-      "settings": "Настройки"
+      "settings": "Настройки",
+      "cashier": "Касса"
     },
     "modules": {
       "dashboard": "Дашборд",
@@ -979,7 +989,49 @@
       "usersPrinterSettings": "Принтер",
       "usersBrandingSettings": "Брендинг",
       "usersBarcodePrint": "Печать этикеток",
-      "checkout": "Оформление"
+      "checkout": "Оформление",
+      "cashierPos": "Касса — продажи",
+      "cashierSales": "Касса — мои чеки"
+    },
+    "monitoring": {
+      "nav": "Мониторинг",
+      "title": "Мониторинг сервера",
+      "subtitle": "Метрики нагрузки и журнал ошибок в реальном времени",
+      "autoRefresh": "Авто-обновление",
+      "refresh": "Обновить",
+      "cpu": "CPU процесса",
+      "system": "Система",
+      "heap": "Heap память",
+      "nonHeap": "Non-heap память",
+      "threads": "Потоки",
+      "peak": "Пик",
+      "daemon": "демонов",
+      "dbPool": "Пул БД",
+      "idle": "Свободно",
+      "pending": "Ожидают",
+      "httpReq": "HTTP-запросов всего",
+      "avg": "Среднее",
+      "uptime": "Аптайм",
+      "errors24h": "Ошибок за 24ч",
+      "warnings": "Предупреждений",
+      "tabOverview": "Сводка",
+      "tabMetrics": "Метрики",
+      "tabLogs": "Журнал",
+      "recentErrors": "Последние ошибки сервера",
+      "recentErrorsHint": "Полный журнал — во вкладке «Журнал»",
+      "noErrors": "Ошибок не зафиксировано",
+      "searchMetrics": "Поиск метрики (например jvm, http, hikari)",
+      "selectMetric": "Выберите метрику слева, чтобы увидеть значения и теги",
+      "allLevels": "Все",
+      "records": "записей",
+      "clearLogs": "Очистить буфер",
+      "logsCleared": "Журнал очищен",
+      "actionFailed": "Не удалось выполнить действие",
+      "time": "Время",
+      "level": "Уровень",
+      "logger": "Источник",
+      "message": "Сообщение",
+      "noLogs": "Записей не найдено"
     }
   },
   "tenantSettings": {
@@ -1104,7 +1156,9 @@
     "showBarcode": "Показывать штрих код",
     "showPrice": "Показывать цену",
     "copies": "Копии",
-    "print": "Печать"
+    "print": "Печать",
+    "printSent": "Этикетка отправлена на принтер",
+    "printFailed": "Не удалось напечатать этикетку"
   },
   "receipt": {
     "loading": "Загрузка чека…",

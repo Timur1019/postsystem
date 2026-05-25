@@ -138,14 +138,18 @@ function prepareThermalPrintInPage(webContents, extraClasses = []) {
   `);
 }
 
-function runSilentPrint(webContents, dims) {
+function runSilentPrint(webContents, dims, options = {}) {
   const paperMm = dims?.paperMm || 80;
   const heightMm = dims?.heightMm || 200;
+  const deviceName = options.deviceName ? String(options.deviceName) : '';
   const opts = {
     silent: true,
     printBackground: true,
     margins: { marginType: 'none' },
   };
+  if (deviceName) {
+    opts.deviceName = deviceName;
+  }
   // На Windows произвольный pageSize у 80мм принтеров часто даёт пустую ленту.
   if (!IS_WIN) {
     opts.pageSize = {
@@ -154,10 +158,15 @@ function runSilentPrint(webContents, dims) {
     };
   }
 
+  const printerLabel = deviceName || 'принтер по умолчанию';
   return new Promise((resolve, reject) => {
     webContents.print(opts, (success, failureReason) => {
-      if (success) resolve();
-      else reject(new Error(failureReason || 'Печать отменена'));
+      if (success) {
+        resolve({ deviceName: deviceName || null });
+        return;
+      }
+      const detail = failureReason && failureReason !== 'cancelled' ? failureReason : 'Печать не выполнена';
+      reject(new Error(`${detail} (принтер: ${printerLabel})`));
     });
   });
 }
@@ -195,6 +204,33 @@ async function ensureWindowPainted(win) {
   await waitForPaintFrames(win.webContents);
 }
 
+/**
+ * Печать этикетки/штрих-кода: размер бумаги отдаём драйверу (термоэтикетка, A4 и т.д.).
+ * Указывать pageSize не безопасно — у этикеточных принтеров своя физическая ширина.
+ */
+function runSilentLabelPrint(webContents, options = {}) {
+  const deviceName = options.deviceName ? String(options.deviceName) : '';
+  const opts = {
+    silent: true,
+    printBackground: true,
+    margins: { marginType: 'none' },
+  };
+  if (deviceName) {
+    opts.deviceName = deviceName;
+  }
+  const printerLabel = deviceName || 'принтер по умолчанию';
+  return new Promise((resolve, reject) => {
+    webContents.print(opts, (success, failureReason) => {
+      if (success) {
+        resolve({ deviceName: deviceName || null });
+        return;
+      }
+      const detail = failureReason && failureReason !== 'cancelled' ? failureReason : 'Печать не выполнена';
+      reject(new Error(`${detail} (принтер: ${printerLabel})`));
+    });
+  });
+}
+
 module.exports = {
   IS_WIN,
   paperWidthPx,
@@ -203,6 +239,7 @@ module.exports = {
   waitForImages,
   prepareThermalPrintInPage,
   runSilentPrint,
+  runSilentLabelPrint,
   createReceiptPrintWindow,
   ensureWindowPainted,
 };

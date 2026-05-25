@@ -6,8 +6,18 @@ contextBridge.exposeInMainWorld('desktopCashier', {
   printReceipt: (receiptNumber) => ipcRenderer.invoke('print-receipt', receiptNumber),
   /** Тихая печать текущей страницы чека (без диалога). */
   printCurrentPage: () => ipcRenderer.invoke('print-current-page'),
+  /** Тихая печать текущей страницы как этикетки/штрих-кода. */
+  printLabelPage: () => ipcRenderer.invoke('print-label-page'),
   openServerSetup: () => ipcRenderer.invoke('desktop:open-server-setup'),
   reload: () => ipcRenderer.invoke('desktop:reload'),
   toggleFullscreen: () => ipcRenderer.invoke('desktop:toggle-fullscreen'),
   quit: () => ipcRenderer.invoke('desktop:quit'),
+
+  listPrinters: () => ipcRenderer.invoke('desktop:list-printers'),
+  getPrinterSettings: () => ipcRenderer.invoke('desktop:get-printer-settings'),
+  setPrinterSettings: (settings) => ipcRenderer.invoke('desktop:set-printer-settings', settings),
+  openPrinterPicker: () => ipcRenderer.invoke('desktop:open-printer-picker'),
+  openLabelPrinterPicker: () => ipcRenderer.invoke('desktop:open-label-printer-picker'),
+  printTestReceipt: () => ipcRenderer.invoke('desktop:print-test-receipt'),
+  openBarcodePage: () => ipcRenderer.invoke('desktop:open-barcode-page'),
 });

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronDown, Maximize, RefreshCw, Server, LogOut } from 'lucide-react';
+import { Barcode, ChevronDown, Maximize, Printer, RefreshCw, Server, LogOut, FileText, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 
 function isDesktopCashier() {
   return typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
@@ -10,11 +11,31 @@ export default function CashierDesktopMenu({ appName }) {
   const { t } = useTranslation();
   const rootRef = useRef(null);
   const [open, setOpen] = useState(false);
+  const [printerName, setPrinterName] = useState('');
+  const [labelPrinterName, setLabelPrinterName] = useState('');
 
   const close = useCallback(() => setOpen(false), []);
 
+  const refreshPrinter = useCallback(async () => {
+    if (!isDesktopCashier() || typeof window.desktopCashier.getPrinterSettings !== 'function') {
+      return;
+    }
+    try {
+      const s = await window.desktopCashier.getPrinterSettings();
+      setPrinterName(s?.receiptPrinterName || '');
+      setLabelPrinterName(s?.labelPrinterName || '');
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshPrinter();
+  }, [refreshPrinter]);
+
   useEffect(() => {
     if (!open) return undefined;
+    refreshPrinter();
     const onDoc = (e) => {
       if (rootRef.current && !rootRef.current.contains(e.target)) {
         close();
@@ -29,7 +50,7 @@ export default function CashierDesktopMenu({ appName }) {
       document.removeEventListener('mousedown', onDoc);
       document.removeEventListener('keydown', onKey);
     };
-  }, [open, close]);
+  }, [open, close, refreshPrinter]);
 
   useEffect(() => {
     if (!isDesktopCashier()) return undefined;
@@ -54,7 +75,59 @@ export default function CashierDesktopMenu({ appName }) {
     }
   };
 
+  const openPrinterPicker = async () => {
+    close();
+    try {
+      const settings = await window.desktopCashier.openPrinterPicker();
+      const next = settings?.receiptPrinterName || '';
+      setPrinterName(next);
+      setLabelPrinterName(settings?.labelPrinterName || '');
+      if (next) {
+        toast.success(t('desktop.printerSaved'));
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const openLabelPicker = async () => {
+    close();
+    if (typeof window.desktopCashier?.openLabelPrinterPicker !== 'function') return;
+    try {
+      const settings = await window.desktopCashier.openLabelPrinterPicker();
+      const next = settings?.labelPrinterName || '';
+      setLabelPrinterName(next);
+      setPrinterName(settings?.receiptPrinterName || '');
+      if (next) {
+        toast.success(t('desktop.printerSaved'));
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const runTestPrint = async () => {
+    close();
+    try {
+      await window.desktopCashier.printTestReceipt();
+      toast.success(t('desktop.testReceiptSent'));
+    } catch (e) {
+      toast.error(e?.message ?? t('desktop.testReceiptFailed'));
+    }
+  };
+
+  const openBarcodePage = () => {
+    close();
+    if (typeof window.desktopCashier?.openBarcodePage === 'function') {
+      window.desktopCashier.openBarcodePage().catch(() => {
+        /* ignore */
+      });
+    }
+  };
+
   const label = appName || 'Aurent';
+  const printerLabel = printerName || t('desktop.receiptPrinterNotSet');
+  const labelPrinterLabel = labelPrinterName || t('desktop.receiptPrinterNotSet');
 
   return (
     <div
@@ -83,6 +156,54 @@ export default function CashierDesktopMenu({ appName }) {
           <Server size={18} strokeWidth={2} aria-hidden />
           <span>{t('desktop.serverSetup')}</span>
         </button>
+        <button
+          type="button"
+          className="cashier-desktop-menu__item cashier-desktop-menu__item--stacked"
+          role="menuitem"
+          onClick={openPrinterPicker}
+        >
+          <Printer size={18} strokeWidth={2} aria-hidden />
+          <span className="cashier-desktop-menu__item-text">
+            <span>{t('desktop.receiptPrinter')}</span>
+            <span className="cashier-desktop-menu__item-meta">
+              {t('desktop.receiptPrinterHint', { name: printerLabel })}
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="cashier-desktop-menu__item"
+          role="menuitem"
+          onClick={runTestPrint}
+        >
+          <FileText size={18} strokeWidth={2} aria-hidden />
+          <span>{t('desktop.testReceipt')}</span>
+        </button>
+        <div className="cashier-desktop-menu__sep" role="separator" />
+        <button
+          type="button"
+          className="cashier-desktop-menu__item cashier-desktop-menu__item--stacked"
+          role="menuitem"
+          onClick={openLabelPicker}
+        >
+          <Tag size={18} strokeWidth={2} aria-hidden />
+          <span className="cashier-desktop-menu__item-text">
+            <span>{t('desktop.labelPrinter')}</span>
+            <span className="cashier-desktop-menu__item-meta">
+              {t('desktop.receiptPrinterHint', { name: labelPrinterLabel })}
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="cashier-desktop-menu__item"
+          role="menuitem"
+          onClick={openBarcodePage}
+        >
+          <Barcode size={18} strokeWidth={2} aria-hidden />
+          <span>{t('desktop.barcodePrint')}</span>
+        </button>
+        <div className="cashier-desktop-menu__sep" role="separator" />
         <button
           type="button"
           className="cashier-desktop-menu__item"

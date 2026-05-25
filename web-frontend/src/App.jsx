@@ -52,6 +52,7 @@ import PlatformCompaniesPage from './pages/platform/PlatformCompaniesPage';
 import PlatformStoresPage from './pages/platform/PlatformStoresPage';
 import PlatformUsersPage from './pages/platform/PlatformUsersPage';
 import PlatformModuleAccessPage from './pages/platform/PlatformModuleAccessPage';
+import PlatformMonitoringPage from './pages/platform/PlatformMonitoringPage';
 import { useModuleAccess } from './hooks/useModuleAccess';
 import HtmlLangSync      from './components/shared/HtmlLangSync';
 import AuthBootstrap     from './components/shared/AuthBootstrap';
@@ -144,6 +145,7 @@ export default function App() {
             <Route path="stores" element={<PlatformStoresPage />} />
             <Route path="users" element={<PlatformUsersPage />} />
             <Route path="access" element={<PlatformModuleAccessPage />} />
+            <Route path="monitoring" element={<PlatformMonitoringPage />} />
           </Route>
 
           <Route path="/" element={
@@ -271,7 +273,7 @@ export default function App() {
               <ProtectedRoute requiredRole="ADMIN" module="usersBrandingSettings"><UsersBrandingSettingsPage /></ProtectedRoute>
             } />
             <Route path="users/barcode-print" element={
-              <ProtectedRoute requiredRole="ADMIN" module="usersBarcodePrint"><UsersBarcodePrintPage /></ProtectedRoute>
+              <ProtectedRoute module="usersBarcodePrint"><UsersBarcodePrintPage /></ProtectedRoute>
             } />
             <Route path="users" element={<Navigate to="/users/list" replace />} />
             <Route path="handbook" element={<HandbookPage scope="admin" />} />

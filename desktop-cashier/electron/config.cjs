@@ -89,7 +89,57 @@ function loadConfig() {
     useRemoteUi,
     webPort: String(fileConfig.webPort || DEFAULTS.webPort),
     apiPort: String(fileConfig.apiPort || DEFAULTS.apiPort),
+    receiptPrinterName: fileConfig.receiptPrinterName || '',
+    labelPrinterName: fileConfig.labelPrinterName || '',
   };
 }
 
-module.exports = { loadConfig, DEFAULTS };
+function userConfigPath() {
+  return path.join(app.getPath('userData'), 'config.json');
+}
+
+function readUserConfig() {
+  return readJsonIfExists(userConfigPath()) || {};
+}
+
+/**
+ * Гранулярная запись (merge): не затираем поля, которые писал кто-то другой.
+ */
+function writeUserConfig(patch) {
+  const file = userConfigPath();
+  const current = readUserConfig();
+  const merged = { ...current, ...(patch || {}) };
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(merged, null, 2), 'utf8');
+  return merged;
+}
+
+function readPrinterSettings() {
+  const cfg = readUserConfig();
+  return {
+    receiptPrinterName: cfg.receiptPrinterName || '',
+    labelPrinterName: cfg.labelPrinterName || '',
+  };
+}
+
+function writePrinterSettings(settings) {
+  const patch = {};
+  if (typeof settings?.receiptPrinterName === 'string') {
+    patch.receiptPrinterName = settings.receiptPrinterName.trim();
+  }
+  if (typeof settings?.labelPrinterName === 'string') {
+    patch.labelPrinterName = settings.labelPrinterName.trim();
+  }
+  writeUserConfig(patch);
+  return readPrinterSettings();
+}
+
+module.exports = {
+  loadConfig,
+  DEFAULTS,
+  userConfigPath,
+  readUserConfig,
+  writeUserConfig,
+  readPrinterSettings,
+  writePrinterSettings,
+};

@@ -236,7 +236,7 @@ export default function PlatformModuleAccessPage() {
                   {groupedModules.map(({ group, items }) => (
                     <section key={group}>
                       <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                        {t(`platform.moduleGroups.${group}`)}
+                        {t(`platform.moduleGroups.${group}`, { defaultValue: group })}
                       </h3>
                       <ul className="space-y-1">
                         {items.map((row) => (
@@ -246,7 +246,7 @@ export default function PlatformModuleAccessPage() {
                           >
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
-                                {t(`platform.modules.${row.id}`, row.id)}
+                                {t([`platform.modules.${row.id}`, `nav.${row.id}`], { defaultValue: row.id })}
                               </p>
                               <p className="text-xs text-slate-400">
                                 {t('platform.moduleAccess.roleDefault')}:{' '}

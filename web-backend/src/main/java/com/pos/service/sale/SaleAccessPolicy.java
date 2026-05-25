@@ -15,28 +15,30 @@ public class SaleAccessPolicy {
 
     public void assertCanView(Sale sale) {
         User actor = currentUserProvider.requireCurrentUser();
-        if (currentUserProvider.isSuperAdmin(actor) || currentUserProvider.isTenantAdmin(actor)) {
+        if (isAdminLevel(actor) || currentUserProvider.isManager(actor)) {
             return;
         }
-        if ("MANAGER".equals(actor.getRole().getName())) {
-            return;
-        }
-        if (!sale.getCashier().getId().equals(actor.getId())) {
+        if (!isOwner(actor, sale)) {
             throw new BadRequestException("Access denied");
         }
     }
 
     public void assertCanVoid(Sale sale) {
         User actor = currentUserProvider.requireCurrentUser();
-        if (currentUserProvider.isSuperAdmin(actor) || currentUserProvider.isTenantAdmin(actor)) {
+        if (isAdminLevel(actor) || currentUserProvider.isManager(actor)) {
             return;
         }
-        if ("MANAGER".equals(actor.getRole().getName())) {
-            return;
-        }
-        if ("CASHIER".equals(actor.getRole().getName()) && sale.getCashier().getId().equals(actor.getId())) {
+        if (currentUserProvider.isCashier(actor) && isOwner(actor, sale)) {
             return;
         }
         throw new BadRequestException("Нет прав на возврат этого чека");
+    }
+
+    private boolean isAdminLevel(User actor) {
+        return currentUserProvider.isSuperAdmin(actor) || currentUserProvider.isTenantAdmin(actor);
+    }
+
+    private static boolean isOwner(User actor, Sale sale) {
+        return sale.getCashier() != null && sale.getCashier().getId().equals(actor.getId());
     }
 }

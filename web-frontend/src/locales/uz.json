@@ -105,7 +105,16 @@
     "serverSetup": "Server sozlamalari…",
     "reload": "Yangilash",
     "fullscreen": "To‘liq ekran",
-    "quit": "Chiqish"
+    "quit": "Chiqish",
+    "receiptPrinter": "Chek printeri",
+    "receiptPrinterHint": "Hozirgi: {{name}}",
+    "receiptPrinterNotSet": "tanlanmagan",
+    "testReceipt": "Test chekni chop etish",
+    "testReceiptSent": "Test chek printerga yuborildi",
+    "testReceiptFailed": "Test chekni chop etib bo‘lmadi",
+    "printerSaved": "Printer saqlandi",
+    "labelPrinter": "Shtrix-kod printeri",
+    "barcodePrint": "Shtrix-kod chop etish"
   },
   "validation": {
     "required": "Majburiy maydon",
@@ -959,7 +968,8 @@
       "orders": "Buyurtmalar",
       "registers": "Kassalar",
       "reports": "Hisobotlar",
-      "settings": "Sozlamalar"
+      "settings": "Sozlamalar",
+      "cashier": "Kassa"
     },
     "modules": {
       "dashboard": "Boshqaruv paneli",
@@ -980,7 +990,49 @@
       "usersPrinterSettings": "Printer",
       "usersBrandingSettings": "Brending",
       "usersBarcodePrint": "Yorliq chop etish",
-      "checkout": "To'lov"
+      "checkout": "To'lov",
+      "cashierPos": "Kassa — sotuv",
+      "cashierSales": "Kassa — mening cheklarim"
+    },
+    "monitoring": {
+      "nav": "Monitoring",
+      "title": "Server monitoringi",
+      "subtitle": "Yuklama metrikalari va xatoliklar jurnali real vaqtda",
+      "autoRefresh": "Avto-yangilash",
+      "refresh": "Yangilash",
+      "cpu": "Jarayon CPU",
+      "system": "Tizim",
+      "heap": "Heap xotira",
+      "nonHeap": "Non-heap xotira",
+      "threads": "Threadlar",
+      "peak": "Eng yuqori",
+      "daemon": "daemon",
+      "dbPool": "DB pool",
+      "idle": "Bo'sh",
+      "pending": "Kutyapti",
+      "httpReq": "Jami HTTP so'rovlari",
+      "avg": "O'rtacha",
+      "uptime": "Ishlash vaqti",
+      "errors24h": "24 soatdagi xatolar",
+      "warnings": "Ogohlantirishlar",
+      "tabOverview": "Umumiy",
+      "tabMetrics": "Metrikalar",
+      "tabLogs": "Jurnal",
+      "recentErrors": "Server xatolari",
+      "recentErrorsHint": "To'liq jurnal — «Jurnal» bo'limida",
+      "noErrors": "Xatolar yo'q",
+      "searchMetrics": "Metrika qidirish (masalan jvm, http, hikari)",
+      "selectMetric": "Qiymat va teglarni ko'rish uchun chap tomondan metrikani tanlang",
+      "allLevels": "Hammasi",
+      "records": "yozuv",
+      "clearLogs": "Bufferni tozalash",
+      "logsCleared": "Jurnal tozalandi",
+      "actionFailed": "Amalni bajarib bo'lmadi",
+      "time": "Vaqt",
+      "level": "Daraja",
+      "logger": "Manba",
+      "message": "Xabar",
+      "noLogs": "Yozuv topilmadi"
     }
   },
   "tenantSettings": {
@@ -1105,7 +1157,9 @@
     "showBarcode": "Shtrix kodni koʻrsatish",
     "showPrice": "Narxni koʻrsatish",
     "copies": "Nusxalar",
-    "print": "Chop etish"
+    "print": "Chop etish",
+    "printSent": "Yorliq printerga yuborildi",
+    "printFailed": "Yorliqni chop etib bo‘lmadi"
   },
   "receipt": {
     "loading": "Chek yuklanmoqda…",

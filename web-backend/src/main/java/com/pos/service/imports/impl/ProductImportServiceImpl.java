@@ -17,13 +17,10 @@ import com.pos.service.imports.ProductImportParseOptions;
 import com.pos.service.imports.ProductImportService;
 import com.pos.service.imports.ProductImportSource;
 import com.pos.service.imports.ProductImportSupport;
-import com.pos.spreadsheet.ExcelSpreadsheetReader;
-import com.pos.spreadsheet.ExcelTemplate;
-import com.pos.spreadsheet.parser.CatalogJsonParser;
+import com.pos.service.imports.source.ProductImportSourceHandler;
+import com.pos.service.imports.source.ProductImportSourceHandlers;
 import com.pos.spreadsheet.parser.HtmlExcelTableParser;
-import com.pos.spreadsheet.parser.UzInvoiceDocumentIdExtractor;
 import com.pos.spreadsheet.parser.UzInvoiceJsonParser;
-import com.pos.spreadsheet.parser.UzInvoiceSpreadsheetParser;
 import com.pos.util.ProductImportParseUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -50,10 +47,7 @@ public class ProductImportServiceImpl implements ProductImportService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final StoreRepository storeRepository;
-    private final ExcelSpreadsheetReader excelSpreadsheetReader;
-    private final UzInvoiceSpreadsheetParser uzInvoiceSpreadsheetParser;
-    private final UzInvoiceJsonParser uzInvoiceJsonParser;
-    private final CatalogJsonParser catalogJsonParser;
+    private final ProductImportSourceHandlers sourceHandlers;
 
     @Lazy
     @Autowired
@@ -63,18 +57,12 @@ public class ProductImportServiceImpl implements ProductImportService {
         ProductRepository productRepository,
         CategoryRepository categoryRepository,
         StoreRepository storeRepository,
-        ExcelSpreadsheetReader excelSpreadsheetReader,
-        UzInvoiceSpreadsheetParser uzInvoiceSpreadsheetParser,
-        UzInvoiceJsonParser uzInvoiceJsonParser,
-        CatalogJsonParser catalogJsonParser
+        ProductImportSourceHandlers sourceHandlers
     ) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.storeRepository = storeRepository;
-        this.excelSpreadsheetReader = excelSpreadsheetReader;
-        this.uzInvoiceSpreadsheetParser = uzInvoiceSpreadsheetParser;
-        this.uzInvoiceJsonParser = uzInvoiceJsonParser;
-        this.catalogJsonParser = catalogJsonParser;
+        this.sourceHandlers = sourceHandlers;
     }
 
     @Override
@@ -85,30 +73,23 @@ public class ProductImportServiceImpl implements ProductImportService {
         ProductImportParseOptions options
     ) {
         ProductImportSource importSource = ProductImportSource.fromParam(source);
+        ProductImportSourceHandler handler = sourceHandlers.require(importSource);
         ProductImportParseOptions parseOpts =
             options != null ? options : ProductImportParseOptions.defaults();
-        List<Map<String, String>> rows = parseRows(file, importSource);
+        List<Map<String, String>> rows = parseRows(file, handler);
         List<ProductImportPreviewRow> preview = new ArrayList<>();
         int rowNum = 2;
         for (Map<String, String> row : rows) {
             if (ProductImportParseUtil.isRowEmpty(row)) {
                 continue;
             }
-            preview.add(
-                ProductImportSupport.toPreviewRow(rowNum++, row, productRepository, importSource, parseOpts)
-            );
+            preview.add(handler.toPreviewRow(rowNum++, row, parseOpts));
         }
         int dup = (int) preview.stream().filter(r -> ProductImportPreviewRow.STATUS_DUPLICATE.equals(r.status())).count();
         int invalid = (int) preview.stream().filter(r -> ProductImportPreviewRow.STATUS_INVALID.equals(r.status())).count();
         int newRows = (int) preview.stream().filter(r -> ProductImportPreviewRow.STATUS_NEW.equals(r.status())).count();
-        String fileInvoiceId = resolveFileInvoiceDocumentId(rows, importSource);
-        boolean invoiceAlreadyImported =
-            StringUtils.hasText(fileInvoiceId)
-                && productRepository.existsByUzInvoiceDocumentIdAndIsActiveTrue(fileInvoiceId);
-        if (!invoiceAlreadyImported && StringUtils.hasText(fileInvoiceId)) {
-            invoiceAlreadyImported =
-                productRepository.existsBySkuStartingWithAndIsActiveTrue(fileInvoiceId + "-L-");
-        }
+        String fileInvoiceId = handler.resolveFileInvoiceId(rows);
+        boolean invoiceAlreadyImported = handler.isFileAlreadyImported(fileInvoiceId);
         return new ProductImportPreviewResponse(
             importSource.name(),
             fileInvoiceId,
@@ -309,20 +290,7 @@ public class ProductImportServiceImpl implements ProductImportService {
         productService.createProduct(req);
     }
 
-    private static String resolveFileInvoiceDocumentId(List<Map<String, String>> rows, ProductImportSource source) {
-        if (source != ProductImportSource.UZ_INVOICE || rows == null) {
-            return null;
-        }
-        for (Map<String, String> row : rows) {
-            String raw = ProductImportParseUtil.cell(row, UzInvoiceDocumentIdExtractor.ROW_KEY_UZ_INVOICE_DOCUMENT_ID);
-            if (StringUtils.hasText(raw)) {
-                return raw.trim().toUpperCase(Locale.ROOT);
-            }
-        }
-        return null;
-    }
-
-    private List<Map<String, String>> parseRows(MultipartFile file, ProductImportSource source) {
+    private List<Map<String, String>> parseRows(MultipartFile file, ProductImportSourceHandler handler) {
         if (file == null || file.isEmpty()) {
             throw new BadRequestException("Файл не выбран");
         }
@@ -340,16 +308,10 @@ public class ProductImportServiceImpl implements ProductImportService {
                 );
             }
             if (json) {
-                if (source == ProductImportSource.UZ_INVOICE) {
-                    return uzInvoiceJsonParser.parse(bytes);
-                }
-                return catalogJsonParser.parse(bytes);
+                return handler.parseJson(bytes);
             }
             try (InputStream in = new java.io.ByteArrayInputStream(bytes)) {
-                if (source == ProductImportSource.UZ_INVOICE) {
-                    return uzInvoiceSpreadsheetParser.parse(in);
-                }
-                return excelSpreadsheetReader.read(in, ExcelTemplate.PRODUCTS_CATALOG);
+                return handler.parseSpreadsheet(in);
             }
         } catch (BadRequestException e) {
             throw e;
@@ -357,7 +319,7 @@ public class ProductImportServiceImpl implements ProductImportService {
             throw new BadRequestException(
                 "Не удалось прочитать файл: " + e.getMessage(),
                 java.util.Map.of(
-                    "source", source.name(),
+                    "source", handler.source().name(),
                     "cause", e.getClass().getSimpleName()
                 ),
                 e

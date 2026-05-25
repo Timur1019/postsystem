@@ -3,7 +3,14 @@ package com.pos.service.imports;
 import com.pos.dto.product.ProductImportPreviewRow;
 import com.pos.entity.Product;
 import com.pos.repository.ProductRepository;
+import com.pos.service.imports.source.CatalogImportSourceHandler;
+import com.pos.service.imports.source.UzInvoiceImportSourceHandler;
+import com.pos.spreadsheet.ExcelSpreadsheetReader;
+import com.pos.spreadsheet.parser.CatalogJsonParser;
 import com.pos.spreadsheet.parser.UzInvoiceDocumentIdExtractor;
+import com.pos.spreadsheet.parser.UzInvoiceJsonParser;
+import com.pos.spreadsheet.parser.UzInvoiceSpreadsheetParser;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -23,10 +30,22 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProductImportSupportTest {
 
-    @Mock
-    ProductRepository productRepository;
+    @Mock ProductRepository productRepository;
+    @Mock ExcelSpreadsheetReader excelSpreadsheetReader;
+    @Mock CatalogJsonParser catalogJsonParser;
+    @Mock UzInvoiceSpreadsheetParser uzInvoiceSpreadsheetParser;
+    @Mock UzInvoiceJsonParser uzInvoiceJsonParser;
+
+    private CatalogImportSourceHandler catalog;
+    private UzInvoiceImportSourceHandler uzInvoice;
 
     private static final ProductImportParseOptions DEFAULT_OPTS = ProductImportParseOptions.defaults();
+
+    @BeforeEach
+    void setUp() {
+        catalog = new CatalogImportSourceHandler(excelSpreadsheetReader, catalogJsonParser, productRepository);
+        uzInvoice = new UzInvoiceImportSourceHandler(uzInvoiceSpreadsheetParser, uzInvoiceJsonParser, productRepository);
+    }
 
     @Test
     void uzInvoice_firstImport_allRowsNew_evenWithSameIkpu() {
@@ -38,12 +57,8 @@ class ProductImportSupportTest {
         Map<String, String> row1 = invoiceRow("Товар 1", "08470001002000000", "10000");
         Map<String, String> row2 = invoiceRow("Товар 2", "08470001002000000", "20000");
 
-        ProductImportPreviewRow p1 = ProductImportSupport.toPreviewRow(
-            2, row1, productRepository, ProductImportSource.UZ_INVOICE, DEFAULT_OPTS
-        );
-        ProductImportPreviewRow p2 = ProductImportSupport.toPreviewRow(
-            3, row2, productRepository, ProductImportSource.UZ_INVOICE, DEFAULT_OPTS
-        );
+        ProductImportPreviewRow p1 = uzInvoice.toPreviewRow(2, row1, DEFAULT_OPTS);
+        ProductImportPreviewRow p2 = uzInvoice.toPreviewRow(3, row2, DEFAULT_OPTS);
 
         assertEquals(ProductImportPreviewRow.STATUS_NEW, p1.status());
         assertEquals(ProductImportPreviewRow.STATUS_NEW, p2.status());
@@ -64,9 +79,7 @@ class ProductImportSupportTest {
         when(productRepository.findFirstByUzInvoiceDocumentIdAndIsActiveTrue("IS-00008429"))
             .thenReturn(Optional.of(existing));
 
-        ProductImportPreviewRow preview = ProductImportSupport.toPreviewRow(
-            5, row, productRepository, ProductImportSource.UZ_INVOICE, DEFAULT_OPTS
-        );
+        ProductImportPreviewRow preview = uzInvoice.toPreviewRow(5, row, DEFAULT_OPTS);
 
         assertEquals(ProductImportPreviewRow.STATUS_DUPLICATE, preview.status());
         assertEquals("Счёт-фактура IS-00008429 уже импортирована", preview.message());
@@ -80,9 +93,7 @@ class ProductImportSupportTest {
         row.put("name", "Товар без SKU");
         row.put("selling_price", "1000");
 
-        ProductImportPreviewRow preview = ProductImportSupport.toPreviewRow(
-            2, row, productRepository, ProductImportSource.CATALOG, DEFAULT_OPTS
-        );
+        ProductImportPreviewRow preview = catalog.toPreviewRow(2, row, DEFAULT_OPTS);
 
         assertEquals(ProductImportPreviewRow.STATUS_INVALID, preview.status());
         assertEquals("Не указан артикул (SKU)", preview.message());
@@ -116,9 +127,7 @@ class ProductImportSupportTest {
         when(productRepository.findFirstBySkuStartingWithAndIsActiveTrueOrderBySkuAsc("IS-00008429-L-"))
             .thenReturn(Optional.of(existing));
 
-        ProductImportPreviewRow preview = ProductImportSupport.toPreviewRow(
-            2, row, productRepository, ProductImportSource.UZ_INVOICE, DEFAULT_OPTS
-        );
+        ProductImportPreviewRow preview = uzInvoice.toPreviewRow(2, row, DEFAULT_OPTS);
 
         assertEquals(ProductImportPreviewRow.STATUS_DUPLICATE, preview.status());
         assertEquals("Счёт-фактура IS-00008429 уже импортирована", preview.message());
@@ -132,9 +141,7 @@ class ProductImportSupportTest {
         row.put("ikpu", "08470001002000000");
         row.put("selling_price", "12000");
 
-        ProductImportPreviewRow preview = ProductImportSupport.toPreviewRow(
-            2, row, productRepository, ProductImportSource.UZ_INVOICE, DEFAULT_OPTS
-        );
+        ProductImportPreviewRow preview = uzInvoice.toPreviewRow(2, row, DEFAULT_OPTS);
 
         assertEquals(ProductImportPreviewRow.STATUS_NEW, preview.status());
         assertNull(preview.uzInvoiceDocumentId());
@@ -149,18 +156,12 @@ class ProductImportSupportTest {
         row.put("storage_location", "Полка B");
         row.put("selling_price", "3000");
 
-        ProductImportPreviewRow fromFile = ProductImportSupport.toPreviewRow(
-            2, row, productRepository, ProductImportSource.CATALOG, DEFAULT_OPTS
-        );
+        ProductImportPreviewRow fromFile = catalog.toPreviewRow(2, row, DEFAULT_OPTS);
         assertEquals("Полка B", fromFile.storageLocation());
 
         row.remove("storage_location");
-        ProductImportPreviewRow fromDefault = ProductImportSupport.toPreviewRow(
-            3,
-            row,
-            productRepository,
-            ProductImportSource.CATALOG,
-            new ProductImportParseOptions("Зона A")
+        ProductImportPreviewRow fromDefault = catalog.toPreviewRow(
+            3, row, new ProductImportParseOptions("Зона A")
         );
         assertEquals("Зона A", fromDefault.storageLocation());
     }
