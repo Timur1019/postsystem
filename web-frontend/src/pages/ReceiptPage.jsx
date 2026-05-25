@@ -4,13 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { saleApi } from '../services/api';
-import { ArrowLeft, Printer, Settings2 } from 'lucide-react';
+import { ArrowLeft, Printer, Settings2, Receipt } from 'lucide-react';
 import { POS_RECEIPT_PRINT_EVENT } from '../utils/printWithHtmlClass';
 import { printReceiptDialog } from '../utils/printReceipt';
 import toast from 'react-hot-toast';
 import ThermalPrintSettingsPanel from '../components/receipt/ThermalPrintSettingsPanel';
 import FiscalReceiptBody from '../components/receipt/FiscalReceiptBody';
 import { useAuthStore } from '../store/authStore';
+import { fmtMoney, splitDateTime } from '../utils/fiscalReceiptFormat';
 
 export default function ReceiptPage() {
   const { t } = useTranslation();
@@ -85,49 +86,78 @@ export default function ReceiptPage() {
     );
   }
 
+  const headerWidthCls =
+    'w-full max-w-[min(640px,calc(var(--print-paper-w,80mm)+8rem))]';
+  const dateTime = sale.createdAt ? splitDateTime(sale.createdAt) : null;
+  const totalLabel = sale?.totalAmount != null
+    ? `${fmtMoney(sale.totalAmount)} ${t('fiscalReceipt.currency')}`
+    : null;
+  const receiptShortNumber = sale?.receiptNumber || receiptNumber;
+
   return (
-    <div className="receipt-page min-h-screen overflow-x-hidden bg-slate-100 px-2 py-3 dark:bg-slate-950">
-      <div className="sticky top-0 z-20 mx-auto mb-3 flex w-full max-w-[var(--print-paper-w,80mm)] flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-100/95 py-2 backdrop-blur print:hidden dark:border-slate-800 dark:bg-slate-950/95">
-        <button
-          type="button"
-          onClick={() => navigate(backTarget)}
-          className="flex items-center gap-2 text-sm text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-        >
-          <ArrowLeft size={16} />
-          {fromCashier ? t('receipt.backCashier') : t('receipt.backPos')}
-        </button>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setSettingsOpen((o) => !o)}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-              settingsOpen
-                ? 'border-emerald-600 bg-emerald-50 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-950/60 dark:text-emerald-200'
-                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Settings2 size={16} />
-            {t('printSettings.toggle')}
-          </button>
-          <button
-            type="button"
-            onClick={() => runPrint()}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
-          >
-            <Printer size={16} />
-            {t('receipt.print')}
-          </button>
+    <div className="receipt-page min-h-screen overflow-x-hidden bg-gradient-to-b from-slate-50 to-slate-100 px-3 py-4 dark:from-slate-950 dark:to-slate-900">
+      <div className={`sticky top-2 z-20 mx-auto mb-4 ${headerWidthCls} print:hidden`}>
+        <div className="rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 shadow-sm shadow-slate-200/50 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-black/30">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(backTarget)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              <ArrowLeft size={15} />
+              {fromCashier ? t('receipt.backCashier') : t('receipt.backPos')}
+            </button>
+
+            <div className="ml-1 flex min-w-0 items-center gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <Receipt size={18} />
+              </span>
+              <div className="min-w-0 leading-tight">
+                <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                  {t('receipt.receiptNo')} {receiptShortNumber}
+                </p>
+                <p className="truncate text-[11px] text-slate-500">
+                  {dateTime ? `${dateTime.date} · ${dateTime.time}` : ''}
+                  {totalLabel ? (dateTime ? ' · ' : '') + totalLabel : ''}
+                </p>
+              </div>
+            </div>
+
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSettingsOpen((o) => !o)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                  settingsOpen
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500/60 dark:bg-emerald-500/15 dark:text-emerald-200'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                }`}
+                aria-expanded={settingsOpen}
+              >
+                <Settings2 size={15} />
+                <span className="hidden sm:inline">{t('printSettings.toggle')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => runPrint()}
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition hover:bg-emerald-700 active:scale-[0.98]"
+              >
+                <Printer size={15} />
+                {t('receipt.print')}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {settingsOpen ? (
-        <div className="mx-auto mb-3 w-full max-w-[var(--print-paper-w,80mm)] print:hidden">
+        <div className={`mx-auto mb-3 ${headerWidthCls} print:hidden`}>
           <ThermalPrintSettingsPanel />
         </div>
       ) : null}
 
       <div className="receipt-page__paper mx-auto w-full">
-        <div className="receipt-page__card overflow-hidden rounded-sm bg-white p-0 text-black shadow-md print:rounded-none print:shadow-none dark:bg-white dark:text-black">
+        <div className="receipt-page__card overflow-hidden rounded-md bg-white p-0 text-black shadow-lg ring-1 ring-slate-200 print:rounded-none print:shadow-none print:ring-0 dark:bg-white dark:text-black dark:ring-slate-700">
           <FiscalReceiptBody sale={sale} />
         </div>
       </div>
