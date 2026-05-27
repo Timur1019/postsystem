@@ -43,7 +43,7 @@ public interface ProductService {
         Pageable pageable
     );
 
-    ProductResponse getProduct(UUID id);
+    ProductResponse getProduct(UUID id, Integer storeId);
 
     ProductLifecycleResponse getProductLifecycle(
         UUID id,
@@ -62,7 +62,7 @@ public interface ProductService {
 
     ProductResponse updateProduct(UUID id, UpdateProductRequest req);
 
-    ProductResponse adjustStock(UUID id, int quantity, String movementType, String notes);
+    ProductResponse adjustStock(UUID id, int quantity, String movementType, String notes, Integer storeId);
 
     ProductResponse receiveWarehouseStock(WarehouseReceiveRequest req);
 

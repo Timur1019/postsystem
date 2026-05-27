@@ -67,6 +67,18 @@ public class ProductResponseAssembler {
         );
     }
 
+    public ProductResponse withStockQuantity(ProductResponse base, int stockQuantity) {
+        return new ProductResponse(
+            base.id(), base.sku(), base.name(), base.description(), base.categoryId(), base.categoryName(),
+            base.costPrice(), base.sellingPrice(), base.defaultDiscountPercent(), base.taxRate(), stockQuantity,
+            base.stockDispatched(), base.lowStockAlert(), stockQuantity <= base.lowStockAlert(),
+            base.barcode(), base.barcodes(), base.imageUrl(), base.active(), base.createdAt(), base.externalProductId(),
+            base.ikpu(), base.ikpuStatus(), base.unitOfMeasure(), base.unitMeasureCode(), base.packageCode(),
+            base.soldIndividually(), base.markedProduct(), base.storageLocation(), base.ownerType(),
+            base.commissionTin(), base.commissionPinfl(), base.storesCount(), base.storePrices()
+        );
+    }
+
     public Map<UUID, Integer> loadDispatchedCounts(List<Product> products) {
         if (products == null || products.isEmpty()) {
             return Map.of();

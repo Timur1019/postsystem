@@ -20,6 +20,8 @@ import com.pos.repository.StockMovementRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.stock.StockInventoryService;
+import com.pos.service.stock.StoreStockService;
+import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +48,8 @@ public class StockInventoryServiceImpl implements StockInventoryService {
     private final ProductRepository productRepository;
     private final StockMovementRepository stockMovementRepository;
     private final StoreRepository storeRepository;
+    private final StoreStockService storeStockService;
+    private final TenantAccessSupport tenantAccess;
     private final CurrentUserProvider currentUserProvider;
 
     @Override
@@ -54,7 +58,11 @@ public class StockInventoryServiceImpl implements StockInventoryService {
             throw new BadRequestException("Add at least one line");
         }
         User user = currentUserProvider.requireCurrentUser();
-        Store store = resolveStore(request.storeId());
+        Integer companyId = tenantAccess.effectiveCompanyIdOrNull();
+        if (companyId == null) {
+            throw new BadRequestException("Company context is required");
+        }
+        Store store = storeStockService.requireStoreForCompany(companyId, request.storeId());
         String number = nextInventoryNumber();
         StockInventory inventory = stockInventoryRepository.save(StockInventory.builder()
             .inventoryNumber(number)
@@ -77,7 +85,7 @@ public class StockInventoryServiceImpl implements StockInventoryService {
             if (!product.isActive()) {
                 throw new BadRequestException("Product is not active: " + product.getName());
             }
-            int systemQty = product.getStockQuantity();
+            int systemQty = storeStockService.getQuantity(product.getId(), store.getId());
             int counted = lineReq.countedQuantity();
             int diff = counted - systemQty;
             lines.add(StockInventoryLine.builder()
@@ -89,7 +97,7 @@ public class StockInventoryServiceImpl implements StockInventoryService {
                 .build());
 
             if (diff != 0) {
-                product.setStockQuantity(counted);
+                storeStockService.setQuantity(product, store, counted);
                 productRepository.save(product);
                 stockMovementRepository.save(StockMovement.builder()
                     .product(product)

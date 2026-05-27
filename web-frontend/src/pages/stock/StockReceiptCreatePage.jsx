@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { productApi, storeApi, supplierApi, warehouseApi } from '../../services/api';
+import { productApi, supplierApi, warehouseApi } from '../../services/api';
 import { invalidateProductCaches } from '../../utils/productCache';
+import { useCompanyStores } from '../../hooks/useCompanyStores';
 
 const emptyLine = () => ({
   productId: '',
@@ -22,14 +23,26 @@ export default function StockReceiptCreatePage() {
   const [storeId, setStoreId] = useState('');
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState([emptyLine()]);
+  const { stores, onlyStore, needsStorePick, resolveStoreId } = useCompanyStores();
+
+  useEffect(() => {
+    if (onlyStore) setStoreId(String(onlyStore.id));
+  }, [onlyStore]);
+
+  const effectiveStoreId = resolveStoreId(storeId);
 
   const { data: products } = useQuery({
-    queryKey: ['products-receipt-pick'],
-    queryFn: () => productApi.getAll({ page: 0, size: 500, activeOnly: true }).then((r) => r.data),
-  });
-  const { data: stores = [] } = useQuery({
-    queryKey: ['stores'],
-    queryFn: () => storeApi.getAll().then((r) => r.data),
+    queryKey: ['products-receipt-pick', effectiveStoreId],
+    queryFn: () =>
+      productApi
+        .getAll({
+          page: 0,
+          size: 500,
+          activeOnly: true,
+          ...(effectiveStoreId ? { storeId: effectiveStoreId } : {}),
+        })
+        .then((r) => r.data),
+    enabled: !needsStorePick || !!effectiveStoreId,
   });
   const { data: suppliers } = useQuery({
     queryKey: ['suppliers-all'],
@@ -64,9 +77,14 @@ export default function StockReceiptCreatePage() {
   };
 
   const submit = () => {
+    const sid = resolveStoreId(storeId);
+    if (!sid) {
+      toast.error(t('stockModal.storeRequired'));
+      return;
+    }
     const payload = {
       supplierId: supplierId || undefined,
-      storeId: storeId === '' ? undefined : Number(storeId),
+      storeId: sid,
       notes: notes.trim() || undefined,
       lines: lines
         .filter((l) => l.productId)
@@ -107,8 +125,13 @@ export default function StockReceiptCreatePage() {
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium">{t('stockReports.colStore')}</label>
-          <select className={inputCls} value={storeId} onChange={(e) => setStoreId(e.target.value)}>
-            <option value="">{t('stockReports.allStores')}</option>
+          <select
+            className={inputCls}
+            value={storeId}
+            onChange={(e) => setStoreId(e.target.value)}
+            required={needsStorePick}
+          >
+            <option value="">{needsStorePick ? t('stockModal.pickStore') : t('stockReports.allStores')}</option>
             {stores.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}

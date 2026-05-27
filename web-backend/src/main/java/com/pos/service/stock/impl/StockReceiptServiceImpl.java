@@ -22,7 +22,9 @@ import com.pos.repository.SupplierRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.stock.StockReceiptService;
+import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.ProductValueNormalizer;
+import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -52,6 +54,8 @@ public class StockReceiptServiceImpl implements StockReceiptService {
     private final StockMovementRepository stockMovementRepository;
     private final SupplierRepository supplierRepository;
     private final StoreRepository storeRepository;
+    private final StoreStockService storeStockService;
+    private final TenantAccessSupport tenantAccess;
     private final CurrentUserProvider currentUserProvider;
 
     @Override
@@ -60,7 +64,11 @@ public class StockReceiptServiceImpl implements StockReceiptService {
             throw new BadRequestException("Add at least one line");
         }
         User user = currentUserProvider.requireCurrentUser();
-        Store store = resolveStore(request.storeId());
+        Integer companyId = tenantAccess.effectiveCompanyIdOrNull();
+        if (companyId == null) {
+            throw new BadRequestException("Company context is required");
+        }
+        Store store = storeStockService.requireStoreForCompany(companyId, request.storeId());
         Supplier supplier = resolveSupplier(request.supplierId());
 
         String receiptNumber = nextReceiptNumber();
@@ -101,7 +109,7 @@ public class StockReceiptServiceImpl implements StockReceiptService {
             if (StringUtils.hasText(lineReq.storageLocation())) {
                 product.setStorageLocation(lineReq.storageLocation().trim());
             }
-            product.setStockQuantity(product.getStockQuantity() + q);
+            storeStockService.increase(product, store, q);
             productRepository.save(product);
 
             BigDecimal lineCost = lineReq.purchasePrice()

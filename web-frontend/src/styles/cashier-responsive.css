@@ -857,12 +857,18 @@
 }
 
 @media (max-width: 639px) {
-  .cashier-page__table-wrap .cashier-sales-table-wrap {
+  .cashier-sales-list-card:not(.is-view-list) .cashier-sales-table-wrap {
     display: none;
   }
 
-  .cashier-sales-mobile-list {
+  .cashier-sales-list-card:not(.is-view-cards) .cashier-sales-mobile-list {
     display: flex;
+    flex-direction: column;
+    padding: 10px 12px;
+  }
+
+  .cashier-sales-list-card.is-view-cards .cashier-sales-mobile-list {
+    grid-template-columns: 1fr;
   }
 
   .cashier-page h1.h5 {

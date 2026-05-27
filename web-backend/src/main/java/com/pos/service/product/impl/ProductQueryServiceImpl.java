@@ -13,6 +13,7 @@ import com.pos.repository.StoreRepository;
 import com.pos.repository.spec.ProductSpecifications;
 import com.pos.service.product.ProductQueryService;
 import com.pos.service.product.ProductResponseAssembler;
+import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.AbstractProductCatalogSupport;
 import com.pos.service.support.TenantAccessSupport;
 import org.springframework.data.domain.Page;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 public class ProductQueryServiceImpl extends AbstractProductCatalogSupport implements ProductQueryService {
 
     private final ProductResponseAssembler assembler;
+    private final StoreStockService storeStockService;
     private final TenantAccessSupport tenantAccess;
 
     public ProductQueryServiceImpl(
@@ -43,10 +45,12 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
         ProductStorePriceRepository productStorePriceRepository,
         StoreRepository storeRepository,
         ProductResponseAssembler assembler,
+        StoreStockService storeStockService,
         TenantAccessSupport tenantAccess
     ) {
         super(productRepository, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
         this.assembler = assembler;
+        this.storeStockService = storeStockService;
         this.tenantAccess = tenantAccess;
     }
 
@@ -92,8 +96,9 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
     }
 
     @Override
-    public ProductResponse getProduct(UUID id) {
-        return assembler.toResponse(findDetailed(id));
+    public ProductResponse getProduct(UUID id, Integer storeId) {
+        Product product = findDetailed(id);
+        return forStore(assembler.toResponse(product), product, storeId);
     }
 
     @Override
@@ -105,13 +110,7 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
     public ProductResponse getByBarcode(String barcode, Integer storeId) {
         Product product = validateBarcodeProduct(resolveByBarcode(barcode), storeId);
         ProductResponse base = assembler.toResponse(product);
-        if (storeId == null) {
-            return base;
-        }
-        BigDecimal price = productStorePriceRepository.findByProduct_IdAndStore_Id(product.getId(), storeId)
-            .map(sp -> sp.getPrice())
-            .orElse(product.getSellingPrice());
-        return assembler.withSellingPrice(base, price);
+        return forStore(base, product, storeId);
     }
 
     @Override
@@ -128,14 +127,33 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
         if (storeId == null) {
             return PageResponse.from(page.map(p -> assembler.toResponse(p, storeCounts, dispatched)));
         }
+        Map<UUID, Integer> storeQty = storeStockService.getQuantities(
+            content.stream().map(Product::getId).toList(),
+            storeId
+        );
         return PageResponse.from(page.map(p -> {
             ProductResponse base = assembler.toResponse(p, storeCounts, dispatched);
+            int qty = storeQty.getOrDefault(p.getId(), 0);
+            ProductResponse withQty = assembler.withStockQuantity(base, qty);
             BigDecimal price = productStorePriceRepository
                 .findByProduct_IdAndStore_Id(p.getId(), storeId)
                 .map(sp -> sp.getPrice())
                 .orElse(p.getSellingPrice());
-            return assembler.withSellingPrice(base, price);
+            return assembler.withSellingPrice(withQty, price);
         }));
+    }
+
+    private ProductResponse forStore(ProductResponse base, Product product, Integer storeId) {
+        if (storeId == null) {
+            return base;
+        }
+        int qty = storeStockService.getQuantity(product.getId(), storeId);
+        ProductResponse withQty = assembler.withStockQuantity(base, qty);
+        BigDecimal price = productStorePriceRepository
+            .findByProduct_IdAndStore_Id(product.getId(), storeId)
+            .map(sp -> sp.getPrice())
+            .orElse(product.getSellingPrice());
+        return assembler.withSellingPrice(withQty, price);
     }
 
     private Product validateBarcodeProduct(Product product, Integer storeId) {

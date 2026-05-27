@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public record WarehouseReceiveRequest(
     @NotNull UUID productId,
+    Integer storeId,
     @NotNull @Min(1) Integer quantity,
     @NotNull @DecimalMin(value = "0.0", inclusive = true) BigDecimal unitSellingPrice,
     @NotNull @DecimalMin(value = "0.0", inclusive = true) BigDecimal purchasePrice,

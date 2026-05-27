@@ -12,9 +12,9 @@ import com.pos.entity.User;
 import com.pos.exception.BadRequestException;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.StockMovementRepository;
-import com.pos.repository.StoreRepository;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.stock.StockWriteOffService;
+import com.pos.service.stock.StoreStockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,7 +36,7 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
 
     private final ProductRepository productRepository;
     private final StockMovementRepository stockMovementRepository;
-    private final StoreRepository storeRepository;
+    private final StoreStockService storeStockService;
     private final CurrentUserProvider currentUserProvider;
 
     @Override
@@ -49,22 +49,17 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
         if (!product.isActive()) {
             throw new BadRequestException("Product is not active");
         }
-        if (product.getStockQuantity() < request.quantity()) {
-            throw new BadRequestException(
-                "Insufficient stock. Available: " + product.getStockQuantity()
-            );
-        }
-
         WriteOffReason reason;
         try {
             reason = WriteOffReason.parse(request.reason());
         } catch (IllegalArgumentException ex) {
             throw new BadRequestException(ex.getMessage());
         }
-        Store store = resolveStore(request.storeId());
+        Store store = storeStockService.resolveStoreForProduct(product, request.storeId());
+        storeStockService.requireAvailable(product, store, request.quantity());
         User user = currentUserProvider.requireCurrentUser();
 
-        product.setStockQuantity(product.getStockQuantity() - request.quantity());
+        storeStockService.decrease(product, store, request.quantity());
         productRepository.save(product);
 
         String notes = request.notes() != null ? request.notes().trim() : null;
@@ -93,14 +88,6 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
         Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
         Page<StockMovement> page = stockMovementRepository.findWriteOffsBetween(start, end, storeId, pageable);
         return PageResponse.from(page.map(m -> toRow(m, m.getProduct())));
-    }
-
-    private Store resolveStore(Integer storeId) {
-        if (storeId == null) {
-            return null;
-        }
-        return storeRepository.findById(storeId)
-            .orElseThrow(() -> new BadRequestException("Store not found"));
     }
 
     private WriteOffRowResponse toRow(StockMovement m, Product product) {

@@ -1,14 +1,15 @@
 // src/components/products/StockAdjustModal.jsx
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { X, Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { productApi } from '../../services/api';
 import { invalidateProductCaches } from '../../utils/productCache';
+import { useCompanyStores } from '../../hooks/useCompanyStores';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm
                   placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500
@@ -17,6 +18,22 @@ const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 t
 export default function StockAdjustModal({ product, onClose, onSaved }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const { stores, onlyStore, needsStorePick, resolveStoreId } = useCompanyStores();
+  const [storeId, setStoreId] = useState('');
+
+  useEffect(() => {
+    if (onlyStore) setStoreId(String(onlyStore.id));
+  }, [onlyStore]);
+
+  const effectiveStoreId = resolveStoreId(storeId);
+
+  const { data: productAtStore } = useQuery({
+    queryKey: ['product-stock', product.id, effectiveStoreId],
+    queryFn: () => productApi.getById(product.id, { storeId: effectiveStoreId }).then((r) => r.data),
+    enabled: !!effectiveStoreId,
+  });
+
+  const displayQty = productAtStore?.stockQuantity ?? product.stockQuantity;
 
   const schema = useMemo(
     () =>
@@ -38,14 +55,19 @@ export default function StockAdjustModal({ product, onClose, onSaved }) {
   });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: ({ quantity, movementType, notes }) =>
-      productApi.adjustStock(product.id, quantity, movementType, notes || undefined),
+    mutationFn: ({ quantity, movementType, notes }) => {
+      const sid = resolveStoreId(storeId);
+      if (!sid) {
+        return Promise.reject(new Error(t('stockModal.storeRequired')));
+      }
+      return productApi.adjustStock(product.id, quantity, movementType, notes || undefined, sid);
+    },
     onSuccess: () => {
       toast.success(t('stockModal.stockUpdated'));
       invalidateProductCaches(qc);
       onSaved?.();
     },
-    onError: (err) => toast.error(err.response?.data?.message ?? t('stockModal.adjustFailed')),
+    onError: (err) => toast.error(err.response?.data?.message ?? err.message ?? t('stockModal.adjustFailed')),
   });
 
   return (
@@ -56,7 +78,8 @@ export default function StockAdjustModal({ product, onClose, onSaved }) {
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('stockModal.title')}</h2>
             <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{product.name}</p>
             <p className="mt-1 font-mono text-xs text-slate-500 dark:text-slate-500">
-              {t('stockModal.current', { qty: product.stockQuantity })}
+              {t('stockModal.current', { qty: displayQty })}
+              {needsStorePick && effectiveStoreId ? ` · ${stores.find((s) => s.id === effectiveStoreId)?.name ?? ''}` : ''}
             </p>
           </div>
           <button
@@ -69,6 +92,25 @@ export default function StockAdjustModal({ product, onClose, onSaved }) {
         </div>
 
         <form onSubmit={handleSubmit((data) => mutate(data))} className="space-y-4 p-5">
+          {needsStorePick ? (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
+                {t('stockReports.colStore')}
+              </label>
+              <select
+                className={inputCls}
+                value={storeId}
+                onChange={(e) => setStoreId(e.target.value)}
+                required
+              >
+                <option value="">{t('stockModal.pickStore')}</option>
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
               {t('stockModal.qtyChange')}
@@ -106,7 +148,7 @@ export default function StockAdjustModal({ product, onClose, onSaved }) {
             </button>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || (needsStorePick && !effectiveStoreId)}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-500 py-2.5 font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50"
             >
               {isPending ? <Loader size={18} className="animate-spin" /> : t('common.apply')}

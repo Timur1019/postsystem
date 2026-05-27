@@ -220,7 +220,8 @@
       "close": "Закрыть",
       "loadFail": "Не удалось загрузить информацию о товаре",
       "tabDetails": "Карточка",
-      "tabLifecycle": "Жизненный цикл"
+      "tabLifecycle": "Жизненный цикл",
+      "openLifecycle": "Жизненный цикл"
     },
     "lifecycle": {
       "currentStock": "Остаток сейчас",
@@ -1340,7 +1341,9 @@
     "notes": "Комментарий (необязательно)",
     "notesPh": "Причина или ссылка…",
     "stockUpdated": "Остаток обновлён",
-    "adjustFailed": "Не удалось изменить остаток"
+    "adjustFailed": "Не удалось изменить остаток",
+    "pickStore": "Выберите магазин",
+    "storeRequired": "Укажите магазин"
   },
   "stockModule": {
     "title": "Товары на складе",
@@ -1577,6 +1580,9 @@
     "printFailed": "Не удалось напечатать чек",
     "saleFailed": "Не удалось оформить продажу",
     "mySalesTitle": "Мои продажи",
+    "salesListTitle": "Продажи",
+    "salesSelectHint": "Выберите продажу из списка",
+    "salesBackToList": "К списку",
     "currentShiftSales": "Текущая смена",
     "shiftOpenedAt": "Открыта {{time}}",
     "showOtherSales": "Показать продажи за другие смены",

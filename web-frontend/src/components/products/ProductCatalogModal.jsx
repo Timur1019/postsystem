@@ -151,18 +151,36 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
     prevSellingRef.current = sellingPriceWatch;
   }, [sellingPriceWatch, costPriceWatch]);
 
+  const resolveStockStoreId = () => {
+    const fromRows = storeRows.map((r) => r.storeId).filter(Boolean);
+    if (fromRows.length === 1) return Number(fromRows[0]);
+    if (stores?.length === 1) return stores[0].id;
+    return null;
+  };
+
   const { mutate, isPending } = useMutation({
-    mutationFn: async ({ payload, stockDelta }) => {
-      const res = isEdit
+    mutationFn: async ({ payload, stockQty, isEditMode }) => {
+      const res = isEditMode
         ? await productApi.update(product.id, payload)
         : await productApi.create(payload);
-      if (isEdit && stockDelta !== 0) {
-        await productApi.adjustStock(
-          product.id,
-          stockDelta,
-          'ADJUSTMENT',
-          t('productCatalog.stockEditNote')
-        );
+      if (isEditMode) {
+        const stockStoreId = resolveStockStoreId();
+        if (!stockStoreId) {
+          throw new Error(t('stockModal.storeRequired'));
+        }
+        const prev = await productApi
+          .getById(product.id, { storeId: stockStoreId })
+          .then((r) => r.data.stockQuantity);
+        const delta = stockQty - prev;
+        if (delta !== 0) {
+          await productApi.adjustStock(
+            product.id,
+            delta,
+            'ADJUSTMENT',
+            t('productCatalog.stockEditNote'),
+            stockStoreId
+          );
+        }
       }
       return res;
     },
@@ -206,13 +224,13 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
     const stockQty = values.initialStock ?? 0;
 
     if (isEdit) {
-      const previousStock = full?.stockQuantity ?? 0;
       mutate({
         payload: {
           ...base,
           active: values.active,
         },
-        stockDelta: stockQty - previousStock,
+        stockQty,
+        isEditMode: true,
       });
     } else {
       mutate({
@@ -221,7 +239,8 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
           initialStock: stockQty,
           ...base,
         },
-        stockDelta: 0,
+        stockQty: 0,
+        isEditMode: false,
       });
     }
   };

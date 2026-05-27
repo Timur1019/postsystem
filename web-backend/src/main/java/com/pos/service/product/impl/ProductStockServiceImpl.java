@@ -4,6 +4,7 @@ import com.pos.dto.product.ProductResponse;
 import com.pos.dto.warehouse.WarehouseReceiveRequest;
 import com.pos.entity.Product;
 import com.pos.entity.StockMovement;
+import com.pos.entity.Store;
 import com.pos.exception.BadRequestException;
 import com.pos.repository.CategoryRepository;
 import com.pos.repository.ProductBarcodeRepository;
@@ -13,6 +14,7 @@ import com.pos.repository.StockMovementRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.service.product.ProductResponseAssembler;
 import com.pos.service.product.ProductStockService;
+import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.AbstractProductCatalogSupport;
 import com.pos.service.support.ProductValueNormalizer;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,7 @@ import java.util.UUID;
 public class ProductStockServiceImpl extends AbstractProductCatalogSupport implements ProductStockService {
 
     private final StockMovementRepository stockMovementRepository;
+    private final StoreStockService storeStockService;
     private final ProductResponseAssembler assembler;
 
     public ProductStockServiceImpl(
@@ -36,20 +39,24 @@ public class ProductStockServiceImpl extends AbstractProductCatalogSupport imple
         ProductStorePriceRepository productStorePriceRepository,
         StoreRepository storeRepository,
         StockMovementRepository stockMovementRepository,
+        StoreStockService storeStockService,
         ProductResponseAssembler assembler
     ) {
         super(productRepository, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
         this.stockMovementRepository = stockMovementRepository;
+        this.storeStockService = storeStockService;
         this.assembler = assembler;
     }
 
     @Override
-    public ProductResponse adjustStock(UUID id, int quantity, String movementType, String notes) {
+    public ProductResponse adjustStock(UUID id, int quantity, String movementType, String notes, Integer storeId) {
         Product product = findById(id);
-        applyStockDelta(product, quantity);
+        Store store = storeStockService.resolveStoreForProduct(product, storeId);
+        applyStockDelta(product, quantity, store);
         productRepository.save(product);
-        recordStockMovement(product, quantity, movementType, notes);
-        return assembler.toResponse(product);
+        recordStockMovement(product, quantity, movementType, notes, store);
+        ProductResponse base = assembler.toResponse(product);
+        return assembler.withStockQuantity(base, storeStockService.getQuantity(product.getId(), store.getId()));
     }
 
     @Override
@@ -59,7 +66,8 @@ public class ProductStockServiceImpl extends AbstractProductCatalogSupport imple
         if (q < 1) {
             throw new BadRequestException("Quantity must be at least 1");
         }
-        applyStockDelta(product, q);
+        Store store = storeStockService.resolveStoreForProduct(product, req.storeId());
+        applyStockDelta(product, q, store);
         product.setSellingPrice(req.unitSellingPrice());
         product.setCostPrice(req.purchasePrice());
         if (req.vatPercent() != null) {
@@ -70,21 +78,31 @@ public class ProductStockServiceImpl extends AbstractProductCatalogSupport imple
             product.setStorageLocation(req.storageLocation().trim());
         }
         Product saved = productRepository.save(product);
-        recordStockMovement(saved, q, "RESTOCK", "Склад: поступление");
+        recordStockMovement(saved, q, "RESTOCK", "Склад: поступление", store);
         return assembler.toResponse(saved);
     }
 
-    private void applyStockDelta(Product product, int delta) {
-        int newStock = product.getStockQuantity() + delta;
-        if (newStock < 0) {
-            throw new BadRequestException("Insufficient stock");
+    private void applyStockDelta(Product product, int delta, Store store) {
+        if (delta == 0) {
+            throw new BadRequestException("Quantity must be non-zero");
         }
-        product.setStockQuantity(newStock);
+        if (delta > 0) {
+            storeStockService.increase(product, store, delta);
+        } else {
+            storeStockService.decrease(product, store, -delta);
+        }
     }
 
-    private void recordStockMovement(Product product, int quantity, String movementType, String notes) {
+    private void recordStockMovement(
+        Product product,
+        int quantity,
+        String movementType,
+        String notes,
+        Store store
+    ) {
         stockMovementRepository.save(StockMovement.builder()
             .product(product)
+            .store(store)
             .movementType(movementType)
             .quantity(quantity)
             .notes(notes)

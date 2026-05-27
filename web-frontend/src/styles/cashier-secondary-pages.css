@@ -504,6 +504,69 @@
   color: #92400e;
 }
 
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane {
+  background: var(--cashier-panel-surface);
+  border-color: var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__head {
+  background: var(--cashier-panel-surface-2);
+  border-bottom-color: var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__close {
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__close:hover {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__close-icon {
+  background: #fff;
+  border-color: var(--cashier-panel-border);
+  color: var(--cashier-panel-muted);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__body {
+  background: #fffbeb;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__footer {
+  background: var(--cashier-panel-surface-2);
+  border-top-color: var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__return {
+  background: #ea580c;
+  color: #fff;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__return:hover:not(:disabled) {
+  background: #c2410c;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__placeholder {
+  color: #92400e;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-card__head {
+  background: var(--cashier-panel-surface-2);
+  border-bottom-color: var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-card__head-title {
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__row.is-selected,
+.cashier-app.cashier-app--terminal .cashier-sales-mobile-card.is-selected {
+  background: #ffedd5 !important;
+  border-color: #fb923c;
+  box-shadow: inset 3px 0 0 #ea580c;
+}
+
 .cashier-app.cashier-app--terminal .alert-warning {
   background: #fffbeb;
   border: 1px solid #fcd34d;

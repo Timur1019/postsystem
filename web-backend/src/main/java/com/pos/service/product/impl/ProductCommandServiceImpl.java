@@ -3,6 +3,7 @@ package com.pos.service.product.impl;
 import com.pos.dto.product.BulkTaxRateRequest;
 import com.pos.dto.product.CreateProductRequest;
 import com.pos.dto.product.ProductResponse;
+import com.pos.dto.product.ProductStorePriceRequest;
 import com.pos.dto.product.UpdateProductRequest;
 import com.pos.entity.Category;
 import com.pos.entity.Product;
@@ -21,7 +22,6 @@ import com.pos.service.support.AbstractProductCatalogSupport;
 import com.pos.service.support.ProductValueNormalizer;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.service.stock.StoreStockService;
-import com.pos.service.support.ProductValueNormalizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -124,13 +124,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         applyStorePrices(saved, req.storePrices());
         applyExtraBarcodes(saved, req.additionalBarcodes(), saved.getBarcode());
         Product persisted = productRepository.save(saved);
-        int initialStock = req.initialStock() != null ? req.initialStock() : 0;
-        if (initialStock > 0) {
-            storeRepository.findByCompanyIdOrderByNameAsc(companyId).forEach(store ->
-                storeStockService.initializeForStore(persisted, store, initialStock)
-            );
-            recordStockMovement(persisted, initialStock, "RESTOCK", "Начальный остаток при создании товара");
-        }
+        applyInitialStock(persisted, req.initialStock(), req.storePrices(), companyId, "Начальный остаток при создании товара");
         return assembler.toResponse(persisted);
     }
 
@@ -328,21 +322,59 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         );
 
         int initialStock = req.initialStock() != null ? req.initialStock() : 0;
-        product.setStockQuantity(initialStock);
+        product.setStockQuantity(0);
 
         Product saved = productRepository.save(product);
         applyStorePrices(saved, req.storePrices());
         applyExtraBarcodes(saved, req.additionalBarcodes(), saved.getBarcode());
-        saved = productRepository.save(saved);
-        if (initialStock > 0) {
-            recordStockMovement(saved, initialStock, "RESTOCK", "Начальный остаток при повторном импорте");
-        }
-        return assembler.toResponse(saved);
+        Product persisted = productRepository.save(saved);
+        Integer companyId = persisted.getCompany() != null ? persisted.getCompany().getId() : null;
+        applyInitialStock(persisted, initialStock, req.storePrices(), companyId, "Начальный остаток при повторном импорте");
+        return assembler.toResponse(persisted);
     }
 
-    private void recordStockMovement(Product product, int quantity, String movementType, String notes) {
+    private void applyInitialStock(
+        Product product,
+        Integer initialStockRaw,
+        List<ProductStorePriceRequest> storePrices,
+        Integer companyId,
+        String movementNote
+    ) {
+        int initialStock = initialStockRaw != null ? initialStockRaw : 0;
+        if (initialStock <= 0 || companyId == null) {
+            return;
+        }
+        List<Integer> targetStoreIds = new java.util.ArrayList<>();
+        if (storePrices != null && !storePrices.isEmpty()) {
+            storePrices.stream().map(ProductStorePriceRequest::storeId).distinct().forEach(targetStoreIds::add);
+        } else {
+            List<com.pos.entity.Store> stores = storeRepository.findByCompanyIdOrderByNameAsc(companyId);
+            if (stores.size() == 1) {
+                targetStoreIds.add(stores.get(0).getId());
+            } else if (stores.size() > 1) {
+                throw new BadRequestException(
+                    "Укажите цены по магазинам (storePrices), чтобы задать начальный остаток при нескольких магазинах"
+                );
+            }
+        }
+        for (Integer storeId : targetStoreIds) {
+            com.pos.entity.Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Store not found: " + storeId));
+            storeStockService.initializeForStore(product, store, initialStock);
+            recordStockMovement(product, initialStock, "RESTOCK", movementNote, store);
+        }
+    }
+
+    private void recordStockMovement(
+        Product product,
+        int quantity,
+        String movementType,
+        String notes,
+        com.pos.entity.Store store
+    ) {
         stockMovementRepository.save(StockMovement.builder()
             .product(product)
+            .store(store)
             .movementType(movementType)
             .quantity(quantity)
             .notes(notes)

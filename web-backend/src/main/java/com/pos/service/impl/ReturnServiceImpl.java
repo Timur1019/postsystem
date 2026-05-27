@@ -5,6 +5,7 @@ import com.pos.dto.sale.SaleResponse;
 import com.pos.dto.shared.PageResponse;
 import com.pos.entity.Product;
 import com.pos.entity.Sale;
+import com.pos.entity.Store;
 import com.pos.domain.StockMovementType;
 import com.pos.entity.StockMovement;
 import com.pos.exception.BadRequestException;
@@ -17,6 +18,7 @@ import com.pos.repository.SaleRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.service.ReturnService;
 import com.pos.service.salesledger.SalesLedgerCacheService;
+import com.pos.service.stock.StoreStockService;
 import com.pos.util.ReturnNotesSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,8 +39,8 @@ public class ReturnServiceImpl implements ReturnService {
 
     private final SaleRepository saleRepository;
     private final SaleItemRepository saleItemRepository;
-    private final ProductRepository productRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final StoreStockService storeStockService;
     private final ReturnMapper returnMapper;
     private final SaleMapper saleMapper;
     private final SalesLedgerCacheService salesLedgerCacheService;
@@ -102,16 +104,15 @@ public class ReturnServiceImpl implements ReturnService {
             throw new BadRequestException("Отмена доступна только для аннулированных чеков (VOIDED)");
         }
 
+        Store store = sale.getStore();
+        if (store == null) {
+            throw new BadRequestException("У продажи не указан магазин");
+        }
+
         sale.getItems().forEach(item -> {
             Product product = item.getProduct();
-            int available = product.getStockQuantity();
-            if (available < item.getQuantity()) {
-                throw new BadRequestException(
-                    "Недостаточно остатка для отмены возврата: " + product.getName()
-                );
-            }
-            product.setStockQuantity(available - item.getQuantity());
-            productRepository.save(product);
+            storeStockService.requireAvailable(product, store, item.getQuantity());
+            storeStockService.decrease(product, store, item.getQuantity());
 
             stockMovementRepository.save(StockMovement.builder()
                 .product(product)

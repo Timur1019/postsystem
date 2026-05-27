@@ -53,7 +53,7 @@ export default function PosPage() {
   const [payOpen, setPayOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [discountOpen, setDiscountOpen] = useState(false);
-  const [posPane, setPosPane] = useState('catalog');
+  const [posPane, setPosPane] = useState('register');
   const { setShell } = usePosShell() ?? {};
   const { open: shiftModalOpen, openShift: openShiftModal } = useCashierShiftModal();
   const layoutCompact = useCashierCompactLayout();

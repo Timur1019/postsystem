@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface ProductStockService {
 
-    ProductResponse adjustStock(UUID id, int quantity, String movementType, String notes);
+    ProductResponse adjustStock(UUID id, int quantity, String movementType, String notes, Integer storeId);
 
     ProductResponse receiveWarehouseStock(WarehouseReceiveRequest req);
 }

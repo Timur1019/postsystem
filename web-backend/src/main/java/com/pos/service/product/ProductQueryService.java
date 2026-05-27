@@ -26,7 +26,7 @@ public interface ProductQueryService {
         Pageable pageable
     );
 
-    ProductResponse getProduct(java.util.UUID id);
+    ProductResponse getProduct(java.util.UUID id, Integer storeId);
 
     ProductResponse getByBarcode(String barcode);
 

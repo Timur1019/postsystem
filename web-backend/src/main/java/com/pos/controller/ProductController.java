@@ -81,8 +81,11 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> getProduct(@PathVariable UUID id) {
-        return ResponseEntity.ok(productService.getProduct(id));
+    public ResponseEntity<ProductResponse> getProduct(
+        @PathVariable UUID id,
+        @RequestParam(required = false) Integer storeId
+    ) {
+        return ResponseEntity.ok(productService.getProduct(id, storeId));
     }
 
     @GetMapping("/{id}/lifecycle")
@@ -130,9 +133,10 @@ public class ProductController {
         @PathVariable UUID id,
         @RequestParam int quantity,
         @RequestParam(defaultValue = "ADJUSTMENT") String movementType,
-        @RequestParam(required = false) String notes
+        @RequestParam(required = false) String notes,
+        @RequestParam(required = false) Integer storeId
     ) {
-        return ResponseEntity.ok(productService.adjustStock(id, quantity, movementType, notes));
+        return ResponseEntity.ok(productService.adjustStock(id, quantity, movementType, notes, storeId));
     }
 
     @DeleteMapping("/{id}")

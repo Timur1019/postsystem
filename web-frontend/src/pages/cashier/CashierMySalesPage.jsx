@@ -1,19 +1,29 @@
 // src/pages/cashier/CashierMySalesPage.jsx
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { Clock, Filter, X } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Clock, Filter, LayoutGrid, List, X, ChevronLeft } from 'lucide-react';
 import { saleApi } from '../../services/api';
 import SalePartialReturnModal from '../../components/sales/SalePartialReturnModal';
+import FiscalReceiptBody from '../../components/receipt/FiscalReceiptBody';
 import { useCashierShift } from '../../hooks/useCashierShift';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 
 const PAGE_SIZE = 14;
 const RECEIPT_DEBOUNCE_MS = 400;
+const SALES_VIEW_STORAGE_KEY = 'cashier-sales-view-mode';
+
+function readSalesViewMode() {
+  try {
+    const v = localStorage.getItem(SALES_VIEW_STORAGE_KEY);
+    if (v === 'list' || v === 'cards') return v;
+  } catch {
+    /* ignore */
+  }
+  return 'list';
+}
 
 function useDebouncedValue(value, delay) {
   const [debounced, setDebounced] = useState(value);
@@ -256,7 +266,7 @@ function SalesPagination({ page, totalPages, totalElements, onPageChange, t }) {
   );
 }
 
-function SalesTable({ rows, isPending, onReturn, voidPending, onRowClick, t }) {
+function SalesTable({ rows, isPending, selectedId, onRowClick, t }) {
   return (
     <div className="cashier-sales-table-wrap">
       <table className="cashier-sales-table">
@@ -267,25 +277,28 @@ function SalesTable({ rows, isPending, onReturn, voidPending, onRowClick, t }) {
             <th className="cashier-sales-table__col-num">{t('pos.total')}</th>
             <th>{t('pos.payment')}</th>
             <th>{t('pos.salesFilterStatus')}</th>
-            <th className="cashier-sales-table__actions" />
           </tr>
         </thead>
         <tbody>
           {isPending ? (
             <tr>
-              <td colSpan={6} className="cashier-sales-table__empty">
+              <td colSpan={5} className="cashier-sales-table__empty">
                 {t('common.loading')}
               </td>
             </tr>
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={6} className="cashier-sales-table__empty">
+              <td colSpan={5} className="cashier-sales-table__empty">
                 {t('pos.noSales')}
               </td>
             </tr>
           ) : (
             rows.map((row) => (
-              <tr key={row.id} className="cashier-sales-table__row" onClick={() => onRowClick(row)}>
+              <tr
+                key={row.id}
+                className={`cashier-sales-table__row${row.id === selectedId ? ' is-selected' : ''}`}
+                onClick={() => onRowClick(row)}
+              >
                 <td className="cashier-sales-table__receipt">{row.receiptNumber}</td>
                 <td className="cashier-sales-table__date">
                   {row.createdAt ? format(new Date(row.createdAt), 'dd.MM.yyyy HH:mm') : '—'}
@@ -297,18 +310,6 @@ function SalesTable({ rows, isPending, onReturn, voidPending, onRowClick, t }) {
                   </span>
                 </td>
                 <td>{statusBadge(row.status, t)}</td>
-                <td className="cashier-sales-table__actions">
-                  {row.status !== 'VOIDED' && onReturn ? (
-                    <button
-                      type="button"
-                      className="cashier-sales-table__return"
-                      onClick={(e) => onReturn(row, e)}
-                      disabled={voidPending}
-                    >
-                      {t('pos.return')}
-                    </button>
-                  ) : null}
-                </td>
               </tr>
             ))
           )}
@@ -350,7 +351,7 @@ function ShiftStatsBanner({ shift, t }) {
   );
 }
 
-function SalesMobileList({ rows, isPending, onReturn, voidPending, onRowClick, t }) {
+function SalesCardsList({ rows, isPending, selectedId, onRowClick, t }) {
   if (isPending) {
     return <p className="cashier-sales-table__empty">{t('common.loading')}</p>;
   }
@@ -362,7 +363,7 @@ function SalesMobileList({ rows, isPending, onReturn, voidPending, onRowClick, t
       {rows.map((row) => (
         <article
           key={row.id}
-          className="cashier-sales-mobile-card"
+          className={`cashier-sales-mobile-card${row.id === selectedId ? ' is-selected' : ''}`}
           role="button"
           tabIndex={0}
           onClick={() => onRowClick(row)}
@@ -386,21 +387,97 @@ function SalesMobileList({ rows, isPending, onReturn, voidPending, onRowClick, t
             </span>
             {statusBadge(row.status, t)}
           </div>
-          {row.status !== 'VOIDED' && onReturn ? (
-            <div className="cashier-sales-mobile-card__actions">
-              <button
-                type="button"
-                className="cashier-sales-table__return w-100"
-                onClick={(e) => onReturn(row, e)}
-                disabled={voidPending}
-              >
-                {t('pos.return')}
-              </button>
-            </div>
-          ) : null}
         </article>
       ))}
     </div>
+  );
+}
+
+function SalesViewToggle({ viewMode, onChange, t }) {
+  return (
+    <div className="pos-topbar-views cashier-sales-view-toggle" role="group" aria-label={t('pos.viewModeLabel')}>
+      <button
+        type="button"
+        className={`pos-topbar-views__btn${viewMode === 'list' ? ' is-active' : ''}`}
+        onClick={() => onChange('list')}
+        title={t('pos.viewAsList')}
+      >
+        <List size={18} aria-hidden />
+      </button>
+      <button
+        type="button"
+        className={`pos-topbar-views__btn${viewMode === 'cards' ? ' is-active' : ''}`}
+        onClick={() => onChange('cards')}
+        title={t('pos.viewAsCards')}
+      >
+        <LayoutGrid size={18} aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn, onClose, t }) {
+  const {
+    data: sale,
+    isPending,
+    isError,
+  } = useQuery({
+    queryKey: ['receipt', receiptNumber],
+    queryFn: () => saleApi.getReceipt(receiptNumber).then((r) => r.data),
+    enabled: !!receiptNumber,
+  });
+
+  const canReturn = selectedRow && selectedRow.status !== 'VOIDED';
+
+  return (
+    <aside className="cashier-sales-receipt-pane" aria-label={t('pos.receipt')}>
+      <header className="cashier-sales-receipt-pane__head">
+        <button
+          type="button"
+          className="cashier-sales-receipt-pane__close"
+          onClick={onClose}
+          aria-label={t('pos.salesBackToList')}
+        >
+          <ChevronLeft size={18} aria-hidden />
+          <span>{t('pos.salesBackToList')}</span>
+        </button>
+        <button
+          type="button"
+          className="cashier-sales-receipt-pane__close-icon"
+          onClick={onClose}
+          aria-label={t('common.close')}
+        >
+          <X size={18} aria-hidden />
+        </button>
+      </header>
+      <div className="cashier-sales-receipt-pane__body">
+        {!receiptNumber ? (
+          <p className="cashier-sales-receipt-pane__placeholder">{t('pos.salesSelectHint')}</p>
+        ) : isPending ? (
+          <p className="cashier-sales-receipt-pane__placeholder">{t('receipt.loading')}</p>
+        ) : isError || !sale ? (
+          <p className="cashier-sales-receipt-pane__placeholder">{t('receipt.notFound')}</p>
+        ) : (
+          <div className="cashier-sales-receipt-pane__paper">
+            <div className="receipt-page__card cashier-sales-receipt-pane__card">
+              <FiscalReceiptBody sale={sale} />
+            </div>
+          </div>
+        )}
+      </div>
+      {canReturn ? (
+        <footer className="cashier-sales-receipt-pane__footer">
+          <button
+            type="button"
+            className="cashier-sales-receipt-pane__return"
+            onClick={onReturn}
+            disabled={returnDisabled}
+          >
+            {t('pos.return')}
+          </button>
+        </footer>
+      ) : null}
+    </aside>
   );
 }
 
@@ -411,27 +488,32 @@ function SalesListCard({
   totalPages,
   totalElements,
   onPageChange,
-  onReturn,
-  voidPending,
+  selectedId,
+  viewMode,
+  onViewModeChange,
   onRowClick,
   t,
 }) {
+  const listModeClass = viewMode === 'cards' ? 'is-view-cards' : 'is-view-list';
+
   return (
-    <div className="cashier-sales-card">
-      <div className="cashier-page__table-wrap cashier-sales-card__table">
-        <SalesMobileList
+    <div className={`cashier-sales-card cashier-sales-list-card ${listModeClass}`}>
+      <div className="cashier-sales-card__head">
+        <span className="cashier-sales-card__head-title">{t('pos.salesListTitle')}</span>
+        <SalesViewToggle viewMode={viewMode} onChange={onViewModeChange} t={t} />
+      </div>
+      <div className="cashier-page__table-wrap cashier-sales-card__table cashier-sales-card__scroll">
+        <SalesCardsList
           rows={rows}
           isPending={isPending}
-          onReturn={onReturn}
-          voidPending={voidPending}
+          selectedId={selectedId}
           onRowClick={onRowClick}
           t={t}
         />
         <SalesTable
           rows={rows}
           isPending={isPending}
-          onReturn={onReturn}
-          voidPending={voidPending}
+          selectedId={selectedId}
           onRowClick={onRowClick}
           t={t}
         />
@@ -449,12 +531,13 @@ function SalesListCard({
 
 export default function CashierMySalesPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const { storeId } = useCashierStore();
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [returnSaleId, setReturnSaleId] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
+  const [viewMode, setViewMode] = useState(readSalesViewMode);
 
   const debouncedReceipt = useDebouncedValue(filters.receiptNumber, RECEIPT_DEBOUNCE_MS);
   const appliedFilters = useMemo(
@@ -491,10 +574,39 @@ export default function CashierMySalesPage() {
     enabled: !!shiftId,
   });
 
-  const handleReturn = (row, e) => {
-    e.stopPropagation();
-    if (row.status === 'VOIDED') return;
-    setReturnSaleId(row.id);
+  const rows = useMemo(() => sales?.content ?? [], [sales?.content]);
+
+  const selectedRow = useMemo(
+    () => rows.find((r) => r.id === selectedId) ?? null,
+    [rows, selectedId]
+  );
+
+  useEffect(() => {
+    if (selectedId && !rows.some((r) => r.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [rows, selectedId]);
+
+  useEffect(() => {
+    if (!selectedId) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setSelectedId(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedId]);
+
+  const handleRowClick = (row) => {
+    setSelectedId((prev) => (prev === row.id ? null : row.id));
+  };
+
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem(SALES_VIEW_STORAGE_KEY, mode);
+    } catch {
+      /* ignore */
+    }
   };
 
   const patchFilters = (patch) => {
@@ -506,10 +618,8 @@ export default function CashierMySalesPage() {
     setPage(0);
   };
 
-  const rows = sales?.content ?? [];
-
   return (
-    <div className="cashier-page">
+    <div className="cashier-page cashier-page--my-sales">
       <h1 className="h5 fw-bold mb-3 flex-shrink-0">{t('pos.mySalesTitle')}</h1>
 
       <SalesFilters
@@ -532,21 +642,37 @@ export default function CashierMySalesPage() {
         ) : !shiftId ? (
           <div className="alert alert-warning mb-0">{t('pos.shiftRequired')}</div>
         ) : (
-          <>
-            <ShiftStatsBanner shift={shift} t={t} />
-            <SalesListCard
-              rows={rows}
-              isPending={salesLoading || filtering}
-              page={page}
-              totalPages={sales?.totalPages ?? 0}
-              totalElements={sales?.totalElements ?? 0}
-              onPageChange={setPage}
-              onReturn={handleReturn}
-              voidPending={!!returnSaleId}
-              onRowClick={(row) => navigate(`/receipt/${row.receiptNumber}`)}
-              t={t}
-            />
-          </>
+          <div className={`cashier-sales-master${selectedId ? ' has-selection' : ''}`}>
+            <div className="cashier-sales-list-pane">
+              <ShiftStatsBanner shift={shift} t={t} />
+              <SalesListCard
+                rows={rows}
+                isPending={salesLoading || filtering}
+                page={page}
+                totalPages={sales?.totalPages ?? 0}
+                totalElements={sales?.totalElements ?? 0}
+                onPageChange={setPage}
+                selectedId={selectedId}
+                viewMode={viewMode}
+                onViewModeChange={handleViewModeChange}
+                onRowClick={handleRowClick}
+                t={t}
+              />
+            </div>
+            {selectedId ? (
+              <SalesReceiptPane
+                receiptNumber={selectedRow?.receiptNumber}
+                selectedRow={selectedRow}
+                returnDisabled={!!returnSaleId}
+                onReturn={() => {
+                  if (selectedRow?.status === 'VOIDED') return;
+                  setReturnSaleId(selectedRow.id);
+                }}
+                onClose={() => setSelectedId(null)}
+                t={t}
+              />
+            ) : null}
+          </div>
         )}
       </div>
 
@@ -559,6 +685,9 @@ export default function CashierMySalesPage() {
           qc.invalidateQueries({ queryKey: ['sales-ledger'] });
           qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
           qc.invalidateQueries({ queryKey: ['returns'] });
+          if (selectedRow?.receiptNumber) {
+            qc.invalidateQueries({ queryKey: ['receipt', selectedRow.receiptNumber] });
+          }
         }}
       />
     </div>

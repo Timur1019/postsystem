@@ -49,6 +49,9 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public DailySummaryResponse getDailySummary(LocalDate date) {
         LocalDate target = date != null ? date : LocalDate.now(zone());
+        if (isToday(target)) {
+            return loadDailySummaryFromDb(target);
+        }
         return analyticsCache.current(companyId())
             .filter(s -> s.covers(target))
             .map(s -> ReportAnalyticsReadSupport.dailySummary(s, target))
@@ -59,6 +62,10 @@ public class ReportServiceImpl implements ReportService {
     public SalesReportResponse getSalesReport(LocalDate from, LocalDate to) {
         LocalDate end = to != null ? to : LocalDate.now(zone());
         LocalDate start = from != null ? from : end.minusDays(6);
+
+        if (rangeIncludesToday(start, end)) {
+            return loadSalesReportFromDb(start, end);
+        }
 
         return analyticsCache.current(companyId())
             .filter(s -> s.coversRange(start, end))
@@ -72,6 +79,9 @@ public class ReportServiceImpl implements ReportService {
         LocalDate start = from != null ? from : end.minus(30, ChronoUnit.DAYS);
 
         int cappedLimit = Math.max(1, limit);
+        if (rangeIncludesToday(start, end)) {
+            return loadTopProductsFromDb(cappedLimit, start, end);
+        }
         var snapshotOpt = analyticsCache.current(companyId());
         if (snapshotOpt.isPresent()) {
             ReportAnalyticsSnapshot snapshot = snapshotOpt.get();
@@ -92,6 +102,9 @@ public class ReportServiceImpl implements ReportService {
         LocalDate end = to != null ? to : LocalDate.now(zone());
         LocalDate start = from != null ? from : end.minus(30, ChronoUnit.DAYS);
 
+        if (rangeIncludesToday(start, end)) {
+            return loadCashierPerformanceFromDb(start, end);
+        }
         var snapshotOpt = analyticsCache.current(companyId());
         if (snapshotOpt.isPresent()) {
             ReportAnalyticsSnapshot snapshot = snapshotOpt.get();
@@ -218,6 +231,23 @@ public class ReportServiceImpl implements ReportService {
 
     private ZoneId zone() {
         return ZoneId.of(cacheProperties.getZoneId());
+    }
+
+    private LocalDate today() {
+        return LocalDate.now(zone());
+    }
+
+    private boolean isToday(LocalDate date) {
+        return date != null && date.equals(today());
+    }
+
+    /** Кэш обновляется ночью; продажи за текущий день — только из БД. */
+    private boolean rangeIncludesToday(LocalDate from, LocalDate to) {
+        if (from == null || to == null) {
+            return false;
+        }
+        LocalDate today = today();
+        return !to.isBefore(today) && !from.isAfter(today);
     }
 
     private DailySummaryResponse loadDailySummaryFromDb(LocalDate date) {

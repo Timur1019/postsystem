@@ -114,7 +114,6 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
             lineDiscountTotal = lineDiscountTotal.add(lineDiscount);
 
             storeStockService.decrease(product, store, itemReq.quantity());
-            productRepository.save(product);
         }
 
         BigDecimal grossTotal = subtotal.add(taxTotal).setScale(2, RoundingMode.HALF_UP);

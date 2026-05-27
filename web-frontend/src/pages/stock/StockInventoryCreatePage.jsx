@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { productApi, storeApi, warehouseApi } from '../../services/api';
+import { productApi, warehouseApi } from '../../services/api';
 import { invalidateProductCaches } from '../../utils/productCache';
+import { useCompanyStores } from '../../hooks/useCompanyStores';
 
 const emptyLine = () => ({ productId: '', countedQuantity: '' });
 
@@ -16,14 +17,26 @@ export default function StockInventoryCreatePage() {
   const [storeId, setStoreId] = useState('');
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState([emptyLine()]);
+  const { stores, onlyStore, needsStorePick, resolveStoreId } = useCompanyStores();
+
+  useEffect(() => {
+    if (onlyStore) setStoreId(String(onlyStore.id));
+  }, [onlyStore]);
+
+  const effectiveStoreId = resolveStoreId(storeId);
 
   const { data: products } = useQuery({
-    queryKey: ['products-inv-pick'],
-    queryFn: () => productApi.getAll({ page: 0, size: 500, activeOnly: true }).then((r) => r.data),
-  });
-  const { data: stores = [] } = useQuery({
-    queryKey: ['stores'],
-    queryFn: () => storeApi.getAll().then((r) => r.data),
+    queryKey: ['products-inv-pick', effectiveStoreId],
+    queryFn: () =>
+      productApi
+        .getAll({
+          page: 0,
+          size: 500,
+          activeOnly: true,
+          ...(effectiveStoreId ? { storeId: effectiveStoreId } : {}),
+        })
+        .then((r) => r.data),
+    enabled: !needsStorePick || !!effectiveStoreId,
   });
 
   const catalog = products?.content ?? [];
@@ -39,8 +52,13 @@ export default function StockInventoryCreatePage() {
   });
 
   const submit = () => {
+    const sid = resolveStoreId(storeId);
+    if (!sid) {
+      toast.error(t('stockModal.storeRequired'));
+      return;
+    }
     const payload = {
-      storeId: storeId === '' ? undefined : Number(storeId),
+      storeId: sid,
       notes: notes.trim() || undefined,
       lines: lines
         .filter((l) => l.productId)
@@ -69,9 +87,16 @@ export default function StockInventoryCreatePage() {
       <div className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs font-medium">{t('stockReports.colStore')}</label>
-          <select value={storeId} onChange={(e) => setStoreId(e.target.value)} className={inputCls}>
-            <option value="">—</option>
-            {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          <select
+            value={storeId}
+            onChange={(e) => setStoreId(e.target.value)}
+            className={inputCls}
+            required={needsStorePick}
+          >
+            <option value="">{needsStorePick ? t('stockModal.pickStore') : '—'}</option>
+            {stores.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
           </select>
         </div>
         <div className="sm:col-span-2">

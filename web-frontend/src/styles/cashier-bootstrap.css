@@ -3068,3 +3068,233 @@
   }
 }
 
+/* Мои продажи — master-detail */
+.cashier-page--my-sales .cashier-page__scroll {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cashier-sales-master {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.cashier-sales-master.has-selection {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 38%);
+}
+
+.cashier-sales-list-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.cashier-sales-list-pane .cashier-sales-shift-stats {
+  flex-shrink: 0;
+  margin-bottom: 0 !important;
+}
+
+.cashier-sales-list-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.cashier-sales-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  flex-shrink: 0;
+}
+
+.cashier-sales-card__head-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--pos-text, #111827);
+}
+
+.cashier-sales-card__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.cashier-sales-list-card.is-view-list .cashier-sales-mobile-list {
+  display: none;
+}
+
+.cashier-sales-list-card.is-view-list .cashier-sales-table-wrap {
+  display: block;
+}
+
+.cashier-sales-list-card.is-view-cards .cashier-sales-table-wrap {
+  display: none;
+}
+
+.cashier-sales-list-card.is-view-cards .cashier-sales-mobile-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.cashier-sales-table__row.is-selected,
+.cashier-sales-mobile-card.is-selected {
+  background: #ecfdf5 !important;
+  border-color: rgb(0 104 71 / 0.45);
+  box-shadow: inset 3px 0 0 var(--pos-green, #006847);
+}
+
+.cashier-sales-receipt-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-radius: 12px;
+  border: 1px solid var(--pos-border, #e5e7eb);
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 0.06);
+  overflow: hidden;
+}
+
+.cashier-sales-receipt-pane__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.cashier-sales-receipt-pane__close {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: #374151;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.cashier-sales-receipt-pane__close:hover {
+  background: #f3f4f6;
+  color: var(--pos-green, #006847);
+}
+
+.cashier-sales-receipt-pane__close-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.cashier-sales-receipt-pane__close-icon:hover {
+  border-color: #d1d5db;
+  color: #111827;
+  background: #f9fafb;
+}
+
+.cashier-sales-receipt-pane__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+  background: #f3f4f6;
+}
+
+.cashier-sales-receipt-pane__paper {
+  width: 100%;
+  max-width: var(--print-paper-w, 80mm);
+}
+
+.cashier-sales-receipt-pane__card {
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgb(15 23 42 / 0.12);
+}
+
+.cashier-sales-receipt-pane__placeholder {
+  align-self: center;
+  margin: auto;
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.cashier-sales-receipt-pane__footer {
+  flex-shrink: 0;
+  padding: 12px 14px;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.cashier-sales-receipt-pane__return {
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: #d97706;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.cashier-sales-receipt-pane__return:hover:not(:disabled) {
+  background: #b45309;
+}
+
+.cashier-sales-receipt-pane__return:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cashier-sales-view-toggle {
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .cashier-sales-master,
+  .cashier-sales-master.has-selection {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+    overflow: auto;
+  }
+
+  .cashier-sales-master.has-selection .cashier-sales-receipt-pane {
+    max-height: 42vh;
+  }
+
+  .cashier-page--my-sales .cashier-page__scroll {
+    overflow: auto;
+  }
+}
+

@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { productApi, warehouseApi } from '../../services/api';
 import { invalidateProductCaches } from '../../utils/productCache';
+import { useCompanyStores } from '../../hooks/useCompanyStores';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm
                   focus:outline-none focus:ring-2 focus:ring-emerald-500
@@ -23,6 +24,14 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
   const [vat, setVat] = useState('');
   const [marked, setMarked] = useState(false);
   const [storageLocation, setStorageLocation] = useState('');
+  const [storeId, setStoreId] = useState('');
+  const { stores, onlyStore, needsStorePick, resolveStoreId } = useCompanyStores();
+
+  useEffect(() => {
+    if (onlyStore) setStoreId(String(onlyStore.id));
+  }, [onlyStore]);
+
+  const effectiveStoreId = resolveStoreId(storeId);
 
   useEffect(() => {
     if (!open) return;
@@ -45,9 +54,12 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
   const lockedProduct = !!initialProduct?.id;
 
   const { data: selectedProduct } = useQuery({
-    queryKey: ['products', productId],
-    queryFn: () => productApi.getById(productId).then((r) => r.data),
-    enabled: open && !!productId,
+    queryKey: ['products', productId, effectiveStoreId],
+    queryFn: () =>
+      productApi
+        .getById(productId, effectiveStoreId ? { storeId: effectiveStoreId } : undefined)
+        .then((r) => r.data),
+    enabled: open && !!productId && (!needsStorePick || !!effectiveStoreId),
   });
 
   useEffect(() => {
@@ -106,8 +118,14 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
       toast.error(t('validation.fieldRequired', { field: t('stockModule.modal.purchase') }));
       return;
     }
+    const sid = resolveStoreId(storeId);
+    if (!sid) {
+      toast.error(t('stockModal.storeRequired'));
+      return;
+    }
     const body = {
       productId,
+      storeId: sid,
       quantity: Math.floor(q),
       unitSellingPrice: sell,
       purchasePrice: buy,
@@ -149,6 +167,25 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
               )}
             </p>
           ) : null}
+          {needsStorePick ? (
+            <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:items-start">
+              <label className={`${labelCls} sm:pt-2`}>
+                <span className="text-red-600">*</span> {t('stockReports.colStore')}
+              </label>
+              <select
+                className={inputCls}
+                value={storeId}
+                onChange={(e) => setStoreId(e.target.value)}
+                required
+              >
+                <option value="">{t('stockModal.pickStore')}</option>
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
           <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:items-start">
             <label className={`${labelCls} sm:pt-2`}>
               <span className="text-red-600">*</span> {t('stockModule.modal.product')}

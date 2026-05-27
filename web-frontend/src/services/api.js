@@ -88,7 +88,7 @@ export const tasnifApi = {
 
 export const productApi = {
   getAll:     (params) => api.get('/products', { params }),
-  getById:    (id)     => api.get(`/products/${id}`),
+  getById:    (id, params) => api.get(`/products/${id}`, { params }),
   lifecycle: (id, params) => api.get(`/products/${id}/lifecycle`, { params }),
   getByBarcode: (barcode, storeId) =>
     api.get(`/products/barcode/${encodeURIComponent(barcode)}`, {
@@ -96,8 +96,15 @@ export const productApi = {
     }),
   create:     (data)   => api.post('/products', data),
   update:     (id, d)  => api.put(`/products/${id}`, d),
-  adjustStock:(id, q, type, notes) =>
-    api.patch(`/products/${id}/stock`, null, { params: { quantity: q, movementType: type, notes } }),
+  adjustStock:(id, q, type, notes, storeId) =>
+    api.patch(`/products/${id}/stock`, null, {
+      params: {
+        quantity: q,
+        movementType: type,
+        notes,
+        ...(storeId != null ? { storeId } : {}),
+      },
+    }),
   deactivate: (id)     => api.delete(`/products/${id}`),
   getLowStock:()       => api.get('/products/low-stock'),
   bulkTaxRate:(body)   => api.patch('/products/bulk/tax-rate', body),

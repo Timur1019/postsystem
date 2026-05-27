@@ -4,6 +4,7 @@ import com.pos.entity.Product;
 import com.pos.entity.Store;
 import com.pos.entity.StoreStock;
 import com.pos.exception.BadRequestException;
+import com.pos.repository.StoreRepository;
 import com.pos.repository.StoreStockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -20,6 +22,7 @@ import java.util.UUID;
 public class StoreStockService {
 
     private final StoreStockRepository storeStockRepository;
+    private final StoreRepository storeRepository;
 
     public int getQuantity(UUID productId, Integer storeId) {
         if (productId == null || storeId == null) {
@@ -42,12 +45,50 @@ public class StoreStockService {
     }
 
     public void requireAvailable(Product product, Store store, int quantity) {
+        if (store == null) {
+            throw new BadRequestException("Store is required for stock operations");
+        }
         int available = getQuantity(product.getId(), store.getId());
         if (available < quantity) {
             throw new BadRequestException(
                 "Insufficient stock for: " + product.getName() + ". Available: " + available
             );
         }
+    }
+
+    /**
+     * Resolves store for stock ops: explicit id, or the only store of the product company.
+     */
+    public Store resolveStoreForProduct(Product product, Integer storeId) {
+        if (storeId != null) {
+            return storeRepository.findById(storeId)
+                .orElseThrow(() -> new BadRequestException("Store not found"));
+        }
+        if (product.getCompany() == null) {
+            throw new BadRequestException("Product has no company");
+        }
+        List<Store> stores = storeRepository.findByCompanyIdOrderByNameAsc(product.getCompany().getId());
+        if (stores.isEmpty()) {
+            throw new BadRequestException("No stores configured for company");
+        }
+        if (stores.size() == 1) {
+            return stores.get(0);
+        }
+        throw new BadRequestException("Укажите магазин (storeId)");
+    }
+
+    public void setQuantity(Product product, Store store, int quantity) {
+        if (store == null) {
+            throw new BadRequestException("Store is required for stock operations");
+        }
+        if (quantity < 0) {
+            throw new BadRequestException("Quantity cannot be negative");
+        }
+        StoreStock stock = storeStockRepository.findByProductIdAndStoreId(product.getId(), store.getId())
+            .orElseGet(() -> StoreStock.builder().product(product).store(store).quantity(0).build());
+        stock.setQuantity(quantity);
+        storeStockRepository.save(stock);
+        syncProductTotal(product);
     }
 
     public void decrease(Product product, Store store, int quantity) {
@@ -85,6 +126,25 @@ public class StoreStockService {
     public void initializeForCompanyStores(Product product, Integer companyId, int quantity) {
         // caller ensures stores exist; bulk init done in migration / product create for all company stores
         syncProductTotal(product);
+    }
+
+    /** Explicit store or the only store of the company; error if several stores and id omitted. */
+    public Store requireStoreForCompany(Integer companyId, Integer storeId) {
+        if (companyId == null) {
+            throw new BadRequestException("Company is required");
+        }
+        if (storeId != null) {
+            return storeRepository.findById(storeId)
+                .orElseThrow(() -> new BadRequestException("Store not found"));
+        }
+        List<Store> stores = storeRepository.findByCompanyIdOrderByNameAsc(companyId);
+        if (stores.isEmpty()) {
+            throw new BadRequestException("No stores configured for company");
+        }
+        if (stores.size() == 1) {
+            return stores.get(0);
+        }
+        throw new BadRequestException("Укажите магазин (storeId)");
     }
 
     private void syncProductTotal(Product product) {
