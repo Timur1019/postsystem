@@ -32,6 +32,14 @@ public class AiAssistantParallel {
     }
 
     public static void awaitAll(CompletableFuture<?>... futures) {
-        CompletableFuture.allOf(futures).join();
+        try {
+            CompletableFuture.allOf(futures).join();
+        } catch (java.util.concurrent.CompletionException ex) {
+            Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+            if (cause instanceof RuntimeException runtime) {
+                throw runtime;
+            }
+            throw new IllegalStateException(cause);
+        }
     }
 }

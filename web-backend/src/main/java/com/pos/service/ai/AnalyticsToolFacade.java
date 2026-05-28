@@ -66,20 +66,22 @@ public class AnalyticsToolFacade {
         List<Object[]> storesRaw = storesF.join();
         List<Map<String, Object>> stores = storesRaw.stream()
                 .limit(5)
-                .map(row -> Map.<String, Object>of(
-                        "storeName", row[1] != null ? String.valueOf(row[1]) : "—",
-                        "revenue", row[2],
-                        "checks", row[3] != null ? ((Number) row[3]).longValue() : 0L
-                ))
+                .map(row -> {
+                    Map<String, Object> one = AiAnalyticsMaps.create();
+                    one.put("storeName", row[1] != null ? String.valueOf(row[1]) : "—");
+                    one.put("revenue", AiAnalyticsMaps.safe(row[2]));
+                    one.put("checks", row[3] != null ? ((Number) row[3]).longValue() : 0L);
+                    return one;
+                })
                 .toList();
-        return Map.of(
-                "from", safeFrom.toString(),
-                "to", safeTo.toString(),
-                "revenue", sales.totalRevenue(),
-                "transactions", sales.transactionCount(),
-                "averageCheck", sales.averageTransactionValue(),
-                "stores", stores
-        );
+        Map<String, Object> out = AiAnalyticsMaps.create();
+        out.put("from", safeFrom.toString());
+        out.put("to", safeTo.toString());
+        out.put("revenue", AiAnalyticsMaps.money(sales.totalRevenue()));
+        out.put("transactions", sales.transactionCount());
+        out.put("averageCheck", AiAnalyticsMaps.money(sales.averageTransactionValue()));
+        out.put("stores", stores);
+        return out;
     }
 
     public Map<String, Object> inventoryOverview(LocalDate from, LocalDate to, Integer companyId) {
@@ -138,13 +140,13 @@ public class AnalyticsToolFacade {
             point.put("stockQty", 0);
             chart.add(point);
         }
-        return Map.of(
-            "date", today.toString(),
-            "totalRevenue", report.totalRevenue(),
-            "transactionCount", report.transactionCount(),
-            "averageCheck", report.averageTransactionValue(),
-            "chart", chart
-        );
+        Map<String, Object> out = AiAnalyticsMaps.create();
+        out.put("date", today.toString());
+        out.put("totalRevenue", AiAnalyticsMaps.money(report.totalRevenue()));
+        out.put("transactionCount", report.transactionCount());
+        out.put("averageCheck", AiAnalyticsMaps.money(report.averageTransactionValue()));
+        out.put("chart", chart);
+        return out;
     }
 
     public Map<String, Object> topProductsPeriod(LocalDate from, LocalDate to, int limit) {
@@ -604,15 +606,11 @@ public class AnalyticsToolFacade {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("from", safeFrom.toString());
         out.put("to", safeTo.toString());
-        out.put("sales", Map.of(
-                "revenue", sales.totalRevenue(),
-                "transactions", sales.transactionCount(),
-                "averageCheck", sales.averageTransactionValue()
-        ));
-        out.put("returns", Map.of(
-                "count", returns.get("returnsCount"),
-                "amount", returns.get("returnsAmount")
-        ));
+        out.put("sales", AiAnalyticsMaps.salesBlock(sales));
+        Map<String, Object> returnsBlock = AiAnalyticsMaps.create();
+        returnsBlock.put("count", returns.get("returnsCount"));
+        returnsBlock.put("amount", AiAnalyticsMaps.safe(returns.get("returnsAmount")));
+        out.put("returns", returnsBlock);
         out.put("catalog", Map.of(
                 "products", productCount,
                 "categories", categoryCount,

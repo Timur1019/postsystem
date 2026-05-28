@@ -63,7 +63,8 @@ class AiAssistantToolRouter {
         if (q.contains("сегодня") || q.contains("today") || q.contains("за день")) {
             return new AiAssistantToolCall(AiAssistantToolCatalog.TODAY_REVENUE, null, null, 10);
         }
-        if (q.contains("продаж") || q.contains("выруч") || q.contains("чек") || q.contains("sales") || q.contains("revenue")) {
+        if (q.contains("продаж") || q.contains("выруч") || q.contains("чек") || q.contains("sales") || q.contains("revenue")
+                || q.contains("динамик") || q.contains("отчёт") || q.contains("отчет")) {
             return new AiAssistantToolCall(AiAssistantToolCatalog.SALES_PERIOD, null, null, 10);
         }
         if (q.contains("graph") || q.contains("chart") || q.contains("график")

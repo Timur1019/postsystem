@@ -74,6 +74,7 @@ public class AiAssistantServiceImpl implements AiAssistantService {
 
     private String normalizePrompt(String message) {
         String raw = message != null ? message.trim() : "";
+        raw = raw.replace('*', ' ').replaceAll("\\s+", " ").trim();
         if (!StringUtils.hasText(raw)) throw new BadRequestException("Введите вопрос");
         int maxChars = Math.max(50, properties.getMaxPromptChars());
         if (raw.length() > maxChars) throw new BadRequestException("Слишком длинный запрос");
