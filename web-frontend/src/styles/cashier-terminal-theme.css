@@ -718,7 +718,17 @@
 }
 
 .pos-return-modal--terminal.pos-return-modal--partial {
-  width: min(96vw, 580px);
+  width: min(96vw, 44rem);
+  max-height: min(94dvh, 52rem);
+}
+
+.pos-return-modal--terminal.pos-return-modal--partial .pos-return-modal__lines.pos-return-modal__lines--select {
+  max-height: min(48dvh, 22rem);
+}
+
+.pos-return-modal--terminal.pos-return-modal--partial .pos-return-modal__preview-head {
+  background: rgb(61 255 168 / 0.08);
+  border: 1px solid var(--pos-border);
 }
 
 .pos-return-modal--terminal .pos-return-modal__header {

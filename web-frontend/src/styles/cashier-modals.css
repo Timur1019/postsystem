@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   width: min(100%, 32rem);
-  max-height: min(92vh, 40rem);
+  max-height: min(94vh, 44rem);
   margin: auto;
   border-radius: 16px;
   background: #fff;
@@ -444,7 +444,62 @@
 /* —— Частичный возврат: крупные кнопки ± (касса + админка) —— */
 .pos-return-modal--partial,
 .pos-return-modal:has(.pos-return-modal__lines--select) {
-  width: min(100%, 36rem);
+  width: min(96vw, 44rem);
+  max-height: min(94vh, 52rem);
+}
+
+.pos-return-modal--partial .pos-return-modal__body {
+  padding: 18px 22px 20px;
+}
+
+.pos-return-modal--partial .pos-return-modal__preview-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f0faf5;
+  border: 1px solid #d1e7dd;
+}
+
+.dark .pos-return-modal--partial .pos-return-modal__preview-head {
+  background: rgb(6 78 59 / 0.2);
+  border-color: rgb(51 65 85);
+}
+
+.pos-return-modal--partial .pos-return-modal__preview-receipt {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dark .pos-return-modal--partial .pos-return-modal__preview-receipt {
+  color: #f8fafc;
+}
+
+.pos-return-modal--partial .pos-return-modal__preview-total-inline {
+  font-size: 1rem;
+  color: #334155;
+}
+
+.pos-return-modal--partial .pos-return-modal__line-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.4;
+}
+
+.dark .pos-return-modal--partial .pos-return-modal__line-name {
+  color: #f1f5f9;
+}
+
+.pos-return-modal--partial .pos-return-modal__textarea {
+  min-height: 4.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
 }
 
 .pos-return-modal__lines--select {
@@ -453,7 +508,15 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+}
+
+.pos-return-modal__lines.pos-return-modal__lines--select {
+  max-height: min(48vh, 22rem);
+  overflow-y: auto;
+  padding-top: 0;
+  border-top: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .pos-return-modal__lines--select .pos-return-line-select {
@@ -836,7 +899,7 @@
   align-items: center;
   justify-content: center;
   background: rgb(0 0 0 / 0.55);
-  padding: 1rem;
+  padding: max(1rem, 2vh) max(1rem, 2vw);
 }
 
 .pos-pay-modal {

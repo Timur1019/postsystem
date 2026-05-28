@@ -110,7 +110,7 @@ export default function SalePartialReturnModal({
             id="partial-return-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            rows={2}
+            rows={3}
             className="pos-return-modal__textarea"
             placeholder={t('pos.returnReasonPh')}
           />
