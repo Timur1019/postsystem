@@ -50,6 +50,10 @@ class AiAssistantToolRouter {
     }
 
     private AiAssistantToolCall selectToolFallback(String q) {
+        q = stripRoutingFiller(q);
+        if (isZReportQuery(q)) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.Z_REPORTS, null, null, 15);
+        }
         if (q.contains("инвентар") || q.contains("inventory count") || q.contains("inventory")) {
             return new AiAssistantToolCall(AiAssistantToolCatalog.INVENTORY, null, null, 10);
         }
@@ -64,7 +68,10 @@ class AiAssistantToolRouter {
             return new AiAssistantToolCall(AiAssistantToolCatalog.TODAY_REVENUE, null, null, 10);
         }
         if (q.contains("продаж") || q.contains("выруч") || q.contains("чек") || q.contains("sales") || q.contains("revenue")
-                || q.contains("динамик") || q.contains("отчёт") || q.contains("отчет")) {
+                || q.contains("динамик")) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.SALES_PERIOD, null, null, 10);
+        }
+        if (q.contains("отчёт") || q.contains("отчет") || q.contains("отчот")) {
             return new AiAssistantToolCall(AiAssistantToolCatalog.SALES_PERIOD, null, null, 10);
         }
         if (q.contains("graph") || q.contains("chart") || q.contains("график")
@@ -92,5 +99,28 @@ class AiAssistantToolRouter {
                 || q.contains("свод") || q.contains("обзор") || q.contains("overview") || q.contains("summary")
                 || q.contains("общий") || q.contains("общая") || q.contains("обший") || q.contains("обгий")
                 || q.contains("итог") || q.contains("картина");
+    }
+
+    private static String stripRoutingFiller(String q) {
+        String s = q;
+        for (String prefix : List.of(
+                "давай ", "покажи ", "покажите ", "выведи ", "выведите ",
+                "нужны ", "нужен ", "хочу ", "хотел бы ", "можно "
+        )) {
+            if (s.startsWith(prefix)) {
+                s = s.substring(prefix.length()).trim();
+            }
+        }
+        return s;
+    }
+
+    private boolean isZReportQuery(String q) {
+        String n = q.replace('з', 'z');
+        return n.contains("z-отчет") || n.contains("z отчет") || n.contains("z отчот")
+                || n.contains("z-отчёт") || n.contains("z отчёт") || n.contains("zотчет") || n.contains("zотчот")
+                || n.contains("z report") || n.contains("z-report")
+                || (n.contains(" z ") && (n.contains("отч") || n.contains("отчот")))
+                || n.startsWith("z ") || n.startsWith("z-")
+                || (n.contains("z") && (n.contains("отчот") || n.contains("отчет") || n.contains("отчёт")));
     }
 }

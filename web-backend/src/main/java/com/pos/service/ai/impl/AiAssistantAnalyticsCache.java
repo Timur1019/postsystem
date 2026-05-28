@@ -17,6 +17,18 @@ class AiAssistantAnalyticsCache {
     private final AnalyticsToolFacade toolFacade;
     private final ConcurrentHashMap<String, CachedOverview> cache = new ConcurrentHashMap<>();
 
+    Map<String, Object> zReportsOverview(LocalDate from, LocalDate to, Integer companyId) {
+        String key = "z|" + companyId + "|" + from + "|" + to;
+        long now = System.currentTimeMillis();
+        CachedOverview hit = cache.get(key);
+        if (hit != null && hit.expiresAtMs > now) {
+            return hit.overview;
+        }
+        Map<String, Object> fresh = toolFacade.zReportsOverview(from, to, companyId);
+        cache.put(key, new CachedOverview(fresh, now + TTL_MS));
+        return fresh;
+    }
+
     Map<String, Object> executiveOverview(LocalDate from, LocalDate to, Integer companyId) {
         String key = companyId + "|" + from + "|" + to;
         long now = System.currentTimeMillis();

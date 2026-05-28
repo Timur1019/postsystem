@@ -84,6 +84,55 @@ public class AnalyticsToolFacade {
         return out;
     }
 
+    public Map<String, Object> zReportsOverview(LocalDate from, LocalDate to, Integer companyId) {
+        LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(90);
+        LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
+        Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
+        Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
+        Integer companyIdFinal = companyId;
+
+        CompletableFuture<Long> totalInSystemF = parallel.supply(
+                () -> zReportRepository.countByCompanyId(companyIdFinal));
+        CompletableFuture<Object[]> periodSummaryF = parallel.supply(
+                () -> zReportRepository.summarizeByCompanyAndClosedAtBetween(companyIdFinal, start, end));
+        CompletableFuture<List<Map<String, Object>>> recentF = parallel.supply(
+                () -> loadRecentZReportRows(companyIdFinal, 15));
+        AiAssistantParallel.awaitAll(totalInSystemF, periodSummaryF, recentF);
+
+        long totalInSystem = totalInSystemF.join();
+        Object[] periodSummary = periodSummaryF.join();
+        long periodCount = periodSummary != null && periodSummary.length > 0 && periodSummary[0] instanceof Number n
+                ? n.longValue() : 0L;
+        BigDecimal periodTotal = periodSummary != null && periodSummary.length > 1 && periodSummary[1] instanceof BigDecimal b
+                ? b : BigDecimal.ZERO;
+
+        Map<String, Object> out = AiAnalyticsMaps.create();
+        out.put("from", safeFrom.toString());
+        out.put("to", safeTo.toString());
+        out.put("periodCount", periodCount);
+        out.put("periodTotalAmount", periodTotal);
+        out.put("totalInSystem", totalInSystem);
+        out.put("recentReports", recentF.join());
+        return out;
+    }
+
+    private List<Map<String, Object>> loadRecentZReportRows(Integer companyId, int limit) {
+        return zReportRepository.findRecentByCompanyId(companyId, PageRequest.of(0, limit))
+                .getContent()
+                .stream()
+                .map(z -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("zNumber", z.getZNumber());
+                    row.put("storeName", z.getStore() != null ? z.getStore().getName() : "—");
+                    row.put("closedAt", z.getClosedAt() != null ? z.getClosedAt().toString() : "—");
+                    row.put("totalAmount", AiAnalyticsMaps.money(z.getTotalAmount()));
+                    row.put("salesCount", z.getSalesCount() != null ? z.getSalesCount() : 0);
+                    row.put("employeeName", z.getEmployeeName());
+                    return row;
+                })
+                .toList();
+    }
+
     public Map<String, Object> inventoryOverview(LocalDate from, LocalDate to, Integer companyId) {
         LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(30);
         LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
@@ -569,11 +618,13 @@ public class AnalyticsToolFacade {
                 () -> storeRepository.countByCompanyIdAndActiveTrue(companyIdFinal));
         CompletableFuture<Object[]> zSummaryF = parallel.supply(
                 () -> zReportRepository.summarizeByCompanyAndClosedAtBetween(companyIdFinal, start, end));
+        CompletableFuture<Long> zTotalF = parallel.supply(
+                () -> zReportRepository.countByCompanyId(companyIdFinal));
         CompletableFuture<Map<String, Object>> returnsF = parallel.supply(
                 () -> returnsSummaryPeriod(safeFrom, safeTo, companyIdFinal));
         AiAssistantParallel.awaitAll(
                 salesF, topProductsF, storesRawF, productCountF, lowStockCountF,
-                categoryCountF, storeCountF, activeStoreCountF, zSummaryF, returnsF);
+                categoryCountF, storeCountF, activeStoreCountF, zSummaryF, zTotalF, returnsF);
 
         SalesReportResponse sales = salesF.join();
         List<TopProductRow> topProducts = topProductsF.join();
@@ -600,6 +651,7 @@ public class AnalyticsToolFacade {
         Object[] zSummary = zSummaryF.join();
         long zReportsCount = zSummary != null && zSummary.length > 0 && zSummary[0] instanceof Number n ? n.longValue() : 0L;
         BigDecimal zReportsTotal = zSummary != null && zSummary.length > 1 && zSummary[1] instanceof BigDecimal b ? b : BigDecimal.ZERO;
+        long zReportsTotalInSystem = zTotalF.join();
 
         Map<String, Object> returns = returnsF.join();
 
@@ -622,10 +674,11 @@ public class AnalyticsToolFacade {
                 "withSales", storesRaw.size(),
                 "top", topStores
         ));
-        out.put("zReports", Map.of(
-                "count", zReportsCount,
-                "totalAmount", zReportsTotal
-        ));
+        Map<String, Object> zReportsBlock = AiAnalyticsMaps.create();
+        zReportsBlock.put("countInPeriod", zReportsCount);
+        zReportsBlock.put("totalAmountInPeriod", zReportsTotal);
+        zReportsBlock.put("totalInSystem", zReportsTotalInSystem);
+        out.put("zReports", zReportsBlock);
         out.put("topProducts", topProducts);
         return out;
     }

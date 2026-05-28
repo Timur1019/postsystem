@@ -28,6 +28,13 @@ public class AiAssistantProperties {
 
     private int maxRequestsPerMinutePerUser = 20;
 
+    /** Skip DeepSeek for factual tool answers; LLM only for advice/complex tools. */
+    private boolean fastMode = true;
+
+    private int maxTokensInsight = 550;
+
+    private int maxTokensGeneralChat = 700;
+
     public boolean isLlmReady() {
         return enabled && StringUtils.hasText(apiKey);
     }

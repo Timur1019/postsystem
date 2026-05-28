@@ -9,6 +9,7 @@ final class AiAssistantToolCatalog {
     static final String REDISTRIBUTION = "stockRedistributionSuggestion";
     static final String STORE_INSIGHT = "storeSalesAndStockInsight";
     static final String INVENTORY = "inventoryOverview";
+    static final String Z_REPORTS = "zReportsOverview";
     static final String BUSINESS_HEALTH = "businessHealthCheck";
     static final String SMALLTALK = "smalltalk";
 
@@ -23,6 +24,7 @@ final class AiAssistantToolCatalog {
                 || REDISTRIBUTION.equals(tool)
                 || STORE_INSIGHT.equals(tool)
                 || INVENTORY.equals(tool)
+                || Z_REPORTS.equals(tool)
                 || BUSINESS_HEALTH.equals(tool)
                 || SMALLTALK.equals(tool);
     }

@@ -68,6 +68,9 @@ app:
     read-timeout-ms: ${AI_ASSISTANT_READ_TIMEOUT_MS:20000}
     max-prompt-chars: ${AI_ASSISTANT_MAX_PROMPT_CHARS:2000}
     max-requests-per-minute-per-user: ${AI_ASSISTANT_MAX_RPM_PER_USER:20}
+    fast-mode: ${AI_ASSISTANT_FAST_MODE:true}
+    max-tokens-insight: ${AI_ASSISTANT_MAX_TOKENS_INSIGHT:550}
+    max-tokens-general-chat: ${AI_ASSISTANT_MAX_TOKENS_GENERAL:700}
 
 logging:
   file:

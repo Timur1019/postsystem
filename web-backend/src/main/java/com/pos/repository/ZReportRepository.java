@@ -38,4 +38,23 @@ public interface ZReportRepository extends JpaRepository<ZReport, Long>, JpaSpec
             @Param("from") java.time.Instant from,
             @Param("to") java.time.Instant to
     );
+
+    @Query("""
+        SELECT COUNT(z)
+        FROM ZReport z
+        WHERE z.store.company.id = :companyId
+        """)
+    long countByCompanyId(@Param("companyId") Integer companyId);
+
+    @EntityGraph(attributePaths = {"store"})
+    @Query("""
+        SELECT z FROM ZReport z
+        JOIN z.store st
+        WHERE st.company.id = :companyId
+        ORDER BY z.closedAt DESC
+        """)
+    org.springframework.data.domain.Page<ZReport> findRecentByCompanyId(
+            @Param("companyId") Integer companyId,
+            Pageable pageable
+    );
 }

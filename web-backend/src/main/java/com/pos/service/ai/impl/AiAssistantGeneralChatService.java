@@ -30,24 +30,31 @@ public class AiAssistantGeneralChatService {
         }
 
         if (AiAssistantOfflineReply.isSimpleGreeting(question) && (history == null || history.isEmpty())) {
+            if (properties.isFastMode()) {
+                return AiAssistantOfflineReply.greetingWithoutLlm(language);
+            }
             return answerGreeting(question, language);
         }
 
         LocalDate to = LocalDate.now();
-        LocalDate from = to.minusDays(30);
-        Map<String, Object> context = Map.of(
-                "executiveOverview", analyticsCache.executiveOverview(from, to, companyId)
-        );
+        LocalDate from = to.minusDays(90);
+        Map<String, Object> executive = analyticsCache.executiveOverview(from, to, companyId);
+
+        if (properties.isFastMode() && !AiAssistantLlmPolicy.useLlmForGeneralChat(question)) {
+            return AiAssistantExecutiveReply.format(executive, language);
+        }
+
+        Map<String, Object> context = Map.of("executiveOverview", executive);
         String dataBrief = AiAssistantContextBrief.build(context, language);
 
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content", AiAssistantPrompts.generalChatSystem()));
-        messages.add(Map.of("role", "user", "content", "DATA (system analytics, last ~30 days):\n" + dataBrief));
+        messages.add(Map.of("role", "user", "content", "DATA (system analytics, last ~90 days):\n" + dataBrief));
         AiAssistantConversationHistory.appendToLlmMessages(messages, history);
         messages.add(Map.of("role", "user", "content", question));
 
         try {
-            String answer = deepSeekClient.chat(messages);
+            String answer = deepSeekClient.chat(messages, properties.getMaxTokensGeneralChat());
             if (answer != null && !answer.isBlank()) {
                 return answer.trim();
             }

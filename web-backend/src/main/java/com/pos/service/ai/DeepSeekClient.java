@@ -23,6 +23,10 @@ public class DeepSeekClient {
     private final ObjectMapper objectMapper;
 
     public String chat(List<Map<String, String>> messages) {
+        return chat(messages, 1100);
+    }
+
+    public String chat(List<Map<String, String>> messages, int maxTokens) {
         if (!properties.isEnabled()) {
             throw new BadRequestException("ИИ ассистент отключён");
         }
@@ -33,7 +37,7 @@ public class DeepSeekClient {
             Map<String, Object> body = Map.of(
                     "model", properties.getModel(),
                     "temperature", 0.35,
-                    "max_tokens", 1100,
+                    "max_tokens", Math.max(120, Math.min(maxTokens, 2000)),
                     "messages", messages
             );
             JsonNode root = deepseekRestClient.post()

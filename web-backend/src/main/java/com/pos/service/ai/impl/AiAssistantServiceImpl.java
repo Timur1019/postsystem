@@ -31,6 +31,7 @@ public class AiAssistantServiceImpl implements AiAssistantService {
     private final AiAssistantGeneralChatService generalChatService;
     private final AiAssistantToolRouter toolRouter;
     private final AiAssistantInsightComposer insightComposer;
+    private final AiAssistantAnalyticsCache analyticsCache;
 
     @Override
     public AiAssistantResponse ask(String message, List<AiAssistantChatMessage> history) {
@@ -42,17 +43,11 @@ public class AiAssistantServiceImpl implements AiAssistantService {
         String language = toolRouter.detectLanguage(normalized);
         rateLimiter.enforce(user.getId(), properties.getMaxRequestsPerMinutePerUser());
 
-        if (toolRouter.isSmallTalk(normalized)) {
-            long latency = System.currentTimeMillis() - started;
-            String answer = generalChatService.answer(normalized, language, companyId, chatHistory);
-            return new AiAssistantResponse(answer, AiAssistantToolCatalog.SMALLTALK, latency, Map.of());
-        }
-
         AiAssistantToolCall toolCall = toolRouter.selectTool(normalized, chatHistory);
 
         if (AiAssistantToolCatalog.SMALLTALK.equals(toolCall.tool())) {
-            long latency = System.currentTimeMillis() - started;
             String answer = generalChatService.answer(normalized, language, companyId, chatHistory);
+            long latency = System.currentTimeMillis() - started;
             return new AiAssistantResponse(answer, AiAssistantToolCatalog.SMALLTALK, latency, Map.of());
         }
 
@@ -86,6 +81,10 @@ public class AiAssistantServiceImpl implements AiAssistantService {
             case AiAssistantToolCatalog.TODAY_REVENUE -> toolFacade.todayRevenue(companyId);
             case AiAssistantToolCatalog.SALES_PERIOD -> toolFacade.salesPeriodOverview(call.from(), call.to(), companyId);
             case AiAssistantToolCatalog.INVENTORY -> toolFacade.inventoryOverview(call.from(), call.to(), companyId);
+            case AiAssistantToolCatalog.Z_REPORTS -> analyticsCache.zReportsOverview(
+                    call.from() != null ? call.from() : java.time.LocalDate.now().minusDays(90),
+                    call.to(),
+                    companyId);
             case AiAssistantToolCatalog.TOP_PRODUCTS -> toolFacade.topProductsPeriod(call.from(), call.to(), call.limit());
             case AiAssistantToolCatalog.RETURNS_SUMMARY -> toolFacade.returnsSummaryPeriod(call.from(), call.to(), companyId);
             case AiAssistantToolCatalog.REDISTRIBUTION -> toolFacade.stockRedistributionSuggestion(call.from(), call.to(), companyId);

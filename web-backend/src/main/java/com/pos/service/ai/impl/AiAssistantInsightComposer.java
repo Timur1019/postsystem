@@ -42,16 +42,19 @@ class AiAssistantInsightComposer {
             }
             return fallback;
         }
+        if (properties.isFastMode() && !AiAssistantLlmPolicy.useLlmForInsight(question, tool)) {
+            return fallback;
+        }
         try {
             String system = AiAssistantPrompts.insightSystem(language, tool);
 
             List<Map<String, String>> messages = new ArrayList<>();
             messages.add(Map.of("role", "system", "content", system));
-            messages.add(Map.of("role", "user", "content", "DATA: " + enrichToolResultForLlm(tool, toolResult)));
+            messages.add(Map.of("role", "user", "content", "DATA: " + compactToolResultForLlm(tool, toolResult)));
             AiAssistantConversationHistory.appendToLlmMessages(messages, history);
             messages.add(Map.of("role", "user", "content", question));
 
-            String content = deepSeekClient.chat(messages);
+            String content = deepSeekClient.chat(messages, properties.getMaxTokensInsight());
             return StringUtils.hasText(content) ? content.trim() : fallback;
         } catch (BadRequestException e) {
             LogUtil.warn(AiAssistantInsightComposer.class, "LLM summarization failed: {}", e.getMessage());
@@ -110,6 +113,7 @@ class AiAssistantInsightComposer {
             case AiAssistantToolCatalog.SALES_PERIOD -> formatSalesPeriodFallback(result, language);
             case AiAssistantToolCatalog.TOP_PRODUCTS -> formatTopProductsFallback(result, language);
             case AiAssistantToolCatalog.INVENTORY -> formatInventoryFallback(result, language);
+            case AiAssistantToolCatalog.Z_REPORTS -> formatZReportsFallback(result, language);
             case AiAssistantToolCatalog.RETURNS_SUMMARY -> formatReturnsFallback(result, language);
             case AiAssistantToolCatalog.REDISTRIBUTION -> formatRedistributionFallback(result, language);
             case AiAssistantToolCatalog.STORE_INSIGHT -> formatStoreInsightFallback(result, language);
@@ -129,6 +133,76 @@ class AiAssistantInsightComposer {
         return String.format("Продажи %s..%s: выручка %s, чеков %s, средний чек %s.",
                 result.get("from"), result.get("to"), result.get("revenue"),
                 result.get("transactions"), result.get("averageCheck"));
+    }
+
+    private String formatZReportsFallback(Map<String, Object> result, String language) {
+        long periodCount = result.get("periodCount") instanceof Number n ? n.longValue() : 0L;
+        long totalInSystem = result.get("totalInSystem") instanceof Number t ? t.longValue() : 0L;
+        String recent = formatRecentZReports(result.get("recentReports"), language);
+        if ("en".equals(language)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("Z-reports %s..%s: %d, amount %s. Total in system: %d.",
+                    result.get("from"), result.get("to"), periodCount, result.get("periodTotalAmount"), totalInSystem));
+            if (periodCount == 0 && totalInSystem > 0) {
+                sb.append("\nNo Z-reports in this date window, but they exist in the system — see recent below.");
+            }
+            if (!recent.isBlank()) {
+                sb.append("\n\nRecent Z-reports:\n").append(recent);
+            }
+            return sb.toString();
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Z-отчёты за %s..%s: %d шт., сумма %s. Всего в системе: %d шт.",
+                result.get("from"), result.get("to"), periodCount, result.get("periodTotalAmount"), totalInSystem));
+        if (periodCount == 0 && totalInSystem > 0) {
+            sb.append("\nЗа выбранный период отчётов нет, но в системе они есть — смотрите последние ниже.");
+        }
+        if (!recent.isBlank()) {
+            sb.append("\n\nПоследние Z-отчёты:\n").append(recent);
+        }
+        return sb.toString();
+    }
+
+    private String formatRecentZReports(Object raw, String language) {
+        if (!(raw instanceof List<?> list) || list.isEmpty()) {
+            return "";
+        }
+        String bullet = "en".equals(language) ? "• " : "• ";
+        return list.stream()
+                .limit(8)
+                .map(item -> {
+                    if (!(item instanceof Map<?, ?> row)) {
+                        return "—";
+                    }
+                    return bullet + String.format("%s — %s, %s, %s, чеков %s",
+                            safeText(row.get("zNumber")),
+                            safeText(row.get("storeName")),
+                            safeText(row.get("closedAt")),
+                            safeText(row.get("totalAmount")),
+                            safeText(row.get("salesCount")));
+                })
+                .collect(Collectors.joining("\n"));
+    }
+
+    private String compactToolResultForLlm(String tool, Map<String, Object> toolResult) {
+        try {
+            if (AiAssistantToolCatalog.Z_REPORTS.equals(tool)) {
+                Map<String, Object> slim = new LinkedHashMap<>();
+                slim.put("from", toolResult.get("from"));
+                slim.put("to", toolResult.get("to"));
+                slim.put("periodCount", toolResult.get("periodCount"));
+                slim.put("periodTotalAmount", toolResult.get("periodTotalAmount"));
+                slim.put("totalInSystem", toolResult.get("totalInSystem"));
+                Object recent = toolResult.get("recentReports");
+                if (recent instanceof List<?> list) {
+                    slim.put("recentReports", list.stream().limit(8).toList());
+                }
+                return objectMapper.writeValueAsString(slim);
+            }
+            return enrichToolResultForLlm(tool, toolResult);
+        } catch (Exception e) {
+            return toolResult.toString();
+        }
     }
 
     private String formatInventoryFallback(Map<String, Object> result, String language) {

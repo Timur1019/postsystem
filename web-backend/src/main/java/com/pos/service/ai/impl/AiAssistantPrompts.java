@@ -52,6 +52,13 @@ final class AiAssistantPrompts {
             case AiAssistantToolCatalog.REDISTRIBUTION -> """
                     Topic focus: STOCK redistribution / transfers between stores from DATA.
                     """;
+            case AiAssistantToolCatalog.Z_REPORTS -> """
+                    Topic focus: Z-REPORTS (кассовые Z-отчёты) only.
+                    Use totalInSystem, periodCount, periodTotalAmount, and recentReports from DATA.
+                    If periodCount is 0 but totalInSystem > 0, explain that reports exist outside the selected period
+                    and list recentReports dates/stores.
+                    Do NOT discuss unrelated sales or inventory unless user asked.
+                    """;
             default -> "Answer strictly from DATA for the requested topic.";
         };
         return """
