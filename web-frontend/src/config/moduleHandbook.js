@@ -3,6 +3,7 @@ const ROUTE_MAP = [
   { test: (p) => p.startsWith('/cashier/pos'), id: 'cashierPos' },
   { test: (p) => p.startsWith('/cashier/sales'), id: 'cashierSales' },
   { test: (p) => p === '/dashboard', id: 'dashboard' },
+  { test: (p) => p.startsWith('/assistant'), id: 'aiAssistant' },
   { test: (p) => p.startsWith('/products'), id: 'products' },
   { test: (p) => p.startsWith('/categories'), id: 'categories' },
   { test: (p) => p.startsWith('/stock/products'), id: 'stockProducts' },
@@ -52,6 +53,7 @@ export const HANDBOOK_GROUPS = {
 
 export const ADMIN_MODULE_IDS = [
   { id: 'dashboard', group: 'main', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'aiAssistant', group: 'main', roles: ['ADMIN'] },
   { id: 'products', group: 'goods', roles: ['ADMIN', 'MANAGER'] },
   { id: 'categories', group: 'goods', roles: ['ADMIN', 'MANAGER'] },
   { id: 'stockProducts', group: 'stock', roles: ['ADMIN', 'MANAGER'] },

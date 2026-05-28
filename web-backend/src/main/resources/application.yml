@@ -58,6 +58,16 @@ app:
     default-lang: uz
     default-type: 2
     search-type: 1
+  ai:
+    enabled: ${AI_ASSISTANT_ENABLED:false}
+    provider: ${AI_ASSISTANT_PROVIDER:deepseek}
+    base-url: ${AI_ASSISTANT_BASE_URL:https://api.deepseek.com}
+    api-key: ${AI_ASSISTANT_API_KEY:}
+    model: ${AI_ASSISTANT_MODEL:deepseek-chat}
+    connect-timeout-ms: ${AI_ASSISTANT_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${AI_ASSISTANT_READ_TIMEOUT_MS:20000}
+    max-prompt-chars: ${AI_ASSISTANT_MAX_PROMPT_CHARS:600}
+    max-requests-per-minute-per-user: ${AI_ASSISTANT_MAX_RPM_PER_USER:20}
 
 logging:
   file:

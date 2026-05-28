@@ -46,7 +46,7 @@ import CashRegisterConfigPage from './pages/CashRegisterConfigPage';
 import CashRegisterTransferPage from './pages/CashRegisterTransferPage';
 import ZReportsPage from './pages/ZReportsPage';
 import OrdersListPage from './pages/OrdersListPage';
-import AppLayout         from './components/layout/AppLayout';
+import AppShellLayout    from './components/layout/AppShellLayout';
 import SuperAdminLayout  from './components/layout/SuperAdminLayout';
 import PlatformCompaniesPage from './pages/platform/PlatformCompaniesPage';
 import PlatformStoresPage from './pages/platform/PlatformStoresPage';
@@ -61,6 +61,7 @@ import PosPage           from './pages/cashier/PosPage';
 import CashierMySalesPage from './pages/cashier/CashierMySalesPage';
 import HandbookPage from './pages/HandbookPage';
 import SupportPage from './pages/SupportPage';
+import AiAssistantPage from './pages/AiAssistantPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -149,11 +150,14 @@ export default function App() {
           </Route>
 
           <Route path="/" element={
-            <ProtectedRoute><AppLayout /></ProtectedRoute>
+            <ProtectedRoute><AppShellLayout /></ProtectedRoute>
           }>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={
               <ProtectedRoute module="dashboard"><DashboardPage /></ProtectedRoute>
+            } />
+            <Route path="assistant" element={
+              <ProtectedRoute requiredRole="ADMIN" module="aiAssistant"><AiAssistantPage /></ProtectedRoute>
             } />
             <Route path="products" element={
               <ProtectedRoute module="products"><ProductsPage /></ProtectedRoute>

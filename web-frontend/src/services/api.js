@@ -253,6 +253,10 @@ export const reportApi = {
   exportCashierPerf: (from, to) => api.get('/reports/cashier-performance/export', { params: { from, to }, responseType: 'blob' }),
 };
 
+export const aiAssistantApi = {
+  chat: (message) => api.post('/ai/assistant/chat', { message }),
+};
+
 export const stockReportApi = {
   dashboard: (params) => api.get('/reports/stock/dashboard', { params }),
   lowStock: (params) => api.get('/reports/stock/low-stock', { params }),

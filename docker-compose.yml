@@ -48,6 +48,11 @@ services:
       DB_USERNAME: pos_user
       DB_PASSWORD: pos_password
       JWT_SECRET: change-me-use-at-least-32-chars-for-hs256!!
+      AI_ASSISTANT_ENABLED: ${AI_ASSISTANT_ENABLED:-true}
+      AI_ASSISTANT_PROVIDER: ${AI_ASSISTANT_PROVIDER:-deepseek}
+      AI_ASSISTANT_BASE_URL: ${AI_ASSISTANT_BASE_URL:-https://api.deepseek.com}
+      AI_ASSISTANT_MODEL: ${AI_ASSISTANT_MODEL:-deepseek-chat}
+      AI_ASSISTANT_API_KEY: ${AI_ASSISTANT_API_KEY:-}
     ports:
       - "8080:8080"
 

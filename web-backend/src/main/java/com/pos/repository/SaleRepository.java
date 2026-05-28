@@ -190,6 +190,20 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
     );
 
     @Query("""
+        SELECT COUNT(s), COALESCE(SUM(s.totalAmount), 0)
+        FROM Sale s
+        WHERE s.createdAt >= :start AND s.createdAt < :end
+          AND s.status IN :statuses
+          AND (:companyId IS NULL OR s.company.id = :companyId)
+        """)
+    List<Object[]> aggregateReturnsBetween(
+        @Param("start") Instant start,
+        @Param("end") Instant end,
+        @Param("statuses") List<Sale.SaleStatus> statuses,
+        @Param("companyId") Integer companyId
+    );
+
+    @Query("""
         SELECT DISTINCT s FROM Sale s
         JOIN FETCH s.cashier
         LEFT JOIN FETCH s.items i
@@ -395,5 +409,25 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         @Param("productId") UUID productId,
         @Param("start") Instant start,
         @Param("end") Instant end
+    );
+
+    @Query(value = """
+        SELECT s.store_id,
+               COALESCE(st.name, '—') AS store_name,
+               COALESCE(SUM(s.total_amount), 0) AS revenue,
+               COUNT(*) AS checks
+        FROM sales s
+        LEFT JOIN stores st ON st.id = s.store_id
+        WHERE s.created_at >= :start
+          AND s.created_at < :end
+          AND s.status = 'COMPLETED'
+          AND s.company_id = :companyId
+        GROUP BY s.store_id, st.name
+        ORDER BY revenue DESC
+        """, nativeQuery = true)
+    List<Object[]> salesByStoreBetween(
+        @Param("start") Instant start,
+        @Param("end") Instant end,
+        @Param("companyId") Integer companyId
     );
 }

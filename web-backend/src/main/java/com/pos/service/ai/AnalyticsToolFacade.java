@@ -1,0 +1,475 @@
+package com.pos.service.ai;
+
+import com.pos.dto.report.SalesReportResponse;
+import com.pos.dto.report.TopProductRow;
+import com.pos.entity.Sale;
+import com.pos.entity.StoreStock;
+import com.pos.repository.ProductRepository;
+import com.pos.repository.SaleItemRepository;
+import com.pos.repository.SaleRepository;
+import com.pos.repository.CategoryRepository;
+import com.pos.repository.StoreRepository;
+import com.pos.repository.StoreStockRepository;
+import com.pos.repository.ZReportRepository;
+import com.pos.service.ReportService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@Component
+@RequiredArgsConstructor
+public class AnalyticsToolFacade {
+
+    private static final ZoneId ZONE = ZoneId.of("Asia/Tashkent");
+
+    private final ReportService reportService;
+    private final SaleRepository saleRepository;
+    private final SaleItemRepository saleItemRepository;
+    private final StoreStockRepository storeStockRepository;
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final StoreRepository storeRepository;
+    private final ZReportRepository zReportRepository;
+
+    public Map<String, Object> todayRevenue(Integer companyId) {
+        LocalDate today = LocalDate.now(ZONE);
+        SalesReportResponse report = reportService.getSalesReport(today, today);
+        Instant chartStart = today.minusDays(6).atStartOfDay(ZONE).toInstant();
+        Instant chartEnd = today.plusDays(1).atStartOfDay(ZONE).toInstant();
+        List<Object[]> daily = saleRepository.dailyRevenueAggregates(chartStart, chartEnd, companyId);
+        List<Map<String, Object>> chart = new ArrayList<>();
+        for (Object[] row : daily) {
+            Map<String, Object> point = new LinkedHashMap<>();
+            point.put("name", String.valueOf(row[0]));
+            point.put("revenue", row[1]);
+            point.put("stockQty", 0);
+            chart.add(point);
+        }
+        return Map.of(
+            "date", today.toString(),
+            "totalRevenue", report.totalRevenue(),
+            "transactionCount", report.transactionCount(),
+            "averageCheck", report.averageTransactionValue(),
+            "chart", chart
+        );
+    }
+
+    public Map<String, Object> topProductsPeriod(LocalDate from, LocalDate to, int limit) {
+        LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(6);
+        LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
+        int safeLimit = Math.max(1, Math.min(limit, 20));
+        List<TopProductRow> rows = reportService.getTopProducts(safeLimit, safeFrom, safeTo);
+        return Map.of(
+            "from", safeFrom.toString(),
+            "to", safeTo.toString(),
+            "items", rows
+        );
+    }
+
+    public Map<String, Object> returnsSummaryPeriod(LocalDate from, LocalDate to, Integer companyId) {
+        LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(6);
+        LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
+        Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
+        Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
+        List<Object[]> agg = saleRepository.aggregateReturnsBetween(
+            start,
+            end,
+            List.of(Sale.SaleStatus.REFUNDED, Sale.SaleStatus.VOIDED),
+            companyId
+        );
+        long count = 0L;
+        BigDecimal total = BigDecimal.ZERO;
+        if (!agg.isEmpty()) {
+            Object[] row = agg.get(0);
+            count = row[0] != null ? ((Number) row[0]).longValue() : 0L;
+            total = row[1] != null ? (BigDecimal) row[1] : BigDecimal.ZERO;
+        }
+        return Map.of(
+            "from", safeFrom.toString(),
+            "to", safeTo.toString(),
+            "returnsCount", count,
+            "returnsAmount", total
+        );
+    }
+
+    public Map<String, Object> stockRedistributionSuggestion(
+        LocalDate from,
+        LocalDate to,
+        Integer companyId
+    ) {
+        LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(30);
+        LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
+        long periodDays = Math.max(1, ChronoUnit.DAYS.between(safeFrom, safeTo) + 1L);
+        Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
+        Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
+
+        List<StoreStock> storeStocks = storeStockRepository.findAllDetailedByCompanyId(companyId);
+        List<Object[]> soldRaw = saleItemRepository.soldUnitsByProductAndStore(start, end, companyId);
+
+        Map<UUID, Map<Integer, Integer>> stockByProductStore = new HashMap<>();
+        Map<UUID, String> productNameById = new HashMap<>();
+        Map<Integer, String> storeNameById = new HashMap<>();
+
+        for (StoreStock ss : storeStocks) {
+            UUID productId = ss.getProduct().getId();
+            Integer storeId = ss.getStore().getId();
+            stockByProductStore.computeIfAbsent(productId, k -> new HashMap<>()).put(storeId, ss.getQuantity());
+            productNameById.put(productId, ss.getProduct().getName());
+            storeNameById.put(storeId, ss.getStore().getName());
+        }
+
+        Map<UUID, Map<Integer, Long>> soldByProductStore = new HashMap<>();
+        for (Object[] row : soldRaw) {
+            UUID productId = (UUID) row[0];
+            Integer storeId = ((Number) row[1]).intValue();
+            long sold = ((Number) row[2]).longValue();
+            soldByProductStore.computeIfAbsent(productId, k -> new HashMap<>()).put(storeId, sold);
+        }
+
+        List<Map<String, Object>> suggestions = new ArrayList<>();
+
+        for (Map.Entry<UUID, Map<Integer, Integer>> e : stockByProductStore.entrySet()) {
+            UUID productId = e.getKey();
+            Map<Integer, Integer> stocks = e.getValue();
+            if (stocks.size() < 2) continue;
+
+            Map<Integer, Long> soldMap = soldByProductStore.getOrDefault(productId, Map.of());
+
+            Integer fromStoreId = null;
+            Integer toStoreId = null;
+            double maxCoverage = -1;
+            double minCoverage = Double.MAX_VALUE;
+
+            for (Map.Entry<Integer, Integer> storeEntry : stocks.entrySet()) {
+                Integer storeId = storeEntry.getKey();
+                int qty = storeEntry.getValue();
+                long sold = soldMap.getOrDefault(storeId, 0L);
+                double daily = sold > 0 ? (double) sold / (double) periodDays : 0.0;
+                double coverage = daily > 0 ? (double) qty / daily : (qty > 0 ? 9999 : 0);
+
+                if (coverage > maxCoverage) {
+                    maxCoverage = coverage;
+                    fromStoreId = storeId;
+                }
+                if (coverage < minCoverage) {
+                    minCoverage = coverage;
+                    toStoreId = storeId;
+                }
+            }
+            if (fromStoreId == null || toStoreId == null || fromStoreId.equals(toStoreId)) continue;
+
+            int fromQty = stocks.getOrDefault(fromStoreId, 0);
+            int toQty = stocks.getOrDefault(toStoreId, 0);
+            long soldTo = soldMap.getOrDefault(toStoreId, 0L);
+            long soldFrom = soldMap.getOrDefault(fromStoreId, 0L);
+            double toDaily = soldTo > 0 ? (double) soldTo / (double) periodDays : 0.0;
+            double fromDaily = soldFrom > 0 ? (double) soldFrom / (double) periodDays : 0.0;
+            int toNeed = (int) Math.ceil(toDaily * 7.0) - toQty;
+            int fromReserve = (int) Math.ceil(fromDaily * 7.0);
+            int fromSurplus = Math.max(0, fromQty - fromReserve);
+            int suggestedQty = Math.min(Math.max(0, toNeed), fromSurplus);
+            if (suggestedQty <= 0) continue;
+
+            Map<String, Object> one = new LinkedHashMap<>();
+            one.put("productId", productId);
+            one.put("productName", productNameById.getOrDefault(productId, "—"));
+            one.put("fromStoreId", fromStoreId);
+            one.put("fromStoreName", storeNameById.getOrDefault(fromStoreId, "—"));
+            one.put("toStoreId", toStoreId);
+            one.put("toStoreName", storeNameById.getOrDefault(toStoreId, "—"));
+            one.put("suggestedQty", suggestedQty);
+            one.put("fromQty", fromQty);
+            one.put("toQty", toQty);
+            suggestions.add(one);
+        }
+
+        suggestions.sort(Comparator.comparingInt(s -> -((Number) s.get("suggestedQty")).intValue()));
+        if (suggestions.size() > 5) {
+            suggestions = suggestions.subList(0, 5);
+        }
+
+        return Map.of(
+            "from", safeFrom.toString(),
+            "to", safeTo.toString(),
+            "periodDays", periodDays,
+            "suggestions", suggestions
+        );
+    }
+
+    public Map<String, Object> storeSalesAndStockInsight(
+        LocalDate from,
+        LocalDate to,
+        Integer companyId
+    ) {
+        LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(30);
+        LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
+        Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
+        Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
+
+        List<Object[]> salesRows = saleRepository.salesByStoreBetween(start, end, companyId);
+        List<StoreStock> storeStocks = storeStockRepository.findAllDetailedByCompanyId(companyId);
+        List<Object[]> soldRaw = saleItemRepository.soldUnitsByProductAndStore(start, end, companyId);
+        Map<String, Object> redistribution = stockRedistributionSuggestion(safeFrom, safeTo, companyId);
+
+        Map<Integer, Long> stockQtyByStore = new HashMap<>();
+        Map<Integer, String> storeNameById = new HashMap<>();
+        for (StoreStock ss : storeStocks) {
+            Integer storeId = ss.getStore().getId();
+            long current = stockQtyByStore.getOrDefault(storeId, 0L);
+            stockQtyByStore.put(storeId, current + ss.getQuantity());
+            storeNameById.put(storeId, ss.getStore().getName());
+        }
+
+        Map<Integer, List<Map<String, Object>>> soldByStore = new HashMap<>();
+        for (Object[] row : soldRaw) {
+            UUID productId = (UUID) row[0];
+            Integer storeId = ((Number) row[1]).intValue();
+            long soldUnits = ((Number) row[2]).longValue();
+            StoreStock match = storeStocks.stream()
+                .filter(ss -> ss.getStore().getId().equals(storeId) && ss.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElse(null);
+            String productName = match != null ? match.getProduct().getName() : "—";
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("productName", productName);
+            item.put("soldUnits", soldUnits);
+            soldByStore.computeIfAbsent(storeId, k -> new ArrayList<>()).add(item);
+        }
+        soldByStore.values().forEach(list ->
+            list.sort((a, b) -> Long.compare(((Number) b.get("soldUnits")).longValue(), ((Number) a.get("soldUnits")).longValue()))
+        );
+
+        List<Map<String, Object>> stores = new ArrayList<>();
+        List<Map<String, Object>> chart = new ArrayList<>();
+        for (Object[] row : salesRows) {
+            Integer storeId = row[0] != null ? ((Number) row[0]).intValue() : null;
+            String storeName = row[1] != null ? String.valueOf(row[1]) : storeNameById.getOrDefault(storeId, "—");
+            Object revenue = row[2];
+            long checks = row[3] != null ? ((Number) row[3]).longValue() : 0L;
+            long stockQty = storeId != null ? stockQtyByStore.getOrDefault(storeId, 0L) : 0L;
+            List<Map<String, Object>> topProducts = soldByStore.getOrDefault(storeId, List.of())
+                .stream()
+                .limit(3)
+                .toList();
+
+            Map<String, Object> one = new LinkedHashMap<>();
+            one.put("storeId", storeId);
+            one.put("storeName", storeName);
+            one.put("revenue", revenue);
+            one.put("checks", checks);
+            one.put("stockQty", stockQty);
+            one.put("topProducts", topProducts);
+            stores.add(one);
+
+            Map<String, Object> point = new LinkedHashMap<>();
+            point.put("name", storeName);
+            point.put("revenue", revenue);
+            point.put("stockQty", stockQty);
+            chart.add(point);
+        }
+
+        return Map.of(
+            "from", safeFrom.toString(),
+            "to", safeTo.toString(),
+            "stores", stores,
+            "redistributionSuggestions", redistribution.getOrDefault("suggestions", List.of()),
+            "chart", chart
+        );
+    }
+
+    public Map<String, Object> businessHealthCheck(LocalDate from, LocalDate to, Integer companyId) {
+        LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(29);
+        LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
+        long days = Math.max(1, ChronoUnit.DAYS.between(safeFrom, safeTo) + 1);
+        LocalDate prevTo = safeFrom.minusDays(1);
+        LocalDate prevFrom = prevTo.minusDays(days - 1);
+
+        SalesReportResponse current = reportService.getSalesReport(safeFrom, safeTo);
+        SalesReportResponse previous = reportService.getSalesReport(prevFrom, prevTo);
+        Map<String, Object> returns = returnsSummaryPeriod(safeFrom, safeTo, companyId);
+        Map<String, Object> topProducts = topProductsPeriod(safeFrom, safeTo, 5);
+        Map<String, Object> storeInsight = storeSalesAndStockInsight(safeFrom, safeTo, companyId);
+
+        BigDecimal curRevenue = current.totalRevenue() != null ? current.totalRevenue() : BigDecimal.ZERO;
+        BigDecimal prevRevenue = previous.totalRevenue() != null ? previous.totalRevenue() : BigDecimal.ZERO;
+        BigDecimal delta = curRevenue.subtract(prevRevenue);
+        BigDecimal returnsAmount = returns.get("returnsAmount") instanceof BigDecimal b ? b : BigDecimal.ZERO;
+        long returnsCount = returns.get("returnsCount") instanceof Number n ? n.longValue() : 0L;
+        long lowStockCount = productRepository.countLowStock();
+
+        // Normalize top products to a map structure (items may be TopProductRow DTOs)
+        List<Map<String, Object>> topItems = new ArrayList<>();
+        Object rawTopItems = topProducts.get("items");
+        if (rawTopItems instanceof List<?> rows) {
+            for (Object row : rows) {
+                if (row instanceof Map<?, ?> map) {
+                    Map<String, Object> one = new LinkedHashMap<>();
+                    one.put("productName", map.get("productName"));
+                    one.put("quantitySold", map.get("quantitySold"));
+                    one.put("revenue", map.get("revenue"));
+                    topItems.add(one);
+                } else if (row instanceof TopProductRow dto) {
+                    Map<String, Object> one = new LinkedHashMap<>();
+                    one.put("productName", dto.productName());
+                    one.put("quantitySold", dto.quantitySold());
+                    one.put("revenue", null);
+                    topItems.add(one);
+                }
+            }
+        }
+
+        // Enhanced: find specific products with potential decline
+        List<Map<String, Object>> decliningProducts = new ArrayList<>();
+        if (!topItems.isEmpty()) {
+            // In real implementation, you'd compare with previous period
+            // Here we'll just mark products with potential issues
+            for (Map<String, Object> item : topItems) {
+                // This is simplified - in production, compare with historical data
+                Object revenue = item.get("revenue");
+                Object quantitySold = item.get("quantitySold");
+                if ((revenue instanceof Number && ((Number) revenue).doubleValue() < 1000)
+                        || (quantitySold instanceof Number && ((Number) quantitySold).longValue() < 10)) {
+                    decliningProducts.add(item);
+                }
+            }
+        }
+
+        // Enhanced: find stores with low stock but high sales
+        List<Map<String, Object>> storesWithIssues = new ArrayList<>();
+        Object storesRaw = storeInsight.get("stores");
+        if (storesRaw instanceof List) {
+            for (Object storeObj : (List<?>) storesRaw) {
+                if (storeObj instanceof Map) {
+                    Map<?, ?> store = (Map<?, ?>) storeObj;
+                    Number stockQty = (Number) store.get("stockQty");
+                    Number revenue = (Number) store.get("revenue");
+                    String storeName = String.valueOf(store.get("storeName"));
+
+                    if (stockQty != null && revenue != null &&
+                            stockQty.longValue() < 50 && revenue.doubleValue() > 5000) {
+                        Map<String, Object> issue = new LinkedHashMap<>();
+                        issue.put("storeName", storeName);
+                        issue.put("stockQty", stockQty);
+                        issue.put("revenue", revenue);
+                        storesWithIssues.add(issue);
+                    }
+                }
+            }
+        }
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("from", safeFrom.toString());
+        out.put("to", safeTo.toString());
+        out.put("previousFrom", prevFrom.toString());
+        out.put("previousTo", prevTo.toString());
+        out.put("currentRevenue", curRevenue);
+        out.put("previousRevenue", prevRevenue);
+        out.put("revenueDelta", delta);
+        out.put("returnsAmount", returnsAmount);
+        out.put("returnsCount", returnsCount);
+        out.put("lowStockCount", lowStockCount);
+        out.put("topProducts", topItems);
+        out.put("decliningProducts", decliningProducts);
+        out.put("storesWithLowStockButHighSales", storesWithIssues);
+        out.put("storeChart", storeInsight.getOrDefault("chart", List.of()));
+        out.put("storeSuggestions", storeInsight.getOrDefault("redistributionSuggestions", List.of()));
+
+        // Keep simple actions as fallback for when LLM fails
+        List<String> simpleActions = new ArrayList<>();
+        if (delta.compareTo(BigDecimal.ZERO) < 0 && !decliningProducts.isEmpty()) {
+            Map<String, Object> firstDeclining = decliningProducts.get(0);
+            simpleActions.add("Sales declined. Check " + firstDeclining.get("productName") + " - it underperformed.");
+        } else if (delta.compareTo(BigDecimal.ZERO) > 0) {
+            simpleActions.add("Revenue growing. Focus on top performers.");
+        }
+        if (!storesWithIssues.isEmpty()) {
+            Map<String, Object> firstIssue = storesWithIssues.get(0);
+            simpleActions.add(firstIssue.get("storeName") + " has low stock (" + firstIssue.get("stockQty") +
+                    ") but good sales (" + firstIssue.get("revenue") + "). Restock urgently.");
+        }
+        if (returnsCount > 0) {
+            simpleActions.add("Returns detected. Review return reasons.");
+        }
+
+        out.put("recommendedActions", simpleActions);
+        out.put("chart", storeInsight.getOrDefault("chart", List.of()));
+        return out;
+    }
+
+    public Map<String, Object> executiveSystemOverview(LocalDate from, LocalDate to, Integer companyId) {
+        LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(30);
+        LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
+        Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
+        Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
+
+        SalesReportResponse sales = reportService.getSalesReport(safeFrom, safeTo);
+        List<TopProductRow> topProducts = reportService.getTopProducts(5, safeFrom, safeTo);
+        List<Object[]> storesRaw = saleRepository.salesByStoreBetween(start, end, companyId);
+        List<Map<String, Object>> topStores = storesRaw.stream()
+                .sorted((a, b) -> Double.compare(toDouble(b[2]), toDouble(a[2])))
+                .limit(5)
+                .map(row -> {
+                    Map<String, Object> one = new LinkedHashMap<>();
+                    one.put("storeId", row[0] != null ? ((Number) row[0]).intValue() : null);
+                    one.put("storeName", row[1] != null ? String.valueOf(row[1]) : "—");
+                    one.put("revenue", row[2]);
+                    one.put("checks", row[3] != null ? ((Number) row[3]).longValue() : 0L);
+                    return one;
+                })
+                .toList();
+
+        long productCount = productRepository.countActiveByCompanyId(companyId);
+        long lowStockCount = productRepository.countLowStockByCompanyId(companyId);
+        long categoryCount = categoryRepository.countByCompanyId(companyId);
+        long storeCount = storeRepository.countByCompanyId(companyId);
+        long activeStoreCount = storeRepository.countByCompanyIdAndActiveTrue(companyId);
+
+        Object[] zSummary = zReportRepository.summarizeByCompanyAndClosedAtBetween(companyId, start, end);
+        long zReportsCount = zSummary != null && zSummary.length > 0 && zSummary[0] instanceof Number n ? n.longValue() : 0L;
+        BigDecimal zReportsTotal = zSummary != null && zSummary.length > 1 && zSummary[1] instanceof BigDecimal b ? b : BigDecimal.ZERO;
+
+        return Map.of(
+                "from", safeFrom.toString(),
+                "to", safeTo.toString(),
+                "sales", Map.of(
+                        "revenue", sales.totalRevenue(),
+                        "transactions", sales.transactionCount(),
+                        "averageCheck", sales.averageTransactionValue()
+                ),
+                "catalog", Map.of(
+                        "products", productCount,
+                        "categories", categoryCount,
+                        "lowStockProducts", lowStockCount
+                ),
+                "stores", Map.of(
+                        "total", storeCount,
+                        "active", activeStoreCount,
+                        "withSales", storesRaw.size(),
+                        "top", topStores
+                ),
+                "zReports", Map.of(
+                        "count", zReportsCount,
+                        "totalAmount", zReportsTotal
+                ),
+                "topProducts", topProducts
+        );
+    }
+
+    private double toDouble(Object value) {
+        if (value instanceof Number n) return n.doubleValue();
+        return 0d;
+    }
+}
+

@@ -30,6 +30,7 @@
   },
   "nav": {
     "dashboard": "Asosiy",
+    "aiAssistant": "AI-assistent",
     "goodsGroup": "Mahsulotlar",
     "productsList": "Mahsulotlar",
     "categories": "Kategoriyalar",
@@ -157,6 +158,19 @@
     "colSku": "SKU",
     "colInStock": "Qoldiq",
     "colMinAlert": "Min. chegara"
+  },
+  "aiAssistant": {
+    "title": "Direktor uchun AI-assistent",
+    "subtitle": "Prototip: analitika va do‘konlar o‘rtasida ko‘chirish tavsiyalari",
+    "hint": "Misollar: «Bugungi tushum qancha?», «Oxirgi 7 kun top mahsulotlar», «Oy bo‘yicha qaytarishlar», «Do‘konlar orasida nimani ko‘chirish kerak?»",
+    "inputPlaceholder": "Analitika bo‘yicha savol kiriting…",
+    "clearChat": "Chatni tozalash",
+    "chartTitle": "Oxirgi analitik javob bo‘yicha grafik",
+    "pageTitle": "AI-assistent",
+    "pageIntro": "Sotuv, qaytarish va ombor bo‘yicha qisqa ham aniq javoblar uchun alohida chat.",
+    "errors": {
+      "failed": "Assistentdan javob olib bo‘lmadi"
+    }
   },
   "categories": {
     "title": "Kategoriyalar",

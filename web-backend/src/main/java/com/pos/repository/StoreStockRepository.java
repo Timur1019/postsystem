@@ -33,4 +33,13 @@ public interface StoreStockRepository extends JpaRepository<StoreStock, UUID> {
         @Param("storeId") Integer storeId,
         @Param("productIds") Collection<UUID> productIds
     );
+
+    @Query("""
+        SELECT ss
+        FROM StoreStock ss
+        JOIN FETCH ss.product p
+        JOIN FETCH ss.store st
+        WHERE st.company.id = :companyId
+        """)
+    List<StoreStock> findAllDetailedByCompanyId(@Param("companyId") Integer companyId);
 }
