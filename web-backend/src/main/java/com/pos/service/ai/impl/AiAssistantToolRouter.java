@@ -1,14 +1,29 @@
 package com.pos.service.ai.impl;
 
+import com.pos.dto.ai.AiAssistantChatMessage;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Locale;
 
 @Component
 class AiAssistantToolRouter {
 
-    AiAssistantToolCall selectTool(String message) {
-        return selectToolFallback(AiAssistantMessageNormalizer.forRouting(message));
+    AiAssistantToolCall selectTool(String message, List<AiAssistantChatMessage> history) {
+        String q = AiAssistantMessageNormalizer.forRouting(message);
+        if (isVagueFollowUp(q) && history != null && !history.isEmpty()) {
+            q = q + " " + AiAssistantConversationHistory.contextHint(history).toLowerCase(Locale.ROOT);
+        }
+        return selectToolFallback(q);
+    }
+
+    private boolean isVagueFollowUp(String q) {
+        if (q.length() > 45) {
+            return false;
+        }
+        return q.startsWith("а ") || q.startsWith("и ") || q.startsWith("ну ")
+                || q.contains("подробнее") || q.contains("ещё") || q.contains("еще")
+                || q.contains("почему") || q.contains("this") || q.contains("that");
     }
 
     String detectLanguage(String message) {

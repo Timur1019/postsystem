@@ -3,6 +3,7 @@ package com.pos.service.ai.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pos.dto.report.TopProductRow;
 import com.pos.config.AiAssistantProperties;
+import com.pos.dto.ai.AiAssistantChatMessage;
 import com.pos.exception.BadRequestException;
 import com.pos.service.ai.DeepSeekClient;
 import com.pos.util.LogUtil;
@@ -27,7 +28,13 @@ class AiAssistantInsightComposer {
     private final ObjectMapper objectMapper;
     private final AiAssistantProperties properties;
 
-    String compose(String question, String language, String tool, Map<String, Object> toolResult) {
+    String compose(
+            String question,
+            String language,
+            String tool,
+            Map<String, Object> toolResult,
+            List<AiAssistantChatMessage> history
+    ) {
         String fallback = buildFallbackAnswer(tool, toolResult, language);
         if (STRICT_DATA_MODE || !properties.isLlmReady()) {
             if (!properties.isLlmReady()) {
@@ -40,9 +47,9 @@ class AiAssistantInsightComposer {
 
             List<Map<String, String>> messages = new ArrayList<>();
             messages.add(Map.of("role", "system", "content", system));
-            messages.add(Map.of("role", "user", "content", "QUESTION: " + question));
-            messages.add(Map.of("role", "user", "content", "TOOL: " + tool));
             messages.add(Map.of("role", "user", "content", "DATA: " + enrichToolResultForLlm(tool, toolResult)));
+            AiAssistantConversationHistory.appendToLlmMessages(messages, history);
+            messages.add(Map.of("role", "user", "content", question));
 
             String content = deepSeekClient.chat(messages);
             return StringUtils.hasText(content) ? content.trim() : fallback;

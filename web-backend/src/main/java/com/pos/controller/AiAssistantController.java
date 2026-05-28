@@ -22,7 +22,7 @@ public class AiAssistantController {
 
     @PostMapping("/chat")
     public ResponseEntity<AiAssistantResponse> chat(@Valid @RequestBody AiAssistantRequest request) {
-        return ResponseEntity.ok(aiAssistantService.ask(request.message()));
+        return ResponseEntity.ok(aiAssistantService.ask(request.message(), request.safeHistory()));
     }
 }
 

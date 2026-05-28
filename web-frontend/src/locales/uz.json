@@ -161,9 +161,10 @@
   },
   "aiAssistant": {
     "title": "Direktor uchun AI-assistent",
-    "subtitle": "Prototip: analitika va do‘konlar o‘rtasida ko‘chirish tavsiyalari",
-    "hint": "Misollar: «Bugungi tushum qancha?», «Oxirgi 7 kun top mahsulotlar», «Oy bo‘yicha qaytarishlar», «Do‘konlar orasida nimani ko‘chirish kerak?»",
-    "inputPlaceholder": "Analitika bo‘yicha savol kiriting…",
+    "subtitle": "Xotirali dialog: bir chatda aniqlashtiring",
+    "hint": "Savol yozing va davom eting: «top mahsulotlar», keyin «a qoldiqlar?», «a do‘kon bo‘yicha?». Javob faqat mavzu bo‘yicha.",
+    "inputPlaceholder": "Xabar…",
+    "thinking": "O‘ylayapman…",
     "clearChat": "Chatni tozalash",
     "chartTitle": "Oxirgi analitik javob bo‘yicha grafik",
     "pageTitle": "AI-assistent",

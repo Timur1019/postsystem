@@ -6,6 +6,14 @@ import { aiAssistantApi } from '../../services/api';
 
 const MAX_MESSAGES = 40;
 const KEEP_LAST_MESSAGES = 24;
+const HISTORY_TURNS = 12;
+
+function toApiHistory(messages) {
+  return messages.slice(-HISTORY_TURNS * 2).map((m) => ({
+    role: m.role,
+    content: m.text,
+  }));
+}
 
 export default function AiAssistantWidget({ onChartDataChange }) {
   const { t } = useTranslation();
@@ -22,15 +30,15 @@ export default function AiAssistantWidget({ onChartDataChange }) {
   };
 
   const askMutation = useMutation({
-    mutationFn: (text) => aiAssistantApi.chat(text).then((r) => r.data),
-    onSuccess: (data, question) => {
+    mutationFn: ({ text, history }) => aiAssistantApi.chat(text, history).then((r) => r.data),
+    onSuccess: (data, { text: question }) => {
       appendMessages([
         { role: 'user', text: question },
         { role: 'assistant', text: data.answer, meta: `${data.tool} · ${data.latencyMs}ms`, data: data.data ?? null },
       ]);
       setInput('');
     },
-    onError: (e, question) => {
+    onError: (e, { text: question }) => {
       const fallback = e?.response?.data?.message ?? t('aiAssistant.errors.failed');
       appendMessages([
         { role: 'user', text: question },
@@ -42,7 +50,7 @@ export default function AiAssistantWidget({ onChartDataChange }) {
   useEffect(() => {
     if (!listRef.current) return;
     listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [messages]);
+  }, [messages, askMutation.isPending]);
 
   const latestChartData = useMemo(() => {
     if (messages.length === 0) return null;
@@ -64,7 +72,7 @@ export default function AiAssistantWidget({ onChartDataChange }) {
     e.preventDefault();
     const text = input.trim();
     if (!text || askMutation.isPending) return;
-    askMutation.mutate(text);
+    askMutation.mutate({ text, history: toApiHistory(messages) });
   };
 
   return (
@@ -102,11 +110,17 @@ export default function AiAssistantWidget({ onChartDataChange }) {
                   : 'mr-6 bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100'
               }`}
             >
-              <p>{m.text}</p>
+              <p className="whitespace-pre-wrap">{m.text}</p>
               {m.meta ? <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{m.meta}</p> : null}
             </div>
           ))
         )}
+        {askMutation.isPending ? (
+          <div className="mr-6 flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            <Loader2 className="animate-spin" size={14} />
+            {t('aiAssistant.thinking')}
+          </div>
+        ) : null}
       </div>
 
       <form onSubmit={submit} className="flex items-center gap-2">
@@ -115,7 +129,7 @@ export default function AiAssistantWidget({ onChartDataChange }) {
           onChange={(e) => setInput(e.target.value)}
           placeholder={t('aiAssistant.inputPlaceholder')}
           className="h-10 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none ring-0 focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-          maxLength={600}
+          maxLength={2000}
         />
         <button
           type="submit"
@@ -128,4 +142,3 @@ export default function AiAssistantWidget({ onChartDataChange }) {
     </section>
   );
 }
-

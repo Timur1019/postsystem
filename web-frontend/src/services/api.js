@@ -254,7 +254,7 @@ export const reportApi = {
 };
 
 export const aiAssistantApi = {
-  chat: (message) => api.post('/ai/assistant/chat', { message }),
+  chat: (message, history = []) => api.post('/ai/assistant/chat', { message, history }),
 };
 
 export const stockReportApi = {

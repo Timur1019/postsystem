@@ -1,6 +1,7 @@
 package com.pos.service.ai.impl;
 
 import com.pos.config.AiAssistantProperties;
+import com.pos.dto.ai.AiAssistantChatMessage;
 import com.pos.dto.ai.AiAssistantResponse;
 import com.pos.entity.User;
 import com.pos.exception.BadRequestException;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -31,39 +33,41 @@ public class AiAssistantServiceImpl implements AiAssistantService {
     private final AiAssistantInsightComposer insightComposer;
 
     @Override
-    public AiAssistantResponse ask(String message) {
+    public AiAssistantResponse ask(String message, List<AiAssistantChatMessage> history) {
         long started = System.currentTimeMillis();
         User user = currentUserProvider.requireCurrentUser();
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
         String normalized = normalizePrompt(message);
+        List<AiAssistantChatMessage> chatHistory = AiAssistantConversationHistory.sanitize(history);
         String language = toolRouter.detectLanguage(normalized);
         rateLimiter.enforce(user.getId(), properties.getMaxRequestsPerMinutePerUser());
 
         if (toolRouter.isSmallTalk(normalized)) {
             long latency = System.currentTimeMillis() - started;
-            String answer = generalChatService.answer(normalized, language, companyId);
+            String answer = generalChatService.answer(normalized, language, companyId, chatHistory);
             return new AiAssistantResponse(answer, AiAssistantToolCatalog.SMALLTALK, latency, Map.of());
         }
 
-        AiAssistantToolCall toolCall = toolRouter.selectTool(normalized);
+        AiAssistantToolCall toolCall = toolRouter.selectTool(normalized, chatHistory);
 
         if (AiAssistantToolCatalog.SMALLTALK.equals(toolCall.tool())) {
             long latency = System.currentTimeMillis() - started;
-            String answer = generalChatService.answer(normalized, language, companyId);
+            String answer = generalChatService.answer(normalized, language, companyId, chatHistory);
             return new AiAssistantResponse(answer, AiAssistantToolCatalog.SMALLTALK, latency, Map.of());
         }
 
         Map<String, Object> toolResult = runTool(toolCall, companyId);
-        String answer = insightComposer.compose(normalized, language, toolCall.tool(), toolResult);
+        String answer = insightComposer.compose(normalized, language, toolCall.tool(), toolResult, chatHistory);
         long latency = System.currentTimeMillis() - started;
 
         LogUtil.info(
                 AiAssistantServiceImpl.class,
-                "AI assistant request: user={} company={} tool={} latencyMs={} ok=true",
+                "AI assistant request: user={} company={} tool={} latencyMs={} historySize={} ok=true",
                 user.getId(),
                 companyId,
                 toolCall.tool(),
-                latency
+                latency,
+                chatHistory.size()
         );
         return new AiAssistantResponse(answer, toolCall.tool(), latency, toolResult);
     }
@@ -89,5 +93,4 @@ public class AiAssistantServiceImpl implements AiAssistantService {
             default -> throw new BadRequestException("Неизвестный инструмент ассистента");
         };
     }
-
 }

@@ -1,6 +1,7 @@
 package com.pos.service.ai.impl;
 
 import com.pos.config.AiAssistantProperties;
+import com.pos.dto.ai.AiAssistantChatMessage;
 import com.pos.exception.BadRequestException;
 import com.pos.service.ai.DeepSeekClient;
 import com.pos.util.LogUtil;
@@ -20,7 +21,7 @@ public class AiAssistantGeneralChatService {
     private final AiAssistantProperties properties;
     private final AiAssistantAnalyticsCache analyticsCache;
 
-    public String answer(String question, String language, Integer companyId) {
+    public String answer(String question, String language, Integer companyId, List<AiAssistantChatMessage> history) {
         if (!properties.isLlmReady()) {
             if (AiAssistantOfflineReply.isSimpleGreeting(question)) {
                 return AiAssistantOfflineReply.greetingWithoutLlm(language);
@@ -28,7 +29,7 @@ public class AiAssistantGeneralChatService {
             return AiAssistantOfflineReply.notConfigured(language);
         }
 
-        if (AiAssistantOfflineReply.isSimpleGreeting(question)) {
+        if (AiAssistantOfflineReply.isSimpleGreeting(question) && (history == null || history.isEmpty())) {
             return answerGreeting(question, language);
         }
 
@@ -39,12 +40,11 @@ public class AiAssistantGeneralChatService {
         );
         String dataBrief = AiAssistantContextBrief.build(context, language);
 
-        String system = AiAssistantPrompts.generalChatSystem();
-
         List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(Map.of("role", "system", "content", system));
+        messages.add(Map.of("role", "system", "content", AiAssistantPrompts.generalChatSystem()));
         messages.add(Map.of("role", "user", "content", "DATA (system analytics, last ~30 days):\n" + dataBrief));
-        messages.add(Map.of("role", "user", "content", "QUESTION: " + question));
+        AiAssistantConversationHistory.appendToLlmMessages(messages, history);
+        messages.add(Map.of("role", "user", "content", question));
 
         try {
             String answer = deepSeekClient.chat(messages);
