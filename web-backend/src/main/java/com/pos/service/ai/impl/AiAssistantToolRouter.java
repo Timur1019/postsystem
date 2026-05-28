@@ -85,8 +85,11 @@ class AiAssistantToolRouter {
     private boolean isConversationalOverview(String q) {
         return q.contains("текущее состояние") || q.contains("общее состояние") || q.contains("состояние системы")
                 || q.contains("по всей системе") || q.contains("как дела у бизнеса") || q.contains("общая картина")
-                || q.contains("по системе всё") || q.contains("скажи всё") || q.contains("что у нас по бизнес")
-                || q.contains("как бизнес") || q.contains("что не так") || q.contains("что делать")
-                || q.contains("совет") || q.contains("рекоменд");
+                || q.contains("по системе") || q.contains("по системе всё") || q.contains("скажи всё")
+                || q.contains("что у нас") || q.contains("как бизнес") || q.contains("что не так") || q.contains("что делать")
+                || q.contains("совет") || q.contains("рекоменд")
+                || q.contains("свод") || q.contains("обзор") || q.contains("overview") || q.contains("summary")
+                || q.contains("общий") || q.contains("общая") || q.contains("обший") || q.contains("обгий")
+                || q.contains("итог") || q.contains("картина");
     }
 }

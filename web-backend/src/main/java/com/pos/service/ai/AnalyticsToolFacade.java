@@ -89,35 +89,20 @@ public class AnalyticsToolFacade {
         Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
         Integer companyIdFinal = companyId;
 
-        CompletableFuture<org.springframework.data.domain.Page<StockInventory>> inventoryF = parallel.supply(
-                () -> stockInventoryRepository.findByCompanyBetween(
-                        companyIdFinal, start, end, PageRequest.of(0, 10)));
-        CompletableFuture<List<Product>> lowStockF = parallel.supply(
-                () -> productRepository.findLowStockProductsByCompanyId(companyIdFinal, PageRequest.of(0, 15)));
+        CompletableFuture<InventorySlice> inventoryF = parallel.supply(() -> loadInventorySlice(companyIdFinal, start, end));
+        CompletableFuture<List<Map<String, Object>>> lowStockF = parallel.supply(
+                () -> loadLowStockRows(companyIdFinal));
         AiAssistantParallel.awaitAll(inventoryF, lowStockF);
 
-        var inventoryPage = inventoryF.join();
-        List<Map<String, Object>> recent = inventoryPage.getContent().stream()
-                .map(this::toInventoryRow)
-                .toList();
-
-        List<Product> lowStock = lowStockF.join();
-        List<Map<String, Object>> lowStockRows = lowStock.stream()
-                .map(p -> {
-                    Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("productName", p.getName());
-                    row.put("stockQty", p.getStockQuantity());
-                    row.put("lowStockAlert", p.getLowStockAlert());
-                    return row;
-                })
-                .toList();
+        InventorySlice inventorySlice = inventoryF.join();
+        List<Map<String, Object>> lowStockRows = lowStockF.join();
 
         return Map.of(
                 "from", safeFrom.toString(),
                 "to", safeTo.toString(),
-                "inventoriesCount", inventoryPage.getTotalElements(),
-                "recentInventories", recent,
-                "lowStockCount", lowStock.size(),
+                "inventoriesCount", inventorySlice.count(),
+                "recentInventories", inventorySlice.recent(),
+                "lowStockCount", lowStockRows.size(),
                 "lowStockProducts", lowStockRows
         );
     }
@@ -317,27 +302,19 @@ public class AnalyticsToolFacade {
 
         CompletableFuture<List<Object[]>> salesRowsF = parallel.supply(
                 () -> saleRepository.salesByStoreBetween(start, end, companyIdFinal));
-        CompletableFuture<List<StoreStock>> storeStocksF = parallel.supply(
-                () -> storeStockRepository.findAllDetailedByCompanyId(companyIdFinal));
+        CompletableFuture<StoreStockIndex> stockIndexF = parallel.supply(
+                () -> buildStoreStockIndex(companyIdFinal));
         CompletableFuture<List<Object[]>> soldRawF = parallel.supply(
                 () -> saleItemRepository.soldUnitsByProductAndStore(start, end, companyIdFinal));
-        AiAssistantParallel.awaitAll(salesRowsF, storeStocksF, soldRawF);
+        AiAssistantParallel.awaitAll(salesRowsF, stockIndexF, soldRawF);
 
         List<Object[]> salesRows = salesRowsF.join();
-        List<StoreStock> storeStocks = storeStocksF.join();
+        StoreStockIndex stockIndex = stockIndexF.join();
         List<Object[]> soldRaw = soldRawF.join();
 
-        Map<Integer, Long> stockQtyByStore = new HashMap<>();
-        Map<Integer, String> storeNameById = new HashMap<>();
-        Map<String, String> productNameByStoreProduct = new HashMap<>();
-        for (StoreStock ss : storeStocks) {
-            Integer storeId = ss.getStore().getId();
-            UUID productId = ss.getProduct().getId();
-            long current = stockQtyByStore.getOrDefault(storeId, 0L);
-            stockQtyByStore.put(storeId, current + ss.getQuantity());
-            storeNameById.put(storeId, ss.getStore().getName());
-            productNameByStoreProduct.put(storeId + ":" + productId, ss.getProduct().getName());
-        }
+        Map<Integer, Long> stockQtyByStore = stockIndex.stockQtyByStore();
+        Map<Integer, String> storeNameById = stockIndex.storeNameById();
+        Map<String, String> productNameByStoreProduct = stockIndex.productNameByStoreProduct();
 
         Map<Integer, List<Map<String, Object>>> soldByStore = new HashMap<>();
         for (Object[] row : soldRaw) {
@@ -530,20 +507,14 @@ public class AnalyticsToolFacade {
 
         CompletableFuture<List<Object[]>> salesRowsF = parallel.supply(
                 () -> saleRepository.salesByStoreBetween(start, end, companyId));
-        CompletableFuture<List<StoreStock>> storeStocksF = parallel.supply(
-                () -> storeStockRepository.findAllDetailedByCompanyId(companyId));
-        AiAssistantParallel.awaitAll(salesRowsF, storeStocksF);
+        CompletableFuture<StoreStockIndex> stockIndexF = parallel.supply(
+                () -> buildStoreStockIndex(companyId));
+        AiAssistantParallel.awaitAll(salesRowsF, stockIndexF);
 
         List<Object[]> salesRows = salesRowsF.join();
-        List<StoreStock> storeStocks = storeStocksF.join();
-
-        Map<Integer, Long> stockQtyByStore = new HashMap<>();
-        Map<Integer, String> storeNameById = new HashMap<>();
-        for (StoreStock ss : storeStocks) {
-            Integer storeId = ss.getStore().getId();
-            stockQtyByStore.merge(storeId, (long) ss.getQuantity(), Long::sum);
-            storeNameById.put(storeId, ss.getStore().getName());
-        }
+        StoreStockIndex stockIndex = stockIndexF.join();
+        Map<Integer, Long> stockQtyByStore = stockIndex.stockQtyByStore();
+        Map<Integer, String> storeNameById = stockIndex.storeNameById();
 
         List<Map<String, Object>> stores = new ArrayList<>();
         List<Map<String, Object>> chart = new ArrayList<>();
@@ -664,6 +635,51 @@ public class AnalyticsToolFacade {
     private double toDouble(Object value) {
         if (value instanceof Number n) return n.doubleValue();
         return 0d;
+    }
+
+    private InventorySlice loadInventorySlice(Integer companyId, Instant start, Instant end) {
+        var page = stockInventoryRepository.findByCompanyBetween(companyId, start, end, PageRequest.of(0, 10));
+        List<Map<String, Object>> recent = page.getContent().stream()
+                .map(this::toInventoryRow)
+                .toList();
+        return new InventorySlice(page.getTotalElements(), recent);
+    }
+
+    private List<Map<String, Object>> loadLowStockRows(Integer companyId) {
+        return productRepository.findLowStockProductsByCompanyId(companyId, PageRequest.of(0, 15)).stream()
+                .map(p -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("productName", p.getName());
+                    row.put("stockQty", p.getStockQuantity());
+                    row.put("lowStockAlert", p.getLowStockAlert());
+                    return row;
+                })
+                .toList();
+    }
+
+    private StoreStockIndex buildStoreStockIndex(Integer companyId) {
+        List<StoreStock> storeStocks = storeStockRepository.findAllDetailedByCompanyId(companyId);
+        Map<Integer, Long> stockQtyByStore = new HashMap<>();
+        Map<Integer, String> storeNameById = new HashMap<>();
+        Map<String, String> productNameByStoreProduct = new HashMap<>();
+        for (StoreStock ss : storeStocks) {
+            Integer storeId = ss.getStore().getId();
+            UUID productId = ss.getProduct().getId();
+            stockQtyByStore.merge(storeId, (long) ss.getQuantity(), Long::sum);
+            storeNameById.put(storeId, ss.getStore().getName());
+            productNameByStoreProduct.put(storeId + ":" + productId, ss.getProduct().getName());
+        }
+        return new StoreStockIndex(stockQtyByStore, storeNameById, productNameByStoreProduct);
+    }
+
+    private record InventorySlice(long count, List<Map<String, Object>> recent) {
+    }
+
+    private record StoreStockIndex(
+            Map<Integer, Long> stockQtyByStore,
+            Map<Integer, String> storeNameById,
+            Map<String, String> productNameByStoreProduct
+    ) {
     }
 }
 
