@@ -3,10 +3,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { Clock, Filter, LayoutGrid, List, X, ChevronLeft } from 'lucide-react';
+import { Clock, Filter, LayoutGrid, List, X, ChevronLeft, Printer } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { saleApi } from '../../services/api';
 import SalePartialReturnModal from '../../components/sales/SalePartialReturnModal';
 import FiscalReceiptBody from '../../components/receipt/FiscalReceiptBody';
+import ThermalReportPrintPortal from '../../components/reports/ThermalReportPrintPortal';
+import { isDesktopSilentPrintAvailable, printReceipt } from '../../utils/printReceipt';
 import { useCashierShift } from '../../hooks/useCashierShift';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -417,6 +420,9 @@ function SalesViewToggle({ viewMode, onChange, t }) {
 }
 
 function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn, onClose, t }) {
+  const [printToken, setPrintToken] = useState(null);
+  const [printing, setPrinting] = useState(false);
+
   const {
     data: sale,
     isPending,
@@ -428,6 +434,28 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
   });
 
   const canReturn = selectedRow && selectedRow.status !== 'VOIDED';
+  const canPrint = Boolean(sale && receiptNumber);
+
+  const handlePrint = async () => {
+    if (!canPrint || printing) return;
+    setPrinting(true);
+    try {
+      if (isDesktopSilentPrintAvailable()) {
+        const mode = await printReceipt(receiptNumber, { preferSilent: true });
+        if (mode) {
+          toast.success(t('receipt.printSent'), { id: 'cashier-sales-print' });
+        } else {
+          setPrintToken(Date.now());
+        }
+      } else {
+        setPrintToken(Date.now());
+      }
+    } catch (e) {
+      toast.error(e?.message ?? t('receipt.printFailed'), { id: 'cashier-sales-print' });
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   return (
     <aside className="cashier-sales-receipt-pane" aria-label={t('pos.receipt')}>
@@ -465,17 +493,47 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
           </div>
         )}
       </div>
-      {canReturn ? (
+      {canPrint ? (
         <footer className="cashier-sales-receipt-pane__footer">
-          <button
-            type="button"
-            className="cashier-sales-receipt-pane__return"
-            onClick={onReturn}
-            disabled={returnDisabled}
-          >
-            {t('pos.return')}
-          </button>
+          <div className="cashier-sales-receipt-pane__actions">
+            <button
+              type="button"
+              className="cashier-sales-receipt-pane__print"
+              onClick={handlePrint}
+              disabled={printing}
+            >
+              <Printer size={18} aria-hidden />
+              {printing ? t('common.loading') : t('receipt.print')}
+            </button>
+            {canReturn ? (
+              <button
+                type="button"
+                className="cashier-sales-receipt-pane__return"
+                onClick={onReturn}
+                disabled={returnDisabled}
+              >
+                {t('pos.return')}
+              </button>
+            ) : null}
+          </div>
         </footer>
+      ) : null}
+      {printToken != null && sale ? (
+        <ThermalReportPrintPortal
+          open
+          printToken={printToken}
+          onPrinted={() => {
+            toast.success(t('receipt.printSent'), { id: 'cashier-sales-print' });
+            setPrintToken(null);
+          }}
+          onError={() => {
+            toast.error(t('receipt.printFailed'), { id: 'cashier-sales-print' });
+            setPrintToken(null);
+          }}
+          onClose={() => setPrintToken(null)}
+        >
+          <FiscalReceiptBody sale={sale} />
+        </ThermalReportPrintPortal>
       ) : null}
     </aside>
   );

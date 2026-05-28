@@ -538,6 +538,16 @@
   border-top-color: var(--cashier-panel-border);
 }
 
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__print {
+  border-color: var(--cashier-panel-border);
+  background: var(--cashier-panel-surface);
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__print:hover:not(:disabled) {
+  background: var(--cashier-panel-surface-2);
+}
+
 .cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__return {
   background: #ea580c;
   color: #fff;

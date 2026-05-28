@@ -3253,6 +3253,39 @@
   background: #fff;
 }
 
+.cashier-sales-receipt-pane__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cashier-sales-receipt-pane__print {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.cashier-sales-receipt-pane__print:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.cashier-sales-receipt-pane__print:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .cashier-sales-receipt-pane__return {
   width: 100%;
   min-height: 44px;
