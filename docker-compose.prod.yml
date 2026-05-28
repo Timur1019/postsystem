@@ -65,6 +65,12 @@ services:
       ORDERS_UPLOAD_DIR: /app/uploads/orders
       LOG_PATH: /app/logs
       TZ: ${TZ:-Asia/Tashkent}
+      AI_ASSISTANT_ENABLED: ${AI_ASSISTANT_ENABLED:-true}
+      AI_ASSISTANT_PROVIDER: ${AI_ASSISTANT_PROVIDER:-deepseek}
+      AI_ASSISTANT_BASE_URL: ${AI_ASSISTANT_BASE_URL:-https://api.deepseek.com}
+      AI_ASSISTANT_MODEL: ${AI_ASSISTANT_MODEL:-deepseek-chat}
+      AI_ASSISTANT_API_KEY: ${AI_ASSISTANT_API_KEY:-}
+      AI_ASSISTANT_MAX_PROMPT_CHARS: ${AI_ASSISTANT_MAX_PROMPT_CHARS:-2000}
     ports:
       - '${API_PORT:-8080}:8080'
     volumes:

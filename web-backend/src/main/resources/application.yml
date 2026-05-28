@@ -59,7 +59,7 @@ app:
     default-type: 2
     search-type: 1
   ai:
-    enabled: ${AI_ASSISTANT_ENABLED:false}
+    enabled: ${AI_ASSISTANT_ENABLED:true}
     provider: ${AI_ASSISTANT_PROVIDER:deepseek}
     base-url: ${AI_ASSISTANT_BASE_URL:https://api.deepseek.com}
     api-key: ${AI_ASSISTANT_API_KEY:}

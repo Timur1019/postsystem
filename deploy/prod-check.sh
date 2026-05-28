@@ -42,6 +42,16 @@ else
   else
     ok "POSTGRES_PASSWORD задан"
   fi
+  ai_enabled="${AI_ASSISTANT_ENABLED:-true}"
+  if [[ "$ai_enabled" == "true" || "$ai_enabled" == "1" ]]; then
+    if [[ -z "${AI_ASSISTANT_API_KEY:-}" ]]; then
+      warn "AI_ASSISTANT_API_KEY пуст — ассистент ответит без DeepSeek (только сводка/подсказка)"
+    else
+      ok "AI_ASSISTANT_API_KEY задан"
+    fi
+  else
+    skip "AI_ASSISTANT_ENABLED=false"
+  fi
 fi
 
 echo ""

@@ -38,6 +38,7 @@ nano .env
 
 - `POSTGRES_PASSWORD`
 - `JWT_SECRET` (не короче 32 символов)
+- `AI_ASSISTANT_API_KEY` — ключ [DeepSeek](https://platform.deepseek.com/) (иначе ассистент без живого чата)
 
 ## 3. Проверка перед деплоем
 

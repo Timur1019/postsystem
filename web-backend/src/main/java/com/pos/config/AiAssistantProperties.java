@@ -3,6 +3,7 @@ package com.pos.config;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.StringUtils;
 
 @Getter
 @Setter
@@ -26,5 +27,9 @@ public class AiAssistantProperties {
     private int maxPromptChars = 2000;
 
     private int maxRequestsPerMinutePerUser = 20;
+
+    public boolean isLlmReady() {
+        return enabled && StringUtils.hasText(apiKey);
+    }
 }
 

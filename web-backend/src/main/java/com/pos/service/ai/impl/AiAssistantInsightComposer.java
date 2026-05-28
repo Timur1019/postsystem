@@ -2,6 +2,8 @@ package com.pos.service.ai.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pos.dto.report.TopProductRow;
+import com.pos.config.AiAssistantProperties;
+import com.pos.exception.BadRequestException;
 import com.pos.service.ai.DeepSeekClient;
 import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +25,14 @@ class AiAssistantInsightComposer {
 
     private final DeepSeekClient deepSeekClient;
     private final ObjectMapper objectMapper;
+    private final AiAssistantProperties properties;
 
     String compose(String question, String language, String tool, Map<String, Object> toolResult) {
         String fallback = buildFallbackAnswer(tool, toolResult, language);
-        if (STRICT_DATA_MODE) {
+        if (STRICT_DATA_MODE || !properties.isLlmReady()) {
+            if (!properties.isLlmReady()) {
+                return fallback + "\n\n" + AiAssistantOfflineReply.notConfigured(language);
+            }
             return fallback;
         }
         try {
@@ -53,8 +59,11 @@ class AiAssistantInsightComposer {
 
             String content = deepSeekClient.chat(messages);
             return StringUtils.hasText(content) ? content.trim() : fallback;
+        } catch (BadRequestException e) {
+            LogUtil.warn(AiAssistantInsightComposer.class, "LLM summarization failed: {}", e.getMessage());
+            return fallback + "\n\n(" + e.getMessage() + ")";
         } catch (Exception e) {
-            LogUtil.error(AiAssistantInsightComposer.class, "LLM summarization failed: {}", e.getMessage());
+            LogUtil.warn(AiAssistantInsightComposer.class, "LLM summarization failed: {}", e.getMessage());
             return fallback;
         }
     }

@@ -1,7 +1,10 @@
 package com.pos.service.ai.impl;
 
+import com.pos.config.AiAssistantProperties;
+import com.pos.exception.BadRequestException;
 import com.pos.service.ai.AnalyticsToolFacade;
 import com.pos.service.ai.DeepSeekClient;
+import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,8 +20,16 @@ public class AiAssistantGeneralChatService {
 
     private final AnalyticsToolFacade toolFacade;
     private final DeepSeekClient deepSeekClient;
+    private final AiAssistantProperties properties;
 
     public String answer(String question, String language, Integer companyId) {
+        if (!properties.isLlmReady()) {
+            if (AiAssistantOfflineReply.isSimpleGreeting(question)) {
+                return AiAssistantOfflineReply.greetingWithoutLlm(language);
+            }
+            return AiAssistantOfflineReply.notConfigured(language);
+        }
+
         Map<String, Object> context = buildSafeContext(companyId);
         String dataBrief = AiAssistantContextBrief.build(context, language);
 
@@ -56,10 +67,14 @@ public class AiAssistantGeneralChatService {
             if (answer != null && !answer.isBlank()) {
                 return answer.trim();
             }
-        } catch (Exception ignored) {
-            // fall through
+        } catch (BadRequestException e) {
+            LogUtil.warn(AiAssistantGeneralChatService.class, "LLM chat failed: {}", e.getMessage());
+            return AiAssistantOfflineReply.llmFailed(language, dataBrief, e.getMessage());
+        } catch (Exception e) {
+            LogUtil.warn(AiAssistantGeneralChatService.class, "LLM chat failed: {}", e.getMessage());
+            return AiAssistantOfflineReply.llmFailed(language, dataBrief, null);
         }
-        return shortFallback(dataBrief, language);
+        return AiAssistantOfflineReply.llmFailed(language, dataBrief, null);
     }
 
     private Map<String, Object> buildSafeContext(Integer companyId) {
@@ -75,15 +90,5 @@ public class AiAssistantGeneralChatService {
         out.put("topProducts", toolFacade.topProductsPeriod(from, to, 10));
         out.put("returnsSummary", toolFacade.returnsSummaryPeriod(from, to, companyId));
         return out;
-    }
-
-    private String shortFallback(String dataBrief, String language) {
-        if ("en".equals(language)) {
-            return "I could not reach the language model right now. Here is a snapshot from system data:\n\n" + dataBrief;
-        }
-        if ("uz".equals(language)) {
-            return "Hozir til modeliga ulanib bo'lmadi. Tizim ma'lumotlari bo'yicha qisqa holat:\n\n" + dataBrief;
-        }
-        return "Сейчас не удалось получить ответ от языковой модели. Краткая сводка из данных системы:\n\n" + dataBrief;
     }
 }
