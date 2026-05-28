@@ -33,7 +33,7 @@ public class DeepSeekClient {
             Map<String, Object> body = Map.of(
                     "model", properties.getModel(),
                     "temperature", 0.25,
-                    "max_tokens", 900,
+                    "max_tokens", 450,
                     "messages", messages
             );
             JsonNode root = deepseekRestClient.post()

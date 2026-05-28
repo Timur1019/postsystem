@@ -345,16 +345,31 @@ async function resolveLabelPrinterName() {
 function waitForReceiptReady(webContents, timeoutMs = 12000) {
   return webContents.executeJavaScript(`
     new Promise((resolve) => {
-      if (window.__posReceiptReady) {
-        resolve(true);
-        return;
-      }
+      const deadline = Date.now() + ${timeoutMs};
+      const finish = (ok) => resolve(Boolean(ok));
       const done = () => {
         window.removeEventListener('pos-receipt-ready', done);
-        resolve(true);
+        finish(true);
       };
+      if (window.__posReceiptReady) {
+        finish(true);
+        return;
+      }
       window.addEventListener('pos-receipt-ready', done, { once: true });
-      setTimeout(() => resolve(false), ${timeoutMs});
+      const poll = () => {
+        if (window.__posReceiptReady) {
+          window.removeEventListener('pos-receipt-ready', done);
+          finish(true);
+          return;
+        }
+        if (Date.now() >= deadline) {
+          window.removeEventListener('pos-receipt-ready', done);
+          finish(false);
+          return;
+        }
+        setTimeout(poll, 120);
+      };
+      setTimeout(poll, 120);
     })
   `);
 }
@@ -364,6 +379,8 @@ async function printReceiptInHiddenWindow(receiptNumber) {
   const url = `${config.cashierUrl}/receipt/${encoded}?silent=1`;
   const paperMm = 80;
   const deviceName = await resolveReceiptPrinterName();
+  const mainSession =
+    mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
   const printWin = createReceiptPrintWindow({
     width: paperWidthPx(paperMm),
     height: 1600,
@@ -371,6 +388,7 @@ async function printReceiptInHiddenWindow(receiptNumber) {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(__dirname, 'preload.cjs'),
+      ...(mainSession ? { session: mainSession } : {}),
     },
   });
   printWin.webContents.setZoomFactor(1);

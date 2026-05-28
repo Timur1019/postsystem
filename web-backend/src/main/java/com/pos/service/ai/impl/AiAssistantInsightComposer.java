@@ -36,20 +36,7 @@ class AiAssistantInsightComposer {
             return fallback;
         }
         try {
-            String system = String.format("""
-                You are a senior retail director co-pilot in a POS system.
-                Reply in language: %s (match the user's question language).
-
-                Style:
-                - Natural chat tone — clear, confident, like a colleague, not a dry bullet dump.
-                - Lead with the direct answer, then 2-4 practical recommendations tied to DATA.
-                - Use real numbers, store names, and product names from DATA only.
-                - Never invent metrics, dates, stores, or products.
-                - If DATA lacks something, say what is missing.
-
-                Do not draw ASCII charts or markdown tables (charts are shown separately in UI).
-                Keep it focused; no filler phrases.
-                """, language);
+            String system = AiAssistantPrompts.insightSystem(language, tool);
 
             List<Map<String, String>> messages = new ArrayList<>();
             messages.add(Map.of("role", "system", "content", system));
@@ -113,7 +100,9 @@ class AiAssistantInsightComposer {
     private String buildFallbackAnswer(String tool, Map<String, Object> result, String language) {
         return switch (tool) {
             case AiAssistantToolCatalog.TODAY_REVENUE -> formatTodayRevenueFallback(result, language);
+            case AiAssistantToolCatalog.SALES_PERIOD -> formatSalesPeriodFallback(result, language);
             case AiAssistantToolCatalog.TOP_PRODUCTS -> formatTopProductsFallback(result, language);
+            case AiAssistantToolCatalog.INVENTORY -> formatInventoryFallback(result, language);
             case AiAssistantToolCatalog.RETURNS_SUMMARY -> formatReturnsFallback(result, language);
             case AiAssistantToolCatalog.REDISTRIBUTION -> formatRedistributionFallback(result, language);
             case AiAssistantToolCatalog.STORE_INSIGHT -> formatStoreInsightFallback(result, language);
@@ -122,6 +111,38 @@ class AiAssistantInsightComposer {
                     ? "Ready to help with sales and stock analytics."
                     : "Готов помочь с аналитикой продаж и склада.";
         };
+    }
+
+    private String formatSalesPeriodFallback(Map<String, Object> result, String language) {
+        if ("en".equals(language)) {
+            return String.format("Sales %s..%s: revenue %s, checks %s, avg check %s.",
+                    result.get("from"), result.get("to"), result.get("revenue"),
+                    result.get("transactions"), result.get("averageCheck"));
+        }
+        return String.format("Продажи %s..%s: выручка %s, чеков %s, средний чек %s.",
+                result.get("from"), result.get("to"), result.get("revenue"),
+                result.get("transactions"), result.get("averageCheck"));
+    }
+
+    private String formatInventoryFallback(Map<String, Object> result, String language) {
+        long count = result.get("inventoriesCount") instanceof Number n ? n.longValue() : 0L;
+        Object recentRaw = result.get("recentInventories");
+        String recent = "—";
+        if (recentRaw instanceof List<?> list && !list.isEmpty()) {
+            recent = list.stream().limit(5).map(this::formatInventoryLine).collect(Collectors.joining("; "));
+        }
+        if ("en".equals(language)) {
+            return String.format("Inventories %s..%s: %d documents. Recent: %s. Low stock SKUs: %s.",
+                    result.get("from"), result.get("to"), count, recent, result.get("lowStockCount"));
+        }
+        return String.format("Инвентаризация %s..%s: документов %d. Последние: %s. Товаров с низким остатком: %s.",
+                result.get("from"), result.get("to"), count, recent, result.get("lowStockCount"));
+    }
+
+    private String formatInventoryLine(Object raw) {
+        if (!(raw instanceof Map<?, ?> row)) return "—";
+        return safeText(row.get("inventoryNumber")) + " / " + safeText(row.get("storeName"))
+                + " (расх. " + safeText(row.get("totalDifference")) + ")";
     }
 
     private String formatTodayRevenueFallback(Map<String, Object> result, String language) {

@@ -4,7 +4,8 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { printReceiptAfterSale } from '../../utils/printReceipt';
+import { isDesktopSilentPrintAvailable, printReceiptAfterSale } from '../../utils/printReceipt';
+import PosSaleAutoPrint from '../../components/cashier/PosSaleAutoPrint';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import { clampPayAmount, round2 } from '../../utils/taxAmounts';
 import { resolveProductUnitPrice } from '../../utils/productPrice';
@@ -53,6 +54,7 @@ export default function PosPage() {
   const [payOpen, setPayOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [discountOpen, setDiscountOpen] = useState(false);
+  const [autoPrintSale, setAutoPrintSale] = useState(null);
   const [posPane, setPosPane] = useState('register');
   const { setShell } = usePosShell() ?? {};
   const { open: shiftModalOpen, openShift: openShiftModal } = useCashierShiftModal();
@@ -317,6 +319,10 @@ export default function PosPage() {
       qc.invalidateQueries({ queryKey: ['my-sales'] });
       qc.invalidateQueries({ queryKey: ['sales-ledger'] });
       const receiptNum = res.data.receiptNumber;
+      if (isDesktopSilentPrintAvailable()) {
+        setAutoPrintSale(res.data);
+        return;
+      }
       try {
         const mode = await printReceiptAfterSale(receiptNum);
         if (mode === 'silent') {
@@ -506,6 +512,18 @@ export default function PosPage() {
         onApplyPercent={setOrderDiscountPercent}
         onClear={clearOrderDiscount}
       />
+
+      {autoPrintSale ? (
+        <PosSaleAutoPrint
+          sale={autoPrintSale}
+          onDone={() => setAutoPrintSale(null)}
+          onFallback={(sale) => {
+            navigate(`/receipt/${sale.receiptNumber}`, {
+              state: { autoPrint: true, fromCashier: true },
+            });
+          }}
+        />
+      ) : null}
     </div>
   );
 }

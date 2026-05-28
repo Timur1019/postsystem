@@ -79,6 +79,8 @@ public class AiAssistantServiceImpl implements AiAssistantService {
     private Map<String, Object> runTool(AiAssistantToolCall call, Integer companyId) {
         return switch (call.tool()) {
             case AiAssistantToolCatalog.TODAY_REVENUE -> toolFacade.todayRevenue(companyId);
+            case AiAssistantToolCatalog.SALES_PERIOD -> toolFacade.salesPeriodOverview(call.from(), call.to(), companyId);
+            case AiAssistantToolCatalog.INVENTORY -> toolFacade.inventoryOverview(call.from(), call.to(), companyId);
             case AiAssistantToolCatalog.TOP_PRODUCTS -> toolFacade.topProductsPeriod(call.from(), call.to(), call.limit());
             case AiAssistantToolCatalog.RETURNS_SUMMARY -> toolFacade.returnsSummaryPeriod(call.from(), call.to(), companyId);
             case AiAssistantToolCatalog.REDISTRIBUTION -> toolFacade.stockRedistributionSuggestion(call.from(), call.to(), companyId);

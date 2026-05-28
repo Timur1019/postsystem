@@ -79,6 +79,17 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     long countLowStockByCompanyId(@Param("companyId") Integer companyId);
 
     @Query("""
+        SELECT p FROM Product p
+        WHERE p.company.id = :companyId AND p.isActive = true
+          AND p.stockQuantity < p.lowStockAlert
+        ORDER BY (p.lowStockAlert - p.stockQuantity) DESC, p.name ASC
+        """)
+    List<Product> findLowStockProductsByCompanyId(
+        @Param("companyId") Integer companyId,
+        org.springframework.data.domain.Pageable pageable
+    );
+
+    @Query("""
         SELECT COALESCE(SUM(p.stockQuantity), 0), COALESCE(SUM(p.stockQuantity * p.costPrice), 0)
         FROM Product p WHERE p.isActive = true
         """)

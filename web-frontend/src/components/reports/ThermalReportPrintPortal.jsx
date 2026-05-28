@@ -7,11 +7,20 @@ import { printThermalReport, waitForPrintDialogClose } from '../../utils/printTh
  * Скрытый термочек в DOM + автопечать (как фискальный чек).
  * @param {string|number} printToken — уникален для каждого запуска печати
  */
-export default function ThermalReportPrintPortal({ open, printToken, children, onPrinted, onClose }) {
+export default function ThermalReportPrintPortal({
+  open,
+  printToken,
+  children,
+  onPrinted,
+  onClose,
+  onError,
+}) {
   const onPrintedRef = useRef(onPrinted);
   const onCloseRef = useRef(onClose);
+  const onErrorRef = useRef(onError);
   onPrintedRef.current = onPrinted;
   onCloseRef.current = onClose;
+  onErrorRef.current = onError;
 
   useLayoutEffect(() => {
     if (!open || printToken == null) return undefined;
@@ -34,8 +43,11 @@ export default function ThermalReportPrintPortal({ open, printToken, children, o
           onPrintedRef.current?.();
           onCloseRef.current?.();
         }
-      } catch {
-        if (!cancelled) onCloseRef.current?.();
+      } catch (err) {
+        if (!cancelled) {
+          onErrorRef.current?.(err);
+          onCloseRef.current?.();
+        }
       }
     };
 

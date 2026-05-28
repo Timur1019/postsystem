@@ -55,9 +55,7 @@ export default function ReceiptPage() {
     if (silentJob) {
       window.__posReceiptReady = true;
       window.dispatchEvent(new CustomEvent('pos-receipt-ready'));
-      return () => {
-        window.__posReceiptReady = false;
-      };
+      return undefined;
     }
     if (!autoPrint || autoPrintedRef.current) return undefined;
     autoPrintedRef.current = true;

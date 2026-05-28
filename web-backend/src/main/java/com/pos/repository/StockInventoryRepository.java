@@ -33,4 +33,19 @@ public interface StockInventoryRepository extends JpaRepository<StockInventory, 
         @Param("storeId") Integer storeId,
         Pageable pageable
     );
+
+    @EntityGraph(attributePaths = {"store", "createdBy"})
+    @Query("""
+        SELECT i FROM StockInventory i
+        JOIN i.store st
+        WHERE st.company.id = :companyId
+          AND i.createdAt >= :start AND i.createdAt < :end
+        ORDER BY i.createdAt DESC
+        """)
+    Page<StockInventory> findByCompanyBetween(
+        @Param("companyId") Integer companyId,
+        @Param("start") Instant start,
+        @Param("end") Instant end,
+        Pageable pageable
+    );
 }

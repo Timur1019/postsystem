@@ -8,8 +8,7 @@ import java.util.Locale;
 class AiAssistantToolRouter {
 
     AiAssistantToolCall selectTool(String message) {
-        // Fast keyword router only — avoids an extra DeepSeek round-trip per request.
-        return selectToolFallback(message);
+        return selectToolFallback(AiAssistantMessageNormalizer.forRouting(message));
     }
 
     String detectLanguage(String message) {
@@ -24,7 +23,7 @@ class AiAssistantToolRouter {
     }
 
     boolean isSmallTalk(String message) {
-        String q = message.toLowerCase(Locale.ROOT).trim();
+        String q = AiAssistantMessageNormalizer.forRouting(message);
         if (q.length() > 80) {
             return false;
         }
@@ -35,32 +34,35 @@ class AiAssistantToolRouter {
                 || q.startsWith("привет ") || q.startsWith("hello ");
     }
 
-    private AiAssistantToolCall selectToolFallback(String message) {
-        String q = message.toLowerCase(Locale.ROOT);
-        if (isConversationalOverview(q)) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.SMALLTALK, null, null, 10);
+    private AiAssistantToolCall selectToolFallback(String q) {
+        if (q.contains("инвентар") || q.contains("inventory count") || q.contains("inventory")) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.INVENTORY, null, null, 10);
         }
-        if (q.contains("graph") || q.contains("chart") || q.contains("график")) {
+        if (q.contains("возврат") || q.contains("return")) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.RETURNS_SUMMARY, null, null, 10);
+        }
+        if (q.contains("топ") || q.contains("top") || q.contains("лидер")
+                || (q.contains("товар") && !q.contains("остат") && !q.contains("склад"))) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.TOP_PRODUCTS, null, null, 10);
+        }
+        if (q.contains("сегодня") || q.contains("today") || q.contains("за день")) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.TODAY_REVENUE, null, null, 10);
+        }
+        if (q.contains("продаж") || q.contains("выруч") || q.contains("чек") || q.contains("sales") || q.contains("revenue")) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.SALES_PERIOD, null, null, 10);
+        }
+        if (q.contains("graph") || q.contains("chart") || q.contains("график")
+                || q.contains("по магазин") || q.contains("магазин") || q.contains("store") || q.contains("филиал")) {
             return new AiAssistantToolCall(AiAssistantToolCatalog.STORE_INSIGHT, null, null, 10);
         }
-        if (q.contains("по магазинам") || q.contains("по магазин") || q.contains("первому магазин")
-                || q.contains("второму магазин") || q.contains("1 магазин") || q.contains("2 магазин")
-                || q.contains("магазин 1") || q.contains("магазин 2") || q.contains("store 1") || q.contains("store 2")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.STORE_INSIGHT, null, null, 10);
-        }
-        if ((q.contains("магазин") || q.contains("store") || q.contains("филиал"))
-                && (q.contains("продаж") || q.contains("sales") || q.contains("остат") || q.contains("stock"))) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.STORE_INSIGHT, null, null, 10);
-        }
-        if (q.contains("склад") || q.contains("stock") || q.contains("остат") || q.contains("перемещ") || q.contains("распредел")) {
+        if (q.contains("перемещ") || q.contains("распредел")) {
             return new AiAssistantToolCall(AiAssistantToolCatalog.REDISTRIBUTION, null, null, 10);
         }
-        if (q.contains("возврат") || q.contains("return")) return new AiAssistantToolCall(AiAssistantToolCatalog.RETURNS_SUMMARY, null, null, 10);
-        if (q.contains("топ") || q.contains("top") || q.contains("лидер") || q.contains("товар") || q.contains("product")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.TOP_PRODUCTS, null, null, 5);
+        if (q.contains("склад") || q.contains("остат") || q.contains("stock")) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.INVENTORY, null, null, 10);
         }
-        if (q.contains("выруч") || q.contains("revenue") || q.contains("чек") || q.contains("продаж") || q.contains("sales")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.TODAY_REVENUE, null, null, 10);
+        if (isConversationalOverview(q)) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.SMALLTALK, null, null, 10);
         }
         return new AiAssistantToolCall(AiAssistantToolCatalog.SMALLTALK, null, null, 10);
     }
@@ -68,14 +70,8 @@ class AiAssistantToolRouter {
     private boolean isConversationalOverview(String q) {
         return q.contains("текущее состояние") || q.contains("общее состояние") || q.contains("состояние системы")
                 || q.contains("по всей системе") || q.contains("как дела у бизнеса") || q.contains("общая картина")
-                || q.contains("по системе") || q.contains("по системе всё") || q.contains("скажи всё")
-                || q.contains("что у нас") || q.contains("как бизнес") || q.contains("как дела с бизнес")
-                || q.contains("все отчет") || q.contains("категор") || q.contains("товары по системе")
-                || q.contains("z-отчет") || q.contains("z отчет") || q.contains("совет") || q.contains("рекоменд")
-                || q.contains("что не так") || q.contains("как исправ") || q.contains("улучш") || q.contains("что делать")
-                || q.contains("почему пада") || q.contains("расскаж") || q.contains("объясн") || q.contains("помоги")
-                || q.contains("current state") || q.contains("overall state") || q.contains("system state")
-                || q.contains("health check") || q.contains("why ") || q.contains("improve") || q.contains("fix ")
-                || q.contains("advice") || q.contains("recommend");
+                || q.contains("по системе всё") || q.contains("скажи всё") || q.contains("что у нас по бизнес")
+                || q.contains("как бизнес") || q.contains("что не так") || q.contains("что делать")
+                || q.contains("совет") || q.contains("рекоменд");
     }
 }

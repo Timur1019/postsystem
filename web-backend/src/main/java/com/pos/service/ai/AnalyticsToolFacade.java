@@ -2,9 +2,12 @@ package com.pos.service.ai;
 
 import com.pos.dto.report.SalesReportResponse;
 import com.pos.dto.report.TopProductRow;
+import com.pos.entity.Product;
 import com.pos.entity.Sale;
+import com.pos.entity.StockInventory;
 import com.pos.entity.StoreStock;
 import com.pos.repository.ProductRepository;
+import com.pos.repository.StockInventoryRepository;
 import com.pos.repository.SaleItemRepository;
 import com.pos.repository.SaleRepository;
 import com.pos.repository.CategoryRepository;
@@ -13,6 +16,7 @@ import com.pos.repository.StoreStockRepository;
 import com.pos.repository.ZReportRepository;
 import com.pos.service.ReportService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -42,6 +46,77 @@ public class AnalyticsToolFacade {
     private final CategoryRepository categoryRepository;
     private final StoreRepository storeRepository;
     private final ZReportRepository zReportRepository;
+    private final StockInventoryRepository stockInventoryRepository;
+
+    public Map<String, Object> salesPeriodOverview(LocalDate from, LocalDate to, Integer companyId) {
+        LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(6);
+        LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
+        SalesReportResponse sales = reportService.getSalesReport(safeFrom, safeTo);
+        Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
+        Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
+        List<Object[]> storesRaw = saleRepository.salesByStoreBetween(start, end, companyId);
+        List<Map<String, Object>> stores = storesRaw.stream()
+                .limit(5)
+                .map(row -> Map.<String, Object>of(
+                        "storeName", row[1] != null ? String.valueOf(row[1]) : "—",
+                        "revenue", row[2],
+                        "checks", row[3] != null ? ((Number) row[3]).longValue() : 0L
+                ))
+                .toList();
+        return Map.of(
+                "from", safeFrom.toString(),
+                "to", safeTo.toString(),
+                "revenue", sales.totalRevenue(),
+                "transactions", sales.transactionCount(),
+                "averageCheck", sales.averageTransactionValue(),
+                "stores", stores
+        );
+    }
+
+    public Map<String, Object> inventoryOverview(LocalDate from, LocalDate to, Integer companyId) {
+        LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(30);
+        LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
+        Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
+        Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
+
+        var inventoryPage = stockInventoryRepository.findByCompanyBetween(
+                companyId, start, end, PageRequest.of(0, 10));
+        List<Map<String, Object>> recent = inventoryPage.getContent().stream()
+                .map(this::toInventoryRow)
+                .toList();
+
+        List<Product> lowStock = productRepository.findLowStockProductsByCompanyId(
+                companyId, PageRequest.of(0, 15));
+        List<Map<String, Object>> lowStockRows = lowStock.stream()
+                .map(p -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("productName", p.getName());
+                    row.put("stockQty", p.getStockQuantity());
+                    row.put("lowStockAlert", p.getLowStockAlert());
+                    return row;
+                })
+                .toList();
+
+        return Map.of(
+                "from", safeFrom.toString(),
+                "to", safeTo.toString(),
+                "inventoriesCount", inventoryPage.getTotalElements(),
+                "recentInventories", recent,
+                "lowStockCount", lowStock.size(),
+                "lowStockProducts", lowStockRows
+        );
+    }
+
+    private Map<String, Object> toInventoryRow(StockInventory i) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("inventoryNumber", i.getInventoryNumber());
+        row.put("storeName", i.getStore() != null ? i.getStore().getName() : "—");
+        row.put("status", i.getStatus());
+        row.put("totalLines", i.getTotalLines());
+        row.put("totalDifference", i.getTotalDifference());
+        row.put("createdAt", i.getCreatedAt() != null ? i.getCreatedAt().toString() : "—");
+        return row;
+    }
 
     public Map<String, Object> todayRevenue(Integer companyId) {
         LocalDate today = LocalDate.now(ZONE);
