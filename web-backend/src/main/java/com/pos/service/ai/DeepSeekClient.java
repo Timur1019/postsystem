@@ -32,8 +32,8 @@ public class DeepSeekClient {
         try {
             Map<String, Object> body = Map.of(
                     "model", properties.getModel(),
-                    "temperature", 0.0,  // Deterministic output, less distortion
-                    "max_tokens", 500,    // Limit response length
+                    "temperature", 0.25,
+                    "max_tokens", 900,
                     "messages", messages
             );
             JsonNode root = deepseekRestClient.post()

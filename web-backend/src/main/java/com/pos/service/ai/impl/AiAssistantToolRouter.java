@@ -41,9 +41,14 @@ class AiAssistantToolRouter {
 
     boolean isSmallTalk(String message) {
         String q = message.toLowerCase(Locale.ROOT).trim();
-        return q.equals("привет") || q.equals("здравствуйте") || q.equals("салам")
-                || q.equals("hello") || q.equals("hi") || q.equals("how are you")
-                || q.equals("как дела") || q.equals("спасибо") || q.equals("пока");
+        if (q.length() > 80) {
+            return false;
+        }
+        return q.equals("привет") || q.equals("здравствуйте") || q.equals("салам") || q.equals("салам алейкум")
+                || q.equals("hello") || q.equals("hi") || q.equals("how are you") || q.equals("hey")
+                || q.equals("как дела") || q.equals("спасибо") || q.equals("благодарю") || q.equals("пока")
+                || q.equals("rahmat") || q.equals("thanks") || q.equals("thank you")
+                || q.startsWith("привет ") || q.startsWith("hello ");
     }
 
     private AiAssistantToolCall selectToolWithLlm(String message) {
@@ -58,8 +63,10 @@ class AiAssistantToolRouter {
             - businessHealthCheck
             - smalltalk
 
-            Use smalltalk for: greetings, general questions, brainstorming, opinions, communication help.
-            Use analytics tools only when user explicitly asks for metrics/period/store/product analytics.
+            Use smalltalk for: greetings, general dialogue, "how is business", system overview,
+            advice, what to do next, opinions — anything that needs broad context, not a single metric.
+            Use analytics tools only when user clearly asks for one specific report:
+            today's revenue, top products, returns, stock moves, or per-store sales/stock breakdown.
 
             Return strict JSON:
             {"tool":"...", "from":"yyyy-MM-dd|null", "to":"yyyy-MM-dd|null", "limit":10}
@@ -79,17 +86,8 @@ class AiAssistantToolRouter {
 
     private AiAssistantToolCall selectToolFallback(String message) {
         String q = message.toLowerCase(Locale.ROOT);
-        if (q.contains("текущее состояние") || q.contains("общее состояние") || q.contains("состояние системы")
-                || q.contains("по всей системе") || q.contains("как дела у бизнеса") || q.contains("общая картина")
-                || q.contains("по системе всё") || q.contains("все отчеты") || q.contains("категор")
-                || q.contains("товары по системе") || q.contains("z-отчет") || q.contains("z отчет")
-                || q.contains("current state") || q.contains("overall state") || q.contains("system state")
-                || q.contains("health check")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.BUSINESS_HEALTH, null, null, 10);
-        }
-        if (q.contains("что не так") || q.contains("как исправ") || q.contains("улучш") || q.contains("что делать")
-                || q.contains("почему пада") || q.contains("why") || q.contains("improve") || q.contains("fix")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.BUSINESS_HEALTH, null, null, 10);
+        if (isConversationalOverview(q)) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.SMALLTALK, null, null, 10);
         }
         if (q.contains("graph") || q.contains("chart") || q.contains("график")) {
             return new AiAssistantToolCall(AiAssistantToolCatalog.STORE_INSIGHT, null, null, 10);
@@ -114,6 +112,20 @@ class AiAssistantToolRouter {
             return new AiAssistantToolCall(AiAssistantToolCatalog.TODAY_REVENUE, null, null, 10);
         }
         return new AiAssistantToolCall(AiAssistantToolCatalog.SMALLTALK, null, null, 10);
+    }
+
+    private boolean isConversationalOverview(String q) {
+        return q.contains("текущее состояние") || q.contains("общее состояние") || q.contains("состояние системы")
+                || q.contains("по всей системе") || q.contains("как дела у бизнеса") || q.contains("общая картина")
+                || q.contains("по системе") || q.contains("по системе всё") || q.contains("скажи всё")
+                || q.contains("что у нас") || q.contains("как бизнес") || q.contains("как дела с бизнес")
+                || q.contains("все отчет") || q.contains("категор") || q.contains("товары по системе")
+                || q.contains("z-отчет") || q.contains("z отчет") || q.contains("совет") || q.contains("рекоменд")
+                || q.contains("что не так") || q.contains("как исправ") || q.contains("улучш") || q.contains("что делать")
+                || q.contains("почему пада") || q.contains("расскаж") || q.contains("объясн") || q.contains("помоги")
+                || q.contains("current state") || q.contains("overall state") || q.contains("system state")
+                || q.contains("health check") || q.contains("why ") || q.contains("improve") || q.contains("fix ")
+                || q.contains("advice") || q.contains("recommend");
     }
 
     private JsonNode parseJsonObject(String raw) {

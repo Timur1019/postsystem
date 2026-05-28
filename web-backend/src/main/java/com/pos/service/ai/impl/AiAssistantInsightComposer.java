@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 class AiAssistantInsightComposer {
 
     private static final int TOP_CHAT_ITEMS = 5;
-    private static final boolean STRICT_DATA_MODE = true;
+    private static final boolean STRICT_DATA_MODE = false;
 
     private final DeepSeekClient deepSeekClient;
     private final ObjectMapper objectMapper;
@@ -31,24 +31,18 @@ class AiAssistantInsightComposer {
         }
         try {
             String system = String.format("""
-                You are a senior POS director assistant focused on actionable advice.
+                You are a senior retail director co-pilot in a POS system.
+                Reply in language: %s (match the user's question language).
 
-                Format:
-                **Key Finding**
-                1 sentence with main insight.
+                Style:
+                - Natural chat tone — clear, confident, like a colleague, not a dry bullet dump.
+                - Lead with the direct answer, then 2-4 practical recommendations tied to DATA.
+                - Use real numbers, store names, and product names from DATA only.
+                - Never invent metrics, dates, stores, or products.
+                - If DATA lacks something, say what is missing.
 
-                **Recommendations**
-                • 2-4 concrete actions with numbers and entities from data.
-
-                **Suggested Next Question**
-                1 specific follow-up question.
-
-                Rules:
-                - Language: %s
-                - Never invent values or names.
-                - For general context remarks, keep them short and practical.
-                - Do not draw ASCII charts/tables in chat.
-                - Charts are rendered separately by UI from tool payload.
+                Do not draw ASCII charts or markdown tables (charts are shown separately in UI).
+                Keep it focused; no filler phrases.
                 """, language);
 
             List<Map<String, String>> messages = new ArrayList<>();

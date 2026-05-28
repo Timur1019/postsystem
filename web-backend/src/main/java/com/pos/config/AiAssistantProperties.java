@@ -23,7 +23,7 @@ public class AiAssistantProperties {
 
     private int readTimeoutMs = 20000;
 
-    private int maxPromptChars = 600;
+    private int maxPromptChars = 2000;
 
     private int maxRequestsPerMinutePerUser = 20;
 }
