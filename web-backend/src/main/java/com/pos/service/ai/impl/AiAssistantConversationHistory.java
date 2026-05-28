@@ -10,7 +10,8 @@ import java.util.Map;
 final class AiAssistantConversationHistory {
 
     private static final int MAX_TURNS = 10;
-    private static final int MAX_CONTENT_CHARS = 900;
+    /** Sent to LLM; full text may be stored in chat UI. */
+    private static final int MAX_CONTENT_CHARS = 2500;
 
     private AiAssistantConversationHistory() {
     }

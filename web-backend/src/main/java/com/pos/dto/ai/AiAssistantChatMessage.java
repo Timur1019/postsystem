@@ -9,7 +9,7 @@ public record AiAssistantChatMessage(
         @Pattern(regexp = "user|assistant")
         String role,
         @NotBlank
-        @Size(max = 2000)
+        @Size(max = 12000)
         String content
 ) {
 }

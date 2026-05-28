@@ -7,12 +7,22 @@ import { aiAssistantApi } from '../../services/api';
 const MAX_MESSAGES = 40;
 const KEEP_LAST_MESSAGES = 24;
 const HISTORY_TURNS = 12;
+/** Must stay below backend AiAssistantChatMessage @Size limit */
+const HISTORY_CONTENT_MAX = 10000;
+
+function truncateHistoryContent(text) {
+  if (!text || text.length <= HISTORY_CONTENT_MAX) return text ?? '';
+  return `${text.slice(0, HISTORY_CONTENT_MAX)}…`;
+}
 
 function toApiHistory(messages) {
-  return messages.slice(-HISTORY_TURNS * 2).map((m) => ({
-    role: m.role,
-    content: m.text,
-  }));
+  return messages
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .slice(-HISTORY_TURNS * 2)
+    .map((m) => ({
+      role: m.role,
+      content: truncateHistoryContent(m.text),
+    }));
 }
 
 export default function AiAssistantWidget({ onChartDataChange }) {
@@ -39,7 +49,11 @@ export default function AiAssistantWidget({ onChartDataChange }) {
       setInput('');
     },
     onError: (e, { text: question }) => {
-      const fallback = e?.response?.data?.message ?? t('aiAssistant.errors.failed');
+      const raw = e?.response?.data?.message ?? '';
+      const fallback =
+        raw.includes('Validation failed') || e?.response?.status === 400
+          ? t('aiAssistant.errors.validation')
+          : raw || t('aiAssistant.errors.failed');
       appendMessages([
         { role: 'user', text: question },
         { role: 'assistant', text: fallback, meta: 'error' },

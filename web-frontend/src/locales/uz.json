@@ -170,7 +170,8 @@
     "pageTitle": "AI-assistent",
     "pageIntro": "Sotuv, qaytarish va ombor bo‘yicha qisqa ham aniq javoblar uchun alohida chat.",
     "errors": {
-      "failed": "Assistentdan javob olib bo‘lmadi"
+      "failed": "Assistentdan javob olib bo‘lmadi",
+      "validation": "Xabar yuborilmadi (chat tarixi juda uzun). «Chatni tozalash» ni bosing va qayta so‘rang."
     }
   },
   "categories": {
