@@ -22,6 +22,7 @@ final class AiAssistantContextBrief {
         Map<?, ?> catalog = asMap(executive.get("catalog"));
         Map<?, ?> stores = asMap(executive.get("stores"));
         Map<?, ?> zReports = asMap(executive.get("zReports"));
+        Map<?, ?> returns = asMap(executive.get("returns"));
 
         String periodFrom = text(executive.get("from"));
         String periodTo = text(executive.get("to"));
@@ -34,6 +35,7 @@ final class AiAssistantContextBrief {
                     Sales: revenue %s, transactions %s, average check %s
                     Stores: %s active of %s total, with sales in period: %s
                     Catalog: %s products, %s categories, low stock items: %s
+                    Returns: %s, amount %s
                     Z-reports: %s reports, total amount %s
                     Top stores: %s
                     Top products: %s
@@ -42,6 +44,7 @@ final class AiAssistantContextBrief {
                     text(sales.get("revenue")), text(sales.get("transactions")), text(sales.get("averageCheck")),
                     text(stores.get("active")), text(stores.get("total")), text(stores.get("withSales")),
                     text(catalog.get("products")), text(catalog.get("categories")), text(catalog.get("lowStockProducts")),
+                    text(returns.get("count")), text(returns.get("amount")),
                     text(zReports.get("count")), text(zReports.get("totalAmount")),
                     topStores, topProducts
             ).trim();
@@ -52,6 +55,7 @@ final class AiAssistantContextBrief {
                     Savdo: tushum %s, tranzaksiya %s, o'rtacha chek %s
                     Do'konlar: %s faol / %s jami, davrda savdo: %s
                     Katalog: %s mahsulot, %s kategoriya, kam qoldiq: %s
+                    Qaytarishlar: %s, summa %s
                     Z-hisobotlar: %s ta, jami summa %s
                     Top do'konlar: %s
                     Top mahsulotlar: %s
@@ -60,6 +64,7 @@ final class AiAssistantContextBrief {
                     text(sales.get("revenue")), text(sales.get("transactions")), text(sales.get("averageCheck")),
                     text(stores.get("active")), text(stores.get("total")), text(stores.get("withSales")),
                     text(catalog.get("products")), text(catalog.get("categories")), text(catalog.get("lowStockProducts")),
+                    text(returns.get("count")), text(returns.get("amount")),
                     text(zReports.get("count")), text(zReports.get("totalAmount")),
                     topStores, topProducts
             ).trim();
@@ -69,6 +74,7 @@ final class AiAssistantContextBrief {
                 Продажи: выручка %s, чеков %s, средний чек %s
                 Магазины: активных %s из %s, с продажами за период: %s
                 Каталог: товаров %s, категорий %s, низкий остаток: %s
+                Возвраты: %s, сумма %s
                 Z-отчёты: %s шт., сумма %s
                 Топ магазинов: %s
                 Топ товаров: %s
@@ -77,6 +83,7 @@ final class AiAssistantContextBrief {
                 text(sales.get("revenue")), text(sales.get("transactions")), text(sales.get("averageCheck")),
                 text(stores.get("active")), text(stores.get("total")), text(stores.get("withSales")),
                 text(catalog.get("products")), text(catalog.get("categories")), text(catalog.get("lowStockProducts")),
+                text(returns.get("count")), text(returns.get("amount")),
                 text(zReports.get("count")), text(zReports.get("totalAmount")),
                 topStores, topProducts
         ).trim();

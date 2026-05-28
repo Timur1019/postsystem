@@ -440,31 +440,37 @@ public class AnalyticsToolFacade {
         long zReportsCount = zSummary != null && zSummary.length > 0 && zSummary[0] instanceof Number n ? n.longValue() : 0L;
         BigDecimal zReportsTotal = zSummary != null && zSummary.length > 1 && zSummary[1] instanceof BigDecimal b ? b : BigDecimal.ZERO;
 
-        return Map.of(
-                "from", safeFrom.toString(),
-                "to", safeTo.toString(),
-                "sales", Map.of(
-                        "revenue", sales.totalRevenue(),
-                        "transactions", sales.transactionCount(),
-                        "averageCheck", sales.averageTransactionValue()
-                ),
-                "catalog", Map.of(
-                        "products", productCount,
-                        "categories", categoryCount,
-                        "lowStockProducts", lowStockCount
-                ),
-                "stores", Map.of(
-                        "total", storeCount,
-                        "active", activeStoreCount,
-                        "withSales", storesRaw.size(),
-                        "top", topStores
-                ),
-                "zReports", Map.of(
-                        "count", zReportsCount,
-                        "totalAmount", zReportsTotal
-                ),
-                "topProducts", topProducts
-        );
+        Map<String, Object> returns = returnsSummaryPeriod(safeFrom, safeTo, companyId);
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("from", safeFrom.toString());
+        out.put("to", safeTo.toString());
+        out.put("sales", Map.of(
+                "revenue", sales.totalRevenue(),
+                "transactions", sales.transactionCount(),
+                "averageCheck", sales.averageTransactionValue()
+        ));
+        out.put("returns", Map.of(
+                "count", returns.get("returnsCount"),
+                "amount", returns.get("returnsAmount")
+        ));
+        out.put("catalog", Map.of(
+                "products", productCount,
+                "categories", categoryCount,
+                "lowStockProducts", lowStockCount
+        ));
+        out.put("stores", Map.of(
+                "total", storeCount,
+                "active", activeStoreCount,
+                "withSales", storesRaw.size(),
+                "top", topStores
+        ));
+        out.put("zReports", Map.of(
+                "count", zReportsCount,
+                "totalAmount", zReportsTotal
+        ));
+        out.put("topProducts", topProducts);
+        return out;
     }
 
     private double toDouble(Object value) {

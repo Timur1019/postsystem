@@ -1,31 +1,15 @@
 package com.pos.service.ai.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pos.exception.BadRequestException;
-import com.pos.service.ai.DeepSeekClient;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
-import java.time.LocalDate;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 class AiAssistantToolRouter {
 
-    private final DeepSeekClient deepSeekClient;
-    private final ObjectMapper objectMapper;
-
     AiAssistantToolCall selectTool(String message) {
-        try {
-            return selectToolWithLlm(message);
-        } catch (Exception ignored) {
-            return selectToolFallback(message);
-        }
+        // Fast keyword router only — avoids an extra DeepSeek round-trip per request.
+        return selectToolFallback(message);
     }
 
     String detectLanguage(String message) {
@@ -49,39 +33,6 @@ class AiAssistantToolRouter {
                 || q.equals("как дела") || q.equals("спасибо") || q.equals("благодарю") || q.equals("пока")
                 || q.equals("rahmat") || q.equals("thanks") || q.equals("thank you")
                 || q.startsWith("привет ") || q.startsWith("hello ");
-    }
-
-    private AiAssistantToolCall selectToolWithLlm(String message) {
-        String system = """
-            You are a router for POS assistant.
-            Choose exactly ONE tool:
-            - todayRevenue
-            - topProductsPeriod
-            - returnsSummaryPeriod
-            - stockRedistributionSuggestion
-            - storeSalesAndStockInsight
-            - businessHealthCheck
-            - smalltalk
-
-            Use smalltalk for: greetings, general dialogue, "how is business", system overview,
-            advice, what to do next, opinions — anything that needs broad context, not a single metric.
-            Use analytics tools only when user clearly asks for one specific report:
-            today's revenue, top products, returns, stock moves, or per-store sales/stock breakdown.
-
-            Return strict JSON:
-            {"tool":"...", "from":"yyyy-MM-dd|null", "to":"yyyy-MM-dd|null", "limit":10}
-            """;
-        List<Map<String, String>> messages = List.of(
-                Map.of("role", "system", "content", system),
-                Map.of("role", "user", "content", message)
-        );
-        JsonNode node = parseJsonObject(deepSeekClient.chat(messages));
-        String tool = node.path("tool").asText("");
-        LocalDate from = parseDate(node.path("from").asText(null));
-        LocalDate to = parseDate(node.path("to").asText(null));
-        int limit = node.path("limit").isInt() ? node.path("limit").asInt(10) : 10;
-        if (!AiAssistantToolCatalog.isAllowed(tool)) return selectToolFallback(message);
-        return new AiAssistantToolCall(tool, from, to, limit);
     }
 
     private AiAssistantToolCall selectToolFallback(String message) {
@@ -126,28 +77,5 @@ class AiAssistantToolRouter {
                 || q.contains("current state") || q.contains("overall state") || q.contains("system state")
                 || q.contains("health check") || q.contains("why ") || q.contains("improve") || q.contains("fix ")
                 || q.contains("advice") || q.contains("recommend");
-    }
-
-    private JsonNode parseJsonObject(String raw) {
-        try {
-            String text = raw != null ? raw.trim() : "";
-            if (text.startsWith("```")) {
-                int first = text.indexOf('{');
-                int last = text.lastIndexOf('}');
-                if (first >= 0 && last > first) text = text.substring(first, last + 1);
-            }
-            return objectMapper.readTree(text);
-        } catch (Exception e) {
-            throw new BadRequestException("Не удалось разобрать ответ ИИ");
-        }
-    }
-
-    private LocalDate parseDate(String maybeDate) {
-        if (!StringUtils.hasText(maybeDate) || "null".equalsIgnoreCase(maybeDate)) return null;
-        try {
-            return LocalDate.parse(maybeDate);
-        } catch (Exception e) {
-            return null;
-        }
     }
 }
