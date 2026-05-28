@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @RequiredArgsConstructor
@@ -47,14 +48,22 @@ public class AnalyticsToolFacade {
     private final StoreRepository storeRepository;
     private final ZReportRepository zReportRepository;
     private final StockInventoryRepository stockInventoryRepository;
+    private final AiAssistantParallel parallel;
 
     public Map<String, Object> salesPeriodOverview(LocalDate from, LocalDate to, Integer companyId) {
         LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(6);
         LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
-        SalesReportResponse sales = reportService.getSalesReport(safeFrom, safeTo);
         Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
         Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
-        List<Object[]> storesRaw = saleRepository.salesByStoreBetween(start, end, companyId);
+        LocalDate fromFinal = safeFrom;
+        LocalDate toFinal = safeTo;
+        CompletableFuture<SalesReportResponse> salesF = parallel.supply(
+                () -> reportService.getSalesReport(fromFinal, toFinal));
+        CompletableFuture<List<Object[]>> storesF = parallel.supply(
+                () -> saleRepository.salesByStoreBetween(start, end, companyId));
+        AiAssistantParallel.awaitAll(salesF, storesF);
+        SalesReportResponse sales = salesF.join();
+        List<Object[]> storesRaw = storesF.join();
         List<Map<String, Object>> stores = storesRaw.stream()
                 .limit(5)
                 .map(row -> Map.<String, Object>of(
@@ -78,15 +87,21 @@ public class AnalyticsToolFacade {
         LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
         Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
         Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
+        Integer companyIdFinal = companyId;
 
-        var inventoryPage = stockInventoryRepository.findByCompanyBetween(
-                companyId, start, end, PageRequest.of(0, 10));
+        CompletableFuture<org.springframework.data.domain.Page<StockInventory>> inventoryF = parallel.supply(
+                () -> stockInventoryRepository.findByCompanyBetween(
+                        companyIdFinal, start, end, PageRequest.of(0, 10)));
+        CompletableFuture<List<Product>> lowStockF = parallel.supply(
+                () -> productRepository.findLowStockProductsByCompanyId(companyIdFinal, PageRequest.of(0, 15)));
+        AiAssistantParallel.awaitAll(inventoryF, lowStockF);
+
+        var inventoryPage = inventoryF.join();
         List<Map<String, Object>> recent = inventoryPage.getContent().stream()
                 .map(this::toInventoryRow)
                 .toList();
 
-        List<Product> lowStock = productRepository.findLowStockProductsByCompanyId(
-                companyId, PageRequest.of(0, 15));
+        List<Product> lowStock = lowStockF.join();
         List<Map<String, Object>> lowStockRows = lowStock.stream()
                 .map(p -> {
                     Map<String, Object> row = new LinkedHashMap<>();
@@ -120,10 +135,16 @@ public class AnalyticsToolFacade {
 
     public Map<String, Object> todayRevenue(Integer companyId) {
         LocalDate today = LocalDate.now(ZONE);
-        SalesReportResponse report = reportService.getSalesReport(today, today);
         Instant chartStart = today.minusDays(6).atStartOfDay(ZONE).toInstant();
         Instant chartEnd = today.plusDays(1).atStartOfDay(ZONE).toInstant();
-        List<Object[]> daily = saleRepository.dailyRevenueAggregates(chartStart, chartEnd, companyId);
+        Integer companyIdFinal = companyId;
+        CompletableFuture<SalesReportResponse> reportF = parallel.supply(
+                () -> reportService.getSalesReport(today, today));
+        CompletableFuture<List<Object[]>> dailyF = parallel.supply(
+                () -> saleRepository.dailyRevenueAggregates(chartStart, chartEnd, companyIdFinal));
+        AiAssistantParallel.awaitAll(reportF, dailyF);
+        SalesReportResponse report = reportF.join();
+        List<Object[]> daily = dailyF.join();
         List<Map<String, Object>> chart = new ArrayList<>();
         for (Object[] row : daily) {
             Map<String, Object> point = new LinkedHashMap<>();
@@ -292,19 +313,30 @@ public class AnalyticsToolFacade {
         LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
         Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
         Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
+        Integer companyIdFinal = companyId;
 
-        List<Object[]> salesRows = saleRepository.salesByStoreBetween(start, end, companyId);
-        List<StoreStock> storeStocks = storeStockRepository.findAllDetailedByCompanyId(companyId);
-        List<Object[]> soldRaw = saleItemRepository.soldUnitsByProductAndStore(start, end, companyId);
-        Map<String, Object> redistribution = stockRedistributionSuggestion(safeFrom, safeTo, companyId);
+        CompletableFuture<List<Object[]>> salesRowsF = parallel.supply(
+                () -> saleRepository.salesByStoreBetween(start, end, companyIdFinal));
+        CompletableFuture<List<StoreStock>> storeStocksF = parallel.supply(
+                () -> storeStockRepository.findAllDetailedByCompanyId(companyIdFinal));
+        CompletableFuture<List<Object[]>> soldRawF = parallel.supply(
+                () -> saleItemRepository.soldUnitsByProductAndStore(start, end, companyIdFinal));
+        AiAssistantParallel.awaitAll(salesRowsF, storeStocksF, soldRawF);
+
+        List<Object[]> salesRows = salesRowsF.join();
+        List<StoreStock> storeStocks = storeStocksF.join();
+        List<Object[]> soldRaw = soldRawF.join();
 
         Map<Integer, Long> stockQtyByStore = new HashMap<>();
         Map<Integer, String> storeNameById = new HashMap<>();
+        Map<String, String> productNameByStoreProduct = new HashMap<>();
         for (StoreStock ss : storeStocks) {
             Integer storeId = ss.getStore().getId();
+            UUID productId = ss.getProduct().getId();
             long current = stockQtyByStore.getOrDefault(storeId, 0L);
             stockQtyByStore.put(storeId, current + ss.getQuantity());
             storeNameById.put(storeId, ss.getStore().getName());
+            productNameByStoreProduct.put(storeId + ":" + productId, ss.getProduct().getName());
         }
 
         Map<Integer, List<Map<String, Object>>> soldByStore = new HashMap<>();
@@ -312,11 +344,7 @@ public class AnalyticsToolFacade {
             UUID productId = (UUID) row[0];
             Integer storeId = ((Number) row[1]).intValue();
             long soldUnits = ((Number) row[2]).longValue();
-            StoreStock match = storeStocks.stream()
-                .filter(ss -> ss.getStore().getId().equals(storeId) && ss.getProduct().getId().equals(productId))
-                .findFirst()
-                .orElse(null);
-            String productName = match != null ? match.getProduct().getName() : "—";
+            String productName = productNameByStoreProduct.getOrDefault(storeId + ":" + productId, "—");
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("productName", productName);
             item.put("soldUnits", soldUnits);
@@ -359,7 +387,6 @@ public class AnalyticsToolFacade {
             "from", safeFrom.toString(),
             "to", safeTo.toString(),
             "stores", stores,
-            "redistributionSuggestions", redistribution.getOrDefault("suggestions", List.of()),
             "chart", chart
         );
     }
@@ -370,12 +397,25 @@ public class AnalyticsToolFacade {
         long days = Math.max(1, ChronoUnit.DAYS.between(safeFrom, safeTo) + 1);
         LocalDate prevTo = safeFrom.minusDays(1);
         LocalDate prevFrom = prevTo.minusDays(days - 1);
+        Integer companyIdFinal = companyId;
 
-        SalesReportResponse current = reportService.getSalesReport(safeFrom, safeTo);
-        SalesReportResponse previous = reportService.getSalesReport(prevFrom, prevTo);
-        Map<String, Object> returns = returnsSummaryPeriod(safeFrom, safeTo, companyId);
-        Map<String, Object> topProducts = topProductsPeriod(safeFrom, safeTo, 5);
-        Map<String, Object> storeInsight = storeSalesAndStockInsight(safeFrom, safeTo, companyId);
+        CompletableFuture<SalesReportResponse> currentF = parallel.supply(
+                () -> reportService.getSalesReport(safeFrom, safeTo));
+        CompletableFuture<SalesReportResponse> previousF = parallel.supply(
+                () -> reportService.getSalesReport(prevFrom, prevTo));
+        CompletableFuture<Map<String, Object>> returnsF = parallel.supply(
+                () -> returnsSummaryPeriod(safeFrom, safeTo, companyIdFinal));
+        CompletableFuture<Map<String, Object>> topProductsF = parallel.supply(
+                () -> topProductsPeriod(safeFrom, safeTo, 5));
+        CompletableFuture<Map<String, Object>> storeInsightF = parallel.supply(
+                () -> storeChartSummary(safeFrom, safeTo, companyIdFinal));
+        AiAssistantParallel.awaitAll(currentF, previousF, returnsF, topProductsF, storeInsightF);
+
+        SalesReportResponse current = currentF.join();
+        SalesReportResponse previous = previousF.join();
+        Map<String, Object> returns = returnsF.join();
+        Map<String, Object> topProducts = topProductsF.join();
+        Map<String, Object> storeInsight = storeInsightF.join();
 
         BigDecimal curRevenue = current.totalRevenue() != null ? current.totalRevenue() : BigDecimal.ZERO;
         BigDecimal prevRevenue = previous.totalRevenue() != null ? previous.totalRevenue() : BigDecimal.ZERO;
@@ -459,7 +499,7 @@ public class AnalyticsToolFacade {
         out.put("decliningProducts", decliningProducts);
         out.put("storesWithLowStockButHighSales", storesWithIssues);
         out.put("storeChart", storeInsight.getOrDefault("chart", List.of()));
-        out.put("storeSuggestions", storeInsight.getOrDefault("redistributionSuggestions", List.of()));
+        out.put("storeSuggestions", List.of());
 
         // Keep simple actions as fallback for when LLM fails
         List<String> simpleActions = new ArrayList<>();
@@ -483,15 +523,88 @@ public class AnalyticsToolFacade {
         return out;
     }
 
+    /** Lightweight store chart for health check (no per-product breakdown). */
+    private Map<String, Object> storeChartSummary(LocalDate safeFrom, LocalDate safeTo, Integer companyId) {
+        Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
+        Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
+
+        CompletableFuture<List<Object[]>> salesRowsF = parallel.supply(
+                () -> saleRepository.salesByStoreBetween(start, end, companyId));
+        CompletableFuture<List<StoreStock>> storeStocksF = parallel.supply(
+                () -> storeStockRepository.findAllDetailedByCompanyId(companyId));
+        AiAssistantParallel.awaitAll(salesRowsF, storeStocksF);
+
+        List<Object[]> salesRows = salesRowsF.join();
+        List<StoreStock> storeStocks = storeStocksF.join();
+
+        Map<Integer, Long> stockQtyByStore = new HashMap<>();
+        Map<Integer, String> storeNameById = new HashMap<>();
+        for (StoreStock ss : storeStocks) {
+            Integer storeId = ss.getStore().getId();
+            stockQtyByStore.merge(storeId, (long) ss.getQuantity(), Long::sum);
+            storeNameById.put(storeId, ss.getStore().getName());
+        }
+
+        List<Map<String, Object>> stores = new ArrayList<>();
+        List<Map<String, Object>> chart = new ArrayList<>();
+        for (Object[] row : salesRows) {
+            Integer storeId = row[0] != null ? ((Number) row[0]).intValue() : null;
+            String storeName = row[1] != null ? String.valueOf(row[1]) : storeNameById.getOrDefault(storeId, "—");
+            Object revenue = row[2];
+            long checks = row[3] != null ? ((Number) row[3]).longValue() : 0L;
+            long stockQty = storeId != null ? stockQtyByStore.getOrDefault(storeId, 0L) : 0L;
+
+            Map<String, Object> one = new LinkedHashMap<>();
+            one.put("storeId", storeId);
+            one.put("storeName", storeName);
+            one.put("revenue", revenue);
+            one.put("checks", checks);
+            one.put("stockQty", stockQty);
+            stores.add(one);
+
+            Map<String, Object> point = new LinkedHashMap<>();
+            point.put("name", storeName);
+            point.put("revenue", revenue);
+            point.put("stockQty", stockQty);
+            chart.add(point);
+        }
+        return Map.of("stores", stores, "chart", chart);
+    }
+
     public Map<String, Object> executiveSystemOverview(LocalDate from, LocalDate to, Integer companyId) {
         LocalDate safeFrom = from != null ? from : LocalDate.now(ZONE).minusDays(30);
         LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
         Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
         Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
+        Integer companyIdFinal = companyId;
 
-        SalesReportResponse sales = reportService.getSalesReport(safeFrom, safeTo);
-        List<TopProductRow> topProducts = reportService.getTopProducts(5, safeFrom, safeTo);
-        List<Object[]> storesRaw = saleRepository.salesByStoreBetween(start, end, companyId);
+        CompletableFuture<SalesReportResponse> salesF = parallel.supply(
+                () -> reportService.getSalesReport(safeFrom, safeTo));
+        CompletableFuture<List<TopProductRow>> topProductsF = parallel.supply(
+                () -> reportService.getTopProducts(5, safeFrom, safeTo));
+        CompletableFuture<List<Object[]>> storesRawF = parallel.supply(
+                () -> saleRepository.salesByStoreBetween(start, end, companyIdFinal));
+        CompletableFuture<Long> productCountF = parallel.supply(
+                () -> productRepository.countActiveByCompanyId(companyIdFinal));
+        CompletableFuture<Long> lowStockCountF = parallel.supply(
+                () -> productRepository.countLowStockByCompanyId(companyIdFinal));
+        CompletableFuture<Long> categoryCountF = parallel.supply(
+                () -> categoryRepository.countByCompanyId(companyIdFinal));
+        CompletableFuture<Long> storeCountF = parallel.supply(
+                () -> storeRepository.countByCompanyId(companyIdFinal));
+        CompletableFuture<Long> activeStoreCountF = parallel.supply(
+                () -> storeRepository.countByCompanyIdAndActiveTrue(companyIdFinal));
+        CompletableFuture<Object[]> zSummaryF = parallel.supply(
+                () -> zReportRepository.summarizeByCompanyAndClosedAtBetween(companyIdFinal, start, end));
+        CompletableFuture<Map<String, Object>> returnsF = parallel.supply(
+                () -> returnsSummaryPeriod(safeFrom, safeTo, companyIdFinal));
+        AiAssistantParallel.awaitAll(
+                salesF, topProductsF, storesRawF, productCountF, lowStockCountF,
+                categoryCountF, storeCountF, activeStoreCountF, zSummaryF, returnsF);
+
+        SalesReportResponse sales = salesF.join();
+        List<TopProductRow> topProducts = topProductsF.join();
+        List<Object[]> storesRaw = storesRawF.join();
         List<Map<String, Object>> topStores = storesRaw.stream()
                 .sorted((a, b) -> Double.compare(toDouble(b[2]), toDouble(a[2])))
                 .limit(5)
@@ -505,17 +618,17 @@ public class AnalyticsToolFacade {
                 })
                 .toList();
 
-        long productCount = productRepository.countActiveByCompanyId(companyId);
-        long lowStockCount = productRepository.countLowStockByCompanyId(companyId);
-        long categoryCount = categoryRepository.countByCompanyId(companyId);
-        long storeCount = storeRepository.countByCompanyId(companyId);
-        long activeStoreCount = storeRepository.countByCompanyIdAndActiveTrue(companyId);
+        long productCount = productCountF.join();
+        long lowStockCount = lowStockCountF.join();
+        long categoryCount = categoryCountF.join();
+        long storeCount = storeCountF.join();
+        long activeStoreCount = activeStoreCountF.join();
 
-        Object[] zSummary = zReportRepository.summarizeByCompanyAndClosedAtBetween(companyId, start, end);
+        Object[] zSummary = zSummaryF.join();
         long zReportsCount = zSummary != null && zSummary.length > 0 && zSummary[0] instanceof Number n ? n.longValue() : 0L;
         BigDecimal zReportsTotal = zSummary != null && zSummary.length > 1 && zSummary[1] instanceof BigDecimal b ? b : BigDecimal.ZERO;
 
-        Map<String, Object> returns = returnsSummaryPeriod(safeFrom, safeTo, companyId);
+        Map<String, Object> returns = returnsF.join();
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("from", safeFrom.toString());

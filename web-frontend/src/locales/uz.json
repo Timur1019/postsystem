@@ -1007,6 +1007,28 @@
       "usersBrandingSettings": "Brending",
       "usersBarcodePrint": "Yorliq chop etish",
       "checkout": "To'lov",
+      "aiAssistant": "AI-assistent",
+      "stockReceipts": "Kirim (hujjat)",
+      "stockInventories": "Inventarizatsiya",
+      "stockTransfers": "Ko'chirish",
+      "reportsSalesDaily": "Kunlik xulosa",
+      "reportsSalesPeriodCompare": "Davrlarni solishtirish",
+      "reportsSalesByStores": "Do'konlar bo'yicha sotuv",
+      "reportsSalesByCategories": "Kategoriyalar bo'yicha",
+      "reportsSalesByProducts": "Tovarlar bo'yicha sotuv",
+      "reportsCashierPerformance": "Kassirlar samaradorligi",
+      "reportsStockDashboard": "Ombor — xulosa",
+      "reportsStockBalances": "Qoldiqlar",
+      "reportsStockLow": "Minimumdan past",
+      "reportsStockDead": "Sotilmagan tovarlar",
+      "reportsStockTurnover": "Aylanma qaydnoma",
+      "reportsStockMovements": "Harakatlar jurnali",
+      "reportsStockLifecycle": "Tovar hayot tsikli",
+      "reportsStockAdjustments": "Tuzatishlar",
+      "reportsStockReceipts": "Kirimlar",
+      "reportsStockWriteOffs": "Hisobdan chiqarish",
+      "reportsStockInventories": "Inventarizatsiya (hisobot)",
+      "reportsStockTransfers": "Ko'chirishlar (hisobot)",
       "cashierPos": "Kassa — sotuv",
       "cashierSales": "Kassa — mening cheklarim"
     },
@@ -1818,6 +1840,236 @@
           "Xarid qarorlarini qabul qilishga yordam beradi."
         ]
       },
+      "aiAssistant": {
+        "title": "AI-assistent",
+        "summary": "Direktor va administrator uchun chat: tizim ma'lumotlari asosida sotuv, qaytarish va ombor bo'yicha javoblar.",
+        "details": [
+          "Matn bilan savol bering: tushum, top tovarlar, past qoldiqlar, qaytarishlar.",
+          "Assistent POS dagi haqiqiy raqamlarga tayangan holda 3–5 amaliy tavsiya beradi.",
+          "Faqat administrator uchun; ishlashi uchun serverda AI_ASSISTANT_API_KEY kerak.",
+          "Chat tarixi sessiyada saqlanadi; uzoq suhbatda «Chatni tozalash» dan foydalaning."
+        ]
+      },
+      "stockReceipts": {
+        "title": "Kirim (hujjat)",
+        "summary": "Do'kon omboriga REC-… hujjati bilan bir nechta qatorli kirim rasmiylashtirish.",
+        "details": [
+          "Yetkazib beruvchi, do'kon va qatorlar: tovar, miqdor, sotib olish narxi.",
+          "O'tkazilgach qoldiq oshadi, harakatlar jurnaliga va «Kirimlar» hisobotiga yoziladi.",
+          "Bir vaqtning o'zida ko'p pozitsiyali yirik qabul uchun qulay.",
+          "«Ombordagi tovarlar»dagi tez qabuldan farqi — bu to'liq ombor hujjati."
+        ]
+      },
+      "stockInventories": {
+        "title": "Inventarizatsiya",
+        "summary": "Fakt qoldiqlarni qayta hisoblash va INV-… aktini o'tkazish, avtomatik tuzatish bilan.",
+        "details": [
+          "Do'konni tanlang, tovarlarni qo'shing va har birida fakt miqdorni kiriting.",
+          "Tizim hisobdagi qoldiq bilan solishtiradi va farqlarni shakllantiradi.",
+          "O'tkazilgach qoldiq faktga moslanadi; hujjat «Inventarizatsiya» hisobotida ko'rinadi.",
+          "Smena yopilgandan keyin yoki ish vaqtidan tashqarida o'tkazish tavsiya etiladi."
+        ]
+      },
+      "stockTransfers": {
+        "title": "Ko'chirish",
+        "summary": "Tarmoq do'konlari o'rtasida TRF-… hujjati bilan tovar ko'chirish.",
+        "details": [
+          "«Qayerdan», «qayerga» do'konlar va tovar qatorlari.",
+          "Tarmoq umumiy qoldig'i o'zgarmaydi — bir nuqtada kamayadi, boshqasida ko'payadi.",
+          "Harakatlar jurnalida marshrut ko'rsatiladi.",
+          "O'tkazishdan oldin jo'natuvchi do'konda yetarli qoldiq borligini tekshiring."
+        ]
+      },
+      "reportsSalesDaily": {
+        "title": "Kunlik xulosa",
+        "summary": "Tanlangan kun uchun tushum, cheklar soni va sotilgan birliklar.",
+        "details": [
+          "Bitta kun uchun tez kesim, murakkab hisobotlarsiz.",
+          "Menejer uchun kunlik nazoratga qulay.",
+          "Kassalardagi o'tkazilgan savdolardan olinadi."
+        ]
+      },
+      "reportsSalesPeriodCompare": {
+        "title": "Davrlarni solishtirish",
+        "summary": "Joriy davr va shu uzunlikdagi avvalgi davr.",
+        "details": [
+          "Sana oralig'ini belgilang — tizim avvalgi interval bilan solishtiradi.",
+          "Tushum va asosiy ko'rsatkichlar o'zgarishini foizda ko'rsatadi.",
+          "Sotuv o'sishi yoki tushishini baholashga yordam beradi."
+        ]
+      },
+      "reportsSalesByStores": {
+        "title": "Do'konlar bo'yicha sotuv",
+        "summary": "Davr bo'yicha savdo nuqtalarini solishtirish: cheklar, tushum, marja.",
+        "details": [
+          "Har bir do'kon uchun jadval: cheklar, sof sotuv, tushum va marja.",
+          "Sana filtri va sahifalash.",
+          "Majlislar uchun Excel eksporti.",
+          "Bir nechta nuqtali tarmoqlarda yetakchi va ortda qolganlarni aniqlash uchun foydali."
+        ]
+      },
+      "reportsSalesByCategories": {
+        "title": "Kategoriyalar bo'yicha sotuv",
+        "summary": "Davr bo'yicha tovar kategoriyalari kesimida tushum va marja.",
+        "details": [
+          "Qaysi assortiment guruhi asosiy aylanmani berishini ko'rsatadi.",
+          "Sof ko'rsatkichlarda qaytarishlar hisobga olinadi.",
+          "Excel eksporti mavjud."
+        ]
+      },
+      "reportsSalesByProducts": {
+        "title": "Tovarlar bo'yicha sotuv",
+        "summary": "Tanlangan davrda har bir tovardan qancha sotilgan.",
+        "details": [
+          "SKU darajasida: miqdor, tushum, marja.",
+          "Saralash va filtrlar xit va sust pozitsiyalarni topishga yordam beradi.",
+          "Xarid va joylashtirish qarorlari uchun asos."
+        ]
+      },
+      "reportsCashierPerformance": {
+        "title": "Kassirlar samaradorligi",
+        "summary": "Davr bo'yicha har bir kassir tushumi.",
+        "details": [
+          "Bir yoki barcha do'konlarda kassirlarni solishtirish.",
+          "Faqat administrator uchun.",
+          "Rag'batlantirish va smena nazorati uchun."
+        ]
+      },
+      "reportsStockDashboard": {
+        "title": "Ombor — xulosa",
+        "summary": "Ombor harakati ko'rinishi: kirim, sotuv, hisobdan chiqarish va joriy qoldiq.",
+        "details": [
+          "Tanlangan davr uchun KPI va kunlik grafik.",
+          "Batafsil ombor hisobotlariga tez havolalar.",
+          "Ombor tahliliga kirish nuqtasi."
+        ]
+      },
+      "reportsStockBalances": {
+        "title": "Ombor qoldiqlari",
+        "summary": "Hisobot sanasiga barcha tovarlar bo'yicha qoldiq kesimi.",
+        "details": [
+          "«Faqat qoldiq > 0» filtri ixcham ro'yxat uchun.",
+          "Ustunlar: tovar, do'kon, miqdor, qoldiq summasi.",
+          "Inventarizatsiya va xarid uchun eksport."
+        ]
+      },
+      "reportsStockLow": {
+        "title": "Minimumdan past",
+        "summary": "Belgilangan chegaradan past qolgan tovarlar.",
+        "details": [
+          "«Past qoldiq» chegarasi ombor kartochkasida belgilanadi.",
+          "Yetkazib beruvchiga buyurtma ro'yxati uchun.",
+          "Bo'sh hisobot — barcha pozitsiyalar minimumdan yuqori."
+        ]
+      },
+      "reportsStockDead": {
+        "title": "Sotilmagan tovarlar",
+        "summary": "Omborda qoldiq bor, lekin N kun sotilmagan.",
+        "details": [
+          "Sotilmagan kunlar chegarasini sozlash mumkin.",
+          "Zaxira tovarni aniqlash va chegirma yoki qaytarish uchun.",
+          "Oxirgi sotuv sanasi va kutish kunlarini ko'rsatadi."
+        ]
+      },
+      "reportsStockTurnover": {
+        "title": "Aylanma qaydnoma",
+        "summary": "Davr bo'yicha qoldiq harakati: boshlanish → kirim → sotuv → hisobdan chiqarish → oxir.",
+        "details": [
+          "Tovarlar bo'yicha klassik ombor qaydnomasi.",
+          "Do'kon va kategoriya filtrlari.",
+          "Excel eksporti."
+        ]
+      },
+      "reportsStockMovements": {
+        "title": "Ombor harakatlari jurnali",
+        "summary": "Qoldiqni o'zgartirgan barcha operatsiyalar: kirim, sotuv, qaytarish, hisobdan chiqarish, tuzatish.",
+        "details": [
+          "Operatsiya turi va davr bo'yicha filtr.",
+          "Hujjat raqami va rasmiylashtirgan foydalanuvchi.",
+          "Ombor auditining asosiy vositasi."
+        ]
+      },
+      "reportsStockLifecycle": {
+        "title": "Tovar hayot tsikli",
+        "summary": "Bitta tovarning to'liq tarixi: kirimlar, sotuvlar, qaytarishlar, hisobdan chiqarishlar va har operatsiyadan keyingi qoldiq.",
+        "details": [
+          "Nom, SKU yoki shtrixkod bo'yicha qidiring.",
+          "Barcha harakatlarning xronologik lentasi.",
+          "Aniq pozitsiya bo'yicha farqlarni tekshirishda qulay."
+        ]
+      },
+      "reportsStockAdjustments": {
+        "title": "Qoldiq tuzatishlari",
+        "summary": "Qo'lda qoldiq o'zgartirish va inventarizatsiya natijalari (ADJUSTMENT turi).",
+        "details": [
+          "Sabab va muallif bilan tuzatishlar ro'yxati.",
+          "Brak hisobidan chiqarish bilan aralashtirmang — bu yerda hisobni faktga moslash.",
+          "Inventarizatsiya hujjatlari bilan bog'liq."
+        ]
+      },
+      "reportsStockReceipts": {
+        "title": "Kirimlar",
+        "summary": "Davr bo'yicha o'tkazilgan REC-… kirim hujjatlari.",
+        "details": [
+          "Kirim sarlavhalari va summalarini ko'rish.",
+          "«Ombor» bo'limidan yangi kirim yaratishga o'tish.",
+          "Yetkazib beruvchi nakladnomasi bilan solishtirish."
+        ]
+      },
+      "reportsStockWriteOffs": {
+        "title": "Hisobdan chiqarish va brak",
+        "summary": "Ombordan hisobdan chiqarilgan tovarlar (mijoz qaytarmasi emas).",
+        "details": [
+          "Sabablar: brak, muddati o'tgan, shikast, kamomad va boshqalar.",
+          "Sotuvsiz qoldiqni kamaytiradi.",
+          "Yo'qotishlarni nazorat qilish uchun muhim."
+        ]
+      },
+      "reportsStockInventories": {
+        "title": "Inventarizatsiya (hisobot)",
+        "summary": "O'tkazilgan INV-… inventarizatsiya aktlari va farqlar yig'indisi.",
+        "details": [
+          "Do'konlar bo'yicha qayta hisoblashlar tarixi.",
+          "Qatorlar soni va umumiy farq.",
+          "Ombor menyusidagi «Yangi inventarizatsiya» formasini to'ldiradi."
+        ]
+      },
+      "reportsStockTransfers": {
+        "title": "Ko'chirishlar (hisobot)",
+        "summary": "Do'konlar o'rtasida o'tkazilgan TRF-… ko'chirish hujjatlari.",
+        "details": [
+          "Marshrut: qayerdan → qayerga, tarkib va sana.",
+          "Tarmoq umumiy qoldig'i o'zgarmaydi.",
+          "Do'konlararo o'tkazmalarni nazorat qilish."
+        ]
+      },
+      "usersList": {
+        "title": "Foydalanuvchilar",
+        "summary": "Xodimlar hisoblari: rollar, do'konlar, modullarga kirish.",
+        "details": [
+          "Rollar: administrator, menejer, kassir.",
+          "Kassir va menejer uchun do'kon tayinlash.",
+          "Bloklash va parolni almashtirish."
+        ]
+      },
+      "usersPrinterSettings": {
+        "title": "Printer sozlamalari",
+        "summary": "Ish joylari uchun chek va yorliq chop etish parametrlari.",
+        "details": [
+          "Printer va chek maydonlarini tanlash.",
+          "Kassa va brauzer chop etishiga ta'sir qiladi.",
+          "Administrator uchun."
+        ]
+      },
+      "usersBrandingSettings": {
+        "title": "Foydalanuvchi sozlamalari",
+        "summary": "Xodimlar uchun interfeys va ko'rinishning shaxsiy parametrlari.",
+        "details": [
+          "Brending, til va boshqa profil sozlamalari.",
+          "Saqlangandan keyin qo'llanadi.",
+          "Administrator uchun."
+        ]
+      },
       "stores": {
         "title": "Do'konlar",
         "summary": "Tarmoq savdo nuqtalari: manzillar, kodlar, foydalanuvchilar va kassalarga bog'lanish.",
@@ -1835,15 +2087,6 @@
           "Avval sizning katalogingiz tekshiriladi; topilmasa Tasnif (klassifikator) bo'yicha izlanadi.",
           "Topilgandan keyin «Yorliq / narxi» ni oching, kerakli bloklarni yoqing va nusxa sonini kiriting.",
           "Chop etish brauzer orqali; termoprinter uchun o'lchamni tizim printer sozlamalaridan sozlang."
-        ]
-      },
-      "users": {
-        "title": "Foydalanuvchilar",
-        "summary": "Xodimlar hisoblari: rollar, do'konlar, modullarga kirish.",
-        "details": [
-          "Rollar: administrator, menejer, kassir.",
-          "Kassir va menejer uchun do'kon tayinlash.",
-          "Bloklash va parolni almashtirish."
         ]
       },
       "checkout": {

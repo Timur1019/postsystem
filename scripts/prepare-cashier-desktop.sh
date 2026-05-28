@@ -17,6 +17,7 @@ npm ci --silent 2>/dev/null || npm install
 
 echo ""
 echo "Готово. Дальше:"
-echo "  Mac dev:    cd desktop-cashier && POS_EMBEDDED=1 npm start"
-echo "  Windows:    scripts\\build-cashier-windows.bat  (на ПК с Win10/11)"
-echo "  Тонкий UI:  INCLUDE_WEB_DIST=0 scripts\\build-cashier-windows.bat"
+echo "  Mac dev (свежий UI из web-dist):  cd desktop-cashier && POS_EMBEDDED=1 npm run dev"
+echo "  Mac dev (через Docker):           FRESH=1 bash scripts/start-cashier-desktop.sh"
+echo "  Mac .dmg:                         INCLUDE_WEB_DIST=1 ./scripts/build-cashier.sh"
+echo "  Windows:                          scripts\\build-cashier-windows.bat"

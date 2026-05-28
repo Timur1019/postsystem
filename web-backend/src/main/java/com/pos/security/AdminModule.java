@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 /** Ключи модулей админки и кассы (синхрон с web-frontend moduleHandbook). */
 public enum AdminModule {
     DASHBOARD("dashboard", "main", Set.of("ADMIN", "MANAGER")),
+    AI_ASSISTANT("aiAssistant", "main", Set.of("ADMIN")),
     PRODUCTS("products", "goods", Set.of("ADMIN", "MANAGER")),
     CATEGORIES("categories", "goods", Set.of("ADMIN", "MANAGER")),
     STOCK_PRODUCTS("stockProducts", "stock", Set.of("ADMIN", "MANAGER")),
