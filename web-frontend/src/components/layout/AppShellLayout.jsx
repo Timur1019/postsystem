@@ -13,6 +13,8 @@ import {
   REGISTER_ROUTES,
   USER_ROUTES,
   REPORT_ROUTES,
+  REPORT_SALES_ROUTES,
+  REPORT_STOCK_ROUTES,
   GOODS_CHILDREN,
   STOCK_CHILDREN,
   ORDER_CHILDREN,
@@ -38,6 +40,8 @@ export default function AppShellLayout() {
   const [goodsOpen, setGoodsOpen] = useState(true);
   const [stockOpen, setStockOpen] = useState(true);
   const [reportsOpen, setReportsOpen] = useState(true);
+  const [reportsSalesOpen, setReportsSalesOpen] = useState(true);
+  const [reportsStockOpen, setReportsStockOpen] = useState(true);
   const [registersOpen, setRegistersOpen] = useState(true);
   const [usersOpen, setUsersOpen] = useState(true);
   const [ordersOpen, setOrdersOpen] = useState(true);
@@ -49,7 +53,6 @@ export default function AppShellLayout() {
   const registersNav = filterByModule(REGISTER_CHILDREN);
   const reportsSalesNav = filterByModule(REPORT_SALES_CHILDREN);
   const reportsStockNav = filterByModule(REPORT_STOCK_CHILDREN);
-  const reportsNavFlat = [...reportsSalesNav, ...reportsStockNav];
   const usersNav = filterByModule(USER_CHILDREN);
 
   useEffect(() => {
@@ -73,6 +76,13 @@ export default function AppShellLayout() {
     if (GOODS_ROUTES.includes(location.pathname)) setGoodsOpen(true);
     if (STOCK_ROUTES.includes(location.pathname)) setStockOpen(true);
     if (REPORT_ROUTES.includes(location.pathname)) setReportsOpen(true);
+    if (REPORT_SALES_ROUTES.includes(location.pathname)) setReportsSalesOpen(true);
+    if (REPORT_STOCK_ROUTES.includes(location.pathname)) setReportsStockOpen(true);
+    if (location.pathname === '/reports') {
+      setReportsOpen(true);
+      setReportsSalesOpen(true);
+      setReportsStockOpen(true);
+    }
     if (REGISTER_ROUTES.includes(location.pathname)) setRegistersOpen(true);
     if (USER_ROUTES.includes(location.pathname)) setUsersOpen(true);
     if (ORDER_ROUTES.includes(location.pathname)) setOrdersOpen(true);
@@ -137,24 +147,33 @@ export default function AppShellLayout() {
         inOrdersSection={ORDER_ROUTES.includes(location.pathname)}
         inRegistersSection={REGISTER_ROUTES.includes(location.pathname)}
         inReportsSection={REPORT_ROUTES.includes(location.pathname)}
+        inReportsSalesSection={REPORT_SALES_ROUTES.includes(location.pathname)}
+        inReportsStockSection={REPORT_STOCK_ROUTES.includes(location.pathname)}
         inUsersSection={USER_ROUTES.includes(location.pathname)}
         goodsOpen={goodsOpen}
         stockOpen={stockOpen}
         ordersOpen={ordersOpen}
         registersOpen={registersOpen}
         reportsOpen={reportsOpen}
+        reportsSalesOpen={reportsSalesOpen}
+        reportsStockOpen={reportsStockOpen}
         usersOpen={usersOpen}
         setGoodsOpen={setGoodsOpen}
         setStockOpen={setStockOpen}
         setOrdersOpen={setOrdersOpen}
         setRegistersOpen={setRegistersOpen}
         setReportsOpen={setReportsOpen}
+        setReportsSalesOpen={setReportsSalesOpen}
+        setReportsStockOpen={setReportsStockOpen}
         setUsersOpen={setUsersOpen}
         goodsNav={goodsNav}
         stockNav={stockNav}
         ordersNav={ordersNav}
         registersNav={registersNav}
-        reportsNavFlat={reportsNavFlat}
+        showReportsSales={reportsSalesNav.length > 0}
+        showReportsStock={reportsStockNav.length > 0}
+        reportsSalesNav={reportsSalesNav}
+        reportsStockNav={reportsStockNav}
         reportsHubActive={location.pathname === '/reports'}
         usersNav={usersNav}
         visibleRest={visibleRest}

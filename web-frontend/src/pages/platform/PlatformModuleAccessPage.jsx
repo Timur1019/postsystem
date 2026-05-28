@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { Shield, RotateCcw, Save } from 'lucide-react';
 import { companyApi, platformModuleAccessApi } from '../../services/api';
 
-const GROUP_ORDER = ['main', 'goods', 'stock', 'orders', 'registers', 'reports', 'settings'];
+const GROUP_ORDER = ['main', 'goods', 'stock', 'orders', 'registers', 'reportsSales', 'reportsStock', 'settings'];
 
 function catalogGroupFor(moduleId, catalogById) {
   return catalogById?.[moduleId] ?? 'main';

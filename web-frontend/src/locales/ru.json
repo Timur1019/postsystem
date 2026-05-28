@@ -983,7 +983,8 @@
       "stock": "Склад",
       "orders": "Заказы",
       "registers": "Кассы",
-      "reports": "Отчёты",
+      "reportsSales": "Отчёты — продажи",
+      "reportsStock": "Отчёты — склад",
       "settings": "Настройки",
       "cashier": "Касса"
     },
@@ -1702,7 +1703,8 @@
       "stock": "Склад",
       "orders": "Заказы",
       "registers": "Кассы",
-      "reports": "Отчёты",
+      "reportsSales": "Отчёты — продажи",
+      "reportsStock": "Отчёты — склад",
       "settings": "Настройки",
       "cashier": "Касса"
     },

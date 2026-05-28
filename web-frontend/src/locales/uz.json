@@ -983,7 +983,8 @@
       "stock": "Ombor",
       "orders": "Buyurtmalar",
       "registers": "Kassalar",
-      "reports": "Hisobotlar",
+      "reportsSales": "Hisobotlar — sotuv",
+      "reportsStock": "Hisobotlar — ombor",
       "settings": "Sozlamalar",
       "cashier": "Kassa"
     },
@@ -1702,7 +1703,8 @@
       "stock": "Ombor",
       "orders": "Buyurtmalar",
       "registers": "Kassalar",
-      "reports": "Hisobotlar",
+      "reportsSales": "Hisobotlar — sotuv",
+      "reportsStock": "Hisobotlar — ombor",
       "settings": "Sozlamalar",
       "cashier": "Kassa"
     },
