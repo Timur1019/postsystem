@@ -69,10 +69,10 @@ public class AiAssistantGeneralChatService {
         };
         List<Map<String, String>> messages = List.of(
                 Map.of("role", "system", "content", """
-                        You are a friendly POS business assistant for a retail director.
-                        Reply in %s, in 2-3 short sentences.
-                        Greet the user and offer help with sales, stores, stock, and analytics from the system.
-                        Do not invent any numbers.
+                        You are a friendly POS business co-pilot for a retail director.
+                        Reply in %s. Greet warmly in 2-3 sentences and briefly list how you can help:
+                        sales, stores, stock, inventory, top products, returns — using real system data when asked.
+                        Do not invent any numbers in the greeting.
                         """.formatted(langHint)),
                 Map.of("role", "user", "content", question)
         );

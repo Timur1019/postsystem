@@ -161,8 +161,8 @@
   },
   "aiAssistant": {
     "title": "Direktor uchun AI-assistent",
-    "subtitle": "Xotirali dialog: bir chatda aniqlashtiring",
-    "hint": "Savol yozing va davom eting: «top mahsulotlar», keyin «a qoldiqlar?», «a do‘kon bo‘yicha?». Javob faqat mavzu bo‘yicha.",
+    "subtitle": "Tizim ma'lumotlari bo'yicha to'liq javob va maslahatlar",
+    "hint": "Mavzu bo'yicha so'rang: mahsulotlar, savdo, do'kon, inventarizatsiya. Raqamlar va 3–5 aniq tavsiya beriladi.",
     "inputPlaceholder": "Xabar…",
     "thinking": "O‘ylayapman…",
     "clearChat": "Chatni tozalash",
