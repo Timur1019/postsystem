@@ -21,6 +21,7 @@ const {
   createReceiptPrintWindow,
   ensureWindowPainted,
 } = require('./print-thermal.cjs');
+const { setupAutoUpdater, checkForUpdatesNow } = require('./auto-update.cjs');
 
 const ALLOWED_PATH_PREFIXES = ['/login', '/cashier', '/receipt', '/users/barcode-print'];
 
@@ -75,6 +76,37 @@ function buildAppMenuTemplate() {
           click: () => openServerSettings(),
         },
         { type: 'separator' },
+        {
+          label: 'Проверить обновления…',
+          click: () => {
+            checkForUpdatesNow(config?.cashierUrl).then((result) => {
+              if (result.updateAvailable) {
+                dialog.showMessageBox({
+                  type: 'info',
+                  title: 'Aurent — обновление',
+                  message: `Доступна версия ${result.version}`,
+                  detail: 'Загрузка начнётся автоматически.',
+                  buttons: ['OK'],
+                }).catch(() => {});
+              } else if (result.ok) {
+                dialog.showMessageBox({
+                  type: 'info',
+                  title: 'Aurent — обновление',
+                  message: 'Установлена последняя версия',
+                  buttons: ['OK'],
+                }).catch(() => {});
+              } else if (result.reason !== 'dev') {
+                dialog.showMessageBox({
+                  type: 'warning',
+                  title: 'Aurent — обновление',
+                  message: 'Не удалось проверить обновления',
+                  detail: String(result.reason || ''),
+                  buttons: ['OK'],
+                }).catch(() => {});
+              }
+            });
+          },
+        },
         { role: 'reload', label: 'Обновить' },
         { role: 'togglefullscreen', label: 'На весь экран' },
       ],
@@ -142,6 +174,11 @@ function registerDesktopIpc() {
       mainWindow.loadURL(`${config.cashierUrl}/users/barcode-print`);
     }
     return { ok: true };
+  });
+
+  ipcMain.handle('desktop:check-updates', async () => {
+    config = loadConfig();
+    return checkForUpdatesNow(config?.cashierUrl);
   });
 }
 
@@ -651,6 +688,11 @@ app.whenReady().then(async () => {
     }
   }
   createWindow();
+
+  setupAutoUpdater({
+    getMainWindow: () => mainWindow,
+    getCashierUrl: () => config?.cashierUrl,
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

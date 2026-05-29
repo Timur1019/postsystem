@@ -100,7 +100,33 @@
     "failed": "Kirish xatosi",
     "badCredentials": "Login yoki parol noto‘g‘ri",
     "networkError": "Server bilan aloqa yo‘q. IP, port va sarlavhadagi Aurent → server sozlamalarini tekshiring",
-    "footer": "Aurent · © {{year}}"
+    "footer": "Aurent · © {{year}}",
+    "downloadCashier": "Kassani yuklab olish"
+  },
+  "installer": {
+    "title": "Aurent Desktop Installer",
+    "subtitle": "Windows yoki Mac uchun kassa dasturini o‘rnating. Interfeys serverdan yuklanadi — UI yangilanishi qayta o‘rnatishsiz.",
+    "loadingVersion": "Versiya yuklanmoqda…",
+    "versionLine": "Versiya {{version}} · {{date}}",
+    "manifestUnavailable": "O‘rnatish fayllari hali serverga yuklanmagan. Administratorga murojaat qiling.",
+    "downloadWindows": "Windows (.exe)",
+    "downloadMac": "Mac (.dmg)",
+    "downloadZip": "To‘liq arxiv (ZIP)",
+    "notAvailable": "Tez orada",
+    "optional": "Qo‘llanma bilan",
+    "firstRunTitle": "Birinchi ishga tushirish",
+    "firstRun1": "Dasturni o‘rnating va «Aurent Cashier» ni oching.",
+    "firstRun2": "Server manzili (IP yoki domen) va port 80 (HTTPS uchun 443) kiriting.",
+    "firstRun3": "Kassir login va paroli bilan kiring.",
+    "firstRun4": "Manzilni keyinroq o‘zgartirish: «Ko‘rinish → Server sozlamalari…» yoki Ctrl+,",
+    "uiUpdateHint": "Kassa interfeysi: administrator serverni yangilaydi — kassada «Ko‘rinish → Yangilash». Qayta o‘rnatish shart emas.",
+    "alreadyHaveAccount": "Hisobingiz bormi?",
+    "goToLogin": "Tizimga kirish",
+    "brands": {
+      "aurentTagline": "Aurent POS kassasi",
+      "dtgroupTagline": "DT Group kassasi",
+      "pomotTagline": "Pomot kassasi"
+    }
   },
   "desktop": {
     "serverSetup": "Server sozlamalari…",
@@ -115,7 +141,11 @@
     "testReceiptFailed": "Test chekni chop etib bo‘lmadi",
     "printerSaved": "Printer saqlandi",
     "labelPrinter": "Shtrix-kod printeri",
-    "barcodePrint": "Shtrix-kod chop etish"
+    "barcodePrint": "Shtrix-kod chop etish",
+    "checkUpdates": "Yangilanishni tekshirish",
+    "checkUpdatesLatest": "So‘nggi versiya o‘rnatilgan",
+    "checkUpdatesAvailable": "{{version}} versiyasi mavjud — yuklab olinmoqda",
+    "checkUpdatesFailed": "Yangilanishni tekshirib bo‘lmadi"
   },
   "validation": {
     "required": "Majburiy maydon",

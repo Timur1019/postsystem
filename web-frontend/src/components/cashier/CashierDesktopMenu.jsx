@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Barcode, ChevronDown, Maximize, Printer, RefreshCw, Server, LogOut, FileText, Tag } from 'lucide-react';
+import { Barcode, ChevronDown, Maximize, Printer, RefreshCw, Server, LogOut, FileText, Tag, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 
@@ -125,6 +125,23 @@ export default function CashierDesktopMenu({ appName }) {
     }
   };
 
+  const checkAppUpdates = async () => {
+    close();
+    if (typeof window.desktopCashier?.checkForUpdates !== 'function') return;
+    try {
+      const result = await window.desktopCashier.checkForUpdates();
+      if (result?.updateAvailable) {
+        toast.success(t('desktop.checkUpdatesAvailable', { version: result.version }));
+      } else if (result?.ok) {
+        toast.success(t('desktop.checkUpdatesLatest'));
+      } else if (result?.reason !== 'dev') {
+        toast.error(t('desktop.checkUpdatesFailed'));
+      }
+    } catch {
+      toast.error(t('desktop.checkUpdatesFailed'));
+    }
+  };
+
   const label = appName || 'Aurent';
   const printerLabel = printerName || t('desktop.receiptPrinterNotSet');
   const labelPrinterLabel = labelPrinterName || t('desktop.receiptPrinterNotSet');
@@ -204,6 +221,15 @@ export default function CashierDesktopMenu({ appName }) {
           <span>{t('desktop.barcodePrint')}</span>
         </button>
         <div className="cashier-desktop-menu__sep" role="separator" />
+        <button
+          type="button"
+          className="cashier-desktop-menu__item"
+          role="menuitem"
+          onClick={checkAppUpdates}
+        >
+          <Download size={18} strokeWidth={2} aria-hidden />
+          <span>{t('desktop.checkUpdates')}</span>
+        </button>
         <button
           type="button"
           className="cashier-desktop-menu__item"

@@ -16,4 +16,7 @@ if (fs.existsSync(webDist)) {
 
 build.extraResources = extraResources;
 
+const updateUrl = process.env.DESKTOP_UPDATE_URL || 'http://127.0.0.1/downloads/desktop/';
+build.publish = [{ provider: 'generic', url: updateUrl }];
+
 module.exports = build;

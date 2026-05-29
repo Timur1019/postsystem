@@ -1,6 +1,8 @@
 {
   "useRemoteUi": true,
-  "cashierUrl": "http://192.168.1.50:80",
-  "backendOrigin": "http://192.168.1.50:8080",
-  "apiHealthUrl": "http://192.168.1.50/api/v1/actuator/health"
+  "cashierUrl": "http://192.168.1.50",
+  "backendOrigin": "http://192.168.1.50",
+  "apiHealthUrl": "http://192.168.1.50/api/v1/actuator/health",
+  "webPort": "80",
+  "apiPort": "80"
 }

@@ -23,6 +23,14 @@ desktop-cashier/node_modules/
 desktop-cashier/web-dist/
 desktop-cashier/release/
 dist/
+downloads/desktop/*.exe
+downloads/desktop/*.dmg
+downloads/desktop/*.zip
+downloads/desktop/*.blockmap
+downloads/desktop/latest*.yml
+downloads/desktop/manifest.json
+!downloads/desktop/.gitkeep
+!downloads/desktop/manifest.json.example
 web-frontend/docker-build/
 .vite/
 npm-debug.log*

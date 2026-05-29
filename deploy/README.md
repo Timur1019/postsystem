@@ -140,6 +140,57 @@ bash deploy/git-update.sh
 
 На файрволе кассовой сети должен быть доступен **порт 80** до сервера (не только 8080).
 
+## 7.1. Страница загрузки кассы (`/install`)
+
+Публичная страница без авторизации:
+
+```
+https://ВАШ_ДОМЕН/install
+```
+
+Карточки партнёров (Aurent, DT Group, Pomot) — **один и тот же установщик**, сервер кассир указывает в мастере первого запуска.
+
+Файлы лежат на сервере:
+
+```
+/opt/aurent-pos/downloads/desktop/
+  manifest.json
+  latest.yml / latest-mac.yml
+  Aurent-Cashier-Setup-*-x64.exe
+  Aurent-Cashier-*.dmg
+```
+
+nginx отдаёт их по URL `/downloads/desktop/...` (volume в `docker-compose.prod.yml`).
+
+### Сборка desktop (CI, без Mac/Windows на вашем ПК)
+
+При изменении `desktop-cashier/` GitHub Actions собирает `.dmg` + `.exe` и заливает на сервер.
+
+Secrets в GitHub:
+
+| Secret | Назначение |
+|--------|------------|
+| `DEPLOY_SSH_KEY` | SSH-ключ для сервера |
+| `DEPLOY_HOST` | IP или домен сервера |
+| `DEPLOY_USER` | SSH-пользователь (по умолчанию `root`) |
+| `SERVER_HOST` | IP для мастера настройки в установщике |
+
+Ручной запуск: GitHub → Actions → **Build Desktop Cashier** → Run workflow.
+
+Локально (одна платформа):
+
+```bash
+chmod +x scripts/build-desktop-release.sh scripts/generate-desktop-manifest.sh
+PLATFORM=mac COPY_TO_DOWNLOADS=1 ./scripts/build-desktop-release.sh
+```
+
+### Два уровня обновлений
+
+| Что | Как |
+|-----|-----|
+| **UI кассы** (React) | `bash deploy/git-update.sh` → на кассе «Вид → Обновить» |
+| **Electron-оболочка** | CI → `/downloads/desktop/` → auto-update в приложении |
+
 ## 8. Полезные команды
 
 ```bash

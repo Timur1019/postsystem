@@ -100,7 +100,33 @@
     "failed": "Ошибка входа",
     "badCredentials": "Неверный логин или пароль",
     "networkError": "Нет связи с сервером. Проверьте IP, порт и кнопку Aurent в шапке → «Настройка сервера»",
-    "footer": "Aurent · © {{year}}"
+    "footer": "Aurent · © {{year}}",
+    "downloadCashier": "Скачать кассу"
+  },
+  "installer": {
+    "title": "Aurent Desktop Installer",
+    "subtitle": "Установите программу кассы для Windows или Mac. Интерфейс загружается с сервера — обновления UI без переустановки.",
+    "loadingVersion": "Загрузка версии…",
+    "versionLine": "Версия {{version}} · {{date}}",
+    "manifestUnavailable": "Файлы установки пока не загружены на сервер. Обратитесь к администратору.",
+    "downloadWindows": "Windows (.exe)",
+    "downloadMac": "Mac (.dmg)",
+    "downloadZip": "Полный архив (ZIP)",
+    "notAvailable": "Скоро",
+    "optional": "С инструкциями",
+    "firstRunTitle": "Первый запуск",
+    "firstRun1": "Установите программу и откройте «Aurent Cashier».",
+    "firstRun2": "Введите адрес сервера (IP или домен) и порт 80 (или 443 для HTTPS).",
+    "firstRun3": "Войдите логином и паролем кассира.",
+    "firstRun4": "Сменить адрес позже: «Вид → Настройка сервера…» или Ctrl+,",
+    "uiUpdateHint": "Обновление интерфейса кассы: администратор обновляет сервер — на кассе «Вид → Обновить». Переустановка не нужна.",
+    "alreadyHaveAccount": "Уже есть аккаунт?",
+    "goToLogin": "Войти в систему",
+    "brands": {
+      "aurentTagline": "Касса Aurent POS",
+      "dtgroupTagline": "Касса для DT Group",
+      "pomotTagline": "Касса для Pomot"
+    }
   },
   "desktop": {
     "serverSetup": "Настройка сервера…",
@@ -115,7 +141,11 @@
     "testReceiptFailed": "Не удалось напечатать тестовый чек",
     "printerSaved": "Принтер сохранён",
     "labelPrinter": "Принтер штрих-кодов",
-    "barcodePrint": "Печать штрих-кодов"
+    "barcodePrint": "Печать штрих-кодов",
+    "checkUpdates": "Проверить обновления",
+    "checkUpdatesLatest": "Установлена последняя версия",
+    "checkUpdatesAvailable": "Доступна версия {{version}} — загрузка началась",
+    "checkUpdatesFailed": "Не удалось проверить обновления"
   },
   "validation": {
     "required": "Обязательное поле",

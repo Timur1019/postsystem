@@ -1,0 +1,125 @@
+name: Build Desktop Cashier
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - 'desktop-cashier/**'
+      - 'scripts/build-desktop-release.sh'
+      - 'scripts/generate-desktop-manifest.sh'
+      - 'scripts/build-cashier.sh'
+      - 'installer/**'
+  workflow_dispatch:
+    inputs:
+      server_host:
+        description: 'Default server host for installer wizard'
+        required: true
+        default: '111.88.132.126'
+
+concurrency:
+  group: desktop-release
+  cancel-in-progress: true
+
+env:
+  SERVER_HOST: ${{ github.event.inputs.server_host || secrets.SERVER_HOST || '111.88.132.126' }}
+  SERVER_WEB_PORT: '80'
+  SERVER_API_PORT: '80'
+  INCLUDE_WEB_DIST: '0'
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: desktop-cashier/package-lock.json
+
+      - name: Build macOS installer
+        run: |
+          chmod +x scripts/*.sh
+          PLATFORM=mac COPY_TO_DOWNLOADS=1 DESKTOP_UPDATE_URL="http://${SERVER_HOST}/downloads/desktop/" \
+            bash scripts/build-desktop-release.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-mac
+          path: |
+            downloads/desktop/*.dmg
+            downloads/desktop/latest-mac.yml
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: desktop-cashier/package-lock.json
+
+      - name: Build Windows installer
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          chmod +x scripts/*.sh
+          PLATFORM=win COPY_TO_DOWNLOADS=1 DESKTOP_UPDATE_URL="http://${SERVER_HOST}/downloads/desktop/" \
+            bash scripts/build-desktop-release.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-win
+          path: |
+            downloads/desktop/*Setup*.exe
+            downloads/desktop/latest.yml
+          if-no-files-found: error
+
+  package-and-deploy:
+    needs: [build-mac, build-windows]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Assemble downloads/desktop
+        run: |
+          mkdir -p downloads/desktop
+          find artifacts -type f \( -name '*.dmg' -o -name '*.exe' -o -name 'latest*.yml' \) -exec cp {} downloads/desktop/ \;
+          chmod +x scripts/*.sh
+          bash scripts/generate-desktop-manifest.sh downloads/desktop
+          cp installer/ДЛЯ-КАССИРА.txt downloads/desktop/ || true
+          ls -la downloads/desktop/
+
+      - name: Deploy to production server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER || 'root' }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: 'downloads/desktop/*'
+          target: '/opt/aurent-pos/downloads/desktop'
+          strip_components: 2
+          overwrite: true
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-release-bundle
+          path: downloads/desktop/

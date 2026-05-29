@@ -66,9 +66,11 @@ bash deploy/deploy.sh
 
 ## Касса
 
-В настройках Aurent Cashier укажите IP сервера и порт **8080**.
+Страница загрузки: **`/install`** (публичная, без входа).
 
-Проверка: `http://<server>:8080/api/v1/actuator/health`
+В настройках Aurent Cashier укажите IP сервера и порт **80** (или **443** для HTTPS).
+
+Проверка: `http://<server>/api/v1/actuator/health`
 
 ## Секреты
 

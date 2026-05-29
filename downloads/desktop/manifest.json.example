@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "releasedAt": "2026-05-30T12:00:00Z",
+  "windows": {
+    "url": "/downloads/desktop/Aurent-Cashier-Setup-1.0.0-x64.exe",
+    "fileName": "Aurent-Cashier-Setup-1.0.0-x64.exe",
+    "size": 0,
+    "sha256": ""
+  },
+  "mac": {
+    "url": "/downloads/desktop/Aurent-Cashier-1.0.0.dmg",
+    "fileName": "Aurent-Cashier-1.0.0.dmg",
+    "size": 0,
+    "sha256": ""
+  },
+  "zip": {
+    "url": "/downloads/desktop/Aurent-Cashier-Desktop-1.0.0.zip",
+    "fileName": "Aurent-Cashier-Desktop-1.0.0.zip",
+    "size": 0,
+    "sha256": ""
+  }
+}

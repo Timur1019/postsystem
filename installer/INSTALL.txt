@@ -5,18 +5,18 @@
 СХЕМА:
 
   [Ваш сервер]                    [Компьютер кассира]
-   API :8080  ◄──── сеть ────   Aurent Cashier (.dmg / .exe)
-   БД, товары, продажи            без Docker на кассе
+   :80 — сайт и касса      ◄────   Aurent Cashier (.dmg / .exe)
+   API через /api на :80           интерфейс грузится с сервера
 
 --------------------------------------------------------------------------------
 УСТАНОВКА (Mac)
 --------------------------------------------------------------------------------
 
-  1. Распакуйте ZIP из Telegram.
+  1. Распакуйте ZIP.
   2. mac/Aurent Cashier-1.0.0.dmg → перетащите в «Программы».
   3. Запустите «Aurent Cashier».
-  4. Укажите IP сервера и порт (обычно 8080).
-  5. Вход: kassir / password (или логин от администратора).
+  4. Укажите IP или домен сервера, порт 80 (или 443 для HTTPS).
+  5. Вход: логин и пароль кассира (выдаёт администратор).
 
   Повторная настройка: «Настройка-сервера-Mac.command» в этой папке.
 
@@ -30,8 +30,8 @@
      (если папка пустая — .exe собирают на Windows, см. ниже)
   3. Запустите установщик → «Далее» → ярлык на рабочем столе.
   4. Откройте «Aurent Cashier».
-  5. Окно «Подключение к серверу» — IP и порт (8080).
-  6. Вход: kassir / password.
+  5. Окно «Подключение к серверу» — адрес и порт 80 (или 443).
+  6. Вход: логин и пароль кассира.
 
   Повторная настройка: «Настройка-сервера-Windows.bat» в этой папке.
 
@@ -44,9 +44,12 @@
 СЕРВЕР
 --------------------------------------------------------------------------------
 
-  На сервере должен работать Aurent backend.
+  На сервере должен работать Aurent (Docker).
   Проверка с кассы в браузере:
-    http://ВАШ_IP:8080/api/v1/actuator/health
+    http://ВАШ_IP/api/v1/actuator/health          (порт 80)
+    https://ВАШ_ДОМЕН/api/v1/actuator/health    (HTTPS, порт 443)
+
+  Должно быть: {"status":"UP"}
 
 --------------------------------------------------------------------------------
 РУЧНОЙ config.json (Mac)
@@ -54,9 +57,24 @@
 
   ~/Library/Application Support/masterpiece-pos-cashier-desktop/config.json
 
+  HTTP (порт 80):
   {
-    "backendOrigin": "http://192.168.1.50:8080",
-    "apiHealthUrl": "http://192.168.1.50:8080/api/v1/actuator/health"
+    "useRemoteUi": true,
+    "cashierUrl": "http://192.168.1.50",
+    "backendOrigin": "http://192.168.1.50",
+    "apiHealthUrl": "http://192.168.1.50/api/v1/actuator/health",
+    "webPort": "80",
+    "apiPort": "80"
+  }
+
+  HTTPS (порт 443):
+  {
+    "useRemoteUi": true,
+    "cashierUrl": "https://pos.example.uz",
+    "backendOrigin": "https://pos.example.uz",
+    "apiHealthUrl": "https://pos.example.uz/api/v1/actuator/health",
+    "webPort": "443",
+    "apiPort": "443"
   }
 
 --------------------------------------------------------------------------------
@@ -67,11 +85,8 @@
     ./scripts/build-cashier.sh
 
   Windows .exe (только на ПК с Windows):
-    cd desktop-cashier
-    npm install
-    npm run build   (сначала соберите web-frontend, см. build-cashier.sh)
-    npm run dist:win
-    Файл: desktop-cashier/release/Aurent Cashier Setup 1.0.0.exe
-    Скопируйте в папку windows/ архива для кассиров.
+    scripts\build-cashier-windows.bat
+
+  Подробнее: desktop-cashier/README.md
 
 ================================================================================

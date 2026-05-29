@@ -67,6 +67,8 @@ services:
       - backend
     ports:
       - "5173:80"
+    volumes:
+      - ./downloads:/var/downloads:ro
 
 volumes:
   pos_pg_data:

@@ -4,12 +4,26 @@
 
 После `bash deploy/git-update.sh` на сервере кассирам достаточно **«Вид → Обновить»** (или перезапустить приложение). Переустановка `.dmg`/`.exe` не нужна, пока не меняется сама оболочка Electron.
 
+**Скачивание для кассиров:** публичная страница `https://ВАШ_СЕРВЕР/install` (без входа).
+
+**Auto-update оболочки:** после настройки сервера приложение проверяет `/downloads/desktop/` на том же хосте.
+
 ## Сборка установщика
 
 ```bash
 cd /Users/timur/Desktop/postsystem
-chmod +x scripts/build-cashier.sh
+chmod +x scripts/build-cashier.sh scripts/build-desktop-release.sh
 ./scripts/build-cashier.sh
+```
+
+CI (Mac + Windows без вашего ПК): GitHub Actions → **Build Desktop Cashier**.
+
+Публикация в `downloads/desktop/` для страницы `/install`:
+
+```bash
+PLATFORM=mac COPY_TO_DOWNLOADS=1 ./scripts/build-desktop-release.sh
+PLATFORM=win COPY_TO_DOWNLOADS=1 ./scripts/build-desktop-release.sh
+bash scripts/generate-desktop-manifest.sh downloads/desktop
 ```
 
 Другой сервер:

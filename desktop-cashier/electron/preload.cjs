@@ -20,4 +20,5 @@ contextBridge.exposeInMainWorld('desktopCashier', {
   openLabelPrinterPicker: () => ipcRenderer.invoke('desktop:open-label-printer-picker'),
   printTestReceipt: () => ipcRenderer.invoke('desktop:print-test-receipt'),
   openBarcodePage: () => ipcRenderer.invoke('desktop:open-barcode-page'),
+  checkForUpdates: () => ipcRenderer.invoke('desktop:check-updates'),
 });

@@ -2,10 +2,10 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff, Loader } from 'lucide-react';
+import { Eye, EyeOff, Loader, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -140,6 +140,15 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-xs text-slate-500">
           {t('login.footer', { year: new Date().getFullYear() })}
+        </p>
+        <p className="mt-3 text-center text-sm">
+          <Link
+            to="/install"
+            className="inline-flex items-center gap-1.5 font-medium text-emerald-600 hover:text-emerald-700"
+          >
+            <Download size={16} />
+            {t('login.downloadCashier')}
+          </Link>
         </p>
       </div>
     </div>
