@@ -111,6 +111,7 @@
     "manifestUnavailable": "Файлы установки пока не загружены на сервер. Обратитесь к администратору.",
     "downloadWindows": "Windows (.exe)",
     "downloadMac": "Mac (.dmg)",
+    "macUniversal": "Intel и Apple Silicon",
     "downloadZip": "Полный архив (ZIP)",
     "notAvailable": "Скоро",
     "optional": "С инструкциями",

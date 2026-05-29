@@ -111,6 +111,7 @@
     "manifestUnavailable": "O‘rnatish fayllari hali serverga yuklanmagan. Administratorga murojaat qiling.",
     "downloadWindows": "Windows (.exe)",
     "downloadMac": "Mac (.dmg)",
+    "macUniversal": "Intel va Apple Silicon",
     "downloadZip": "To‘liq arxiv (ZIP)",
     "notAvailable": "Tez orada",
     "optional": "Qo‘llanma bilan",

@@ -155,7 +155,9 @@ export default function DesktopInstallerPage() {
                     href={manifest?.mac?.url}
                     label={t('installer.downloadMac')}
                     sublabel={
-                      manifest?.mac?.size ? formatBytes(manifest.mac.size) : t('installer.notAvailable')
+                      manifest?.mac?.size
+                        ? `${formatBytes(manifest.mac.size)} · ${t('installer.macUniversal')}`
+                        : t('installer.notAvailable')
                     }
                     icon={Apple}
                     accent={brand.accent}

@@ -28,8 +28,14 @@
     "extraResources": [],
     "mac": {
       "category": "public.app-category.business",
+      "artifactName": "Aurent-Cashier-${version}-mac-universal.${ext}",
       "target": [
-        "dmg"
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
       ]
     },
     "win": {

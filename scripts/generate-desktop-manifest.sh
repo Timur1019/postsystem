@@ -84,11 +84,25 @@ def entry(pattern):
         "sha256": sha256(path),
     }
 
+def entry_first(patterns):
+    for pattern in patterns:
+        hit = entry(pattern)
+        if hit:
+            return hit
+    return None
+
 manifest = {
     "version": version,
     "releasedAt": released_at,
     "windows": entry("*Setup*.exe"),
-    "mac": entry("*.dmg"),
+    "mac": entry_first([
+        "*mac-universal*.dmg",
+        "*universal*.dmg",
+        "*x64*.dmg",
+        "*.dmg",
+    ]),
+    "macIntel": entry("*x64*.dmg"),
+    "macArm": entry("*arm64*.dmg"),
     "zip": entry("Aurent-Cashier-Desktop-*.zip") or entry("Aurent-Cashier-Windows-portable-*.zip"),
 }
 
