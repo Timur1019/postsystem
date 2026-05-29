@@ -101,34 +101,54 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: desktop-mac
-          path: artifacts
+          path: artifacts/mac
 
       - uses: actions/download-artifact@v4
         continue-on-error: true
+        id: download-win
         with:
           name: desktop-win
-          path: artifacts
+          path: artifacts/win
 
       - name: Assemble downloads/desktop
         run: |
           mkdir -p downloads/desktop
-          find artifacts -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.zip' -o -name 'latest*.yml' \) -exec cp {} downloads/desktop/ \;
+          shopt -s nullglob
+          for src in artifacts/mac/downloads/desktop/* artifacts/win/downloads/desktop/*; do
+            [[ -f "$src" ]] && cp -f "$src" downloads/desktop/
+          done
+          shopt -u nullglob
+          find artifacts -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.zip' -o -name 'latest*.yml' \) \
+            -exec cp -f {} downloads/desktop/ \;
           chmod +x scripts/*.sh
           bash scripts/generate-desktop-manifest.sh downloads/desktop
           cp installer/ДЛЯ-КАССИРА.txt downloads/desktop/ || true
-          ls -la downloads/desktop/
+          echo "=== Assembled ==="
+          ls -lah downloads/desktop/
+          python3 -c "import json; m=json.load(open('downloads/desktop/manifest.json')); assert m.get('mac'), 'missing mac'; print('manifest OK', json.dumps({k:m.get(k) and m[k].get('fileName') for k in ('windows','mac','zip')}))"
 
       - name: Deploy to production server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER || 'root' }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: 'downloads/desktop/*'
-          target: '/opt/aurent-pos/downloads/desktop'
-          strip_components: 2
-          overwrite: true
-        continue-on-error: true
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER || 'root' }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 600 /dev/null ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            'mkdir -p /opt/aurent-pos/downloads/desktop'
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
+            downloads/desktop/ \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:/opt/aurent-pos/downloads/desktop/"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            'ls -lah /opt/aurent-pos/downloads/desktop/'
+          rm -f ~/.ssh/deploy_key
 
       - uses: actions/upload-artifact@v4
         with:

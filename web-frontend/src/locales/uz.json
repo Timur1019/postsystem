@@ -104,8 +104,8 @@
     "downloadCashier": "Kassani yuklab olish"
   },
   "installer": {
-    "title": "Aurent Desktop Installer",
-    "subtitle": "Windows yoki Mac uchun kassa dasturini o‘rnating. Interfeys serverdan yuklanadi — UI yangilanishi qayta o‘rnatishsiz.",
+    "title": "DT Group kassasini yuklab olish",
+    "subtitle": "Windows yoki Mac uchun kassa dasturini o‘rnating. Interfeys serverdan yuklanadi — yangilanish qayta o‘rnatishsiz.",
     "loadingVersion": "Versiya yuklanmoqda…",
     "versionLine": "Versiya {{version}} · {{date}}",
     "manifestUnavailable": "O‘rnatish fayllari hali serverga yuklanmagan. Administratorga murojaat qiling.",
@@ -116,7 +116,7 @@
     "optional": "Qo‘llanma bilan",
     "firstRunTitle": "Birinchi ishga tushirish",
     "firstRun1": "Dasturni o‘rnating va «Aurent Cashier» ni oching.",
-    "firstRun2": "Server manzili (IP yoki domen) va port 80 (HTTPS uchun 443) kiriting.",
+    "firstRun2": "Server manzili (IP yoki domen) va port 8081 kiriting.",
     "firstRun3": "Kassir login va paroli bilan kiring.",
     "firstRun4": "Manzilni keyinroq o‘zgartirish: «Ko‘rinish → Server sozlamalari…» yoki Ctrl+,",
     "uiUpdateHint": "Kassa interfeysi: administrator serverni yangilaydi — kassada «Ko‘rinish → Yangilash». Qayta o‘rnatish shart emas.",
