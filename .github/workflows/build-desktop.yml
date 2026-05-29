@@ -10,6 +10,7 @@ on:
       - 'scripts/generate-desktop-manifest.sh'
       - 'scripts/build-cashier.sh'
       - 'installer/**'
+      - '.github/workflows/build-desktop.yml'
   workflow_dispatch:
     inputs:
       server_host:
@@ -23,8 +24,8 @@ concurrency:
 
 env:
   SERVER_HOST: ${{ github.event.inputs.server_host || secrets.SERVER_HOST || '111.88.132.126' }}
-  SERVER_WEB_PORT: '80'
-  SERVER_API_PORT: '80'
+  SERVER_WEB_PORT: '8081'
+  SERVER_API_PORT: '8080'
   INCLUDE_WEB_DIST: '0'
 
 jobs:
@@ -42,7 +43,8 @@ jobs:
       - name: Build macOS installer
         run: |
           chmod +x scripts/*.sh
-          PLATFORM=mac COPY_TO_DOWNLOADS=1 DESKTOP_UPDATE_URL="http://${SERVER_HOST}/downloads/desktop/" \
+          PLATFORM=mac COPY_TO_DOWNLOADS=1 \
+            DESKTOP_UPDATE_URL="http://${SERVER_HOST}:${SERVER_WEB_PORT}/downloads/desktop/" \
             bash scripts/build-desktop-release.sh
 
       - uses: actions/upload-artifact@v4
@@ -51,10 +53,12 @@ jobs:
           path: |
             downloads/desktop/*.dmg
             downloads/desktop/latest-mac.yml
+            downloads/desktop/manifest.json
           if-no-files-found: error
 
   build-windows:
     runs-on: windows-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -70,38 +74,45 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
           chmod +x scripts/*.sh
-          PLATFORM=win COPY_TO_DOWNLOADS=1 DESKTOP_UPDATE_URL="http://${SERVER_HOST}/downloads/desktop/" \
+          PLATFORM=win COPY_TO_DOWNLOADS=1 \
+            DESKTOP_UPDATE_URL="http://${SERVER_HOST}:${SERVER_WEB_PORT}/downloads/desktop/" \
             bash scripts/build-desktop-release.sh
 
       - uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: desktop-win
           path: |
             downloads/desktop/*Setup*.exe
+            downloads/desktop/Aurent-Cashier-Windows-portable-*.zip
             downloads/desktop/latest.yml
-          if-no-files-found: error
+          if-no-files-found: warn
 
   package-and-deploy:
     needs: [build-mac, build-windows]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    if: |
+      always() &&
+      needs.build-mac.result == 'success' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - uses: actions/download-artifact@v4
         with:
-          pattern: desktop-*
+          name: desktop-mac
           path: artifacts
-          merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: desktop-win
+          path: artifacts
 
       - name: Assemble downloads/desktop
         run: |
           mkdir -p downloads/desktop
-          find artifacts -type f \( -name '*.dmg' -o -name '*.exe' -o -name 'latest*.yml' \) -exec cp {} downloads/desktop/ \;
+          find artifacts -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.zip' -o -name 'latest*.yml' \) -exec cp {} downloads/desktop/ \;
           chmod +x scripts/*.sh
           bash scripts/generate-desktop-manifest.sh downloads/desktop
           cp installer/ДЛЯ-КАССИРА.txt downloads/desktop/ || true

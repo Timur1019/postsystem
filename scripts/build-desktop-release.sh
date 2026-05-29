@@ -82,7 +82,27 @@ case "$TARGET" in
     npm run dist:mac
     ;;
   win)
-    npm run dist:win
+    rm -rf "${LOCALAPPDATA:-}/electron-builder/Cache/winCodeSign" 2>/dev/null || true
+    export CSC_IDENTITY_AUTO_DISCOVERY="${CSC_IDENTITY_AUTO_DISCOVERY:-false}"
+    if npm run dist:win; then
+      echo "==> Windows NSIS installer OK"
+    else
+      echo "==> NSIS failed — portable ZIP (win-unpacked)..."
+      npm run dist:win:dir
+      UNPACKED="$ROOT/desktop-cashier/release/win-unpacked"
+      PORTABLE="$ROOT/downloads/desktop/Aurent-Cashier-Windows-portable-${VERSION}.zip"
+      mkdir -p "$ROOT/downloads/desktop"
+      if [[ ! -d "$UNPACKED" ]]; then
+        echo "Ошибка: нет win-unpacked" >&2
+        exit 1
+      fi
+      if command -v zip >/dev/null 2>&1; then
+        (cd "$UNPACKED" && zip -r -q "$PORTABLE" .)
+      else
+        powershell.exe -NoProfile -Command "Compress-Archive -Path '$UNPACKED/*' -DestinationPath '$PORTABLE' -Force"
+      fi
+      echo "==> Portable: $PORTABLE"
+    fi
     ;;
   *)
     echo "Unknown PLATFORM: $TARGET" >&2
