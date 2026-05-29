@@ -14,7 +14,24 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-VERSION="${VERSION:-$(node -p "require('./desktop-cashier/package.json').version")}"
+read_version() {
+  local pkg="$ROOT/desktop-cashier/package.json"
+  if [[ ! -f "$pkg" ]]; then
+    echo "1.0.0"
+    return
+  fi
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c "import json,sys; print(json.load(open(sys.argv[1],encoding='utf-8'))['version'])" "$pkg"
+    return
+  fi
+  if command -v node >/dev/null 2>&1; then
+    (cd "$ROOT/desktop-cashier" && node -p "require('./package.json').version")
+    return
+  fi
+  grep -m1 '"version"' "$pkg" | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/'
+}
+
+VERSION="${VERSION:-$(read_version)}"
 SERVER_HOST="${SERVER_HOST:-111.88.132.126}"
 SERVER_WEB_PORT="${SERVER_WEB_PORT:-80}"
 SERVER_API_PORT="${SERVER_API_PORT:-80}"

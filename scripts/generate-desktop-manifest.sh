@@ -9,19 +9,19 @@ RELEASED_AT="${RELEASED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 
 read_version() {
   local pkg="$ROOT/desktop-cashier/package.json"
-  if [[ -f "$pkg" ]]; then
-    if command -v node >/dev/null 2>&1; then
-      node -p "require('$pkg').version"
-      return
-    fi
-    if command -v python3 >/dev/null 2>&1; then
-      python3 -c "import json; print(json.load(open('$pkg'))['version'])"
-      return
-    fi
-    grep -m1 '"version"' "$pkg" | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/'
+  if [[ ! -f "$pkg" ]]; then
+    echo "1.0.0"
     return
   fi
-  echo "1.0.0"
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c "import json,sys; print(json.load(open(sys.argv[1],encoding='utf-8'))['version'])" "$pkg"
+    return
+  fi
+  if command -v node >/dev/null 2>&1; then
+    (cd "$ROOT/desktop-cashier" && node -p "require('./package.json').version")
+    return
+  fi
+  grep -m1 '"version"' "$pkg" | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/'
 }
 
 VERSION="${VERSION:-$(read_version)}"

@@ -10,9 +10,9 @@
     "start:dev": "POS_REMOTE_UI=1 POS_CASHIER_URL=http://localhost:5173 electron .",
     "dev": "POS_EMBEDDED=1 electron .",
     "dist": "electron-builder --config electron-builder.config.cjs",
-    "dist:mac": "electron-builder --mac --config electron-builder.config.cjs",
-    "dist:win": "electron-builder --win --config electron-builder.config.cjs --config.win.signAndEditExecutable=false --config.win.verifyUpdateCodeSignature=false",
-    "dist:win:dir": "electron-builder --win dir --config electron-builder.config.cjs --config.win.signAndEditExecutable=false"
+    "dist:mac": "electron-builder --mac --config electron-builder.config.cjs --publish never",
+    "dist:win": "electron-builder --win --config electron-builder.config.cjs --publish never --config.win.signAndEditExecutable=false --config.win.verifyUpdateCodeSignature=false",
+    "dist:win:dir": "electron-builder --win dir --config electron-builder.config.cjs --publish never --config.win.signAndEditExecutable=false"
   },
   "build": {
     "appId": "com.aurent.pos.cashier",
