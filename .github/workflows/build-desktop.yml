@@ -140,21 +140,31 @@ jobs:
           set -euo pipefail
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          if [[ -n "${DEPLOY_SSH_KEY_B64:-}" ]]; then
-            echo "$DEPLOY_SSH_KEY_B64" | tr -d '[:space:]' | base64 -d > ~/.ssh/deploy_key
+          write_key=false
+          if [[ -n "${DEPLOY_SSH_KEY:-}" ]] && [[ "$DEPLOY_SSH_KEY" == *"BEGIN"* ]]; then
+            printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+            write_key=true
+          elif [[ -n "${DEPLOY_SSH_KEY_B64:-}" ]]; then
+            if [[ "$DEPLOY_SSH_KEY_B64" == ssh-* ]]; then
+              echo "::error::В DEPLOY_SSH_KEY_B64 вставлен ПУБЛИЧНЫЙ ключ (ssh-ed25519...). Удалите DEPLOY_SSH_KEY_B64 и создайте DEPLOY_SSH_KEY: cat ~/.ssh/aurent-deploy | pbcopy"
+              exit 1
+            fi
+            if ! echo "$DEPLOY_SSH_KEY_B64" | tr -d '[:space:]' | base64 -d > ~/.ssh/deploy_key 2>/dev/null; then
+              echo "::error::DEPLOY_SSH_KEY_B64 — неверный base64. На Mac: base64 -i ~/.ssh/aurent-deploy | tr -d '[:space:]' | pbcopy"
+              exit 1
+            fi
+            write_key=true
           elif [[ -n "${DEPLOY_SSH_KEY:-}" ]]; then
             printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
-            if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
-              printf '%b' "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
-            fi
-          else
-            echo "::error::Нет DEPLOY_SSH_KEY_B64 или DEPLOY_SSH_KEY в secrets репозитория."
+            write_key=true
+          fi
+          if [[ "$write_key" != true ]]; then
+            echo "::error::Нет DEPLOY_SSH_KEY (приватный ключ целиком) или DEPLOY_SSH_KEY_B64."
             exit 1
           fi
           chmod 600 ~/.ssh/deploy_key
           if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
-            echo "::error::SSH-ключ не читается. Создайте secret DEPLOY_SSH_KEY_B64:"
-            echo "  base64 -i ~/.ssh/aurent-deploy | tr -d '[:space:]'"
+            echo "::error::SSH-ключ не читается. GitHub → Secrets → DEPLOY_SSH_KEY → вставьте вывод: cat ~/.ssh/aurent-deploy"
             exit 1
           fi
           echo "SSH key OK: $(ssh-keygen -l -f ~/.ssh/deploy_key | awk '{print $2}')"
