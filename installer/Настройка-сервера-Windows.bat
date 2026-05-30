@@ -9,9 +9,9 @@ echo   Aurent Касса - смена адреса сервера
 echo ============================================
 echo.
 set /p HOST=Адрес сервера (IP или домен, без http://) [111.88.132.126]: 
-set /p PORT=Порт API [80]: 
+set /p PORT=Порт API [8081]: 
 if "%HOST%"=="" set HOST=111.88.132.126
-if "%PORT%"=="" set PORT=80
+if "%PORT%"=="" set PORT=8081
 
 rem HTTPS для 443/8443 (как в мастере первого запуска)
 set BACKEND=http://%HOST%:%PORT%

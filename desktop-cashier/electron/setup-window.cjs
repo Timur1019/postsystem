@@ -6,8 +6,8 @@ const { resolveWebDist } = require('./embedded-server.cjs');
 const { buildOrigin, buildHealthUrl, parseServerUrl } = require('./server-url.cjs');
 const { writeUserConfig } = require('./config.cjs');
 
-const DEFAULT_WEB_PORT = process.env.POS_WEB_PORT || '443';
-const DEFAULT_API_PORT = process.env.POS_API_PORT || '443';
+const DEFAULT_WEB_PORT = process.env.POS_WEB_PORT || '8081';
+const DEFAULT_API_PORT = process.env.POS_API_PORT || '8081';
 
 function configPath() {
   return path.join(app.getPath('userData'), 'config.json');
@@ -56,21 +56,21 @@ function buildSetupHtml(current) {
     ? 'Укажите адрес магазина (как сказал администратор). Обычно это IP или имя сервера — ничего сложного настраивать не нужно.'
     : 'Укажите адрес сервера магазина. Интерфейс загрузится из сети — после обновления на сервере нажмите «Вид → Обновить».';
   const hint = hasEmbedded
-    ? 'Порт: обычно 80 (сайт и API через один адрес). 8080 — только если администратор открыл его отдельно.'
-    : 'Для HTTPS (aurent.uz): порт сайта и API — <strong>443</strong>. Для HTTP без шифрования — 80. Порты сайта и API обычно одинаковые.';
-  const displayApiPort = apiPort === '8080' ? '443' : apiPort;
+    ? 'Порт сервера: обычно <strong>8081</strong> (сайт и API на одном адресе). Если не работает — спросите администратора.'
+    : 'Порт сайта и API: обычно <strong>8081</strong>. Для HTTPS — 443. Не используйте порт 80, если администратор не сказал иначе.';
+  const displayApiPort = apiPort;
   const portFields = hasEmbedded
-    ? `<label for="apiPort">Порт сервера (обычно 80)</label>
-    <input id="apiPort" name="apiPort" type="number" placeholder="80" value="${displayApiPort}" required />
-    <input type="hidden" id="webPort" value="80" />`
+    ? `<label for="apiPort">Порт сервера (обычно 8081)</label>
+    <input id="apiPort" name="apiPort" type="number" placeholder="8081" value="${displayApiPort}" required />
+    <input type="hidden" id="webPort" value="${webPort}" />`
     : `<div class="row">
       <div>
         <label for="webPort">Порт сайта</label>
-        <input id="webPort" name="webPort" type="number" placeholder="443" value="${webPort}" required />
+        <input id="webPort" name="webPort" type="number" placeholder="8081" value="${webPort}" required />
       </div>
       <div>
         <label for="apiPort">Порт API</label>
-        <input id="apiPort" name="apiPort" type="number" placeholder="443" value="${apiPort}" required />
+        <input id="apiPort" name="apiPort" type="number" placeholder="8081" value="${apiPort}" required />
       </div>
     </div>`;
   return `data:text/html;charset=utf-8,${encodeURIComponent(`<!DOCTYPE html>
@@ -116,8 +116,8 @@ function buildSetupHtml(current) {
       e.preventDefault();
       const host = document.getElementById('host').value.trim();
       const webEl = document.getElementById('webPort');
-      const webPort = webEl ? (webEl.value.trim() || '80') : '80';
-      const apiPort = document.getElementById('apiPort').value.trim() || '80';
+      const apiPort = document.getElementById('apiPort').value.trim() || '8081';
+      const webPort = webEl ? (webEl.value.trim() || apiPort) : apiPort;
       window.setupApi.save({ host, webPort, apiPort });
     });
   </script>

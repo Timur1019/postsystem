@@ -6,9 +6,9 @@ echo ""
 echo "=== Aurent Cashier — адрес сервера ==="
 echo ""
 read -r -p "IP или домен сервера [111.88.132.126]: " HOST
-read -r -p "Порт сайта и API [80]: " PORT
+read -r -p "Порт сайта и API [8081]: " PORT
 HOST="${HOST:-111.88.132.126}"
-PORT="${PORT:-80}"
+PORT="${PORT:-8081}"
 
 HOST="${HOST#http://}"
 HOST="${HOST#https://}"
@@ -30,12 +30,13 @@ fi
 mkdir -p "$CONFIG_DIR"
 cat > "$CONFIG_FILE" <<EOF
 {
-  "useRemoteUi": true,
-  "cashierUrl": "${ORIGIN}",
+  "useRemoteUi": false,
+  "cashierUrl": "http://127.0.0.1:5199",
   "backendOrigin": "${ORIGIN}",
   "apiHealthUrl": "${HEALTH}",
   "webPort": "${PORT}",
-  "apiPort": "${PORT}"
+  "apiPort": "${PORT}",
+  "embeddedPort": 5199
 }
 EOF
 

@@ -243,7 +243,7 @@ function collectApiHealthUrls(cfg) {
     const host = u.hostname;
     if (host && host !== '127.0.0.1' && host !== 'localhost') {
       const seen = new Set(urls);
-      for (const port of ['443', '80', '8080']) {
+      for (const port of ['8081', '443', '80', '8080']) {
         const line = buildHealthUrl(buildOrigin(host, port));
         if (!seen.has(line)) urls.push(line);
       }
@@ -318,7 +318,7 @@ async function waitForServices() {
         `Проверялись адреса:\n${tried}\n\n` +
         'Что сделать:\n' +
         '• Укажите IP сервера без http://\n' +
-        '• HTTPS (aurent.uz): порт **443**, HTTP — **80**\n' +
+        '• HTTPS (aurent.uz): порт **443**, HTTP — **8081** (не 80)\n' +
         '• В браузере на этом ПК откройте:\n' +
         `  https://ВАШ_ДОМЕН/api/v1/actuator/health\n` +
         '  Должно быть: {"status":"UP"}\n' +
@@ -637,20 +637,21 @@ function createWindow() {
   mainWindow.webContents.on('will-navigate', guardNavigation);
   mainWindow.webContents.on('will-redirect', guardNavigation);
 
-  if (process.platform === 'win32') {
-    mainWindow.setMenuBarVisibility(false);
-  }
+  mainWindow.webContents.on('did-fail-load', (_event, code, description, url) => {
+    if (code === -3) return;
+    dialog.showErrorBox(
+      'Aurent — Касса',
+      `Не удалось загрузить страницу:\n${url}\n\n${description} (${code})\n\n` +
+        'Проверьте адрес сервера (Вид → Настройка сервера): IP 111.88.132.126, порт 8081.'
+    );
+  });
 
   mainWindow.loadURL(`${config.cashierUrl}/login`);
 }
 
 app.whenReady().then(async () => {
   registerDesktopIpc();
-  if (process.platform === 'darwin') {
-    buildAppMenu();
-  } else {
-    Menu.setApplicationMenu(null);
-  }
+  buildAppMenu();
   config = loadConfig();
 
   if (!hasUserServerConfig()) {

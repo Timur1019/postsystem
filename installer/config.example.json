@@ -1,8 +1,9 @@
 {
-  "useRemoteUi": true,
-  "cashierUrl": "http://192.168.1.50",
-  "backendOrigin": "http://192.168.1.50",
-  "apiHealthUrl": "http://192.168.1.50/api/v1/actuator/health",
-  "webPort": "80",
-  "apiPort": "80"
+  "useRemoteUi": false,
+  "cashierUrl": "http://127.0.0.1:5199",
+  "backendOrigin": "http://111.88.132.126:8081",
+  "apiHealthUrl": "http://111.88.132.126:8081/api/v1/actuator/health",
+  "webPort": "8081",
+  "apiPort": "8081",
+  "embeddedPort": 5199
 }

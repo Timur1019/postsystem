@@ -5,8 +5,8 @@
 СХЕМА:
 
   [Ваш сервер]                    [Компьютер кассира]
-   :80 — сайт и касса      ◄────   Aurent Cashier (.dmg / .exe)
-   API через /api на :80           интерфейс грузится с сервера
+   :8081 — сайт и касса      ◄────   Aurent Cashier (.dmg / .exe)
+   API через /api на :8081           интерфейс внутри программы
 
 --------------------------------------------------------------------------------
 УСТАНОВКА (Mac)
@@ -15,7 +15,7 @@
   1. Распакуйте ZIP.
   2. mac/Aurent Cashier-1.0.0.dmg → перетащите в «Программы».
   3. Запустите «Aurent Cashier».
-  4. Укажите IP или домен сервера, порт 80 (или 443 для HTTPS).
+  4. Укажите IP или домен сервера, порт 8081.
   5. Вход: логин и пароль кассира (выдаёт администратор).
 
   Повторная настройка: «Настройка-сервера-Mac.command» в этой папке.
@@ -30,7 +30,7 @@
      (если папка пустая — .exe собирают на Windows, см. ниже)
   3. Запустите установщик → «Далее» → ярлык на рабочем столе.
   4. Откройте «Aurent Cashier».
-  5. Окно «Подключение к серверу» — адрес и порт 80 (или 443).
+  5. Окно «Подключение к серверу» — адрес и порт 8081.
   6. Вход: логин и пароль кассира.
 
   Повторная настройка: «Настройка-сервера-Windows.bat» в этой папке.
@@ -46,7 +46,7 @@
 
   На сервере должен работать Aurent (Docker).
   Проверка с кассы в браузере:
-    http://ВАШ_IP/api/v1/actuator/health          (порт 80)
+    http://ВАШ_IP:8081/api/v1/actuator/health
     https://ВАШ_ДОМЕН/api/v1/actuator/health    (HTTPS, порт 443)
 
   Должно быть: {"status":"UP"}
@@ -57,24 +57,26 @@
 
   ~/Library/Application Support/masterpiece-pos-cashier-desktop/config.json
 
-  HTTP (порт 80):
+  HTTP (порт 8081):
   {
-    "useRemoteUi": true,
-    "cashierUrl": "http://192.168.1.50",
-    "backendOrigin": "http://192.168.1.50",
-    "apiHealthUrl": "http://192.168.1.50/api/v1/actuator/health",
-    "webPort": "80",
-    "apiPort": "80"
+    "useRemoteUi": false,
+    "cashierUrl": "http://127.0.0.1:5199",
+    "backendOrigin": "http://192.168.1.50:8081",
+    "apiHealthUrl": "http://192.168.1.50:8081/api/v1/actuator/health",
+    "webPort": "8081",
+    "apiPort": "8081",
+    "embeddedPort": 5199
   }
 
   HTTPS (порт 443):
   {
-    "useRemoteUi": true,
-    "cashierUrl": "https://pos.example.uz",
+    "useRemoteUi": false,
+    "cashierUrl": "http://127.0.0.1:5199",
     "backendOrigin": "https://pos.example.uz",
     "apiHealthUrl": "https://pos.example.uz/api/v1/actuator/health",
     "webPort": "443",
-    "apiPort": "443"
+    "apiPort": "443",
+    "embeddedPort": 5199
   }
 
 --------------------------------------------------------------------------------
