@@ -127,31 +127,32 @@ jobs:
           ls -lah downloads/desktop/
           python3 -c "import json; m=json.load(open('downloads/desktop/manifest.json')); assert m.get('mac'), 'missing mac'; print('manifest OK', json.dumps({k:m.get(k) and m[k].get('fileName') for k in ('windows','mac','zip')}))"
 
-      - name: Deploy to production server
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER || 'root' }}
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
-            "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            'mkdir -p /opt/aurent-pos/downloads/desktop'
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
-            downloads/desktop/ \
-            "${DEPLOY_USER}@${DEPLOY_HOST}:/opt/aurent-pos/downloads/desktop/"
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
-            "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            'ls -lah /opt/aurent-pos/downloads/desktop/'
-          rm -f ~/.ssh/deploy_key
-
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-release-bundle
           path: downloads/desktop/
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Deploy to production server
+        continue-on-error: true
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER || 'root' }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -o StrictHostKeyChecking=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            'mkdir -p /opt/aurent-pos/downloads/desktop'
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=yes" \
+            downloads/desktop/ \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:/opt/aurent-pos/downloads/desktop/"
+          ssh -o StrictHostKeyChecking=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            'ls -lah /opt/aurent-pos/downloads/desktop/'
