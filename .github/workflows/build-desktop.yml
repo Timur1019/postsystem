@@ -138,36 +138,60 @@ jobs:
           DEPLOY_SSH_KEY_B64: ${{ secrets.DEPLOY_SSH_KEY_B64 }}
         run: |
           set -euo pipefail
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          write_key=false
-          if [[ -n "${DEPLOY_SSH_KEY:-}" ]] && [[ "$DEPLOY_SSH_KEY" == *"BEGIN"* ]]; then
-            printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
-            write_key=true
-          elif [[ -n "${DEPLOY_SSH_KEY_B64:-}" ]]; then
-            if [[ "$DEPLOY_SSH_KEY_B64" == ssh-* ]]; then
-              echo "::error::В DEPLOY_SSH_KEY_B64 вставлен ПУБЛИЧНЫЙ ключ (ssh-ed25519...). Удалите DEPLOY_SSH_KEY_B64 и создайте DEPLOY_SSH_KEY: cat ~/.ssh/aurent-deploy | pbcopy"
-              exit 1
-            fi
-            if ! echo "$DEPLOY_SSH_KEY_B64" | tr -d '[:space:]' | base64 -d > ~/.ssh/deploy_key 2>/dev/null; then
-              echo "::error::DEPLOY_SSH_KEY_B64 — неверный base64. На Mac: base64 -i ~/.ssh/aurent-deploy | tr -d '[:space:]' | pbcopy"
-              exit 1
-            fi
-            write_key=true
-          elif [[ -n "${DEPLOY_SSH_KEY:-}" ]]; then
-            printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
-            write_key=true
-          fi
-          if [[ "$write_key" != true ]]; then
-            echo "::error::Нет DEPLOY_SSH_KEY (приватный ключ целиком) или DEPLOY_SSH_KEY_B64."
-            exit 1
-          fi
-          chmod 600 ~/.ssh/deploy_key
-          if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
-            echo "::error::SSH-ключ не читается. GitHub → Secrets → DEPLOY_SSH_KEY → вставьте вывод: cat ~/.ssh/aurent-deploy"
-            exit 1
-          fi
-          echo "SSH key OK: $(ssh-keygen -l -f ~/.ssh/deploy_key | awk '{print $2}')"
+          python3 <<'PY'
+          import base64
+          import os
+          import subprocess
+          from pathlib import Path
+
+          raw = os.environ.get("DEPLOY_SSH_KEY", "").strip()
+          b64 = os.environ.get("DEPLOY_SSH_KEY_B64", "").strip()
+          key_path = Path.home() / ".ssh" / "deploy_key"
+          key_path.parent.mkdir(mode=0o700, exist_ok=True)
+
+          def validate(path: Path) -> None:
+              path.chmod(0o600)
+              subprocess.run(
+                  ["ssh-keygen", "-y", "-f", str(path)],
+                  check=True,
+                  stdout=subprocess.DEVNULL,
+                  stderr=subprocess.DEVNULL,
+              )
+
+          if b64:
+              if b64.startswith("ssh-"):
+                  raise SystemExit(
+                      "DEPLOY_SSH_KEY_B64 содержит ПУБЛИЧНЫЙ ключ (ssh-ed25519...). "
+                      "На Mac: base64 -i ~/.ssh/aurent-deploy | tr -d '[:space:]' | pbcopy"
+                  )
+              try:
+                  data = base64.b64decode("".join(b64.split()), validate=True)
+              except Exception as exc:
+                  raise SystemExit(f"DEPLOY_SSH_KEY_B64 — неверный base64: {exc}") from exc
+              key_path.write_bytes(data)
+              validate(key_path)
+          elif raw and "BEGIN" in raw:
+              text = raw.replace("\r\n", "\n").replace("\r", "\n")
+              if not text.endswith("\n"):
+                  text += "\n"
+              key_path.write_text(text, encoding="utf-8")
+              try:
+                  validate(key_path)
+              except subprocess.CalledProcessError:
+                  raise SystemExit(
+                      "DEPLOY_SSH_KEY повреждён (GitHub часто ломает переносы строк). "
+                      "Удалите DEPLOY_SSH_KEY и создайте DEPLOY_SSH_KEY_B64: "
+                      "base64 -i ~/.ssh/aurent-deploy | tr -d '[:space:]' | pbcopy"
+                  ) from None
+          else:
+              raise SystemExit(
+                  "Нет рабочего secret. Создайте DEPLOY_SSH_KEY_B64:\n"
+                  "  base64 -i ~/.ssh/aurent-deploy | tr -d '[:space:]' | pbcopy"
+              )
+
+          fp = subprocess.check_output(["ssh-keygen", "-l", "-f", str(key_path)], text=True)
+          print("SSH key OK:", fp.split()[1] if fp else fp)
+          PY
 
       - name: Deploy to production server
         continue-on-error: true
