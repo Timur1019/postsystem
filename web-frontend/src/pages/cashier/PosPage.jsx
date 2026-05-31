@@ -311,7 +311,7 @@ export default function PosPage() {
         orderDiscountAmount: getCheckoutOrderDiscountAmount(),
         orderDiscountPercent: getCheckoutOrderDiscountPercent(),
       }),
-    onSuccess: async (res) => {
+    onSuccess: async (res, payment) => {
       clearCart();
       setPayOpen(false);
       setSelectedLineId(null);
@@ -320,15 +320,21 @@ export default function PosPage() {
       qc.invalidateQueries({ queryKey: ['my-sales'] });
       qc.invalidateQueries({ queryKey: ['sales-ledger'] });
       const receiptNum = res.data.receiptNumber;
-      if (isDesktopCashier()) {
-        toast.success(t('pos.saleSuccess'));
-        setAutoPrintSale(res.data);
+      const shouldPrint = payment?.printReceipt !== false;
+      toast.success(t('pos.saleSuccess'));
+      if (shouldPrint) {
+        if (isDesktopCashier()) {
+          setAutoPrintSale(res.data);
+        } else {
+          navigate(`/receipt/${receiptNum}`, {
+            state: { autoPrint: true, fromCashier: true },
+          });
+        }
         return;
       }
-      toast.success(t('pos.saleSuccess'));
-      navigate(`/receipt/${receiptNum}`, {
-        state: { autoPrint: true, fromCashier: true },
-      });
+      if (!isDesktopCashier()) {
+        navigate(`/receipt/${receiptNum}`, { state: { fromCashier: true } });
+      }
     },
     onError: (e) => {
       const msg = e.response?.data?.message ?? t('pos.saleFailed');

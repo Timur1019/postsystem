@@ -1,4 +1,3 @@
-// Оплата в правой колонке кассы (register rail).
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
@@ -14,10 +13,15 @@ import {
   Check,
   Building2,
   Heart,
+  Printer,
 } from 'lucide-react';
 import NumericKeypad, { formatKeypadAmount } from './NumericKeypad';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import { clampPayAmount, exceedsPayAmount, round2 } from '../../utils/taxAmounts';
+import {
+  isPosReceiptPrintEnabled,
+  setPosReceiptPrintEnabled,
+} from '../../utils/receiptPrintPreference';
 
 const amountStr = (n) => {
   const v = round2(n);
@@ -59,6 +63,7 @@ export default function PosPaymentFlow({
   const [payMethod, setPayMethod] = useState(null);
   const [tendered, setTendered] = useState('');
   const [cashPortion, setCashPortion] = useState('');
+  const [printReceiptEnabled, setPrintReceiptEnabled] = useState(isPosReceiptPrintEnabled);
 
   const reset = () => {
     setStep('receipt');
@@ -66,6 +71,7 @@ export default function PosPaymentFlow({
     setPayMethod(null);
     setTendered('');
     setCashPortion('');
+    setPrintReceiptEnabled(isPosReceiptPrintEnabled());
   };
 
   const handleClose = () => {
@@ -140,6 +146,7 @@ export default function PosPaymentFlow({
       cashAmount: cash,
       cardAmount: card,
       amountTendered: cash,
+      printReceipt: printReceiptEnabled,
     });
   };
 
@@ -168,6 +175,7 @@ export default function PosPaymentFlow({
       receiptType,
       cardType: type,
       amountTendered: toPay,
+      printReceipt: printReceiptEnabled,
     });
   };
 
@@ -179,6 +187,15 @@ export default function PosPaymentFlow({
       receiptType,
       cardType: null,
       amountTendered: amount,
+      printReceipt: printReceiptEnabled,
+    });
+  };
+
+  const togglePrintReceipt = () => {
+    setPrintReceiptEnabled((prev) => {
+      const next = !prev;
+      setPosReceiptPrintEnabled(next);
+      return next;
     });
   };
 
@@ -327,6 +344,17 @@ export default function PosPaymentFlow({
                     <span className="pos-pay-method-step__due-value">{fmt(toPay)}</span>
                   </div>
                 </div>
+                <label className="pos-pay-print-toggle">
+                  <input
+                    type="checkbox"
+                    className="pos-pay-print-toggle__input"
+                    checked={printReceiptEnabled}
+                    onChange={togglePrintReceipt}
+                  />
+                  <span className="pos-pay-print-toggle__box" aria-hidden />
+                  <Printer size={20} strokeWidth={1.75} className="pos-pay-print-toggle__icon" aria-hidden />
+                  <span className="pos-pay-print-toggle__text">{t('pos.printReceiptAfterSale')}</span>
+                </label>
                 <div className="pos-pay-method-cards pos-pay-method-cards--register-stack pos-pay-method-cards--terminal">
                   {PAY_METHODS.map(({ id, icon: Icon, labelKey, action }) => (
                     <button

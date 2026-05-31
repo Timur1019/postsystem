@@ -435,16 +435,10 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
   const canReturn = selectedRow && selectedRow.status !== 'VOIDED';
   const canPrint = Boolean(sale && receiptNumber);
 
-  const handlePrint = async () => {
+  const handlePrint = () => {
     if (!canPrint || printing) return;
     setPrinting(true);
-    try {
-      setPrintToken(Date.now());
-    } catch (e) {
-      toast.error(e?.message ?? t('receipt.printFailed'), { id: 'cashier-sales-print' });
-    } finally {
-      setPrinting(false);
-    }
+    setPrintToken(Date.now());
   };
 
   return (
@@ -517,12 +511,17 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
           onPrinted={() => {
             toast.success(t('receipt.printSent'), { id: 'cashier-sales-print' });
             setPrintToken(null);
+            setPrinting(false);
           }}
           onError={() => {
             toast.error(t('receipt.printFailed'), { id: 'cashier-sales-print' });
             setPrintToken(null);
+            setPrinting(false);
           }}
-          onClose={() => setPrintToken(null)}
+          onClose={() => {
+            setPrintToken(null);
+            setPrinting(false);
+          }}
         >
           <FiscalReceiptBody sale={sale} />
         </ThermalReportPrintPortal>
