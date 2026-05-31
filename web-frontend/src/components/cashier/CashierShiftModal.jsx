@@ -105,7 +105,7 @@ export default function CashierShiftModal({
 
   return (
     <>
-      <PosModalPortal open={open && !printReport} onClose={onClose}>
+      <PosModalPortal open={open} onClose={onClose}>
         <div
           className="pos-pay-modal pos-pay-modal--shift pos-pay-modal--shift-terminal"
           onMouseDown={(e) => e.stopPropagation()}

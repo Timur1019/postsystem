@@ -9,13 +9,16 @@ export const PRINT_THERMAL_CLASS = 'print-thermal-only';
 /** Доп. класс: печать из модалки журнала (скрывает #root). */
 export const PRINT_THERMAL_MODAL_CLASS = 'print-thermal-modal';
 
-/** Electron: дублируем @media print на экран для webContents.print({ silent: true }). */
 export const ELECTRON_SILENT_PRINT_CLASS = 'electron-silent-print';
+
+/** Только автопечать после продажи: тёмный фон под модалкой, без белой вспышки. */
+export const ELECTRON_AUTO_PRINT_JOB_CLASS = 'electron-auto-print-job';
 
 const THERMAL_PRINT_CLASSES = new Set([
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
   ELECTRON_SILENT_PRINT_CLASS,
+  ELECTRON_AUTO_PRINT_JOB_CLASS,
   'print-z-report-only',
   'print-shift-report-only',
 ]);

@@ -58,6 +58,13 @@ html.electron-silent-print body {
   padding: 0 !important;
   background: white !important;
 }
+
+/* Автопечать: экран как у модалки «Печатается…», без белого кадра */
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job,
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job body {
+  background: rgba(15, 23, 42, 0.58) !important;
+}
+
 html.electron-silent-print.print-thermal-only .receipt-page,
 html.electron-silent-print.print-thermal-only .receipt-page--silent,
 html.electron-silent-print.print-thermal-only .receipt-page__paper,
@@ -79,11 +86,17 @@ html.electron-silent-print.print-thermal-only #receipt-print-area * {
   visibility: visible !important;
 }
 html.electron-silent-print.print-thermal-modal #root,
-html.electron-silent-print.print-thermal-modal .pos-pay-overlay,
+html.electron-silent-print.print-thermal-modal .pos-pay-overlay:not(.receipt-printing-overlay),
 html.electron-silent-print.print-thermal-modal [data-sonner-toaster],
-html.electron-silent-print.print-thermal-modal body > *:not(.fiscal-print-scene) {
+html.electron-silent-print.print-thermal-modal
+  body > *:not(.fiscal-print-scene):not(.receipt-printing-overlay) {
   display: none !important;
   visibility: hidden !important;
+}
+html.electron-silent-print.print-thermal-modal .receipt-printing-overlay {
+  display: flex !important;
+  visibility: visible !important;
+  z-index: 2147483647 !important;
 }
 html.electron-silent-print.print-thermal-modal .fiscal-print-scene,
 html.electron-silent-print.print-thermal-modal .thermal-report-print-host,

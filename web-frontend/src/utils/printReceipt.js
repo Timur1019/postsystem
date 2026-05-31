@@ -3,6 +3,7 @@ import {
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
   ELECTRON_SILENT_PRINT_CLASS,
+  ELECTRON_AUTO_PRINT_JOB_CLASS,
 } from './printWithHtmlClass';
 
 /** Классы печати — снимаем после job. */
@@ -10,6 +11,7 @@ const PRINT_HTML_CLASSES = [
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
   ELECTRON_SILENT_PRINT_CLASS,
+  ELECTRON_AUTO_PRINT_JOB_CLASS,
 ];
 
 export function isDesktopCashier() {
@@ -75,7 +77,11 @@ async function waitForReceiptDomReady({ useModalShell = false } = {}) {
     const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
     const imgs = Array.from(area.querySelectorAll('img'));
     const imgsReady = imgs.length === 0 || imgs.every((img) => img.complete);
-    if (textLen >= 80 && h >= 120 && imgsReady) {
+    const isShiftReport =
+      area.classList.contains('receipt-print-root') && !document.getElementById('receipt-print-area');
+    const minText = isShiftReport ? 12 : 80;
+    const minH = isShiftReport ? 40 : 120;
+    if (textLen >= minText && h >= minH && imgsReady) {
       return;
     }
   }
@@ -124,7 +130,12 @@ export async function printThermalReceiptAuto() {
   await waitForReceiptDomReady({ useModalShell: true });
   await prepareDesktopForPrint();
 
-  const classes = [PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS, ELECTRON_SILENT_PRINT_CLASS];
+  const classes = [
+    PRINT_THERMAL_CLASS,
+    PRINT_THERMAL_MODAL_CLASS,
+    ELECTRON_SILENT_PRINT_CLASS,
+    ELECTRON_AUTO_PRINT_JOB_CLASS,
+  ];
   const cleanup = prepareThermalPrint(classes);
 
   try {

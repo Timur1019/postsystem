@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import ReceiptPrintingOverlay from '../cashier/ReceiptPrintingOverlay';
 import { printThermalReceiptDialog } from '../../utils/printReceipt';
-import { printThermalReport, waitForPrintDialogClose } from '../../utils/printThermalReport';
+import { printThermalReport } from '../../utils/printThermalReport';
 
 /**
  * Скрытый термочек в DOM + печать; на экране — только модалка «Печатается…».
@@ -52,17 +52,22 @@ export default function ThermalReportPrintPortal({
       let shell = null;
       for (let i = 0; i < 50 && !cancelled; i += 1) {
         shell = document.getElementById('fiscal-print-shell');
-        const area = document.getElementById('receipt-print-area') || shell;
+        const area =
+          document.getElementById('receipt-print-area') ||
+          shell?.querySelector('.receipt-print-root') ||
+          shell;
         const textLen = area ? (area.innerText || '').trim().length : 0;
         const h = area
           ? Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height)
           : 0;
-        const imgs = Array.from(area.querySelectorAll('img')).filter((img) => {
+        const minText = isShift ? 12 : 20;
+        const minH = isShift ? 40 : 80;
+        const imgs = Array.from(area?.querySelectorAll('img') ?? []).filter((img) => {
           const host = document.getElementById('fiscal-print-shell');
           return host?.contains(img);
         });
         const imgsReady = imgs.length === 0 || imgs.every((img) => img.complete);
-        if (shell && textLen >= 20 && h >= 80 && imgsReady) break;
+        if (shell && textLen >= minText && h >= minH && imgsReady) break;
         await new Promise((r) => setTimeout(r, 100));
       }
       if (cancelled) return;
@@ -73,14 +78,10 @@ export default function ThermalReportPrintPortal({
       }
 
       try {
-        let mode = 'dialog';
         if (printMode === 'dialog' || isShift) {
-          mode = await printThermalReceiptDialog({ useModalShell: true });
+          await printThermalReceiptDialog({ useModalShell: true });
         } else {
-          mode = await printThermalReport();
-        }
-        if (mode === 'dialog') {
-          await waitForPrintDialogClose();
+          await printThermalReport();
         }
         if (!cancelled) {
           onPrintedRef.current?.();
