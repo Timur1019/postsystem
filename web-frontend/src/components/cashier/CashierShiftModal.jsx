@@ -47,12 +47,25 @@ export default function CashierShiftModal({
     },
   });
 
+  const applyNewShift = (newShift) => {
+    qc.setQueryData(['cashier-shift', storeId, userId], newShift);
+    qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
+    qc.invalidateQueries({ queryKey: ['my-sales'] });
+    onShiftUpdated?.(newShift);
+  };
+
   const zMutation = useMutation({
-    mutationFn: () => cashierShiftApi.zReport(shiftId).then((r) => r.data),
+    mutationFn: () => cashierShiftApi.finalizeZReport(shiftId).then((r) => r.data),
     onSuccess: (data) => {
+      applyNewShift(data.newShift);
+      toast.success(
+        t('pos.zReportFinalized', {
+          defaultValue: 'Z-отчёт сформирован, счётчики обнулены. Смена продолжается.',
+        })
+      );
       if (printAfterLoadRef.current === 'Z') {
         printAfterLoadRef.current = null;
-        queuePrint(data);
+        queuePrint(data.report);
       }
     },
     onError: (e) => {

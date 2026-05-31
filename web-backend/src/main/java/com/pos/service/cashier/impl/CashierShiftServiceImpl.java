@@ -1,6 +1,7 @@
 package com.pos.service.cashier.impl;
 
 import com.pos.dto.cashier.CashierShiftResponse;
+import com.pos.dto.cashier.FinalizeZReportResponse;
 import com.pos.dto.cashier.ShiftReportResponse;
 import com.pos.entity.CashierShift;
 import com.pos.entity.Store;
@@ -60,18 +61,7 @@ public class CashierShiftServiceImpl implements CashierShiftService {
                 throw new BadRequestException("Смена уже открыта");
             });
 
-        CashierShift shift = CashierShift.builder()
-            .cashier(cashier)
-            .store(store)
-            .status(CashierShift.ShiftStatus.OPEN)
-            .openedAt(Instant.now())
-            .saleCount(0)
-            .totalAmount(BigDecimal.ZERO)
-            .cashAmount(BigDecimal.ZERO)
-            .cardAmount(BigDecimal.ZERO)
-            .vatAmount(BigDecimal.ZERO)
-            .build();
-        CashierShift saved = cashierShiftRepository.save(shift);
+        CashierShift saved = persistNewOpenShift(cashier, store);
         LogUtil.info(
             CashierShiftServiceImpl.class,
             "Shift opened: id={}, storeId={}, cashierId={}",
@@ -108,6 +98,36 @@ public class CashierShiftServiceImpl implements CashierShiftService {
 
     @Override
     @Transactional
+    public FinalizeZReportResponse finalizeZReport(UUID shiftId) {
+        CashierShift shift = accessPolicy.requireOwned(shiftId);
+        if (shift.getStatus() != CashierShift.ShiftStatus.OPEN) {
+            throw new BadRequestException("Z-отчёт доступен только для открытой смены");
+        }
+        Instant reportAt = Instant.now();
+        ShiftReportResponse report = buildReport("Z", shift, reportAt);
+        applyCloseTotals(shift, report);
+        zReportFromShiftService.createForClosedShift(shift, report);
+        cashierShiftRepository.save(shift);
+
+        CashierShift newShift = persistNewOpenShift(shift.getCashier(), shift.getStore());
+        CashierShiftResponse newShiftResponse = cashierShiftMapper.toResponse(
+            newShift,
+            shift.getStore().getName(),
+            null
+        );
+        LogUtil.info(
+            CashierShiftServiceImpl.class,
+            "Z-report finalized: closedShiftId={}, newShiftId={}, sales={}, total={}",
+            shiftId,
+            newShift.getId(),
+            report.saleCount(),
+            report.totalAmount()
+        );
+        return new FinalizeZReportResponse(report, newShiftResponse);
+    }
+
+    @Override
+    @Transactional
     public CashierShiftResponse closeShift(UUID shiftId) {
         CashierShift shift = accessPolicy.requireOwned(shiftId);
         if (shift.getStatus() == CashierShift.ShiftStatus.CLOSED) {
@@ -138,6 +158,21 @@ public class CashierShiftServiceImpl implements CashierShiftService {
             ? aggregateLoader.loadForShift(shift, Instant.now())
             : null;
         return cashierShiftMapper.toResponse(shift, storeName, live);
+    }
+
+    private CashierShift persistNewOpenShift(User cashier, Store store) {
+        CashierShift shift = CashierShift.builder()
+            .cashier(cashier)
+            .store(store)
+            .status(CashierShift.ShiftStatus.OPEN)
+            .openedAt(Instant.now())
+            .saleCount(0)
+            .totalAmount(BigDecimal.ZERO)
+            .cashAmount(BigDecimal.ZERO)
+            .cardAmount(BigDecimal.ZERO)
+            .vatAmount(BigDecimal.ZERO)
+            .build();
+        return cashierShiftRepository.save(shift);
     }
 
     private static void applyCloseTotals(CashierShift shift, ShiftReportResponse report) {

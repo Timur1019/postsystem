@@ -1618,6 +1618,7 @@
     "themeDark": "Qorong'u Tema",
       "xReportLoaded": "X-hisobot tayyor",
       "zReportLoaded": "Z-hisobot tayyor",
+      "zReportFinalized": "Z-hisobot tayyor, hisoblagichlar noldan. Smena davom etadi.",
       "reportFailed": "Hisobotni shakllantirib bo'lmadi",
     "xReport": "X-hisobot",
     "zReport": "Z-hisobot",

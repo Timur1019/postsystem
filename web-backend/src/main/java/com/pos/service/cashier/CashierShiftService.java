@@ -1,6 +1,7 @@
 package com.pos.service.cashier;
 
 import com.pos.dto.cashier.CashierShiftResponse;
+import com.pos.dto.cashier.FinalizeZReportResponse;
 import com.pos.dto.cashier.ShiftReportResponse;
 
 import java.util.UUID;
@@ -15,6 +16,9 @@ public interface CashierShiftService {
     ShiftReportResponse buildXReport(UUID shiftId);
 
     ShiftReportResponse buildZReportPreview(UUID shiftId);
+
+    /** Z-отчёт: закрыть период, сохранить Z, открыть новую смену (счётчики с нуля). */
+    FinalizeZReportResponse finalizeZReport(UUID shiftId);
 
     CashierShiftResponse closeShift(UUID shiftId);
 }

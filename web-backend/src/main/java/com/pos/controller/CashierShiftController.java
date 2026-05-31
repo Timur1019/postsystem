@@ -1,6 +1,7 @@
 package com.pos.controller;
 
 import com.pos.dto.cashier.CashierShiftResponse;
+import com.pos.dto.cashier.FinalizeZReportResponse;
 import com.pos.dto.cashier.ShiftReportResponse;
 import com.pos.service.cashier.CashierShiftService;
 import lombok.RequiredArgsConstructor;
@@ -42,8 +43,14 @@ public class CashierShiftController {
 
     @GetMapping("/{id}/z-report")
     @PreAuthorize("hasRole('CASHIER')")
-    public ResponseEntity<ShiftReportResponse> zReport(@PathVariable UUID id) {
+    public ResponseEntity<ShiftReportResponse> zReportPreview(@PathVariable UUID id) {
         return ResponseEntity.ok(cashierShiftService.buildZReportPreview(id));
+    }
+
+    @PostMapping("/{id}/z-report")
+    @PreAuthorize("hasRole('CASHIER')")
+    public ResponseEntity<FinalizeZReportResponse> finalizeZReport(@PathVariable UUID id) {
+        return ResponseEntity.ok(cashierShiftService.finalizeZReport(id));
     }
 
     @PostMapping("/{id}/close")
