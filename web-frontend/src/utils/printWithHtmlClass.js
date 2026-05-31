@@ -14,6 +14,9 @@ export const ELECTRON_SILENT_PRINT_CLASS = 'electron-silent-print';
 /** Только автопечать после продажи: тёмный фон под модалкой, без белой вспышки. */
 export const ELECTRON_AUTO_PRINT_JOB_CLASS = 'electron-auto-print-job';
 
+/** На момент webContents.print: чек в кадре, модалка скрыта (только Electron). */
+export const ELECTRON_PRINT_CAPTURING_CLASS = 'electron-print-capturing';
+
 const THERMAL_PRINT_CLASSES = new Set([
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,

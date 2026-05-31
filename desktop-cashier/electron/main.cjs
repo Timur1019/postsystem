@@ -462,8 +462,27 @@ ipcMain.handle('desktop:print-receipt-auto', async (event) => {
   await waitForPaintFrames(wc);
   const deviceName = await resolveReceiptPrinterName({ promptIfMissing: false });
   const printers = await listSystemPrinters();
-  const result = await runSilentReceiptAutoPrint(wc, { deviceName, printers });
-  return { ok: true, ...result };
+  const CAPTURE_CLASS = 'electron-print-capturing';
+  try {
+    await wc.executeJavaScript(`
+      document.documentElement.classList.add('${CAPTURE_CLASS}');
+      return new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      });
+    `);
+    await waitForPaintFrames(wc);
+    await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 280 : 150));
+    const result = await runSilentReceiptAutoPrint(wc, { deviceName, printers });
+    return { ok: true, ...result };
+  } finally {
+    try {
+      await wc.executeJavaScript(`
+        document.documentElement.classList.remove('${CAPTURE_CLASS}');
+      `);
+    } catch {
+      /* ignore */
+    }
+  }
 });
 
 function createWindow() {

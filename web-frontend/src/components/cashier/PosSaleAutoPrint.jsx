@@ -42,6 +42,8 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     const run = async () => {
       await waitForQrInShell();
       if (cancelled) return;
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      if (cancelled) return;
 
       try {
         await printThermalReceiptAuto();

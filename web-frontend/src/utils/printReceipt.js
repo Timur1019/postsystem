@@ -3,6 +3,7 @@ import {
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
   ELECTRON_SILENT_PRINT_CLASS,
+  ELECTRON_PRINT_CAPTURING_CLASS,
 } from './printWithHtmlClass';
 
 /** Классы печати — снимаем после job. */
@@ -10,6 +11,7 @@ const PRINT_HTML_CLASSES = [
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
   ELECTRON_SILENT_PRINT_CLASS,
+  ELECTRON_PRINT_CAPTURING_CLASS,
 ];
 
 export function isDesktopCashier() {
