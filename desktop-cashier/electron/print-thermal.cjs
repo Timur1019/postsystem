@@ -17,6 +17,53 @@ const CUT_FEED_MM = 22;
 /** Таймаут всей операции печати — иначе окно чека «висит» на экране. */
 const PRINT_JOB_TIMEOUT_MS = 45000;
 
+/** Windows POS-80: callback webContents.print иногда не вызывается — не ждём вечно. */
+const PRINT_CALLBACK_TIMEOUT_MS = IS_WIN ? 12000 : 8000;
+
+/** Диалог печати: пользователь нажимает «Печать» вручную. */
+const PRINT_DIALOG_CALLBACK_TIMEOUT_MS = 120000;
+
+/**
+ * webContents.print с таймаутом (известная проблема Electron + термопринтеры Windows).
+ * По таймауту считаем задание отправленным в очередь Windows.
+ */
+function invokeWebContentsPrint(webContents, opts, timeoutMs = PRINT_CALLBACK_TIMEOUT_MS) {
+  return new Promise((resolve, reject) => {
+    if (!webContents || webContents.isDestroyed()) {
+      reject(new Error('Окно печати недоступно'));
+      return;
+    }
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      console.warn('[Aurent print] webContents.print — таймаут callback, очередь принтера');
+      resolve({ callbackTimeout: true, success: true });
+    }, timeoutMs);
+
+    try {
+      webContents.print(opts, (success, failureReason) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (success) {
+          resolve({ success: true });
+          return;
+        }
+        const detail =
+          failureReason && failureReason !== 'cancelled' ? failureReason : 'Печать не выполнена';
+        reject(new Error(detail));
+      });
+    } catch (err) {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        reject(err);
+      }
+    }
+  });
+}
+
 /** Окно за пределами экрана: на Windows нужен show для отрисовки, но не показываем пользователю. */
 const OFFSCREEN_BOUNDS = { x: -24000, y: -24000 };
 
@@ -228,19 +275,14 @@ function runSilentPrint(webContents, dims, options = {}) {
   /** POS-80: сначала явный pageSize (высота чека), затем драйвер по умолчанию. */
   const pageSizeStrategies = IS_WIN ? [true, false] : [true];
 
-  const tryOnce = (name, useCustomPageSize) =>
-    new Promise((resolve, reject) => {
-      const opts = buildSilentPrintOpts(name, dims, useCustomPageSize);
-      webContents.print(opts, (success, failureReason) => {
-        if (success) {
-          resolve({ deviceName: name || requested || null, useCustomPageSize });
-          return;
-        }
-        const detail =
-          failureReason && failureReason !== 'cancelled' ? failureReason : 'Печать не выполнена';
-        reject(new Error(detail));
-      });
-    });
+  const tryOnce = async (name, useCustomPageSize) => {
+    const opts = buildSilentPrintOpts(name, dims, useCustomPageSize);
+    const result = await invokeWebContentsPrint(webContents, opts);
+    if (result.callbackTimeout) {
+      console.warn('[Aurent print] silent — задание в очереди без callback');
+    }
+    return { deviceName: name || requested || null, useCustomPageSize };
+  };
 
   return (async () => {
     let lastErr;
@@ -273,15 +315,9 @@ function runDialogReceiptPrint(webContents, deviceName) {
     opts.deviceName = deviceName;
   }
   return new Promise((resolve, reject) => {
-    webContents.print(opts, (success, failureReason) => {
-      if (success) {
-        resolve({ dialog: true });
-        return;
-      }
-      const detail =
-        failureReason && failureReason !== 'cancelled' ? failureReason : 'Печать отменена';
-      reject(new Error(detail));
-    });
+    invokeWebContentsPrint(webContents, opts, PRINT_DIALOG_CALLBACK_TIMEOUT_MS)
+      .then(() => resolve({ dialog: true }))
+      .catch(reject);
   });
 }
 
@@ -440,27 +476,19 @@ function runSilentReceiptPrint(webContents, options = {}) {
   const attempts = winPrintAttempts(requested, printers);
   const printerLabel = requested || 'принтер по умолчанию';
 
-  const tryOnce = (name) =>
-    new Promise((resolve, reject) => {
-      const opts = {
-        silent: true,
-        printBackground: true,
-        margins: { marginType: 'none' },
-        copies: 1,
-      };
-      if (name) {
-        opts.deviceName = name;
-      }
-      webContents.print(opts, (success, failureReason) => {
-        if (success) {
-          resolve({ deviceName: name || requested || null });
-          return;
-        }
-        const detail =
-          failureReason && failureReason !== 'cancelled' ? failureReason : 'Печать не выполнена';
-        reject(new Error(detail));
-      });
-    });
+  const tryOnce = async (name) => {
+    const opts = {
+      silent: true,
+      printBackground: true,
+      margins: { marginType: 'none' },
+      copies: 1,
+    };
+    if (name) {
+      opts.deviceName = name;
+    }
+    await invokeWebContentsPrint(webContents, opts);
+    return { deviceName: name || requested || null };
+  };
 
   return (async () => {
     let lastErr;
@@ -646,21 +674,15 @@ function runSilentLabelPrint(webContents, options = {}) {
     opts.deviceName = deviceName;
   }
   const printerLabel = deviceName || 'принтер по умолчанию';
-  return new Promise((resolve, reject) => {
-    webContents.print(opts, (success, failureReason) => {
-      if (success) {
-        resolve({ deviceName: deviceName || null });
-        return;
-      }
-      const detail = failureReason && failureReason !== 'cancelled' ? failureReason : 'Печать не выполнена';
-      reject(
-        new Error(
-          `${detail} (принтер: ${printerLabel}). ` +
-            'Aurent → «Принтер чека»: выберите устройство из списка Windows.'
-        )
+  return invokeWebContentsPrint(webContents, opts)
+    .then(() => ({ deviceName: deviceName || null }))
+    .catch((err) => {
+      const detail = err?.message || 'Печать не выполнена';
+      throw new Error(
+        `${detail} (принтер: ${printerLabel}). ` +
+          'Aurent → «Принтер чека»: выберите устройство из списка Windows.'
       );
     });
-  });
 }
 
 module.exports = {

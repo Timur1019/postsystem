@@ -1,5 +1,6 @@
 /**
- * Автопечать после продажи на десктопе + превью чека на экране (как раньше).
+ * Автопечать после продажи на десктопе + модалка «Печатается чек…».
+ * Модалка закрывается через ~1.5 с — не ждём IPC (Windows POS-80 часто не отдаёт callback).
  */
 import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,8 +10,8 @@ import DesktopPrintOverlay from './DesktopPrintOverlay';
 import { cleanupDesktopPrintState, printDesktopReceiptSale } from '../../utils/printReceipt';
 import '../../styles/pos-sale-auto-print.css';
 
-const QR_WAIT_MS = 2000;
-const PREVIEW_MIN_MS = 1800;
+const QR_WAIT_MS = 800;
+const MODAL_VISIBLE_MS = 1500;
 
 async function waitForQrInShell(maxMs = QR_WAIT_MS) {
   const deadline = Date.now() + maxMs;
@@ -23,7 +24,7 @@ async function waitForQrInShell(maxMs = QR_WAIT_MS) {
       await new Promise((r) => setTimeout(r, 80));
       continue;
     }
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 80));
   }
   const img = document.querySelector('#pos-sale-print-shell .receipt-qr');
   return img?.src || null;
@@ -32,28 +33,32 @@ async function waitForQrInShell(maxMs = QR_WAIT_MS) {
 export default function PosSaleAutoPrint({ sale, onDone }) {
   const { t } = useTranslation();
   const onDoneRef = useRef(onDone);
-  const previewStartedRef = useRef(Date.now());
   onDoneRef.current = onDone;
 
   useLayoutEffect(() => {
     if (!sale?.receiptNumber) return undefined;
 
     let cancelled = false;
-    const finish = async () => {
-      const elapsed = Date.now() - previewStartedRef.current;
-      if (elapsed < PREVIEW_MIN_MS) {
-        await new Promise((r) => setTimeout(r, PREVIEW_MIN_MS - elapsed));
-      }
+    let modalClosed = false;
+
+    const closeModal = () => {
+      if (modalClosed || cancelled) return;
+      modalClosed = true;
       cleanupDesktopPrintState();
-      if (!cancelled) onDoneRef.current?.();
+      onDoneRef.current?.();
     };
 
     const run = async () => {
       const qrDataUrl = await waitForQrInShell();
       if (cancelled) return;
 
+      const printPromise = printDesktopReceiptSale(sale, { qrDataUrl, autoPrint: true });
+
+      await new Promise((r) => setTimeout(r, MODAL_VISIBLE_MS));
+      closeModal();
+
       try {
-        const result = await printDesktopReceiptSale(sale, { qrDataUrl, autoPrint: true });
+        const result = await printPromise;
         if (cancelled) return;
         if (result.ok) {
           if (result.mode === 'dialog') {
@@ -64,21 +69,14 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
               duration: 3000,
             });
           }
-          await finish();
           return;
         }
-      } catch (err) {
-        console.warn('[Aurent] auto print failed', err);
-        if (!cancelled) {
-          toast.error(err?.message || t('pos.printFailed'), { id: 'pos-auto-print' });
-          await finish();
-        }
-        return;
-      }
-
-      if (!cancelled) {
         toast.error(t('pos.printFailed'), { id: 'pos-auto-print' });
-        await finish();
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('[Aurent] auto print failed', err);
+          toast.error(err?.message || t('pos.printFailed'), { id: 'pos-auto-print' });
+        }
       }
     };
 

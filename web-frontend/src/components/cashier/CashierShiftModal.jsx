@@ -35,7 +35,11 @@ export default function CashierShiftModal({
     if (isDesktopCashier()) {
       setPrintingReport(true);
       try {
-        const result = await printDesktopShiftReport(data, t);
+        const printPromise = printDesktopShiftReport(data, t);
+        const result = await Promise.race([
+          printPromise,
+          new Promise((resolve) => setTimeout(() => resolve({ ok: true, mode: 'queued' }), 15000)),
+        ]);
         if (result.ok) {
           if (result.mode === 'dialog') {
             toast('Нажмите «Печать» в окне Windows', { duration: 5000 });
@@ -45,6 +49,7 @@ export default function CashierShiftModal({
         } else {
           toast.error(t('receipt.printFailed'));
         }
+        printPromise.catch(() => {});
       } catch (e) {
         toast.error(e?.message ?? t('receipt.printFailed'));
       } finally {
