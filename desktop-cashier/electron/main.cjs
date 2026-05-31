@@ -387,6 +387,12 @@ async function resolvePrinterByKind(kind, { promptIfMissing = true } = {}) {
   }
 
   if (!promptIfMissing) {
+    const def = printers.find((p) => p.isDefault);
+    if (def?.name) return def.name;
+    const thermal = printers.find((p) =>
+      /pos-80|pos80|xprinter|termo|receipt|thermal|чек/i.test(p.name)
+    );
+    if (thermal?.name) return thermal.name;
     return saved || '';
   }
 

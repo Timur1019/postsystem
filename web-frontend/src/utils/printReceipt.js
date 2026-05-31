@@ -125,10 +125,6 @@ export async function printDesktopReceiptSale(sale, { qrDataUrl = null, autoPrin
     const result = await window.desktopCashier.printReceiptSale(payload, invokeOpts);
     return { ok: true, mode: result?.mode || 'silent' };
   } catch (err) {
-    if (typeof window.desktopCashier?.printReceiptSaleDialog === 'function') {
-      await window.desktopCashier.printReceiptSaleDialog(payload);
-      return { ok: true, mode: 'dialog' };
-    }
     throw err;
   }
 }

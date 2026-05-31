@@ -257,7 +257,7 @@ function buildSilentPrintOpts(deviceName, dims, useCustomPageSize = true) {
 function buildStandardSilentPrintOpts(deviceName) {
   const opts = {
     silent: true,
-    printBackground: false,
+    printBackground: true,
     margins: { marginType: 'none' },
     copies: 1,
   };

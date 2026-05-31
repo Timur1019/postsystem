@@ -48,7 +48,7 @@ test('buildThermalReceiptDocument включает текст чека и скр
 test('buildStandardSilentPrintOpts — схема Electron docs', () => {
   const opts = buildStandardSilentPrintOpts('POS-80 (copy 2)');
   assert.strictEqual(opts.silent, true);
-  assert.strictEqual(opts.printBackground, false);
+  assert.strictEqual(opts.printBackground, true);
   assert.strictEqual(opts.deviceName, 'POS-80 (copy 2)');
   assert.strictEqual(opts.margins.marginType, 'none');
   assert.strictEqual(opts.pageSize, undefined);

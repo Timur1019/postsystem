@@ -17,10 +17,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     let cancelled = false;
 
     const run = async () => {
-      const qrImg = document.querySelector('.receipt-qr');
-      const qrDataUrl = qrImg?.src || null;
-
-      printDesktopReceiptSale(sale, { qrDataUrl, autoPrint: true })
+      printDesktopReceiptSale(sale, { autoPrint: true })
         .then((result) => {
           if (cancelled) return;
           if (!result?.ok) {
