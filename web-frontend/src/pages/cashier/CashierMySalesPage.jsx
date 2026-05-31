@@ -9,6 +9,7 @@ import { saleApi } from '../../services/api';
 import SalePartialReturnModal from '../../components/sales/SalePartialReturnModal';
 import FiscalReceiptBody from '../../components/receipt/FiscalReceiptBody';
 import ThermalReportPrintPortal from '../../components/reports/ThermalReportPrintPortal';
+import { isDesktopCashier, printDesktopReceiptSale } from '../../utils/printReceipt';
 import { useCashierShift } from '../../hooks/useCashierShift';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -439,6 +440,21 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
     if (!canPrint || printing) return;
     setPrinting(true);
     try {
+      if (isDesktopCashier()) {
+        const img = document.querySelector('.cashier-sales-receipt-pane__card .receipt-qr');
+        const qrDataUrl = img?.src || null;
+        const result = await printDesktopReceiptSale(sale, { qrDataUrl });
+        if (result.ok) {
+          if (result.mode === 'dialog') {
+            toast('Нажмите «Печать» в окне Windows', { id: 'cashier-sales-print', duration: 5000 });
+          } else {
+            toast.success(t('receipt.printSent'), { id: 'cashier-sales-print' });
+          }
+          return;
+        }
+        toast.error(t('receipt.printFailed'), { id: 'cashier-sales-print' });
+        return;
+      }
       setPrintToken(Date.now());
     } catch (e) {
       toast.error(e?.message ?? t('receipt.printFailed'), { id: 'cashier-sales-print' });

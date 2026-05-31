@@ -62,6 +62,30 @@ export function buildDesktopSalePrintPayload(sale, qrDataUrl = null) {
   };
 }
 
+/** Печать чека на десктопе: Electron собирает HTML из JSON продажи. */
+export async function printDesktopReceiptSale(sale, { qrDataUrl = null } = {}) {
+  if (!isDesktopCashier() || !sale?.receiptNumber) {
+    return { ok: false };
+  }
+  const payload = buildDesktopSalePrintPayload(
+    sale,
+    qrDataUrl ?? captureReceiptQrDataUrl()
+  );
+  if (!payload) {
+    return { ok: false };
+  }
+  try {
+    const result = await window.desktopCashier.printReceiptSale(payload);
+    return { ok: true, mode: result?.mode || 'silent' };
+  } catch (err) {
+    if (typeof window.desktopCashier?.printReceiptSaleDialog === 'function') {
+      await window.desktopCashier.printReceiptSaleDialog(payload);
+      return { ok: true, mode: 'dialog' };
+    }
+    throw err;
+  }
+}
+
 function captureReceiptHtml() {
   const area =
     document.querySelector('#fiscal-print-shell #receipt-print-area') ||

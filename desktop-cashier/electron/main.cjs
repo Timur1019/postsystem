@@ -544,17 +544,20 @@ async function printReceiptSaleInHiddenWindow(payload, options = {}) {
   const printers = await listSystemPrinters();
   const mainSession =
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
+  const useDialog =
+    Boolean(options.useDialog) ||
+    (process.platform === 'win32' && config?.receiptUsePrintDialog === true);
 
   try {
     const result = await printHtmlInHiddenWindow(bodyHtml, {
       deviceName,
       printers,
       session: mainSession,
-      useDialog: Boolean(options.useDialog),
+      useDialog,
     });
     return result;
   } catch (err) {
-    if (process.platform === 'win32' && !options.useDialog) {
+    if (process.platform === 'win32' && !useDialog) {
       return printHtmlInHiddenWindow(bodyHtml, {
         deviceName,
         printers,

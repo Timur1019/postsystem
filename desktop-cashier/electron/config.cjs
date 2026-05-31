@@ -111,6 +111,8 @@ function loadConfig() {
     apiPort: String(fileConfig.apiPort || DEFAULTS.apiPort),
     receiptPrinterName: fileConfig.receiptPrinterName || '',
     labelPrinterName: fileConfig.labelPrinterName || '',
+    /** Windows POS-80: true = сразу диалог печати (надёжно, нужен клик «Печать»). */
+    receiptUsePrintDialog: fileConfig.receiptUsePrintDialog === true,
   };
 }
 

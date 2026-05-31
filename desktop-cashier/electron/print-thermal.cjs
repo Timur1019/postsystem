@@ -305,15 +305,25 @@ async function runSilentPdfReceiptPrint(pdfBuffer, deviceName, printers) {
   if (!pdfBuffer || pdfBuffer.length < 6000) {
     throw new Error('PDF чека пустой');
   }
+  let printPdf;
+  try {
+    printPdf = require('pdf-to-printer').print;
+  } catch (err) {
+    throw new Error(`pdf-to-printer недоступен: ${err?.message || err}`);
+  }
   const tmpPdf = path.join(os.tmpdir(), `aurent-receipt-${Date.now()}.pdf`);
   fs.writeFileSync(tmpPdf, pdfBuffer);
   try {
-    const { print: printPdf } = require('pdf-to-printer');
     const attempts = winPrintAttempts(deviceName, printers);
     let lastErr;
     for (const name of attempts) {
       try {
-        const opts = { silent: true, printDialog: false };
+        const opts = {
+          silent: true,
+          printDialog: false,
+          scale: 'shrink',
+          monochrome: true,
+        };
         if (name) {
           opts.printer = name;
         }
@@ -327,6 +337,66 @@ async function runSilentPdfReceiptPrint(pdfBuffer, deviceName, printers) {
   } finally {
     fs.unlink(tmpPdf, () => {});
   }
+}
+
+async function runSilentPdfInBrowserWindow(pdfBuffer, deviceName, printers, dims) {
+  if (!pdfBuffer || pdfBuffer.length < 6000) {
+    throw new Error('PDF чека пустой');
+  }
+  const tmpPdf = path.join(os.tmpdir(), `aurent-receipt-${Date.now()}-view.pdf`);
+  fs.writeFileSync(tmpPdf, pdfBuffer);
+  const widthPx = paperWidthPx(dims?.paperMm || 80);
+  const heightPx = Math.min(
+    5000,
+    Math.max(400, Math.ceil((dims?.contentHeightPx || 900) + 80))
+  );
+  const printWin = createReceiptPrintWindow({
+    width: widthPx,
+    height: heightPx,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  try {
+    const fileUrl = `file:///${tmpPdf.replace(/\\/g, '/').replace(/^\/+/, '')}`;
+    await printWin.loadURL(fileUrl);
+    await ensureWindowPainted(printWin);
+    showWindowForPrint(printWin, widthPx, heightPx);
+    await new Promise((r) => setTimeout(r, IS_WIN ? 1400 : 400));
+    await waitForPaintFrames(printWin.webContents);
+    await runSilentReceiptPrint(printWin.webContents, { deviceName, printers });
+  } finally {
+    if (!printWin.isDestroyed()) {
+      printWin.close();
+    }
+    fs.unlink(tmpPdf, () => {});
+  }
+}
+
+/** Windows: HTML silent часто даёт пустую полоску на POS-80 — только PDF или диалог. */
+async function runWindowsReceiptPrint(printWin, webContents, dims, deviceName, printers) {
+  const pdfBuffer = await buildReceiptPdfBuffer(webContents, dims);
+  if (!pdfBuffer || pdfBuffer.length < 6000) {
+    await runDialogReceiptPrint(webContents, deviceName);
+    return { mode: 'dialog' };
+  }
+  try {
+    await runSilentPdfReceiptPrint(pdfBuffer, deviceName, printers);
+    await new Promise((r) => setTimeout(r, 400));
+    return { mode: 'pdf' };
+  } catch (pdfErr) {
+    console.warn('[Aurent print] pdf-to-printer failed:', pdfErr?.message || pdfErr);
+  }
+  try {
+    await runSilentPdfInBrowserWindow(pdfBuffer, deviceName, printers, dims);
+    await new Promise((r) => setTimeout(r, 400));
+    return { mode: 'pdf-browser' };
+  } catch (browserErr) {
+    console.warn('[Aurent print] PDF browser print failed:', browserErr?.message || browserErr);
+  }
+  await runDialogReceiptPrint(webContents, deviceName);
+  return { mode: 'dialog' };
 }
 
 async function loadReceiptHtmlInWindow(printWin, bodyHtml) {
@@ -442,23 +512,7 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
     }
 
     if (IS_WIN) {
-      try {
-        const pdfBuffer = await buildReceiptPdfBuffer(printWin.webContents, dims);
-        await runSilentPdfReceiptPrint(pdfBuffer, deviceName, printers);
-        await new Promise((r) => setTimeout(r, 400));
-        return { mode: 'pdf' };
-      } catch (pdfErr) {
-        console.warn('[Aurent print] Windows PDF print failed:', pdfErr?.message || pdfErr);
-      }
-      try {
-        await runSilentPrint(printWin.webContents, dims, { deviceName, printers });
-        await new Promise((r) => setTimeout(r, 600));
-        return { mode: 'silent' };
-      } catch (htmlErr) {
-        console.warn('[Aurent print] HTML silent failed, opening dialog:', htmlErr?.message || htmlErr);
-        await runDialogReceiptPrint(printWin.webContents, deviceName);
-        return { mode: 'dialog' };
-      }
+      return runWindowsReceiptPrint(printWin, printWin.webContents, dims, deviceName, printers);
     }
 
     await runSilentPrint(printWin.webContents, dims, { deviceName, printers });
@@ -554,6 +608,8 @@ module.exports = {
   verifyReceiptPdf,
   buildReceiptPdfBuffer,
   runSilentPdfReceiptPrint,
+  runSilentPdfInBrowserWindow,
+  runWindowsReceiptPrint,
   showWindowForPrint,
   createReceiptPrintWindow,
   ensureWindowPainted,
