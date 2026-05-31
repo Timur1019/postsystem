@@ -6,10 +6,12 @@ on:
     tags: ['v*']
     paths:
       - 'desktop-cashier/**'
+      - 'web-frontend/**'
       - 'scripts/build-desktop-release.sh'
       - 'scripts/generate-desktop-manifest.sh'
       - 'scripts/build-cashier.sh'
       - 'installer/**'
+      - 'downloads/desktop/**'
       - '.github/workflows/build-desktop.yml'
   workflow_dispatch:
     inputs:
