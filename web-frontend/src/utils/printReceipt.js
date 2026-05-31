@@ -130,6 +130,7 @@ export async function printThermalReceiptAuto() {
   try {
     if (isDesktopCashier() && typeof window.desktopCashier?.printReceiptAuto === 'function') {
       await waitForPaintSettled();
+      await new Promise((r) => setTimeout(r, 500));
       await window.desktopCashier.printReceiptAuto();
       return 'silent';
     }

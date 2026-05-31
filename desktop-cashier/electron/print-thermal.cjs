@@ -119,31 +119,51 @@ const MEASURE_RECEIPT_DIMS_JS = `
 })()
 `;
 
+function buildSizedSilentPrintOpts(deviceName, dims) {
+  const opts = buildStandardSilentPrintOpts(deviceName);
+  const paperMm = dims?.paperMm || 80;
+  const heightMm = Math.max(dims?.heightMm || 200, 120);
+  opts.pageSize = {
+    width: Math.round(paperMm * 1000),
+    height: Math.round(heightMm * 1000),
+  };
+  delete opts.usePrinterDefaultPageSize;
+  return opts;
+}
+
 const AUTO_PRINT_TIMEOUT_MS = IS_WIN ? 8000 : 6000;
 
 /**
- * Одна тихая попытка — без циклов по 12 с (иначе ~40 с белый экран).
+ * Тихая автопечать: сначала драйвер 80mm, при сбое — с высотой по контенту.
  */
 async function runSilentReceiptAutoPrint(webContents, options = {}) {
   const deviceName = options.deviceName ? String(options.deviceName) : '';
   const printers = options.printers || [];
+  const dims = options.dims || null;
   const attempts = winPrintAttempts(deviceName, printers);
   const printerLabel = deviceName || 'принтер по умолчанию';
   const name = attempts[0] ?? deviceName;
-  const opts = buildStandardSilentPrintOpts(name);
+
+  const tryPrint = (opts) => invokeWebContentsPrint(webContents, opts, AUTO_PRINT_TIMEOUT_MS);
 
   try {
-    const result = await invokeWebContentsPrint(webContents, opts, AUTO_PRINT_TIMEOUT_MS);
+    const result = await tryPrint(buildStandardSilentPrintOpts(name));
     if (result.callbackTimeout) {
       console.warn('[Aurent print] auto receipt — задание в очереди Windows');
     }
     return { mode: 'silent', deviceName: name || deviceName || '' };
-  } catch (err) {
-    const detail = err?.message || 'Печать не выполнена';
-    throw new Error(
-      `${detail} (принтер: ${printerLabel}). ` +
-        'Aurent → «Принтер чека»: выберите POS-80 и сохраните.'
-    );
+  } catch (firstErr) {
+    if (!dims?.heightMm || !IS_WIN) throw firstErr;
+    try {
+      await tryPrint(buildSizedSilentPrintOpts(name, dims));
+      return { mode: 'silent', deviceName: name || deviceName || '' };
+    } catch {
+      const detail = firstErr?.message || 'Печать не выполнена';
+      throw new Error(
+        `${detail} (принтер: ${printerLabel}). ` +
+          'Aurent → «Принтер чека»: выберите POS-80 и сохраните.'
+      );
+    }
   }
 }
 
