@@ -47,13 +47,11 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
 
       try {
         const mode = await printThermalReceiptAuto();
-        if (!cancelled) {
-          if (mode === 'silent') {
-            toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
-              id: 'pos-auto-print',
-              duration: 3000,
-            });
-          }
+        if (!cancelled && (mode === 'silent' || mode === 'dialog')) {
+          toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
+            id: 'pos-auto-print',
+            duration: 3000,
+          });
         }
       } catch (err) {
         if (!cancelled) {
