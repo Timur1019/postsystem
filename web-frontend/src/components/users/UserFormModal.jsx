@@ -188,6 +188,11 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
       }
     }
 
+    if (!username) {
+      toast.error(t('validation.required'));
+      return;
+    }
+
     if (isEdit) {
       const newPassword = data.password?.trim() ?? '';
       if (newPassword.length > 0 && newPassword.length < 6) {
@@ -195,6 +200,7 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
         return;
       }
       const payload = {
+        username,
         firstName,
         lastName,
         patronymic,
@@ -263,11 +269,11 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
           <div>
             <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{t('users.colUsername')} *</label>
             <input
-              {...register('username', { required: !isEdit })}
-              readOnly={isEdit}
-              disabled={isEdit}
-              className={`${inputCls} ${isEdit ? 'cursor-not-allowed opacity-70' : ''}`}
+              {...register('username', { required: true })}
+              autoComplete="username"
+              className={inputCls}
             />
+            {errors.username && <p className="mt-1 text-xs text-red-400">{t('validation.required')}</p>}
           </div>
           {fieldOn('email') ? (
             <div>

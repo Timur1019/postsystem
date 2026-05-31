@@ -98,6 +98,18 @@ public class UserServiceImpl implements UserService {
     public UserResponse update(UUID id, UpdateUserRequest req) {
         User user = requireAccessibleUser(id);
 
+        if (req.username() != null) {
+            String username = UserLoginUtil.normalizeUsername(req.username());
+            if (!StringUtils.hasText(username)) {
+                throw new BadRequestException("Username is required");
+            }
+            Integer companyId = user.getCompany() != null ? user.getCompany().getId() : null;
+            if (!username.equalsIgnoreCase(user.getUsername())) {
+                assertUsernameAvailable(companyId, username, user.getId());
+                user.setUsername(username);
+            }
+        }
+
         if (req.firstName() != null) user.setFirstName(trimOrNull(req.firstName()));
         if (req.lastName() != null) user.setLastName(trimOrNull(req.lastName()));
         if (req.patronymic() != null) user.setPatronymic(trimOrNull(req.patronymic()));
