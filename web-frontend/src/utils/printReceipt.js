@@ -63,7 +63,7 @@ export function buildDesktopSalePrintPayload(sale, qrDataUrl = null) {
 }
 
 /** Печать чека на десктопе: Electron собирает HTML из JSON продажи. */
-export async function printDesktopReceiptSale(sale, { qrDataUrl = null } = {}) {
+export async function printDesktopReceiptSale(sale, { qrDataUrl = null, autoPrint = false } = {}) {
   if (!isDesktopCashier() || !sale?.receiptNumber) {
     return { ok: false };
   }
@@ -74,8 +74,9 @@ export async function printDesktopReceiptSale(sale, { qrDataUrl = null } = {}) {
   if (!payload) {
     return { ok: false };
   }
+  const invokeOpts = { autoPrint: Boolean(autoPrint) };
   try {
-    const result = await window.desktopCashier.printReceiptSale(payload);
+    const result = await window.desktopCashier.printReceiptSale(payload, invokeOpts);
     return { ok: true, mode: result?.mode || 'silent' };
   } catch (err) {
     if (typeof window.desktopCashier?.printReceiptSaleDialog === 'function') {
@@ -98,6 +99,7 @@ function captureReceiptHtml() {
 
 function captureReceiptQrDataUrl() {
   const img =
+    document.querySelector('#pos-sale-print-shell .receipt-qr') ||
     document.querySelector('#fiscal-print-shell .receipt-qr') ||
     document.querySelector('#receipt-print-area .receipt-qr');
   if (img?.complete && img.naturalWidth > 0 && img.src) {

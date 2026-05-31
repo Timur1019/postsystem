@@ -14,6 +14,12 @@ const IS_WIN = process.platform === 'win32';
 /** Запас внизу листа — драйвер POS-80 чаще отрезает после подачи бумаги. */
 const CUT_FEED_MM = 22;
 
+/** Таймаут всей операции печати — иначе окно чека «висит» на экране. */
+const PRINT_JOB_TIMEOUT_MS = 45000;
+
+/** Окно за пределами экрана: на Windows нужен show для отрисовки, но не показываем пользователю. */
+const OFFSCREEN_BOUNDS = { x: -24000, y: -24000 };
+
 function paperWidthPx(paperMm) {
   return Math.max(280, Math.round((paperMm / 25.4) * 96) + 48);
 }
@@ -339,47 +345,29 @@ async function runSilentPdfReceiptPrint(pdfBuffer, deviceName, printers) {
   }
 }
 
-async function runSilentPdfInBrowserWindow(pdfBuffer, deviceName, printers, dims) {
-  if (!pdfBuffer || pdfBuffer.length < 6000) {
-    throw new Error('PDF чека пустой');
-  }
-  const tmpPdf = path.join(os.tmpdir(), `aurent-receipt-${Date.now()}-view.pdf`);
-  fs.writeFileSync(tmpPdf, pdfBuffer);
+/** Windows: PDF silent, при сбое — диалог (HTML silent на POS-80 не используем). */
+async function runWindowsReceiptPrint(
+  printWin,
+  webContents,
+  dims,
+  deviceName,
+  printers,
+  _options = {}
+) {
   const widthPx = paperWidthPx(dims?.paperMm || 80);
-  const heightPx = Math.min(
-    5000,
-    Math.max(400, Math.ceil((dims?.contentHeightPx || 900) + 80))
-  );
-  const printWin = createReceiptPrintWindow({
-    width: widthPx,
-    height: heightPx,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
-  try {
-    const fileUrl = `file:///${tmpPdf.replace(/\\/g, '/').replace(/^\/+/, '')}`;
-    await printWin.loadURL(fileUrl);
-    await ensureWindowPainted(printWin);
-    showWindowForPrint(printWin, widthPx, heightPx);
-    await new Promise((r) => setTimeout(r, IS_WIN ? 1400 : 400));
-    await waitForPaintFrames(printWin.webContents);
-    await runSilentReceiptPrint(printWin.webContents, { deviceName, printers });
-  } finally {
-    if (!printWin.isDestroyed()) {
-      printWin.close();
-    }
-    fs.unlink(tmpPdf, () => {});
-  }
-}
+  const heightPx = Math.min(5000, Math.max(400, Math.ceil((dims?.contentHeightPx || 900) + 80)));
 
-/** Windows: HTML silent часто даёт пустую полоску на POS-80 — только PDF или диалог. */
-async function runWindowsReceiptPrint(printWin, webContents, dims, deviceName, printers) {
-  const pdfBuffer = await buildReceiptPdfBuffer(webContents, dims);
-  if (!pdfBuffer || pdfBuffer.length < 6000) {
+  const openDialog = async () => {
+    showWindowForPrint(printWin, widthPx, heightPx, { visible: true });
+    await waitForPaintFrames(webContents);
+    await new Promise((r) => setTimeout(r, IS_WIN ? 400 : 150));
     await runDialogReceiptPrint(webContents, deviceName);
     return { mode: 'dialog' };
+  };
+
+  const pdfBuffer = await buildReceiptPdfBuffer(webContents, dims);
+  if (!pdfBuffer || pdfBuffer.length < 6000) {
+    return openDialog();
   }
   try {
     await runSilentPdfReceiptPrint(pdfBuffer, deviceName, printers);
@@ -388,15 +376,7 @@ async function runWindowsReceiptPrint(printWin, webContents, dims, deviceName, p
   } catch (pdfErr) {
     console.warn('[Aurent print] pdf-to-printer failed:', pdfErr?.message || pdfErr);
   }
-  try {
-    await runSilentPdfInBrowserWindow(pdfBuffer, deviceName, printers, dims);
-    await new Promise((r) => setTimeout(r, 400));
-    return { mode: 'pdf-browser' };
-  } catch (browserErr) {
-    console.warn('[Aurent print] PDF browser print failed:', browserErr?.message || browserErr);
-  }
-  await runDialogReceiptPrint(webContents, deviceName);
-  return { mode: 'dialog' };
+  return openDialog();
 }
 
 async function loadReceiptHtmlInWindow(printWin, bodyHtml) {
@@ -464,13 +444,35 @@ function runSilentReceiptPrint(webContents, options = {}) {
   })();
 }
 
-function showWindowForPrint(win, widthPx, heightPx) {
+/**
+ * Подготовить окно к печати. visible:false — за экраном (автопечать), иначе превью на POS.
+ */
+function showWindowForPrint(win, widthPx, heightPx, options = {}) {
   if (!win || win.isDestroyed()) return;
+  const visible = options.visible !== false;
+  const height = Math.min(heightPx, 1200);
   if (IS_WIN) {
-    win.setBounds({ x: 60, y: 60, width: widthPx, height: Math.min(heightPx, 1200) });
+    const bounds = visible
+      ? { x: 60, y: 60, width: widthPx, height }
+      : { ...OFFSCREEN_BOUNDS, width: widthPx, height };
+    win.setBounds(bounds);
     win.setOpacity(1);
+  } else if (!visible) {
+    win.setPosition(OFFSCREEN_BOUNDS.x, OFFSCREEN_BOUNDS.y);
   }
-  win.showInactive();
+  if (!win.isVisible()) {
+    win.showInactive();
+  }
+}
+
+function forceClosePrintWindow(win) {
+  if (win && !win.isDestroyed()) {
+    try {
+      win.close();
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
@@ -490,9 +492,14 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
   });
   printWin.webContents.setZoomFactor(1);
 
+  const killTimer = setTimeout(() => {
+    console.warn('[Aurent print] timeout — закрываем окно печати');
+    forceClosePrintWindow(printWin);
+  }, PRINT_JOB_TIMEOUT_MS);
+
   try {
     await loadReceiptHtmlInWindow(printWin, bodyHtml);
-    await ensureWindowPainted(printWin);
+    await ensureWindowPainted(printWin, { visible: useDialog });
     await waitForImages(printWin.webContents);
     await new Promise((r) => setTimeout(r, IS_WIN ? 1200 : 300));
     await waitForPaintFrames(printWin.webContents);
@@ -502,7 +509,7 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
     }
     const heightPx = Math.min(5000, Math.max(400, Math.ceil(dims.contentHeightPx + 80)));
     printWin.setSize(widthPx, heightPx);
-    showWindowForPrint(printWin, widthPx, heightPx);
+    showWindowForPrint(printWin, widthPx, heightPx, { visible: useDialog });
     await waitForPaintFrames(printWin.webContents);
     await new Promise((r) => setTimeout(r, IS_WIN ? 800 : 200));
 
@@ -519,10 +526,9 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
     await new Promise((r) => setTimeout(r, IS_WIN ? 600 : 150));
     return { mode: 'silent' };
   } finally {
+    clearTimeout(killTimer);
     await cleanupThermalPrintInPage(printWin.webContents);
-    if (!printWin.isDestroyed()) {
-      printWin.close();
-    }
+    forceClosePrintWindow(printWin);
   }
 }
 
@@ -543,16 +549,22 @@ function createReceiptPrintWindow({ width, height, webPreferences }) {
   });
 
   if (IS_WIN) {
-    win.setPosition(80, 80);
+    win.setPosition(OFFSCREEN_BOUNDS.x, OFFSCREEN_BOUNDS.y);
     win.setOpacity(1);
   }
 
   return win;
 }
 
-async function ensureWindowPainted(win) {
-  if (IS_WIN && !win.isDestroyed()) {
-    win.showInactive();
+async function ensureWindowPainted(win, options = {}) {
+  const visible = options.visible === true;
+  if (!win.isDestroyed()) {
+    if (IS_WIN && !visible) {
+      const [w, h] = win.getSize();
+      showWindowForPrint(win, w || paperWidthPx(80), h || 800, { visible: false });
+    } else if (IS_WIN) {
+      win.showInactive();
+    }
   }
   await waitForWindowReady(win);
   await waitForPaintFrames(win.webContents);
@@ -608,9 +620,10 @@ module.exports = {
   verifyReceiptPdf,
   buildReceiptPdfBuffer,
   runSilentPdfReceiptPrint,
-  runSilentPdfInBrowserWindow,
   runWindowsReceiptPrint,
   showWindowForPrint,
+  forceClosePrintWindow,
+  PRINT_JOB_TIMEOUT_MS,
   createReceiptPrintWindow,
   ensureWindowPainted,
   /** @internal unit tests */

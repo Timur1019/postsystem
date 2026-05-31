@@ -27,6 +27,9 @@ const {
   ensureWindowPainted,
   printHtmlInHiddenWindow,
   showWindowForPrint,
+  runWindowsReceiptPrint,
+  forceClosePrintWindow,
+  PRINT_JOB_TIMEOUT_MS,
 } = require('./print-thermal.cjs');
 const { setupAutoUpdater, checkForUpdatesNow } = require('./auto-update.cjs');
 
@@ -486,6 +489,10 @@ async function printReceiptInHiddenWindow(receiptNumber) {
       },
     });
     printWin.webContents.setZoomFactor(1);
+    const killTimer = setTimeout(() => {
+      console.warn('[Aurent print] timeout receipt URL — закрываем окно');
+      forceClosePrintWindow(printWin);
+    }, PRINT_JOB_TIMEOUT_MS);
 
     try {
       await printWin.loadURL(url);
@@ -493,7 +500,7 @@ async function printReceiptInHiddenWindow(receiptNumber) {
       if (!ready) {
         throw new Error('Чек не успел загрузиться для печати');
       }
-      await ensureWindowPainted(printWin);
+      await ensureWindowPainted(printWin, { visible: false });
       await waitForImages(printWin.webContents);
       await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 1400 : 400));
       await waitForPaintFrames(printWin.webContents);
@@ -507,25 +514,47 @@ async function printReceiptInHiddenWindow(receiptNumber) {
       }
       await waitForPaintFrames(printWin.webContents);
       await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 120));
-      showWindowForPrint(printWin, paperWidthPx(paperMm), Math.min(5000, Math.max(900, Math.ceil(dims.contentHeightPx * 1.2))));
+      const heightPx = Math.min(5000, Math.max(900, Math.ceil(dims.contentHeightPx * 1.2)));
+      showWindowForPrint(printWin, paperWidthPx(paperMm), heightPx, { visible: false });
       await waitForPaintFrames(printWin.webContents);
       await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 120));
-      await runSilentReceiptPrint(printWin.webContents, { deviceName, printers, dims });
+      if (process.platform === 'win32') {
+        await runWindowsReceiptPrint(printWin, printWin.webContents, dims, deviceName, printers, {
+          useDialog: false,
+        });
+      } else {
+        await runSilentReceiptPrint(printWin.webContents, { deviceName, printers, dims });
+      }
       await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 600 : 200));
       await cleanupThermalPrintInPage(printWin.webContents);
-      if (!printWin.isDestroyed()) {
-        printWin.close();
-      }
+      forceClosePrintWindow(printWin);
       return;
     } catch (err) {
       lastErr = err;
       await cleanupThermalPrintInPage(printWin.webContents);
-      if (!printWin.isDestroyed()) {
-        printWin.close();
-      }
+      forceClosePrintWindow(printWin);
+    } finally {
+      clearTimeout(killTimer);
     }
   }
   throw lastErr || new Error('Печать чека не выполнена');
+}
+
+function resolveReceiptPrintUseDialog(options = {}) {
+  if (options.useDialog) {
+    return true;
+  }
+  if (process.platform !== 'win32') {
+    return false;
+  }
+  if (config?.receiptUsePrintDialog === false) {
+    return false;
+  }
+  if (config?.receiptUsePrintDialog === true) {
+    return true;
+  }
+  /** После продажи на Windows по умолчанию — диалог (как раньше, надёжно на POS-80). */
+  return options.autoPrint === true;
 }
 
 async function printReceiptSaleInHiddenWindow(payload, options = {}) {
@@ -544,9 +573,7 @@ async function printReceiptSaleInHiddenWindow(payload, options = {}) {
   const printers = await listSystemPrinters();
   const mainSession =
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
-  const useDialog =
-    Boolean(options.useDialog) ||
-    (process.platform === 'win32' && config?.receiptUsePrintDialog === true);
+  const useDialog = resolveReceiptPrintUseDialog(options);
 
   try {
     const result = await printHtmlInHiddenWindow(bodyHtml, {
@@ -686,8 +713,11 @@ ipcMain.handle('print-receipt', async (_event, receiptNumber) => {
   return { ok: true };
 });
 
-ipcMain.handle('print-receipt-sale', async (_event, salePayload) => {
-  const result = await printReceiptSaleInHiddenWindow(salePayload);
+ipcMain.handle('print-receipt-sale', async (_event, salePayload, invokeOptions = {}) => {
+  const result = await printReceiptSaleInHiddenWindow(salePayload, {
+    autoPrint: invokeOptions.autoPrint === true,
+    useDialog: invokeOptions.useDialog === true,
+  });
   return { ok: true, ...(result || {}) };
 });
 

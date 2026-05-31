@@ -1,0 +1,46 @@
+/* Превью чека на POS после продажи (как на экране кассы) */
+.pos-sale-auto-print {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  pointer-events: none;
+}
+
+.pos-sale-auto-print__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.pos-sale-auto-print__paper {
+  position: absolute;
+  left: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(320px, var(--print-paper-w, 80mm));
+  max-height: min(92vh, 720px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #fff;
+  color: #000;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  border-radius: 4px;
+}
+
+.pos-sale-auto-print__shell {
+  padding: 0;
+}
+
+.pos-sale-auto-print__shell #receipt-print-area,
+.pos-sale-auto-print__shell .receipt-print-root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  background: #fff;
+  color: #000;
+}
+
+.pos-sale-auto-print__shell #receipt-print-area *,
+.pos-sale-auto-print__shell .receipt-print-root * {
+  color: #000 !important;
+}
