@@ -119,6 +119,7 @@ for f in \
   db/migration_manual_sales_store.sql \
   db/migration_manual_z_reports_from_sales.sql \
   db/migration_manual_cashier_shifts.sql \
+  db/migration_manual_cashier_shift_period.sql \
   db/migration_manual_product_discount.sql \
   db/migration_manual_sale_payment_split.sql
 do
