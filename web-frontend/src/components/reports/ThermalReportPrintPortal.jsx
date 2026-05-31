@@ -1,6 +1,7 @@
 // src/components/reports/ThermalReportPrintPortal.jsx
 import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { isDesktopCashier, printThermalReceiptDialog } from '../../utils/printReceipt';
 import { printThermalReport, waitForPrintDialogClose } from '../../utils/printThermalReport';
 
 /**
@@ -44,9 +45,13 @@ export default function ThermalReportPrintPortal({
       }
 
       try {
-        const mode = await printThermalReport();
-        if (mode !== 'silent') {
-          await waitForPrintDialogClose();
+        if (isDesktopCashier()) {
+          await printThermalReceiptDialog({ useModalShell: true });
+        } else {
+          const mode = await printThermalReport();
+          if (mode !== 'silent') {
+            await waitForPrintDialogClose();
+          }
         }
         if (!cancelled) {
           onPrintedRef.current?.();

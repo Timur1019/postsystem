@@ -4,7 +4,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { isDesktopSilentPrintAvailable, printReceiptAfterSale } from '../../utils/printReceipt';
+import { isDesktopCashier } from '../../utils/printReceipt';
 import PosSaleAutoPrint from '../../components/cashier/PosSaleAutoPrint';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import { clampPayAmount, round2 } from '../../utils/taxAmounts';
@@ -319,18 +319,9 @@ export default function PosPage() {
       qc.invalidateQueries({ queryKey: ['my-sales'] });
       qc.invalidateQueries({ queryKey: ['sales-ledger'] });
       const receiptNum = res.data.receiptNumber;
-      if (isDesktopSilentPrintAvailable()) {
+      if (isDesktopCashier()) {
         setAutoPrintSale(res.data);
         return;
-      }
-      try {
-        const mode = await printReceiptAfterSale(receiptNum);
-        if (mode === 'silent') {
-          toast.success(t('pos.saleSuccess'));
-          return;
-        }
-      } catch (e) {
-        toast.error(e?.message ?? t('pos.printFailed'));
       }
       toast.success(t('pos.saleSuccess'));
       navigate(`/receipt/${receiptNum}`, {
@@ -514,15 +505,7 @@ export default function PosPage() {
       />
 
       {autoPrintSale ? (
-        <PosSaleAutoPrint
-          sale={autoPrintSale}
-          onDone={() => setAutoPrintSale(null)}
-          onFallback={(sale) => {
-            navigate(`/receipt/${sale.receiptNumber}`, {
-              state: { autoPrint: true, fromCashier: true },
-            });
-          }}
-        />
+        <PosSaleAutoPrint sale={autoPrintSale} onDone={() => setAutoPrintSale(null)} />
       ) : null}
     </div>
   );

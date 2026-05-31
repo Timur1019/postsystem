@@ -1649,6 +1649,7 @@
     "completeSale": "Savdoni yakunlash",
     "saleSuccess": "Savdo muvaffaqiyatli",
     "printFailed": "Chek chop etilmadi",
+    "printDialogAuto": "Windows chop etish oynasi — «Chop etish», POS-80 printer",
     "saleFailed": "Savdo amalga oshmadi",
     "mySalesTitle": "Mening savdolarim",
     "salesListTitle": "Savdolar",

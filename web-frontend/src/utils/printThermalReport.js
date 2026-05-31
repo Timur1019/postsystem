@@ -5,7 +5,7 @@ import {
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
 } from './printWithHtmlClass';
-import { isDesktopSilentPrintAvailable } from './printReceipt';
+import { isDesktopCashier, printThermalReceiptDialog } from './printReceipt';
 
 const THERMAL_REPORT_CLASSES = [PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS];
 
@@ -28,15 +28,9 @@ async function waitForThermalPrintDom() {
 }
 
 export async function printThermalReport() {
-  if (isDesktopSilentPrintAvailable() && typeof window.desktopCashier?.printCurrentPage === 'function') {
-    const cleanup = prepareThermalPrint(THERMAL_REPORT_CLASSES);
-    try {
-      await waitForThermalPrintDom();
-      await window.desktopCashier.printCurrentPage();
-      return 'silent';
-    } finally {
-      cleanup();
-    }
+  if (isDesktopCashier()) {
+    await printThermalReceiptDialog({ useModalShell: true });
+    return 'dialog';
   }
 
   printWithHtmlClass(THERMAL_REPORT_CLASSES);

@@ -1,8 +1,8 @@
 import { syncPrintCssVars } from './syncPrintCssVars';
 import { usePrintSettingsStore } from '../store/printSettingsStore';
 
-function isDesktopSilentPrintAvailable() {
-  return typeof window !== 'undefined' && typeof window.desktopCashier?.printReceipt === 'function';
+function useElectronSilentPrintStyles() {
+  return false;
 }
 
 export const POS_RECEIPT_PRINT_EVENT = 'pos-request-receipt-print';
@@ -51,7 +51,7 @@ function removeThermalPageRule() {
  */
 export function prepareThermalPrint(className) {
   const classes = (Array.isArray(className) ? className : [className]).filter(Boolean);
-  if (isDesktopSilentPrintAvailable()) {
+  if (useElectronSilentPrintStyles()) {
     classes.push(ELECTRON_SILENT_PRINT_CLASS);
   }
   const state = usePrintSettingsStore.getState();

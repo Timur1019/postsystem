@@ -37,7 +37,7 @@ export default function ReceiptPage() {
   const runPrint = useCallback(async () => {
     try {
       const mode = await printReceiptDialog(receiptNumber);
-      if (mode === 'silent') {
+      if (mode) {
         toast.success(t('receipt.printSent'), { id: 'receipt-print' });
       }
     } catch (e) {
