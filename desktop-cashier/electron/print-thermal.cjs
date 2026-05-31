@@ -162,7 +162,7 @@ function prepareThermalPrintInPage(webContents, extraClasses = []) {
       const pxPerMm = 96 / 25.4;
       const bodyH = document.body.scrollHeight || 0;
       const contentPx = Math.max(best.h, bodyH, best.area ? best.area.scrollHeight : 0);
-      const heightMm = Math.max(100, Math.ceil(contentPx / pxPerMm) + 20 + CUT_FEED_MM);
+      const heightMm = Math.max(100, Math.ceil(contentPx / pxPerMm) + 20 + ${CUT_FEED_MM});
       return {
         paperMm: parseFloat(paper) || 80,
         heightMm,
