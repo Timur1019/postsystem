@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
 const { resolveWebDist } = require('./embedded-server.cjs');
-const { buildOrigin, buildHealthUrl, parseServerUrl } = require('./server-url.cjs');
+const { buildOrigin, buildHealthUrl, parseServerUrl, usesHttps } = require('./server-url.cjs');
 const { writeUserConfig } = require('./config.cjs');
 
 const DEFAULT_WEB_PORT = process.env.POS_WEB_PORT || '8081';
@@ -56,8 +56,8 @@ function buildSetupHtml(current) {
     ? 'Укажите адрес магазина (как сказал администратор). Обычно это IP или имя сервера — ничего сложного настраивать не нужно.'
     : 'Укажите адрес сервера магазина. Интерфейс загрузится из сети — после обновления на сервере нажмите «Вид → Обновить».';
   const hint = hasEmbedded
-    ? 'Порт сервера: обычно <strong>8081</strong> (сайт и API на одном адресе). Если не работает — спросите администратора.'
-    : 'Порт сайта и API: обычно <strong>8081</strong>. Для HTTPS — 443. Не используйте порт 80, если администратор не сказал иначе.';
+    ? 'Порт API: <strong>443</strong> для HTTPS (aurent.uz). Укажите домен <strong>точно как в браузере</strong> (часто www.aurent.uz, не aurent.uz).'
+    : 'Порт сайта и API: <strong>443</strong> для HTTPS. Домен — как в браузере (www.aurent.uz). Для HTTP в сети магазина — 8081.';
   const displayApiPort = apiPort;
   const portFields = hasEmbedded
     ? `<label for="apiPort">Порт сервера (обычно 8081)</label>
@@ -106,7 +106,7 @@ function buildSetupHtml(current) {
   <p>${intro}</p>
   <form id="f">
     <label for="host">Адрес сервера (IP или домен)</label>
-    <input id="host" name="host" placeholder="например 192.168.1.50" value="${host}" required autocomplete="off" />
+    <input id="host" name="host" placeholder="www.aurent.uz или IP сервера" value="${host}" required autocomplete="off" />
     ${portFields}
     <button type="submit">Продолжить</button>
   </form>
@@ -117,7 +117,7 @@ function buildSetupHtml(current) {
       const host = document.getElementById('host').value.trim();
       const webEl = document.getElementById('webPort');
       const apiPort = document.getElementById('apiPort').value.trim() || '8081';
-      const webPort = webEl ? (webEl.value.trim() || apiPort) : apiPort;
+      const webPort = webEl && webEl.type === 'hidden' ? apiPort : (webEl.value.trim() || apiPort);
       window.setupApi.save({ host, webPort, apiPort });
     });
   </script>
@@ -145,34 +145,52 @@ function normalizeHostPort(host, port) {
   return { host: h, port: p };
 }
 
+function isLanHost(host) {
+  const h = String(host || '').trim().toLowerCase();
+  return h === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(h) || h.endsWith('.local');
+}
+
+/** HTTPS и публичный домен — UI с сайта (как браузер); LAN IP:8081 — встроенный UI + прокси. */
+function shouldUseRemoteUi(host, webPort, apiPort) {
+  const web = String(webPort || '').trim();
+  const api = String(apiPort || '').trim();
+  if (usesHttps(api) || usesHttps(web)) return true;
+  return !isLanHost(host);
+}
+
 function saveConfig({ host, webPort, apiPort }) {
   const { host: h } = normalizeHostPort(host, apiPort);
-  const web = String(webPort || DEFAULT_WEB_PORT).trim() || DEFAULT_WEB_PORT;
+  let web = String(webPort || DEFAULT_API_PORT).trim() || DEFAULT_API_PORT;
   const api = String(apiPort || DEFAULT_API_PORT).trim() || DEFAULT_API_PORT;
-  const webOrigin = buildOrigin(h, web);
-  const backendOrigin = buildOrigin(h, api);
   const hasEmbedded = Boolean(resolveWebDist());
   const embeddedPort = 5199;
 
-  const payload = hasEmbedded
+  if (hasEmbedded) {
+    web = api;
+  }
+
+  const origin = buildOrigin(h, api);
+  const useRemoteUi = !hasEmbedded || shouldUseRemoteUi(h, web, api);
+
+  const payload = useRemoteUi
     ? {
-        useRemoteUi: false,
-        cashierUrl: `http://127.0.0.1:${embeddedPort}`,
-        backendOrigin,
-        webPort: web,
+        useRemoteUi: true,
+        cashierUrl: origin,
+        backendOrigin: origin,
+        webPort: api,
         apiPort: api,
         embeddedPort,
-        apiHealthUrl: buildHealthUrl(backendOrigin),
+        apiHealthUrl: buildHealthUrl(origin),
       }
     : {
-        useRemoteUi: true,
-        cashierUrl: webOrigin,
-        backendOrigin,
-        webPort: web,
+        useRemoteUi: false,
+        cashierUrl: `http://127.0.0.1:${embeddedPort}`,
+        backendOrigin: buildOrigin(h, api),
+        webPort: api,
         apiPort: api,
-        apiHealthUrl: buildHealthUrl(webOrigin),
+        embeddedPort,
+        apiHealthUrl: buildHealthUrl(buildOrigin(h, api)),
       };
-  // merge: чтобы не затирать настройки принтера и пр.
   return writeUserConfig(payload);
 }
 

@@ -1,5 +1,8 @@
 #!/bin/bash
-CONFIG_DIR="$HOME/Library/Application Support/masterpiece-pos-cashier-desktop"
+CONFIG_DIR="$HOME/Library/Application Support/Aurent Cashier"
+if [[ ! -d "$CONFIG_DIR" ]]; then
+  CONFIG_DIR="$HOME/Library/Application Support/masterpiece-pos-cashier-desktop"
+fi
 CONFIG_FILE="$CONFIG_DIR/config.json"
 
 echo ""
@@ -27,11 +30,18 @@ elif [[ "$PORT" == "80" ]]; then
   HEALTH="http://${HOST}/api/v1/actuator/health"
 fi
 
+USE_REMOTE=false
+CASHIER_URL="http://127.0.0.1:5199"
+if [[ "$PORT" == "443" || "$PORT" == "8443" ]]; then
+  USE_REMOTE=true
+  CASHIER_URL="${ORIGIN}"
+fi
+
 mkdir -p "$CONFIG_DIR"
 cat > "$CONFIG_FILE" <<EOF
 {
-  "useRemoteUi": false,
-  "cashierUrl": "http://127.0.0.1:5199",
+  "useRemoteUi": ${USE_REMOTE},
+  "cashierUrl": "${CASHIER_URL}",
   "backendOrigin": "${ORIGIN}",
   "apiHealthUrl": "${HEALTH}",
   "webPort": "${PORT}",

@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
 const { resolveWebDist } = require('./embedded-server.cjs');
+const { buildOrigin } = require('./server-url.cjs');
 
 const DEFAULTS = {
   cashierUrl: 'http://127.0.0.1:5199',
@@ -48,12 +49,27 @@ function loadConfig() {
   }
 
   const hasEmbeddedDist = Boolean(resolveWebDist());
+  const savedCashierUrl = String(fromEnv.cashierUrl || fileConfig.cashierUrl || '');
+  const looksLocalCashier =
+    savedCashierUrl.includes('127.0.0.1') || savedCashierUrl.includes('localhost');
+  const backendOrigin = (fromEnv.backendOrigin || fileConfig.backendOrigin || DEFAULTS.backendOrigin).replace(
+    /\/$/,
+    ''
+  );
+
+  /** Конфиг под встроенный UI, но в .exe нет web-dist — иначе белый экран на 127.0.0.1. */
+  const forceRemoteUi =
+    !hasEmbeddedDist &&
+    Boolean(backendOrigin && backendOrigin !== DEFAULTS.backendOrigin) &&
+    (looksLocalCashier || fileConfig.useRemoteUi === false);
+
   const useRemoteUi =
     fromEnv.useRemoteUi === true ||
     fileConfig.useRemoteUi === true ||
+    forceRemoteUi ||
     (!hasEmbeddedDist &&
-      Boolean(fromEnv.cashierUrl || fileConfig.cashierUrl) &&
-      !String(fromEnv.cashierUrl || fileConfig.cashierUrl).includes('127.0.0.1'));
+      Boolean(savedCashierUrl) &&
+      !looksLocalCashier);
 
   /** Встроенный UI из web-dist; API — на сервер (backendOrigin). */
   const useEmbedded =
@@ -62,14 +78,18 @@ function loadConfig() {
     (process.env.POS_EMBEDDED === '1' || process.env.POS_FORCE_REMOTE_UI !== '1');
 
   const embeddedPort = Number(fileConfig.embeddedPort || DEFAULTS.embeddedPort);
-  const backendOrigin = (fromEnv.backendOrigin || fileConfig.backendOrigin || DEFAULTS.backendOrigin).replace(
-    /\/$/,
-    ''
-  );
 
   let cashierUrl = fromEnv.cashierUrl || fileConfig.cashierUrl || DEFAULTS.cashierUrl;
   if (useEmbedded) {
     cashierUrl = `http://127.0.0.1:${embeddedPort}`;
+  } else if (forceRemoteUi && backendOrigin) {
+    try {
+      const api = new URL(backendOrigin);
+      const webPort = String(fileConfig.webPort || fileConfig.apiPort || api.port || '443');
+      cashierUrl = buildOrigin(api.hostname, webPort);
+    } catch {
+      cashierUrl = backendOrigin;
+    }
   }
   cashierUrl = cashierUrl.replace(/\/$/, '');
 

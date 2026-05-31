@@ -36,7 +36,7 @@
   Повторная настройка: «Настройка-сервера-Windows.bat» в этой папке.
 
   config.json вручную:
-    %APPDATA%\masterpiece-pos-cashier-desktop\config.json
+    %APPDATA%\Aurent Cashier\config.json
 
   Windows может спросить «Разрешить приложению?» — Разрешить.
 
@@ -55,7 +55,7 @@
 РУЧНОЙ config.json (Mac)
 --------------------------------------------------------------------------------
 
-  ~/Library/Application Support/masterpiece-pos-cashier-desktop/config.json
+  ~/Library/Application Support/Aurent Cashier/config.json
 
   HTTP (порт 8081):
   {

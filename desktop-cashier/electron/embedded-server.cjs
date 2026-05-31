@@ -32,6 +32,7 @@ function startEmbeddedUi({ port, backendOrigin }) {
       target,
       changeOrigin: true,
       secure: false,
+      xfwd: true,
       pathFilter: (pathname) => pathname.startsWith('/api'),
       on: {
         error: (err, _req, res) => {

@@ -182,11 +182,21 @@ function registerDesktopIpc() {
   });
 }
 
+function normalizeHost(host) {
+  return String(host || '')
+    .toLowerCase()
+    .replace(/^www\./, '');
+}
+
+function hostsMatch(a, b) {
+  return normalizeHost(a) === normalizeHost(b);
+}
+
 function isAllowedLocation(urlString) {
   try {
     const target = new URL(urlString);
     const base = new URL(config.cashierUrl);
-    if (target.origin !== base.origin) {
+    if (!hostsMatch(target.hostname, base.hostname)) {
       return false;
     }
     return ALLOWED_PATH_PREFIXES.some((prefix) => target.pathname === prefix || target.pathname.startsWith(`${prefix}/`));
@@ -630,7 +640,6 @@ function createWindow() {
   const guardNavigation = (event, url) => {
     if (!isAllowedLocation(url)) {
       event.preventDefault();
-      mainWindow.loadURL(`${config.cashierUrl}/cashier/pos`);
     }
   };
 
@@ -649,10 +658,32 @@ function createWindow() {
   mainWindow.loadURL(`${config.cashierUrl}/login`);
 }
 
+function registerTrustedCertificateHandler() {
+  app.on('certificate-error', (event, _webContents, url, _error, _certificate, callback) => {
+    try {
+      const target = new URL(url);
+      const bases = [config?.cashierUrl, config?.backendOrigin].filter(Boolean);
+      const trusted = bases.some((base) => {
+        const origin = new URL(base);
+        return hostsMatch(target.hostname, origin.hostname);
+      });
+      if (trusted) {
+        event.preventDefault();
+        callback(true);
+        return;
+      }
+    } catch {
+      // ignore
+    }
+    callback(false);
+  });
+}
+
 app.whenReady().then(async () => {
   registerDesktopIpc();
   buildAppMenu();
   config = loadConfig();
+  registerTrustedCertificateHandler();
 
   if (!hasUserServerConfig()) {
     try {

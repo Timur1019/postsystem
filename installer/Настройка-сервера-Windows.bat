@@ -1,6 +1,8 @@
 @echo off
 chcp 65001 >nul
-set CONFIG_DIR=%APPDATA%\masterpiece-pos-cashier-desktop
+rem Установщик Electron хранит config в папке productName (не в имени npm-пакета)
+set CONFIG_DIR=%APPDATA%\Aurent Cashier
+if not exist "%CONFIG_DIR%" set CONFIG_DIR=%APPDATA%\masterpiece-pos-cashier-desktop
 set CONFIG_FILE=%CONFIG_DIR%\config.json
 
 echo.
@@ -27,10 +29,21 @@ if "%PORT%"=="8443" (
 
 if not exist "%CONFIG_DIR%" mkdir "%CONFIG_DIR%"
 
+if "%PORT%"=="443" (
+  set USE_REMOTE=true
+  set CASHIER_URL=%BACKEND%
+) else if "%PORT%"=="8443" (
+  set USE_REMOTE=true
+  set CASHIER_URL=%BACKEND%
+) else (
+  set USE_REMOTE=false
+  set CASHIER_URL=http://127.0.0.1:5199
+)
+
 (
 echo {
-echo   "useRemoteUi": false,
-echo   "cashierUrl": "http://127.0.0.1:5199",
+echo   "useRemoteUi": %USE_REMOTE%,
+echo   "cashierUrl": "%CASHIER_URL%",
 echo   "backendOrigin": "%BACKEND%",
 echo   "apiHealthUrl": "%HEALTH%",
 echo   "webPort": "%PORT%",

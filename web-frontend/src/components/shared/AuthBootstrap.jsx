@@ -1,8 +1,16 @@
 // Waits for persisted auth (localStorage) before rendering routes — avoids login redirect loops.
+import { useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 
 export default function AuthBootstrap({ children }) {
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const setHasHydrated = useAuthStore((s) => s.setHasHydrated);
+
+  useEffect(() => {
+    if (hasHydrated) return undefined;
+    const timer = setTimeout(() => setHasHydrated(true), 4000);
+    return () => clearTimeout(timer);
+  }, [hasHydrated, setHasHydrated]);
 
   if (!hasHydrated) {
     return (
