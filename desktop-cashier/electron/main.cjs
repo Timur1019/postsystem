@@ -349,47 +349,62 @@ async function listSystemPrinters() {
   }
 }
 
+const PRINTER_KIND = {
+  receipt: { field: 'receiptPrinterName', pickerKind: 'receipt' },
+  label: { field: 'labelPrinterName', pickerKind: 'label' },
+};
+
 /**
- * Кассир ничего не выбирает: один принтер — сохраняем сами; несколько — один раз
- * показываем окно выбора и сохраняем; нет принтеров — печатаем в "по умолчанию".
+ * Имя принтера из config.json (точное имя Windows).
+ * Первый раз (или если принтер пропал) — окно выбора; дальше только сохранённое.
+ * Смена: меню Aurent → «Принтер чека».
  */
-async function resolveReceiptPrinterName() {
-  const saved = readPrinterSettings();
-  if (saved.receiptPrinterName) {
-    return saved.receiptPrinterName;
-  }
+async function resolvePrinterByKind(kind, { promptIfMissing = true } = {}) {
+  const meta = PRINTER_KIND[kind] || PRINTER_KIND.receipt;
+  const saved = readPrinterSettings()[meta.field];
   const printers = await listSystemPrinters();
-  if (printers.length === 0) {
+
+  if (saved && printers.some((p) => p.name === saved)) {
+    return saved;
+  }
+
+  if (saved && printers.length > 0) {
+    writePrinterSettings({ [meta.field]: '' });
+  }
+
+  if (!promptIfMissing) {
+    return saved || '';
+  }
+
+  if (!printers.length) {
+    dialog.showMessageBoxSync({
+      type: 'warning',
+      title: 'Aurent — печать',
+      message: 'В Windows не найден ни один принтер.',
+      detail:
+        'Подключите термопринтер, установите драйвер, затем: меню Aurent → «Принтер чека».',
+      buttons: ['OK'],
+    });
     return '';
   }
-  if (printers.length === 1) {
-    const only = printers[0];
-    writePrinterSettings({ receiptPrinterName: only.name });
-    return only.name;
+
+  await showPrinterPickerWindow(mainWindow, { kind: meta.pickerKind });
+  const chosen = readPrinterSettings()[meta.field] || '';
+  if (!chosen) {
+    throw new Error('Принтер не выбран. Меню Aurent → «Принтер чека».');
   }
-  await showPrinterPickerWindow(mainWindow, { kind: 'receipt' });
-  return readPrinterSettings().receiptPrinterName || '';
+  return chosen;
 }
 
-async function resolveLabelPrinterName() {
-  const saved = readPrinterSettings();
-  if (saved.labelPrinterName) {
-    return saved.labelPrinterName;
-  }
-  const printers = await listSystemPrinters();
-  if (printers.length === 0) {
-    return '';
-  }
-  if (printers.length === 1) {
-    const only = printers[0];
-    writePrinterSettings({ labelPrinterName: only.name });
-    return only.name;
-  }
-  await showPrinterPickerWindow(mainWindow, { kind: 'label' });
-  return readPrinterSettings().labelPrinterName || '';
+function resolveReceiptPrinterName(options) {
+  return resolvePrinterByKind('receipt', options);
 }
 
-function waitForReceiptReady(webContents, timeoutMs = 12000) {
+function resolveLabelPrinterName(options) {
+  return resolvePrinterByKind('label', options);
+}
+
+function waitForReceiptReady(webContents, timeoutMs = 20000) {
   return webContents.executeJavaScript(`
     new Promise((resolve) => {
       const deadline = Date.now() + ${timeoutMs};
@@ -571,8 +586,14 @@ ipcMain.handle('print-receipt', async (event, receiptNumber) => {
   if (!isAllowedLocation(`${config.cashierUrl}/receipt/${receiptNumber}`)) {
     throw new Error('Недопустимый URL чека');
   }
-  await printReceiptInHiddenWindow(receiptNumber);
-  return { ok: true };
+  try {
+    await printReceiptInHiddenWindow(receiptNumber);
+    return { ok: true };
+  } catch (err) {
+    const msg = err?.message || 'Печать не выполнена';
+    dialog.showErrorBox('Aurent — печать чека', `${msg}\n\nПроверьте: меню Aurent → принтер чека → тестовая печать.`);
+    throw err;
+  }
 });
 
 ipcMain.handle('print-label-page', async (event) => {

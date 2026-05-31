@@ -6,12 +6,17 @@ const KIND_META = {
   receipt: {
     field: 'receiptPrinterName',
     title: 'Принтер чека',
-    hint: 'Выберите принтер, на котором будут печататься чеки.',
+    hint:
+      'Выберите принтер из списка (имя как в Windows) и нажмите «Сохранить». ' +
+      'Чеки после продажи будут печататься на нём автоматически. ' +
+      'Сменить позже: меню Aurent → «Принтер чека».',
   },
   label: {
     field: 'labelPrinterName',
     title: 'Принтер штрих-кодов / этикеток',
-    hint: 'Выберите принтер этикеток (или обычный принтер для печати штрих-кодов).',
+    hint:
+      'Выберите принтер и нажмите «Сохранить». ' +
+      'Сменить позже: меню Aurent → «Принтер штрих-кодов».',
   },
 };
 
@@ -184,7 +189,11 @@ function showPrinterPickerWindow(mainWindow, options = {}) {
     });
 
     ipcMain.handle('printer-picker:save', (_e, name) => {
-      const saved = writePrinterSettings({ [meta.field]: String(name || '') });
+      const trimmed = String(name || '').trim();
+      if (!trimmed) {
+        throw new Error('Выберите принтер из списка');
+      }
+      const saved = writePrinterSettings({ [meta.field]: trimmed });
       finish(saved);
       return saved;
     });

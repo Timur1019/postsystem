@@ -30,9 +30,18 @@ export default function ThermalReportPrintPortal({
     const run = async () => {
       await document.fonts?.ready;
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-      await new Promise((r) => setTimeout(r, 250));
+      let shell = null;
+      for (let i = 0; i < 40 && !cancelled; i += 1) {
+        shell = document.getElementById('fiscal-print-shell');
+        if (shell && shell.scrollHeight >= 8) break;
+        await new Promise((r) => setTimeout(r, 100));
+      }
       if (cancelled) return;
-      if (!document.getElementById('fiscal-print-shell')) return;
+      if (!shell) {
+        onErrorRef.current?.(new Error('Чек не успел подготовиться для печати'));
+        onCloseRef.current?.();
+        return;
+      }
 
       try {
         const mode = await printThermalReport();

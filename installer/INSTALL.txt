@@ -37,6 +37,7 @@
 
   config.json вручную:
     %APPDATA%\Aurent Cashier\config.json
+    (принтер чека: поле receiptPrinterName — задаётся в меню Aurent или при первой печати)
 
   Windows может спросить «Разрешить приложению?» — Разрешить.
 

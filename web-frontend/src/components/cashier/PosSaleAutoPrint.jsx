@@ -1,29 +1,41 @@
-// Автопечать чека после продажи в главном окне Electron (без скрытого окна).
+// Автопечать после продажи: скрытое окно Electron (/receipt?silent=1), как тестовый чек.
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import ThermalReportPrintPortal from '../reports/ThermalReportPrintPortal';
-import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
+import { printReceiptAfterSale } from '../../utils/printReceipt';
 
 export default function PosSaleAutoPrint({ sale, onDone, onFallback }) {
   const { t } = useTranslation();
+  const startedRef = useRef(false);
 
-  if (!sale) return null;
+  useEffect(() => {
+    const num = sale?.receiptNumber;
+    if (!num || startedRef.current) return undefined;
+    startedRef.current = true;
+    let cancelled = false;
 
-  return (
-    <ThermalReportPrintPortal
-      open
-      printToken={sale.receiptNumber}
-      onPrinted={() => {
-        toast.success(t('pos.saleSuccess'));
-        onDone?.();
-      }}
-      onError={() => {
+    (async () => {
+      try {
+        const mode = await printReceiptAfterSale(num);
+        if (cancelled) return;
+        if (mode === 'silent') {
+          toast.success(t('pos.saleSuccess'));
+          onDone?.();
+          return;
+        }
         toast.error(t('pos.printFailed'));
         onFallback?.(sale);
-      }}
-      onClose={() => onDone?.()}
-    >
-      <FiscalReceiptBody sale={sale} />
-    </ThermalReportPrintPortal>
-  );
+      } catch (e) {
+        if (cancelled) return;
+        toast.error(e?.message ?? t('pos.printFailed'));
+        onFallback?.(sale);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sale, onDone, onFallback, t]);
+
+  return null;
 }
