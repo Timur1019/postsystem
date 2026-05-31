@@ -55,6 +55,7 @@ export default function PosPage() {
   const [returnOpen, setReturnOpen] = useState(false);
   const [discountOpen, setDiscountOpen] = useState(false);
   const [autoPrintSale, setAutoPrintSale] = useState(null);
+  const clearAutoPrintSale = useCallback(() => setAutoPrintSale(null), []);
   const [posPane, setPosPane] = useState('register');
   const { setShell } = usePosShell() ?? {};
   const { open: shiftModalOpen, openShift: openShiftModal } = useCashierShiftModal();
@@ -506,7 +507,7 @@ export default function PosPage() {
       />
 
       {autoPrintSale ? (
-        <PosSaleAutoPrint sale={autoPrintSale} onDone={() => setAutoPrintSale(null)} />
+        <PosSaleAutoPrint sale={autoPrintSale} onDone={clearAutoPrintSale} />
       ) : null}
     </div>
   );

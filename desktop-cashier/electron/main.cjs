@@ -523,13 +523,17 @@ async function printReceiptInHiddenWindow(receiptNumber) {
 }
 
 async function printReceiptHtmlInHiddenWindow(bodyHtml) {
-  const deviceName = await resolveReceiptPrinterName();
+  const deviceName = await resolveReceiptPrinterName({ promptIfMissing: false });
   const printers = await listSystemPrinters();
   const mainSession =
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
   const html = String(bodyHtml || '').trim();
   if (!html || html.length < 40) {
     throw new Error('Пустой чек для печати');
+  }
+  const plainLen = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length;
+  if (plainLen < 40) {
+    throw new Error('Чек без текста для печати');
   }
   await printHtmlInHiddenWindow(html, {
     deviceName,

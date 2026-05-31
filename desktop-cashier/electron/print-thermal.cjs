@@ -328,7 +328,7 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
     await new Promise((r) => setTimeout(r, IS_WIN ? 900 : 300));
     await waitForPaintFrames(printWin.webContents);
     const dims = await prepareThermalPrintInPage(printWin.webContents);
-    if (!dims?.textLen || dims.textLen < 40 || dims.contentHeightPx < 60) {
+    if (!dims?.textLen || dims.textLen < 80 || dims.contentHeightPx < 120) {
       throw new Error('Чек пустой — не удалось подготовить печать');
     }
     if (!printWin.isDestroyed()) {

@@ -1,10 +1,12 @@
 /**
  * Автопечать после продажи на десктопе.
- * 1. Чек уже в памяти (ответ API) — рендер в DOM
- * 2. printReceiptHtml → скрытое окно Electron → silent print
- * 3. При сбое — window.print (диалог Windows, всегда работает)
+ * 1. Чек из ответа API → DOM
+ * 2. printReceiptHtml → скрытое окно → silent print
+ * 3. printReceipt(номер) — запасной путь
+ * 4. window.print — диалог Windows
  */
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
@@ -14,55 +16,86 @@ import { usePrintSettingsStore } from '../../store/printSettingsStore';
 
 async function waitForReceiptInDom() {
   await document.fonts?.ready;
-  for (let i = 0; i < 55; i += 1) {
+  for (let i = 0; i < 60; i += 1) {
     await new Promise((r) => setTimeout(r, 100));
     const area = document.getElementById('receipt-print-area');
     if (!area) continue;
     const textLen = (area.innerText || '').trim().length;
     const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
     const imgs = Array.from(area.querySelectorAll('img'));
-    const imgsReady = imgs.length === 0 || imgs.every((img) => img.complete && img.naturalWidth > 0);
+    const imgsReady =
+      imgs.length === 0 || imgs.every((img) => img.complete && img.naturalWidth > 0);
     if (textLen >= 80 && h >= 120 && imgsReady) {
-      return area;
+      return { area, textLen };
     }
   }
-  return document.getElementById('receipt-print-area');
+  const area = document.getElementById('receipt-print-area');
+  const textLen = area ? (area.innerText || '').trim().length : 0;
+  return { area, textLen };
+}
+
+async function trySilentPrintAfterSale(sale, html, textLen) {
+  const num = sale?.receiptNumber != null ? String(sale.receiptNumber).trim() : '';
+
+  if (
+    html.length >= 40 &&
+    textLen >= 80 &&
+    typeof window.desktopCashier?.printReceiptHtml === 'function'
+  ) {
+    await window.desktopCashier.printReceiptHtml(html);
+    return true;
+  }
+
+  if (num && typeof window.desktopCashier?.printReceipt === 'function') {
+    await window.desktopCashier.printReceipt(num);
+    return true;
+  }
+
+  return false;
 }
 
 export default function PosSaleAutoPrint({ sale, onDone }) {
   const { t } = useTranslation();
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   useLayoutEffect(() => {
-    if (!sale) return undefined;
+    if (!sale?.receiptNumber) return undefined;
 
     let cancelled = false;
     syncPrintCssVars(usePrintSettingsStore.getState());
 
+    const finish = () => {
+      if (!cancelled) onDoneRef.current?.();
+    };
+
     const run = async () => {
-      const area = await waitForReceiptInDom();
+      const { area, textLen } = await waitForReceiptInDom();
       if (cancelled) return;
 
       const html = area?.outerHTML?.trim() || '';
-      const textLen = area ? (area.innerText || '').trim().length : 0;
 
-      if (html.length >= 40 && textLen >= 80 && typeof window.desktopCashier?.printReceiptHtml === 'function') {
+      if (typeof window.desktopCashier?.printReceiptHtml === 'function' ||
+          typeof window.desktopCashier?.printReceipt === 'function') {
         try {
-          await window.desktopCashier.printReceiptHtml(html);
-          if (!cancelled) onDone?.();
-          return;
+          const ok = await trySilentPrintAfterSale(sale, html, textLen);
+          if (ok) {
+            finish();
+            return;
+          }
         } catch (err) {
-          console.warn('[Aurent] printReceiptHtml after sale failed', err);
+          console.warn('[Aurent] silent print after sale failed', err);
         }
       }
 
       if (cancelled) return;
       try {
         await printThermalReceiptDialog({ useModalShell: true });
-        if (!cancelled) onDone?.();
+        finish();
       } catch {
         if (!cancelled) {
           toast.error(t('pos.printFailed'));
-          onDone?.();
+          finish();
         }
       }
     };
@@ -72,11 +105,11 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     return () => {
       cancelled = true;
     };
-  }, [sale, onDone, t]);
+  }, [sale?.receiptNumber, t]);
 
   if (!sale) return null;
 
-  return (
+  const host = (
     <div className="fiscal-print-scene thermal-report-print-host" aria-hidden>
       <div id="fiscal-print-shell">
         <div className="receipt-print-root bg-white text-black">
@@ -85,4 +118,6 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
       </div>
     </div>
   );
+
+  return createPortal(host, document.body);
 }

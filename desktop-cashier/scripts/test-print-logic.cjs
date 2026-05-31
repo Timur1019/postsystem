@@ -81,6 +81,16 @@ test('matchPrinterName: точное совпадение', () => {
   assert.strictEqual(matchPrinterName('POS-80 (copy 2)', printers), 'POS-80 (copy 2)');
 });
 
+test('buildThermalReceiptDocument: фискальный HTML с QR data URL', () => {
+  const body =
+    '<div id="receipt-print-area"><p class="receipt-title">MAGAZIN</p>' +
+    '<p>Chek №1001</p><img class="receipt-qr" src="data:image/png;base64,abc" alt="" /></div>';
+  const doc = buildThermalReceiptDocument(body);
+  assert.ok(doc.includes('MAGAZIN'));
+  assert.ok(doc.includes('data:image/png;base64,abc'));
+  assert.ok(doc.includes('receipt-qr'));
+});
+
 test('paperWidthPx для 80mm >= 280px', () => {
   assert.ok(paperWidthPx(80) >= 280);
 });
