@@ -359,13 +359,31 @@ const PRINTER_KIND = {
  * Первый раз (или если принтер пропал) — окно выбора; дальше только сохранённое.
  * Смена: меню Aurent → «Принтер чека».
  */
+function matchPrinterName(saved, printers) {
+  const want = String(saved || '').trim();
+  if (!want || !printers?.length) return null;
+  const exact = printers.find((p) => p.name === want);
+  if (exact) return exact.name;
+  const lower = want.toLowerCase();
+  const ci = printers.find((p) => p.name.toLowerCase() === lower);
+  if (ci) return ci.name;
+  const partial = printers.find(
+    (p) => p.name.toLowerCase().includes(lower) || lower.includes(p.name.toLowerCase())
+  );
+  return partial?.name || null;
+}
+
 async function resolvePrinterByKind(kind, { promptIfMissing = true } = {}) {
   const meta = PRINTER_KIND[kind] || PRINTER_KIND.receipt;
   const saved = readPrinterSettings()[meta.field];
   const printers = await listSystemPrinters();
 
-  if (saved && printers.some((p) => p.name === saved)) {
-    return saved;
+  const matched = matchPrinterName(saved, printers);
+  if (matched) {
+    if (matched !== saved) {
+      writePrinterSettings({ [meta.field]: matched });
+    }
+    return matched;
   }
 
   if (saved && printers.length > 0) {
@@ -441,6 +459,7 @@ async function printReceiptInHiddenWindow(receiptNumber) {
   const url = `${config.cashierUrl}/receipt/${encoded}?silent=1`;
   const paperMm = 80;
   const deviceName = await resolveReceiptPrinterName();
+  const printers = await listSystemPrinters();
   const mainSession =
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
   const printWin = createReceiptPrintWindow({
@@ -477,13 +496,13 @@ async function printReceiptInHiddenWindow(receiptNumber) {
       })
       .then(() => ensureWindowPainted(printWin))
       .then(() => waitForImages(printWin.webContents))
-      .then(() => new Promise((r) => setTimeout(r, 400)))
+      .then(() => new Promise((r) => setTimeout(r, process.platform === 'win32' ? 900 : 400)))
       .then(() => prepareThermalPrintInPage(printWin.webContents))
       .then((dims) => {
         if (!dims?.textLen || dims.contentHeightPx < 20) {
           throw new Error('Чек пустой — проверьте вход в кассу и связь с сервером');
         }
-        return runSilentPrint(printWin.webContents, dims, { deviceName });
+        return runSilentPrint(printWin.webContents, dims, { deviceName, printers });
       })
       .then(() => {
         cleanup();
@@ -539,6 +558,7 @@ function buildTestReceiptDataUrl() {
 async function printTestReceiptInHiddenWindow() {
   const paperMm = 80;
   const deviceName = await resolveReceiptPrinterName();
+  const printers = await listSystemPrinters();
   const printWin = createReceiptPrintWindow({
     width: paperWidthPx(paperMm),
     height: 800,
@@ -567,7 +587,7 @@ async function printTestReceiptInHiddenWindow() {
       .then(() => waitForImages(printWin.webContents))
       .then(() => new Promise((r) => setTimeout(r, 200)))
       .then(() => prepareThermalPrintInPage(printWin.webContents))
-      .then((dims) => runSilentPrint(printWin.webContents, dims, { deviceName }))
+      .then((dims) => runSilentPrint(printWin.webContents, dims, { deviceName, printers }))
       .then(() => {
         cleanup();
       })
@@ -630,7 +650,8 @@ ipcMain.handle('print-current-page', async (event) => {
     throw new Error('Нет содержимого для печати');
   }
   const deviceName = await resolveReceiptPrinterName();
-  await runSilentPrint(wc, dims, { deviceName });
+  const printers = await listSystemPrinters();
+  await runSilentPrint(wc, dims, { deviceName, printers });
   return { ok: true };
 });
 

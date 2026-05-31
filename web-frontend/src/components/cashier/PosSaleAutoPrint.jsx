@@ -27,7 +27,8 @@ export default function PosSaleAutoPrint({ sale, onDone, onFallback }) {
         onFallback?.(sale);
       } catch (e) {
         if (cancelled) return;
-        toast.error(e?.message ?? t('pos.printFailed'));
+        const msg = e?.message ?? t('pos.printFailed');
+        toast.error(msg, { duration: 8000 });
         onFallback?.(sale);
       }
     })();

@@ -138,37 +138,80 @@ function prepareThermalPrintInPage(webContents, extraClasses = []) {
   `);
 }
 
-function runSilentPrint(webContents, dims, options = {}) {
+function buildSilentPrintOpts(deviceName, dims) {
   const paperMm = dims?.paperMm || 80;
   const heightMm = dims?.heightMm || 200;
-  const deviceName = options.deviceName ? String(options.deviceName) : '';
   const opts = {
     silent: true,
     printBackground: true,
     margins: { marginType: 'none' },
+    copies: 1,
   };
   if (deviceName) {
     opts.deviceName = deviceName;
   }
-  // На Windows произвольный pageSize у 80мм принтеров часто даёт пустую ленту.
   if (!IS_WIN) {
     opts.pageSize = {
       width: Math.round(paperMm * 1000),
       height: Math.round(heightMm * 1000),
     };
   }
+  return opts;
+}
 
-  const printerLabel = deviceName || 'принтер по умолчанию';
-  return new Promise((resolve, reject) => {
-    webContents.print(opts, (success, failureReason) => {
-      if (success) {
-        resolve({ deviceName: deviceName || null });
-        return;
-      }
-      const detail = failureReason && failureReason !== 'cancelled' ? failureReason : 'Печать не выполнена';
-      reject(new Error(`${detail} (принтер: ${printerLabel})`));
+/** Windows: очередь «по умолчанию» иногда печатает, когда явное имя (POS-80) даёт Print job failed. */
+function winPrintAttempts(requestedName, printers) {
+  const requested = String(requestedName || '').trim();
+  if (!IS_WIN) {
+    return requested ? [requested] : [''];
+  }
+  const info = printers?.find((p) => p.name === requested);
+  const attempts = [];
+  if (requested) {
+    attempts.push(requested);
+  }
+  if (!requested || info?.isDefault) {
+    attempts.push('');
+  }
+  return [...new Set(attempts)];
+}
+
+function runSilentPrint(webContents, dims, options = {}) {
+  const requested = options.deviceName ? String(options.deviceName) : '';
+  const printers = options.printers || [];
+  const attempts = winPrintAttempts(requested, printers);
+  const printerLabel = requested || 'принтер по умолчанию';
+
+  const tryOnce = (name) =>
+    new Promise((resolve, reject) => {
+      const opts = buildSilentPrintOpts(name, dims);
+      webContents.print(opts, (success, failureReason) => {
+        if (success) {
+          resolve({ deviceName: name || requested || null });
+          return;
+        }
+        const detail =
+          failureReason && failureReason !== 'cancelled' ? failureReason : 'Печать не выполнена';
+        reject(new Error(detail));
+      });
     });
-  });
+
+  return (async () => {
+    let lastErr;
+    for (const name of attempts) {
+      try {
+        return await tryOnce(name);
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    const detail = lastErr?.message || 'Печать не выполнена';
+    throw new Error(
+      `${detail} (принтер: ${printerLabel}). ` +
+        'Проверьте: POS-80 включён, рулон 80 мм, в Windows тестовая страница печатается. ' +
+        'В Aurent снова выберите «Принтер чека» → POS-80 → Сохранить.'
+    );
+  })();
 }
 
 /**
@@ -226,7 +269,12 @@ function runSilentLabelPrint(webContents, options = {}) {
         return;
       }
       const detail = failureReason && failureReason !== 'cancelled' ? failureReason : 'Печать не выполнена';
-      reject(new Error(`${detail} (принтер: ${printerLabel})`));
+      reject(
+        new Error(
+          `${detail} (принтер: ${printerLabel}). ` +
+            'Aurent → «Принтер чека»: выберите устройство из списка Windows.'
+        )
+      );
     });
   });
 }

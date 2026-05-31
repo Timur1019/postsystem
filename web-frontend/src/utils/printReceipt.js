@@ -21,6 +21,11 @@ export async function printReceipt(receiptNumber, { preferSilent = true } = {}) 
   const num = String(receiptNumber || '').trim();
 
   if (preferSilent && isDesktopSilentPrintAvailable()) {
+    // Сначала скрытое окно /receipt?silent=1 — надёжнее на Windows, чем print-current-page.
+    if (num) {
+      await window.desktopCashier.printReceipt(num);
+      return 'silent';
+    }
     if (typeof window.desktopCashier.printCurrentPage === 'function' && isOnReceiptPage()) {
       const cleanup = prepareThermalPrint(PRINT_THERMAL_CLASS);
       try {
@@ -32,10 +37,6 @@ export async function printReceipt(receiptNumber, { preferSilent = true } = {}) 
       } finally {
         cleanup();
       }
-    }
-    if (num) {
-      await window.desktopCashier.printReceipt(num);
-      return 'silent';
     }
   }
 
