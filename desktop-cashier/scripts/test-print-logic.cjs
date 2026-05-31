@@ -17,7 +17,10 @@ const {
   paperWidthPx,
 } = require('../electron/print-thermal.cjs');
 const { matchPrinterName } = require('../electron/printer-match.cjs');
-const { isThermalPrinterName } = require('../electron/print-escpos.cjs');
+const {
+  isThermalPrinterName,
+  createEscPosBufferPrinter,
+} = require('../electron/print-escpos.cjs');
 
 let passed = 0;
 let failed = 0;
@@ -130,6 +133,13 @@ test('isThermalPrinterName — Xprinter POS-80', () => {
   assert.strictEqual(isThermalPrinterName('Xprinter POS-80'), true);
   assert.strictEqual(isThermalPrinterName('POS-80'), true);
   assert.strictEqual(isThermalPrinterName('HP LaserJet'), false);
+});
+
+test('createEscPosBufferPrinter — непустой ESC/POS буфер', () => {
+  const p = createEscPosBufferPrinter();
+  p.println('AURENT TEST');
+  p.cut();
+  assert.ok(p.buffer && p.buffer.length > 20, 'должен быть RAW-буфер');
 });
 
 test('paperWidthPx для 80mm >= 280px', () => {

@@ -4,6 +4,7 @@
  */
 
 const { ThermalPrinter, PrinterTypes, CharacterSet, BreakLine } = require('node-thermal-printer');
+const { IS_WIN, printRawBuffer } = require('./win-raw-print.cjs');
 
 /** 80 mm, шрифт A — обычно 48 символов. */
 const LINE_WIDTH = 48;
@@ -121,26 +122,37 @@ function vatRateLabel(sale) {
   return '12';
 }
 
-async function createEscPosPrinter(deviceName) {
+function assertDeviceName(deviceName) {
   const name = String(deviceName || '').trim();
   if (!name) {
     throw new Error('Принтер чека не выбран (меню Aurent → Принтер чека).');
   }
+  if (!IS_WIN) {
+    throw new Error('ESC/POS RAW — только Windows');
+  }
+  return name;
+}
+
+/** Собирает ESC/POS в буфер (без interface — драйвер printer npm не нужен). */
+function createEscPosBufferPrinter() {
   const printer = new ThermalPrinter({
     type: PrinterTypes.EPSON,
-    interface: `printer:${name}`,
     characterSet: CharacterSet.PC866_CYRILLIC,
     removeSpecialCharacters: false,
     lineCharacter: '-',
     breakLine: BreakLine.WORD,
     width: LINE_WIDTH,
-    options: { timeout: 8000 },
   });
-  const connected = await printer.isPrinterConnected();
-  if (!connected) {
-    throw new Error(`Принтер «${name}» недоступен. Проверьте USB и драйвер Xprinter POS-80.`);
-  }
+  printer.append(printer.printer.config.HW_INIT);
   return printer;
+}
+
+async function sendEscPosBuffer(deviceName, printer) {
+  const buffer = printer.buffer;
+  if (!buffer || buffer.length < 16) {
+    throw new Error('Буфер чека пустой');
+  }
+  await printRawBuffer(deviceName, buffer);
 }
 
 /**
@@ -148,8 +160,9 @@ async function createEscPosPrinter(deviceName) {
  * @param {{ deviceName: string, labels?: object, fields?: object, branding?: object, qrPayload?: string }} options
  */
 async function printSaleEscPos(sale, options = {}) {
-  const { deviceName, labels = {}, fields = {}, branding = {} } = options;
-  const printer = await createEscPosPrinter(deviceName);
+  const { labels = {}, fields = {}, branding = {} } = options;
+  const deviceName = assertDeviceName(options.deviceName);
+  const printer = createEscPosBufferPrinter();
   const L = labels;
   const cur = L.currency || "so'm";
   const { date, time } = splitDateTime(sale.createdAt);
@@ -299,13 +312,14 @@ async function printSaleEscPos(sale, options = {}) {
   printer.newLine();
   printer.newLine();
   printer.cut();
-  await printer.execute();
+  await sendEscPosBuffer(deviceName, printer);
 
   return { mode: 'escpos', deviceName };
 }
 
 async function printTestEscPos(deviceName) {
-  const printer = await createEscPosPrinter(deviceName);
+  const name = assertDeviceName(deviceName);
+  const printer = createEscPosBufferPrinter();
   printer.alignCenter();
   printer.bold(true);
   printer.println('AURENT — TEST');
@@ -317,13 +331,16 @@ async function printTestEscPos(deviceName) {
   printer.println('avtoprint ishlayapti.');
   printer.newLine();
   printer.cut();
-  await printer.execute();
-  return { mode: 'escpos', deviceName };
+  await sendEscPosBuffer(name, printer);
+  return { mode: 'escpos', deviceName: name };
 }
 
 module.exports = {
   LINE_WIDTH,
+  IS_WIN,
   isThermalPrinterName,
   printSaleEscPos,
   printTestEscPos,
+  createEscPosBufferPrinter,
+  sendEscPosBuffer,
 };
