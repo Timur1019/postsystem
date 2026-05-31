@@ -64,14 +64,20 @@ public interface CashierShiftMapper {
         );
     }
 
-    default ShiftReportResponse toReport(String type, CashierShift shift, Instant reportAt, ShiftBannerAggregate aggregate) {
+    default ShiftReportResponse toReport(
+        String type,
+        CashierShift shift,
+        Instant periodFrom,
+        Instant reportAt,
+        ShiftBannerAggregate aggregate
+    ) {
         return new ShiftReportResponse(
             type,
             shift.getId(),
             shift.getStore().getId(),
             shift.getStore().getName(),
             shift.getCashier().getFullName(),
-            shift.getOpenedAt(),
+            periodFrom,
             reportAt,
             aggregate.saleCount(),
             aggregate.totalAmount(),

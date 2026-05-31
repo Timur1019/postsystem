@@ -35,6 +35,10 @@ public class CashierShift {
     @Column(name = "opened_at", nullable = false)
     private Instant openedAt;
 
+    /** Начало текущего Z-периода в открытой смене (после Z обнуляется). */
+    @Column(name = "period_started_at", nullable = false)
+    private Instant periodStartedAt;
+
     @Column(name = "closed_at")
     private Instant closedAt;
 
@@ -61,6 +65,9 @@ public class CashierShift {
     void prePersist() {
         if (openedAt == null) {
             openedAt = Instant.now();
+        }
+        if (periodStartedAt == null) {
+            periodStartedAt = openedAt;
         }
         if (status == null) {
             status = ShiftStatus.OPEN;

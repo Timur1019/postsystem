@@ -103,27 +103,21 @@ public class CashierShiftServiceImpl implements CashierShiftService {
         if (shift.getStatus() != CashierShift.ShiftStatus.OPEN) {
             throw new BadRequestException("Z-отчёт доступен только для открытой смены");
         }
+        Instant periodFrom = periodStart(shift);
         Instant reportAt = Instant.now();
         ShiftReportResponse report = buildReport("Z", shift, reportAt);
-        applyCloseTotals(shift, report);
-        zReportFromShiftService.createForClosedShift(shift, report);
-        cashierShiftRepository.save(shift);
-
-        CashierShift newShift = persistNewOpenShift(shift.getCashier(), shift.getStore());
-        CashierShiftResponse newShiftResponse = cashierShiftMapper.toResponse(
-            newShift,
-            shift.getStore().getName(),
-            null
-        );
+        zReportFromShiftService.createForOpenShiftPeriod(shift, report, periodFrom);
+        shift.setPeriodStartedAt(reportAt);
+        CashierShift saved = cashierShiftRepository.save(shift);
+        CashierShiftResponse shiftResponse = toLiveResponse(saved, saved.getStore().getName());
         LogUtil.info(
             CashierShiftServiceImpl.class,
-            "Z-report finalized: closedShiftId={}, newShiftId={}, sales={}, total={}",
+            "Z-report finalized in open shift: shiftId={}, sales={}, total={}",
             shiftId,
-            newShift.getId(),
             report.saleCount(),
             report.totalAmount()
         );
-        return new FinalizeZReportResponse(report, newShiftResponse);
+        return new FinalizeZReportResponse(report, shiftResponse);
     }
 
     @Override
@@ -149,23 +143,31 @@ public class CashierShiftServiceImpl implements CashierShiftService {
     }
 
     private ShiftReportResponse buildReport(String type, CashierShift shift, Instant reportAt) {
-        ShiftBannerAggregate aggregate = aggregateLoader.loadForShift(shift, reportAt);
-        return cashierShiftMapper.toReport(type, shift, reportAt, aggregate);
+        Instant periodFrom = periodStart(shift);
+        ShiftBannerAggregate aggregate = aggregateLoader.loadForShift(shift, periodFrom, reportAt);
+        return cashierShiftMapper.toReport(type, shift, periodFrom, reportAt, aggregate);
     }
 
     private CashierShiftResponse toLiveResponse(CashierShift shift, String storeName) {
+        Instant now = Instant.now();
         ShiftBannerAggregate live = shift.getStatus() == CashierShift.ShiftStatus.OPEN
-            ? aggregateLoader.loadForShift(shift, Instant.now())
+            ? aggregateLoader.loadForShift(shift, periodStart(shift), now)
             : null;
         return cashierShiftMapper.toResponse(shift, storeName, live);
     }
 
+    private static Instant periodStart(CashierShift shift) {
+        return shift.getPeriodStartedAt() != null ? shift.getPeriodStartedAt() : shift.getOpenedAt();
+    }
+
     private CashierShift persistNewOpenShift(User cashier, Store store) {
+        Instant now = Instant.now();
         CashierShift shift = CashierShift.builder()
             .cashier(cashier)
             .store(store)
             .status(CashierShift.ShiftStatus.OPEN)
-            .openedAt(Instant.now())
+            .openedAt(now)
+            .periodStartedAt(now)
             .saleCount(0)
             .totalAmount(BigDecimal.ZERO)
             .cashAmount(BigDecimal.ZERO)

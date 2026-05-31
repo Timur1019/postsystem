@@ -65,7 +65,7 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
             : store.getAddress();
         String tin = company != null ? company.getTin() : null;
 
-        ShiftSaleBounds bounds = loadShiftBounds(shift.getId());
+        ShiftSaleBounds bounds = loadShiftBounds(shift.getId(), shift.getOpenedAt(), report.reportAt());
 
         BigDecimal returnsCash = bounds.returnsCash();
         BigDecimal returnsCard = bounds.returnsCard();
@@ -119,6 +119,83 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
     }
 
     @Override
+    public ZReport createForOpenShiftPeriod(CashierShift shift, ShiftReportResponse report, Instant periodFrom) {
+        Store store = shift.getStore();
+        Integer storeId = store.getId();
+        int nextZ = zReportRepository.findMaxZNumberByStoreId(storeId) + 1;
+
+        CashRegister register = cashRegisterRepository
+            .findFirstByStore_IdOrderByRegisterNumberAsc(storeId)
+            .orElse(null);
+
+        String fiscalCardId = register != null && StringUtils.hasText(register.getFiscalCardId())
+            ? register.getFiscalCardId().trim()
+            : DEFAULT_FISCAL_CARD;
+        String terminalSerial = register != null ? register.getEquipmentSerial() : null;
+        String appletVersion = register != null ? register.getEquipmentModel() : null;
+
+        Company company = store.getCompany();
+        String companyName = company != null && StringUtils.hasText(company.getLegalName())
+            ? company.getLegalName()
+            : (company != null ? company.getName() : store.getName());
+        String companyAddress = company != null && StringUtils.hasText(company.getAddress())
+            ? company.getAddress()
+            : store.getAddress();
+        String tin = company != null ? company.getTin() : null;
+
+        ShiftSaleBounds bounds = loadShiftBounds(shift.getId(), periodFrom, report.reportAt());
+
+        BigDecimal returnsCash = bounds.returnsCash();
+        BigDecimal returnsCard = bounds.returnsCard();
+        BigDecimal vatReturn = bounds.returnsVat();
+
+        ZReport zReport = ZReport.builder()
+            .store(store)
+            .fiscalCardId(fiscalCardId)
+            .terminalSerial(terminalSerial)
+            .openedAt(periodFrom)
+            .closedAt(report.reportAt())
+            .zNumber(nextZ)
+            .totalAmount(report.totalAmount())
+            .vatAmount(report.vatAmount())
+            .employeeName(report.cashierName())
+            .brandName(DEFAULT_BRAND)
+            .companyName(companyName)
+            .companyAddress(companyAddress)
+            .tin(tin)
+            .appletVersion(appletVersion)
+            .cashTotal(report.cashAmount())
+            .cardTotal(report.cardAmount())
+            .returnsCash(returnsCash)
+            .returnsCard(returnsCard)
+            .vatReturn(vatReturn)
+            .salesCount(report.saleCount())
+            .returnsCount(bounds.returnsCount())
+            .firstReceiptNumber(bounds.firstReceipt())
+            .lastReceiptNumber(bounds.lastReceipt())
+            .discountTotal(report.discountTotal())
+            .lineDiscountTotal(report.lineDiscountTotal())
+            .orderDiscountTotal(report.orderDiscountTotal())
+            .build();
+
+        try {
+            zReport = zReportRepository.save(zReport);
+        } catch (Exception ex) {
+            LogUtil.error(ZReportFromShiftServiceImpl.class, "Failed to persist Z-report for shift {}", shift.getId(), ex);
+            throw new BadRequestException("Не удалось сохранить Z-отчёт: " + ex.getMessage());
+        }
+
+        LogUtil.info(
+            ZReportFromShiftServiceImpl.class,
+            "Z-report {} (#{}) created for open shift {} (period reset)",
+            zReport.getId(),
+            zReport.getZNumber(),
+            shift.getId()
+        );
+        return zReport;
+    }
+
+    @Override
     public int backfillMissingForClosedShifts() {
         List<CashierShift> shifts = cashierShiftRepository.findClosedWithoutZReport(
             CashierShift.ShiftStatus.CLOSED
@@ -151,11 +228,11 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
         return created;
     }
 
-    private ShiftSaleBounds loadShiftBounds(UUID shiftId) {
-        List<Object[]> completed = saleRepository.aggregateByShiftId(shiftId);
+    private ShiftSaleBounds loadShiftBounds(UUID shiftId, Instant periodFrom, Instant reportAt) {
+        List<Object[]> completed = saleRepository.aggregateByShiftId(shiftId, periodFrom, reportAt);
         Object[] row = completed.isEmpty() ? new Object[8] : unwrapRow(completed.get(0));
 
-        List<Object[]> returns = saleRepository.aggregateReturnsByShiftId(shiftId);
+        List<Object[]> returns = saleRepository.aggregateReturnsByShiftId(shiftId, periodFrom, reportAt);
         Object[] ret = returns.isEmpty() ? new Object[4] : unwrapRow(returns.get(0));
 
         return new ShiftSaleBounds(

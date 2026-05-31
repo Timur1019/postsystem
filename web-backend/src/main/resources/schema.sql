@@ -278,6 +278,7 @@ CREATE TABLE cashier_shifts (
     store_id        INT NOT NULL REFERENCES stores(id),
     status          VARCHAR(20) NOT NULL DEFAULT 'OPEN',
     opened_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    period_started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     closed_at       TIMESTAMPTZ,
     sale_count      INT NOT NULL DEFAULT 0,
     total_amount    NUMERIC(18, 2) NOT NULL DEFAULT 0,

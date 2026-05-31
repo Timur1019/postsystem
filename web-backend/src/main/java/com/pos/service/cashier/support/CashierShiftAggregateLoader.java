@@ -18,13 +18,13 @@ public class CashierShiftAggregateLoader {
     private final SaleRepository saleRepository;
     private final CashierShiftMapper cashierShiftMapper;
 
-    public ShiftBannerAggregate loadForShift(CashierShift shift, Instant reportAt) {
-        List<Object[]> rows = saleRepository.aggregateShiftBannerByShiftId(shift.getId());
+    public ShiftBannerAggregate loadForShift(CashierShift shift, Instant periodFrom, Instant reportAt) {
+        List<Object[]> rows = saleRepository.aggregateShiftBannerByShiftId(shift.getId(), periodFrom, reportAt);
         if (rows.isEmpty() || cashierShiftMapper.isEmptyBannerRow(rows.get(0))) {
             rows = saleRepository.aggregateShiftBannerByCashierAndTime(
                 shift.getCashier().getId(),
                 shift.getStore().getId(),
-                shift.getOpenedAt(),
+                periodFrom,
                 reportAt
             );
         }

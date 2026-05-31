@@ -17,7 +17,7 @@ public interface CashierShiftService {
 
     ShiftReportResponse buildZReportPreview(UUID shiftId);
 
-    /** Z-отчёт: закрыть период, сохранить Z, открыть новую смену (счётчики с нуля). */
+    /** Z-отчёт: обнулить счётчики текущего периода, смена остаётся открытой. */
     FinalizeZReportResponse finalizeZReport(UUID shiftId);
 
     CashierShiftResponse closeShift(UUID shiftId);

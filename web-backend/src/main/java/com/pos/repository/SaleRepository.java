@@ -283,8 +283,14 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         FROM sales
         WHERE cashier_shift_id = :shiftId
           AND status = 'COMPLETED'
+          AND created_at >= :periodFrom
+          AND created_at < :reportAt
         """, nativeQuery = true)
-    List<Object[]> aggregateByShiftId(@Param("shiftId") UUID shiftId);
+    List<Object[]> aggregateByShiftId(
+        @Param("shiftId") UUID shiftId,
+        @Param("periodFrom") Instant periodFrom,
+        @Param("reportAt") Instant reportAt
+    );
 
     /**
      * Статистика смены для баннера и Z-отчёта: число чеков (все статусы) и чистая выручка
@@ -324,8 +330,14 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
                COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.order_discount_amount ELSE 0 END), 0)
         FROM sales s
         WHERE s.cashier_shift_id = :shiftId
+          AND s.created_at >= :periodFrom
+          AND s.created_at < :reportAt
         """, nativeQuery = true)
-    List<Object[]> aggregateShiftBannerByShiftId(@Param("shiftId") UUID shiftId);
+    List<Object[]> aggregateShiftBannerByShiftId(
+        @Param("shiftId") UUID shiftId,
+        @Param("periodFrom") Instant periodFrom,
+        @Param("reportAt") Instant reportAt
+    );
 
     @Query(value = """
         SELECT CAST(COUNT(*) AS INTEGER),
@@ -380,8 +392,14 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         FROM sales
         WHERE cashier_shift_id = :shiftId
           AND status IN ('REFUNDED', 'VOIDED')
+          AND created_at >= :periodFrom
+          AND created_at < :reportAt
         """, nativeQuery = true)
-    List<Object[]> aggregateReturnsByShiftId(@Param("shiftId") UUID shiftId);
+    List<Object[]> aggregateReturnsByShiftId(
+        @Param("shiftId") UUID shiftId,
+        @Param("periodFrom") Instant periodFrom,
+        @Param("reportAt") Instant reportAt
+    );
 
     @Query("""
         SELECT DISTINCT s FROM Sale s
