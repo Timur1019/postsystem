@@ -10,7 +10,6 @@ import SalePartialReturnModal from '../../components/sales/SalePartialReturnModa
 import FiscalReceiptBody from '../../components/receipt/FiscalReceiptBody';
 import ThermalReportPrintPortal from '../../components/reports/ThermalReportPrintPortal';
 import { isDesktopCashier, printDesktopReceiptSale } from '../../utils/printReceipt';
-import DesktopPrintOverlay from '../../components/cashier/DesktopPrintOverlay';
 import { useCashierShift } from '../../hooks/useCashierShift';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -444,18 +443,13 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
       if (isDesktopCashier()) {
         const img = document.querySelector('.cashier-sales-receipt-pane__card .receipt-qr');
         const qrDataUrl = img?.src || null;
-        const printPromise = printDesktopReceiptSale(sale, { qrDataUrl });
-        const result = await Promise.race([
-          printPromise,
-          new Promise((resolve) => setTimeout(() => resolve({ ok: true, mode: 'queued' }), 15000)),
-        ]);
+        const result = await printDesktopReceiptSale(sale, { qrDataUrl });
         if (result.ok) {
           if (result.mode === 'dialog') {
             toast('Нажмите «Печать» в окне Windows', { id: 'cashier-sales-print', duration: 5000 });
           } else {
             toast.success(t('receipt.printSent'), { id: 'cashier-sales-print' });
           }
-          printPromise.catch(() => {});
           return;
         }
         toast.error(t('receipt.printFailed'), { id: 'cashier-sales-print' });
@@ -471,9 +465,6 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
 
   return (
     <aside className="cashier-sales-receipt-pane" aria-label={t('pos.receipt')}>
-      {printing && isDesktopCashier() ? (
-        <DesktopPrintOverlay open messageKey="receipt.printing" />
-      ) : null}
       <header className="cashier-sales-receipt-pane__head">
         <button
           type="button"

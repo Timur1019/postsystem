@@ -8,7 +8,6 @@ import { cashierShiftApi } from '../../services/api';
 import PosModalPortal from './PosModalPortal';
 import ShiftReportPrintBody from './ShiftReportPrintBody';
 import ThermalReportPrintPortal from '../reports/ThermalReportPrintPortal';
-import DesktopPrintOverlay from './DesktopPrintOverlay';
 import { isDesktopCashier, printDesktopShiftReport } from '../../utils/printReceipt';
 import { useAuthStore } from '../../store/authStore';
 import { useOpenCashierShift } from '../../hooks/useCashierShift';
@@ -28,18 +27,12 @@ export default function CashierShiftModal({
   const shiftId = shift?.id;
   const [printReport, setPrintReport] = useState(null);
   const [printToken, setPrintToken] = useState(0);
-  const [printingReport, setPrintingReport] = useState(false);
   const printAfterLoadRef = useRef(null);
 
   const queuePrint = async (data) => {
     if (isDesktopCashier()) {
-      setPrintingReport(true);
       try {
-        const printPromise = printDesktopShiftReport(data, t);
-        const result = await Promise.race([
-          printPromise,
-          new Promise((resolve) => setTimeout(() => resolve({ ok: true, mode: 'queued' }), 15000)),
-        ]);
+        const result = await printDesktopShiftReport(data, t);
         if (result.ok) {
           if (result.mode === 'dialog') {
             toast('Нажмите «Печать» в окне Windows', { duration: 5000 });
@@ -49,11 +42,8 @@ export default function CashierShiftModal({
         } else {
           toast.error(t('receipt.printFailed'));
         }
-        printPromise.catch(() => {});
       } catch (e) {
         toast.error(e?.message ?? t('receipt.printFailed'));
-      } finally {
-        setPrintingReport(false);
       }
       return;
     }
@@ -116,8 +106,7 @@ export default function CashierShiftModal({
     zMutation.isPending ||
     closeMutation.isPending ||
     openMutation.isPending ||
-    Boolean(printReport) ||
-    printingReport;
+    Boolean(printReport);
 
   const handleXReport = () => {
     printAfterLoadRef.current = 'X';
@@ -224,11 +213,6 @@ export default function CashierShiftModal({
       >
         {printReport ? <ShiftReportPrintBody report={printReport} /> : null}
       </ThermalReportPrintPortal>
-
-      <DesktopPrintOverlay
-        open={printingReport}
-        messageKey="receipt.printingReport"
-      />
     </>
   );
 }
