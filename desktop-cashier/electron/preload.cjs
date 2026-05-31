@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('desktopCashier', {
   openServerSetup: () => ipcRenderer.invoke('desktop:open-server-setup'),
   reload: () => ipcRenderer.invoke('desktop:reload'),
   toggleFullscreen: () => ipcRenderer.invoke('desktop:toggle-fullscreen'),
+  prepareForPrint: () => ipcRenderer.invoke('desktop:prepare-for-print'),
   quit: () => ipcRenderer.invoke('desktop:quit'),
 
   listPrinters: () => ipcRenderer.invoke('desktop:list-printers'),

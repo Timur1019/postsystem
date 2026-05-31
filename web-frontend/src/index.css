@@ -82,7 +82,8 @@ html.electron-silent-print.print-thermal-modal body > *:not(.fiscal-print-scene)
   visibility: hidden !important;
 }
 html.electron-silent-print.print-thermal-modal .fiscal-print-scene,
-html.electron-silent-print.print-thermal-modal .thermal-report-print-host {
+html.electron-silent-print.print-thermal-modal .thermal-report-print-host,
+html.electron-silent-print.print-thermal-modal .pos-sale-print-host {
   display: block !important;
   visibility: visible !important;
   position: static !important;
@@ -359,12 +360,15 @@ html.dark .receipt-page__card {
     padding: 0 !important;
     background: white !important;
     height: auto !important;
+    min-height: 0 !important;
     overflow: visible !important;
   }
   html.print-thermal-modal body {
     display: block !important;
   }
-  html.print-thermal-modal .fiscal-print-scene {
+  html.print-thermal-modal .fiscal-print-scene,
+  html.print-thermal-modal .thermal-report-print-host,
+  html.print-thermal-modal .pos-sale-print-host {
     display: block !important;
     visibility: visible !important;
     position: static !important;

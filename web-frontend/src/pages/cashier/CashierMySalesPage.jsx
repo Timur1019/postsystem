@@ -9,7 +9,6 @@ import { saleApi } from '../../services/api';
 import SalePartialReturnModal from '../../components/sales/SalePartialReturnModal';
 import FiscalReceiptBody from '../../components/receipt/FiscalReceiptBody';
 import ThermalReportPrintPortal from '../../components/reports/ThermalReportPrintPortal';
-import { isDesktopCashier, printThermalReceiptDialog } from '../../utils/printReceipt';
 import { useCashierShift } from '../../hooks/useCashierShift';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -440,11 +439,6 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
     if (!canPrint || printing) return;
     setPrinting(true);
     try {
-      if (isDesktopCashier()) {
-        await printThermalReceiptDialog({ useModalShell: true });
-        toast.success(t('receipt.printSent'), { id: 'cashier-sales-print' });
-        return;
-      }
       setPrintToken(Date.now());
     } catch (e) {
       toast.error(e?.message ?? t('receipt.printFailed'), { id: 'cashier-sales-print' });

@@ -131,6 +131,12 @@ function registerDesktopIpc() {
     }
     return { ok: true };
   });
+  ipcMain.handle('desktop:prepare-for-print', () => {
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isFullScreen()) {
+      mainWindow.setFullScreen(false);
+    }
+    return { ok: true };
+  });
   ipcMain.handle('desktop:quit', () => {
     app.quit();
     return { ok: true };
