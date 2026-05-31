@@ -595,15 +595,16 @@ function defaultReceiptDims(bodyHtml, options = {}) {
 }
 
 async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
-  const widthPx = paperWidthPx(80);
+  const paperMm = 80;
+  const widthPx = paperWidthPx(paperMm);
   const deviceName = options.deviceName || '';
   const printers = options.printers || [];
   const useDialog = Boolean(options.useDialog);
+  const standaloneReceipt = Boolean(options.standaloneReceipt);
   const mainWindow = options.mainWindow || null;
-
   const printWin = createReceiptPrintWindow({
     width: widthPx,
-    height: 1200,
+    height: 1600,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -621,18 +622,44 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
     await loadReceiptHtmlInWindow(printWin, bodyHtml);
     await ensureWindowPainted(printWin, { visible: false });
     await waitForImages(printWin.webContents);
-    await new Promise((r) => setTimeout(r, IS_WIN ? 500 : 200));
+    await new Promise((r) => setTimeout(r, IS_WIN ? 800 : 300));
     await waitForPaintFrames(printWin.webContents);
 
+    let dims;
+    if (standaloneReceipt) {
+      dims = defaultReceiptDims(bodyHtml, { kind: options.contentKind || 'receipt' });
+    } else {
+      dims = await prepareThermalPrintInPage(printWin.webContents);
+      if (!dims?.textLen || dims.textLen < 40 || dims.contentHeightPx < 80) {
+        dims = defaultReceiptDims(bodyHtml);
+      }
+    }
+
+    const heightPx = Math.min(5000, Math.max(400, Math.ceil(dims.contentHeightPx + 80)));
+    printWin.setSize(widthPx, heightPx);
+
+    if (IS_WIN) {
+      return runWindowsReceiptPrint(printWin, printWin.webContents, dims, deviceName, printers, {
+        useDialog,
+        mainWindow,
+      });
+    }
+
+    preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx, useDialog);
+    await waitForPaintFrames(printWin.webContents);
+    await new Promise((r) => setTimeout(r, 200));
+
     if (useDialog) {
-      preparePrintWindowForJob(mainWindow, printWin, widthPx, 800, true);
       await runDialogReceiptPrint(printWin.webContents, deviceName);
       return { mode: 'dialog' };
     }
 
-    return runStandardSilentReceiptPrint(printWin.webContents, deviceName, printers);
+    await runSilentPrint(printWin.webContents, dims, { deviceName, printers });
+    await new Promise((r) => setTimeout(r, 150));
+    return { mode: 'silent' };
   } finally {
     clearTimeout(killTimer);
+    await cleanupThermalPrintInPage(printWin.webContents);
     forceClosePrintWindow(printWin);
   }
 }

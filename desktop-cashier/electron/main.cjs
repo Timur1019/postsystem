@@ -26,6 +26,7 @@ const {
   createReceiptPrintWindow,
   ensureWindowPainted,
   printHtmlInHiddenWindow,
+  runWindowsReceiptPrint,
   runStandardSilentReceiptPrint,
   showWindowForPrint,
   forceClosePrintWindow,
@@ -572,14 +573,30 @@ async function printReceiptSaleInHiddenWindow(payload, options = {}) {
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
   const useDialog = resolveReceiptPrintUseDialog(options);
 
-  return printHtmlInHiddenWindow(bodyHtml, {
-    deviceName,
-    printers,
-    session: mainSession,
-    useDialog,
-    standaloneReceipt: true,
-    mainWindow,
-  });
+  try {
+    const result = await printHtmlInHiddenWindow(bodyHtml, {
+      deviceName,
+      printers,
+      session: mainSession,
+      useDialog,
+      standaloneReceipt: true,
+      mainWindow,
+    });
+    return result;
+  } catch (err) {
+    console.warn('[Aurent print] printReceiptSale failed:', err?.message || err);
+    if (!useDialog) {
+      return printHtmlInHiddenWindow(bodyHtml, {
+        deviceName,
+        printers,
+        session: mainSession,
+        useDialog: true,
+        standaloneReceipt: true,
+        mainWindow,
+      });
+    }
+    throw err;
+  }
 }
 
 async function printReceiptHtmlInHiddenWindow(bodyHtml, options = {}) {
@@ -623,15 +640,29 @@ async function printShiftReportInHiddenWindow(payload) {
   const printers = await listSystemPrinters();
   const mainSession =
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
-  return printHtmlInHiddenWindow(bodyHtml, {
-    deviceName,
-    printers,
-    session: mainSession,
-    useDialog: false,
-    standaloneReceipt: true,
-    contentKind: 'shift',
-    mainWindow,
-  });
+
+  try {
+    return await printHtmlInHiddenWindow(bodyHtml, {
+      deviceName,
+      printers,
+      session: mainSession,
+      useDialog: false,
+      standaloneReceipt: true,
+      contentKind: 'shift',
+      mainWindow,
+    });
+  } catch (err) {
+    console.warn('[Aurent print] printShiftReport failed:', err?.message || err);
+    return printHtmlInHiddenWindow(bodyHtml, {
+      deviceName,
+      printers,
+      session: mainSession,
+      useDialog: true,
+      standaloneReceipt: true,
+      contentKind: 'shift',
+      mainWindow,
+    });
+  }
 }
 
 async function printTestReceiptInHiddenWindow() {
