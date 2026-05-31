@@ -1,5 +1,5 @@
 /**
- * Автопечать после продажи на десктопе + превью чека слева (без блокирующей модалки).
+ * Автопечать после продажи: превью чека ~2 с, печать в фоне (UI не блокируется).
  */
 import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +38,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     if (!sale?.receiptNumber) return undefined;
 
     let cancelled = false;
+
     const finish = async () => {
       const elapsed = Date.now() - previewStartedRef.current;
       if (elapsed < PREVIEW_MIN_MS) {
@@ -51,10 +52,13 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
       const qrDataUrl = await waitForQrInShell();
       if (cancelled) return;
 
-      try {
-        const result = await printDesktopReceiptSale(sale, { qrDataUrl, autoPrint: true });
-        if (cancelled) return;
-        if (result.ok) {
+      printDesktopReceiptSale(sale, { qrDataUrl, autoPrint: true })
+        .then((result) => {
+          if (cancelled) return;
+          if (!result?.ok) {
+            toast.error(t('pos.printFailed'), { id: 'pos-auto-print' });
+            return;
+          }
           if (result.mode === 'dialog') {
             toast('Нажмите «Печать» в окне Windows', { id: 'pos-auto-print', duration: 6000 });
           } else {
@@ -63,20 +67,15 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
               duration: 3000,
             });
           }
-          await finish();
-          return;
-        }
-        if (!cancelled) {
-          toast.error(t('pos.printFailed'), { id: 'pos-auto-print' });
-          await finish();
-        }
-      } catch (err) {
-        console.warn('[Aurent] auto print failed', err);
-        if (!cancelled) {
-          toast.error(err?.message || t('pos.printFailed'), { id: 'pos-auto-print' });
-          await finish();
-        }
-      }
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            console.warn('[Aurent] auto print failed', err);
+            toast.error(err?.message || t('pos.printFailed'), { id: 'pos-auto-print' });
+          }
+        });
+
+      await finish();
     };
 
     run();
