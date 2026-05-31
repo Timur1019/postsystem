@@ -53,9 +53,30 @@ export default function ReceiptPage() {
   useEffect(() => {
     if (!sale) return undefined;
     if (silentJob) {
-      window.__posReceiptReady = true;
-      window.dispatchEvent(new CustomEvent('pos-receipt-ready'));
-      return undefined;
+      let cancelled = false;
+      const signalReady = async () => {
+        await document.fonts?.ready;
+        for (let i = 0; i < 30 && !cancelled; i += 1) {
+          await new Promise((r) => setTimeout(r, 100));
+          const area = document.getElementById('receipt-print-area');
+          const textLen = area ? (area.innerText || '').trim().length : 0;
+          const h = area
+            ? Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height)
+            : 0;
+          const imgs = Array.from(document.images);
+          const imgsReady = imgs.every((img) => img.complete);
+          if (textLen >= 80 && h >= 120 && imgsReady) {
+            break;
+          }
+        }
+        if (cancelled) return;
+        window.__posReceiptReady = true;
+        window.dispatchEvent(new CustomEvent('pos-receipt-ready'));
+      };
+      signalReady();
+      return () => {
+        cancelled = true;
+      };
     }
     if (!autoPrint || autoPrintedRef.current) return undefined;
     autoPrintedRef.current = true;

@@ -422,34 +422,46 @@ function resolveLabelPrinterName(options) {
   return resolvePrinterByKind('label', options);
 }
 
-function waitForReceiptReady(webContents, timeoutMs = 20000) {
+function waitForReceiptReady(webContents, timeoutMs = 25000) {
   return webContents.executeJavaScript(`
     new Promise((resolve) => {
       const deadline = Date.now() + ${timeoutMs};
       const finish = (ok) => resolve(Boolean(ok));
+      const isLayoutReady = () => {
+        const area = document.getElementById('receipt-print-area');
+        if (!area) return false;
+        const textLen = (area.innerText || '').trim().length;
+        const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
+        const imgsReady = Array.from(document.images).every((img) => img.complete);
+        return textLen >= 80 && h >= 120 && imgsReady;
+      };
       const done = () => {
         window.removeEventListener('pos-receipt-ready', done);
-        finish(true);
+        if (isLayoutReady()) {
+          finish(true);
+        } else {
+          setTimeout(() => finish(isLayoutReady()), 400);
+        }
       };
-      if (window.__posReceiptReady) {
+      if (window.__posReceiptReady && isLayoutReady()) {
         finish(true);
         return;
       }
       window.addEventListener('pos-receipt-ready', done, { once: true });
       const poll = () => {
-        if (window.__posReceiptReady) {
+        if (window.__posReceiptReady && isLayoutReady()) {
           window.removeEventListener('pos-receipt-ready', done);
           finish(true);
           return;
         }
         if (Date.now() >= deadline) {
           window.removeEventListener('pos-receipt-ready', done);
-          finish(false);
+          finish(isLayoutReady());
           return;
         }
-        setTimeout(poll, 120);
+        setTimeout(poll, 150);
       };
-      setTimeout(poll, 120);
+      setTimeout(poll, 150);
     })
   `);
 }
@@ -496,14 +508,19 @@ async function printReceiptInHiddenWindow(receiptNumber) {
       })
       .then(() => ensureWindowPainted(printWin))
       .then(() => waitForImages(printWin.webContents))
-      .then(() => new Promise((r) => setTimeout(r, process.platform === 'win32' ? 900 : 400)))
+      .then(() => new Promise((r) => setTimeout(r, process.platform === 'win32' ? 1200 : 400)))
       .then(() => prepareThermalPrintInPage(printWin.webContents))
       .then((dims) => {
         if (!dims?.textLen || dims.contentHeightPx < 20) {
           throw new Error('Чек пустой — проверьте вход в кассу и связь с сервером');
         }
+        if (!printWin.isDestroyed()) {
+          const h = Math.min(5000, Math.max(900, Math.ceil(dims.contentHeightPx * 1.15)));
+          printWin.setSize(paperWidthPx(paperMm), h);
+        }
         return runSilentPrint(printWin.webContents, dims, { deviceName, printers });
       })
+      .then(() => new Promise((r) => setTimeout(r, process.platform === 'win32' ? 600 : 200)))
       .then(() => {
         cleanup();
       })

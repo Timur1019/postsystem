@@ -121,18 +121,33 @@ function prepareThermalPrintInPage(webContents, extraClasses = []) {
         await document.fonts.ready;
       }
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-      const area =
-        document.getElementById('receipt-print-area') ||
-        document.getElementById('fiscal-print-shell');
-      const h = area ? Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height) : 0;
-      const textLen = area ? (area.innerText || '').trim().length : 0;
+      const measure = () => {
+        const area =
+          document.getElementById('receipt-print-area') ||
+          document.getElementById('fiscal-print-shell');
+        const h = area
+          ? Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height)
+          : 0;
+        const textLen = area ? (area.innerText || '').trim().length : 0;
+        return { h, textLen, area };
+      };
+      let best = measure();
+      for (let i = 0; i < 8; i += 1) {
+        await new Promise((r) => setTimeout(r, 150));
+        const next = measure();
+        if (next.h > best.h || next.textLen > best.textLen) {
+          best = next;
+        }
+      }
       const pxPerMm = 96 / 25.4;
-      const heightMm = Math.max(60, Math.ceil((Math.max(h, document.body.scrollHeight) / pxPerMm)) + 10);
+      const bodyH = document.body.scrollHeight || 0;
+      const contentPx = Math.max(best.h, bodyH, best.area ? best.area.scrollHeight : 0);
+      const heightMm = Math.max(100, Math.ceil(contentPx / pxPerMm) + 20);
       return {
         paperMm: parseFloat(paper) || 80,
         heightMm,
-        contentHeightPx: h,
-        textLen,
+        contentHeightPx: contentPx,
+        textLen: best.textLen,
       };
     })()
   `);
@@ -150,12 +165,9 @@ function buildSilentPrintOpts(deviceName, dims) {
   if (deviceName) {
     opts.deviceName = deviceName;
   }
-  if (!IS_WIN) {
-    opts.pageSize = {
-      width: Math.round(paperMm * 1000),
-      height: Math.round(heightMm * 1000),
-    };
-  }
+  const pageH = Math.round(Math.max(heightMm, 100) * 1000);
+  const pageW = Math.round(paperMm * 1000);
+  opts.pageSize = { width: pageW, height: pageH };
   return opts;
 }
 
