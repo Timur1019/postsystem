@@ -18,6 +18,7 @@ export default function ThermalReportPrintPortal({
   open,
   printToken,
   receiptNumber,
+  sale = null,
   printMode = 'auto',
   children,
   onPrinted,
@@ -68,6 +69,7 @@ export default function ThermalReportPrintPortal({
           mode = await printThermalReceipt({
             useModalShell: true,
             receiptNumber: receiptNumber ?? printToken,
+            sale,
           });
         } else {
           mode = await printThermalReport();
@@ -92,7 +94,7 @@ export default function ThermalReportPrintPortal({
     return () => {
       cancelled = true;
     };
-  }, [open, printToken, printMode, receiptNumber]);
+  }, [open, printToken, printMode, receiptNumber, sale]);
 
   if (!open || !children) return null;
 

@@ -7,8 +7,7 @@ import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
-import { printThermalReceiptDialog } from '../../utils/printReceipt';
-import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
+import { buildDesktopSalePrintPayload } from '../../utils/printReceipt';
 
 async function waitForQrInDom(maxMs = 6000) {
   const deadline = Date.now() + maxMs;
@@ -48,19 +47,9 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
       const qrDataUrl = await waitForQrInDom();
       if (cancelled) return;
 
-      const td = useTenantDisplayStore.getState();
-      const payload = {
-        ...sale,
-        qrDataUrl,
-        _branding: {
-          companyName: td.receiptCompanyName || sale.storeName || undefined,
-          companyAddress: td.receiptCompanyAddress || undefined,
-          stir: td.receiptStir || undefined,
-          logoDataUrl: td.receiptLogoDataUrl || undefined,
-        },
-      };
+      const payload = buildDesktopSalePrintPayload(sale, qrDataUrl);
 
-      if (typeof window.desktopCashier?.printReceiptSale === 'function') {
+      if (typeof window.desktopCashier?.printReceiptSale === 'function' && payload) {
         try {
           await window.desktopCashier.printReceiptSale(payload);
           finish();
@@ -71,15 +60,8 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
       }
 
       if (cancelled) return;
-      try {
-        await printThermalReceiptDialog({ useModalShell: true });
-        finish();
-      } catch {
-        if (!cancelled) {
-          toast.error(t('pos.printFailed'));
-          finish();
-        }
-      }
+      toast.error(t('pos.printFailed'));
+      finish();
     };
 
     run();

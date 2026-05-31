@@ -513,6 +513,7 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
           open
           printToken={printToken}
           receiptNumber={receiptNumber}
+          sale={sale}
           onPrinted={() => {
             toast.success(t('receipt.printSent'), { id: 'cashier-sales-print' });
             setPrintToken(null);

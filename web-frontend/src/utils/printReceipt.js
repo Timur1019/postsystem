@@ -5,6 +5,7 @@ import {
   PRINT_THERMAL_MODAL_CLASS,
   ELECTRON_SILENT_PRINT_CLASS,
 } from './printWithHtmlClass';
+import { useTenantDisplayStore } from '../store/tenantDisplayStore';
 
 /** Классы, которые Electron вешает на <html> при тихой печати — снимаем, иначе белый экран. */
 const DESKTOP_PRINT_HTML_CLASSES = [
@@ -45,12 +46,40 @@ function isOnReceiptPage() {
   return Boolean(receiptPrintElement());
 }
 
+/** JSON продажи + брендинг для Electron printReceiptSale (без React/Tailwind). */
+export function buildDesktopSalePrintPayload(sale, qrDataUrl = null) {
+  if (!sale?.receiptNumber) return null;
+  const td = useTenantDisplayStore.getState();
+  return {
+    ...sale,
+    qrDataUrl: qrDataUrl || sale.qrDataUrl || null,
+    _branding: {
+      companyName: td.receiptCompanyName || sale.storeName || undefined,
+      companyAddress: td.receiptCompanyAddress || undefined,
+      stir: td.receiptStir || undefined,
+      logoDataUrl: td.receiptLogoDataUrl || undefined,
+    },
+  };
+}
+
 function captureReceiptHtml() {
-  const area = document.getElementById('receipt-print-area');
+  const area =
+    document.querySelector('#fiscal-print-shell #receipt-print-area') ||
+    document.getElementById('receipt-print-area');
   if (!area) return '';
   const textLen = (area.innerText || '').trim().length;
   if (textLen < 40) return '';
   return area.outerHTML;
+}
+
+function captureReceiptQrDataUrl() {
+  const img =
+    document.querySelector('#fiscal-print-shell .receipt-qr') ||
+    document.querySelector('#receipt-print-area .receipt-qr');
+  if (img?.complete && img.naturalWidth > 0 && img.src) {
+    return img.src;
+  }
+  return null;
 }
 
 async function waitForReceiptDomReady() {
@@ -94,11 +123,43 @@ export async function printThermalReceiptDialog({ useModalShell = false } = {}) 
  * @param {{ useModalShell?: boolean, receiptNumber?: string|number }} options
  * @returns {Promise<'silent'|'dialog'>}
  */
-export async function printThermalReceipt({ useModalShell = false, receiptNumber = null } = {}) {
+export async function printThermalReceipt({
+  useModalShell = false,
+  receiptNumber = null,
+  sale = null,
+} = {}) {
   if (isDesktopCashier()) {
     const num = receiptNumber != null ? String(receiptNumber).trim() : '';
 
-    // Сначала HTML из уже отрисованного чека (продажа / portal)
+    // Лучший путь: чек из JSON в Electron (журнал продаж, повторная печать)
+    if (typeof window.desktopCashier?.printReceiptSale === 'function') {
+      const saleForPrint = sale?.receiptNumber ? sale : null;
+      if (saleForPrint) {
+        try {
+          await waitForReceiptDomReady();
+          const qrDataUrl = captureReceiptQrDataUrl();
+          const payload = buildDesktopSalePrintPayload(saleForPrint, qrDataUrl);
+          if (payload) {
+            await window.desktopCashier.printReceiptSale(payload);
+            return 'silent';
+          }
+        } catch (err) {
+          console.warn('[Aurent] printReceiptSale failed', err);
+        }
+      }
+    }
+
+    // Скрытое окно /receipt/N?silent=1 — полная страница чека со стилями
+    if (num && typeof window.desktopCashier?.printReceipt === 'function') {
+      try {
+        await window.desktopCashier.printReceipt(num);
+        return 'silent';
+      } catch (err) {
+        console.warn('[Aurent] printReceipt hidden window failed', err);
+      }
+    }
+
+    // HTML-фрагмент без Tailwind — запасной путь
     await waitForReceiptDomReady();
     const html = captureReceiptHtml();
     if (html && typeof window.desktopCashier?.printReceiptHtml === 'function') {
@@ -111,14 +172,11 @@ export async function printThermalReceipt({ useModalShell = false, receiptNumber
       }
     }
 
-    // Повторная печать по номеру (чек уже в базе)
-    if (num && typeof window.desktopCashier?.printReceipt === 'function') {
-      try {
-        await window.desktopCashier.printReceipt(num);
-        return 'silent';
-      } catch (err) {
-        console.warn('[Aurent] printReceipt hidden window failed', err);
-      }
+    // На десктопе window.print() печатает весь экран (Мои продажи / POS), не чек
+    if (num || sale?.receiptNumber) {
+      throw new Error(
+        'Не удалось напечатать чек. Проверьте принтер POS-80 в меню Aurent → Принтер чека.'
+      );
     }
 
     return printThermalReceiptDialog({ useModalShell });
