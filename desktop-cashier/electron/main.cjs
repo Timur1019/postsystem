@@ -12,6 +12,7 @@ const { buildOrigin, buildHealthUrl } = require('./server-url.cjs');
 const { startEmbeddedUi, stopEmbeddedUi } = require('./embedded-server.cjs');
 const { showSetupWindow, configPath } = require('./setup-window.cjs');
 const { showPrinterPickerWindow } = require('./printer-picker-window.cjs');
+const { matchPrinterName } = require('./printer-match.cjs');
 const {
   paperWidthPx,
   waitForImages,
@@ -22,6 +23,7 @@ const {
   runSilentLabelPrint,
   createReceiptPrintWindow,
   ensureWindowPainted,
+  printHtmlInHiddenWindow,
 } = require('./print-thermal.cjs');
 const { setupAutoUpdater, checkForUpdatesNow } = require('./auto-update.cjs');
 
@@ -361,27 +363,6 @@ const PRINTER_KIND = {
  * Первый раз (или если принтер пропал) — окно выбора; дальше только сохранённое.
  * Смена: меню Aurent → «Принтер чека».
  */
-function matchPrinterName(saved, printers) {
-  const want = String(saved || '').trim();
-  if (!want || !printers?.length) return null;
-  const exact = printers.find((p) => p.name === want);
-  if (exact) return exact.name;
-  const lower = want.toLowerCase();
-  const ci = printers.find((p) => p.name.toLowerCase() === lower);
-  if (ci) return ci.name;
-  const partialMatches = printers.filter(
-    (p) => p.name.toLowerCase().includes(lower) || lower.includes(p.name.toLowerCase())
-  );
-  if (partialMatches.length === 1) {
-    return partialMatches[0].name;
-  }
-  if (partialMatches.length > 1) {
-    const def = partialMatches.find((p) => p.isDefault);
-    return (def || partialMatches[0]).name;
-  }
-  return null;
-}
-
 async function resolvePrinterByKind(kind, { promptIfMissing = true } = {}) {
   const meta = PRINTER_KIND[kind] || PRINTER_KIND.receipt;
   const saved = readPrinterSettings()[meta.field];
@@ -497,49 +478,49 @@ async function printReceiptInHiddenWindow(receiptNumber) {
   });
   printWin.webContents.setZoomFactor(1);
 
-  return new Promise((resolve, reject) => {
-    const cleanup = () => {
-      if (!printWin.isDestroyed()) {
-        printWin.close();
-      }
-    };
+  try {
+    await printWin.loadURL(url);
+    const ready = await waitForReceiptReady(printWin.webContents);
+    if (!ready) {
+      throw new Error('Чек не успел загрузиться для печати');
+    }
+    await ensureWindowPainted(printWin);
+    await waitForImages(printWin.webContents);
+    await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 1400 : 400));
+    await waitForPaintFrames(printWin.webContents);
+    const dims = await prepareThermalPrintInPage(printWin.webContents);
+    if (!dims?.textLen || dims.textLen < 80 || dims.contentHeightPx < 120) {
+      throw new Error('Чек пустой — проверьте вход в кассу и связь с сервером');
+    }
+    if (!printWin.isDestroyed()) {
+      const h = Math.min(5000, Math.max(900, Math.ceil(dims.contentHeightPx * 1.15)));
+      printWin.setSize(paperWidthPx(paperMm), h);
+    }
+    await waitForPaintFrames(printWin.webContents);
+    await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 120));
+    await runSilentPrint(printWin.webContents, dims, { deviceName, printers });
+    await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 600 : 200));
+  } finally {
+    await cleanupThermalPrintInPage(printWin.webContents);
+    if (!printWin.isDestroyed()) {
+      printWin.close();
+    }
+  }
+}
 
-    printWin.webContents.on('did-fail-load', () => {
-      cleanup();
-      reject(new Error('Не удалось загрузить чек для печати'));
-    });
-
-    printWin
-      .loadURL(url)
-      .then(() => waitForReceiptReady(printWin.webContents))
-      .then((ready) => {
-        if (!ready) {
-          throw new Error('Чек не успел загрузиться для печати');
-        }
-      })
-      .then(() => ensureWindowPainted(printWin))
-      .then(() => waitForImages(printWin.webContents))
-      .then(() => new Promise((r) => setTimeout(r, process.platform === 'win32' ? 1200 : 400)))
-      .then(() => prepareThermalPrintInPage(printWin.webContents))
-      .then((dims) => {
-        if (!dims?.textLen || dims.contentHeightPx < 20) {
-          throw new Error('Чек пустой — проверьте вход в кассу и связь с сервером');
-        }
-        if (!printWin.isDestroyed()) {
-          const h = Math.min(5000, Math.max(900, Math.ceil(dims.contentHeightPx * 1.15)));
-          printWin.setSize(paperWidthPx(paperMm), h);
-        }
-        return runSilentPrint(printWin.webContents, dims, { deviceName, printers });
-      })
-      .then(() => new Promise((r) => setTimeout(r, process.platform === 'win32' ? 600 : 200)))
-      .then(() => {
-        cleanup();
-      })
-      .then(resolve)
-      .catch((err) => {
-        cleanup();
-        reject(err);
-      });
+async function printReceiptHtmlInHiddenWindow(bodyHtml) {
+  const deviceName = await resolveReceiptPrinterName();
+  const printers = await listSystemPrinters();
+  const mainSession =
+    mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
+  const html = String(bodyHtml || '').trim();
+  if (!html || html.length < 40) {
+    throw new Error('Пустой чек для печати');
+  }
+  await printHtmlInHiddenWindow(html, {
+    deviceName,
+    printers,
+    session: mainSession,
   });
 }
 
@@ -627,21 +608,20 @@ async function printTestReceiptInHiddenWindow() {
   });
 }
 
-ipcMain.handle('print-receipt', async (event, receiptNumber) => {
+ipcMain.handle('print-receipt', async (_event, receiptNumber) => {
   if (!receiptNumber || !config?.cashierUrl) {
     throw new Error('Некорректный номер чека');
   }
   if (!isAllowedLocation(`${config.cashierUrl}/receipt/${receiptNumber}`)) {
     throw new Error('Недопустимый URL чека');
   }
-  try {
-    await printReceiptInHiddenWindow(receiptNumber);
-    return { ok: true };
-  } catch (err) {
-    const msg = err?.message || 'Печать не выполнена';
-    dialog.showErrorBox('Aurent — печать чека', `${msg}\n\nПроверьте: меню Aurent → принтер чека → тестовая печать.`);
-    throw err;
-  }
+  await printReceiptInHiddenWindow(receiptNumber);
+  return { ok: true };
+});
+
+ipcMain.handle('print-receipt-html', async (_event, bodyHtml) => {
+  await printReceiptHtmlInHiddenWindow(bodyHtml);
+  return { ok: true };
 });
 
 ipcMain.handle('print-label-page', async (event) => {

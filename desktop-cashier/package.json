@@ -12,7 +12,8 @@
     "dist": "electron-builder --config electron-builder.config.cjs",
     "dist:mac": "electron-builder --mac --config electron-builder.config.cjs --publish never",
     "dist:win": "electron-builder --win --config electron-builder.config.cjs --publish never --config.win.signAndEditExecutable=false --config.win.verifyUpdateCodeSignature=false",
-    "dist:win:dir": "electron-builder --win dir --config electron-builder.config.cjs --publish never --config.win.signAndEditExecutable=false"
+    "dist:win:dir": "electron-builder --win dir --config electron-builder.config.cjs --publish never --config.win.signAndEditExecutable=false",
+    "test:print": "node scripts/test-print-logic.cjs"
   },
   "build": {
     "appId": "com.aurent.pos.cashier",

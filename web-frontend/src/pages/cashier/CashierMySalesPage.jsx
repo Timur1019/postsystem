@@ -512,6 +512,7 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
         <ThermalReportPrintPortal
           open
           printToken={printToken}
+          receiptNumber={receiptNumber}
           onPrinted={() => {
             toast.success(t('receipt.printSent'), { id: 'cashier-sales-print' });
             setPrintToken(null);

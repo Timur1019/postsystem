@@ -1,4 +1,4 @@
-// Автопечать после продажи: тихая печать Electron → POS-80; при сбое — диалог Windows.
+// Fallback: тихая печать не сработала — диалог Windows (window.print).
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import ThermalReportPrintPortal from '../reports/ThermalReportPrintPortal';
@@ -13,6 +13,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     <ThermalReportPrintPortal
       open
       printToken={sale.receiptNumber}
+      printMode="dialog"
       onPrinted={() => {
         toast.success(t('pos.saleSuccess'));
         onDone?.();

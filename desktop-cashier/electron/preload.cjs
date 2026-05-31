@@ -2,9 +2,11 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('desktopCashier', {
   isDesktop: true,
-  /** Тихая печать по номеру чека (скрытое окно). */
+  /** Тихая печать по номеру чека (скрытое окно /receipt). */
   printReceipt: (receiptNumber) => ipcRenderer.invoke('print-receipt', receiptNumber),
-  /** Тихая печать текущей страницы чека (без диалога). */
+  /** Тихая печать готового HTML чека (скрытое окно). */
+  printReceiptHtml: (bodyHtml) => ipcRenderer.invoke('print-receipt-html', bodyHtml),
+  /** @deprecated Используйте printReceipt / printReceiptHtml */
   printCurrentPage: () => ipcRenderer.invoke('print-current-page'),
   /** Тихая печать текущей страницы как этикетки/штрих-кода. */
   printLabelPage: () => ipcRenderer.invoke('print-label-page'),

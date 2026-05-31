@@ -172,7 +172,7 @@ function prepareThermalPrintInPage(webContents, extraClasses = []) {
   `);
 }
 
-function buildSilentPrintOpts(deviceName, dims) {
+function buildSilentPrintOpts(deviceName, dims, useCustomPageSize = true) {
   const paperMm = dims?.paperMm || 80;
   const heightMm = dims?.heightMm || 200;
   const opts = {
@@ -184,16 +184,18 @@ function buildSilentPrintOpts(deviceName, dims) {
   if (deviceName) {
     opts.deviceName = deviceName;
   }
-  const pageH = Math.round(Math.max(heightMm, 100) * 1000);
-  const pageW = Math.round(paperMm * 1000);
-  opts.pageSize = { width: pageW, height: pageH };
+  if (useCustomPageSize) {
+    const pageH = Math.round(Math.max(heightMm, 100) * 1000);
+    const pageW = Math.round(paperMm * 1000);
+    opts.pageSize = { width: pageW, height: pageH };
+  }
   return opts;
 }
 
 /** Windows: очередь «по умолчанию» иногда печатает, когда явное имя (POS-80) даёт Print job failed. */
-function winPrintAttempts(requestedName, printers) {
+function winPrintAttempts(requestedName, printers, platformIsWin = IS_WIN) {
   const requested = String(requestedName || '').trim();
-  if (!IS_WIN) {
+  if (!platformIsWin) {
     return requested ? [requested] : [''];
   }
   const info = printers?.find((p) => p.name === requested);
@@ -201,7 +203,8 @@ function winPrintAttempts(requestedName, printers) {
   if (requested) {
     attempts.push(requested);
   }
-  if (!requested || info?.isDefault) {
+  /** Если принтер не default — повтор через очередь Windows по умолчанию. */
+  if (!requested || !info?.isDefault) {
     attempts.push('');
   }
   return [...new Set(attempts)];
@@ -212,13 +215,15 @@ function runSilentPrint(webContents, dims, options = {}) {
   const printers = options.printers || [];
   const attempts = winPrintAttempts(requested, printers);
   const printerLabel = requested || 'принтер по умолчанию';
+  /** POS-80 на Windows часто печатает пустую полоску с кастомным pageSize — сначала драйвер по умолчанию. */
+  const pageSizeStrategies = IS_WIN ? [false, true] : [true];
 
-  const tryOnce = (name) =>
+  const tryOnce = (name, useCustomPageSize) =>
     new Promise((resolve, reject) => {
-      const opts = buildSilentPrintOpts(name, dims);
+      const opts = buildSilentPrintOpts(name, dims, useCustomPageSize);
       webContents.print(opts, (success, failureReason) => {
         if (success) {
-          resolve({ deviceName: name || requested || null });
+          resolve({ deviceName: name || requested || null, useCustomPageSize });
           return;
         }
         const detail =
@@ -230,10 +235,12 @@ function runSilentPrint(webContents, dims, options = {}) {
   return (async () => {
     let lastErr;
     for (const name of attempts) {
-      try {
-        return await tryOnce(name);
-      } catch (err) {
-        lastErr = err;
+      for (const useCustomPageSize of pageSizeStrategies) {
+        try {
+          return await tryOnce(name, useCustomPageSize);
+        } catch (err) {
+          lastErr = err;
+        }
       }
     }
     const detail = lastErr?.message || 'Печать не выполнена';
@@ -245,8 +252,102 @@ function runSilentPrint(webContents, dims, options = {}) {
   })();
 }
 
+function buildThermalReceiptDocument(bodyHtml) {
+  const css = `
+    @page { size: 80mm auto; margin: 0; }
+    html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+    body {
+      font-family: 'Courier New', 'Liberation Mono', Consolas, monospace;
+      font-size: 13px; line-height: 1.5; font-weight: 700;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    #receipt-print-area, .receipt-print-root {
+      width: 72mm; max-width: 72mm; margin: 0; padding: 2mm 3mm;
+      box-sizing: border-box; background: #fff; color: #000;
+    }
+    #receipt-print-area *, .receipt-print-root * { color: #000 !important; opacity: 1 !important; visibility: visible !important; }
+    .receipt-row { display: flex; justify-content: space-between; gap: 4px; padding: 1px 0; }
+    .receipt-row__value { text-align: right; flex: 1; min-width: 0; }
+    .receipt-row--bold { font-weight: 700; }
+    .receipt-title { font-size: 1.15em; font-weight: 700; text-align: center; text-transform: uppercase; }
+    .receipt-subtitle, .receipt-meta-label { font-size: 0.92em; }
+    .receipt-section-title { font-weight: 700; margin: 0 0 2px; }
+    .receipt-divider { border-top: 1px dashed #000; margin: 4px 0; }
+    .receipt-items-header { display: flex; font-weight: 700; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 2px; }
+    .receipt-item { margin-bottom: 4px; }
+    .receipt-item-name { font-weight: 700; }
+    .receipt-item-line { display: flex; justify-content: space-between; }
+    .receipt-fiscal-sign { font-weight: 700; text-decoration: underline; word-break: break-all; }
+    .receipt-qr { display: block; margin: 0 auto; max-width: 100%; }
+    .receipt-footer { font-size: 0.9em; text-align: center; }
+    .receipt-logo { display: block; margin: 0 auto 4px; max-height: 32mm; max-width: 100%; object-fit: contain; }
+    .text-center { text-align: center; }
+    .my-2 { margin-top: 4px; margin-bottom: 4px; }
+    .mt-4 { margin-top: 8px; }
+    .pt-3 { padding-top: 6px; }
+    .space-y-1 > * + * { margin-top: 2px; }
+    #receipt-print-area::after { content: ''; display: block; height: 20mm; min-height: 20mm; }
+  `;
+  return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Aurent — чек</title>
+  <style>${css}</style>
+</head>
+<body>
+  ${bodyHtml}
+  <script>
+    window.__posReceiptReady = true;
+    window.dispatchEvent(new CustomEvent('pos-receipt-ready'));
+  </script>
+</body>
+</html>`;
+}
+
+async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
+  const paperMm = 80;
+  const deviceName = options.deviceName || '';
+  const printers = options.printers || [];
+  const printWin = createReceiptPrintWindow({
+    width: paperWidthPx(paperMm),
+    height: 1600,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      ...(options.session ? { session: options.session } : {}),
+    },
+  });
+  printWin.webContents.setZoomFactor(1);
+  const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(buildThermalReceiptDocument(bodyHtml))}`;
+
+  try {
+    await printWin.loadURL(dataUrl);
+    await ensureWindowPainted(printWin);
+    await waitForImages(printWin.webContents);
+    await new Promise((r) => setTimeout(r, IS_WIN ? 900 : 300));
+    await waitForPaintFrames(printWin.webContents);
+    const dims = await prepareThermalPrintInPage(printWin.webContents);
+    if (!dims?.textLen || dims.textLen < 40 || dims.contentHeightPx < 60) {
+      throw new Error('Чек пустой — не удалось подготовить печать');
+    }
+    if (!printWin.isDestroyed()) {
+      const h = Math.min(5000, Math.max(900, Math.ceil(dims.contentHeightPx * 1.15)));
+      printWin.setSize(paperWidthPx(paperMm), h);
+    }
+    await waitForPaintFrames(printWin.webContents);
+    await new Promise((r) => setTimeout(r, IS_WIN ? 350 : 120));
+    await runSilentPrint(printWin.webContents, dims, { deviceName, printers });
+    await new Promise((r) => setTimeout(r, IS_WIN ? 500 : 150));
+  } finally {
+    await cleanupThermalPrintInPage(printWin.webContents);
+    if (!printWin.isDestroyed()) {
+      printWin.close();
+    }
+  }
+}
+
 /**
- * Окно для печати чека по URL (?silent=1).
  * @param {import('electron').BrowserWindowConstructorOptions & { webPreferences: object }} base
  */
 function createReceiptPrintWindow({ width, height, webPreferences }) {
@@ -320,6 +421,11 @@ module.exports = {
   cleanupThermalPrintInPage,
   runSilentPrint,
   runSilentLabelPrint,
+  buildThermalReceiptDocument,
+  printHtmlInHiddenWindow,
   createReceiptPrintWindow,
   ensureWindowPainted,
+  /** @internal unit tests */
+  buildSilentPrintOpts,
+  winPrintAttempts,
 };

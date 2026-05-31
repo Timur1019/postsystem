@@ -1,16 +1,24 @@
 // src/components/reports/ThermalReportPrintPortal.jsx
 import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { isDesktopCashier, printThermalReceipt } from '../../utils/printReceipt';
+import {
+  isDesktopCashier,
+  printThermalReceipt,
+  printThermalReceiptDialog,
+} from '../../utils/printReceipt';
 import { printThermalReport, waitForPrintDialogClose } from '../../utils/printThermalReport';
 
 /**
- * Скрытый термочек в DOM + автопечать (как фискальный чек).
+ * Скрытый термочек в DOM + автопечать.
  * @param {string|number} printToken — уникален для каждого запуска печати
+ * @param {'auto'|'dialog'} printMode — auto: скрытое окно Electron; dialog: window.print
+ * @param {string|number} [receiptNumber] — для тихой печати по номеру чека
  */
 export default function ThermalReportPrintPortal({
   open,
   printToken,
+  receiptNumber,
+  printMode = 'auto',
   children,
   onPrinted,
   onClose,
@@ -46,20 +54,26 @@ export default function ThermalReportPrintPortal({
         await new Promise((r) => setTimeout(r, 100));
       }
       if (cancelled) return;
-      if (!shell) {
+      if (!shell && printMode !== 'auto') {
         onErrorRef.current?.(new Error('Чек не успел подготовиться для печати'));
         onCloseRef.current?.();
         return;
       }
 
       try {
-        const mode = isDesktopCashier()
-          ? await printThermalReceipt({ useModalShell: true })
-          : await printThermalReport();
+        let mode = 'dialog';
+        if (printMode === 'dialog') {
+          mode = await printThermalReceiptDialog({ useModalShell: true });
+        } else if (isDesktopCashier()) {
+          mode = await printThermalReceipt({
+            useModalShell: true,
+            receiptNumber: receiptNumber ?? printToken,
+          });
+        } else {
+          mode = await printThermalReport();
+        }
         if (mode === 'dialog') {
           await waitForPrintDialogClose();
-        } else if (mode === 'silent') {
-          await new Promise((r) => setTimeout(r, 400));
         }
         if (!cancelled) {
           onPrintedRef.current?.();
@@ -78,7 +92,7 @@ export default function ThermalReportPrintPortal({
     return () => {
       cancelled = true;
     };
-  }, [open, printToken]);
+  }, [open, printToken, printMode, receiptNumber]);
 
   if (!open || !children) return null;
 
