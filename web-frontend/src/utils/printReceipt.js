@@ -14,6 +14,14 @@ const PRINT_HTML_CLASSES = [
   ELECTRON_PRINT_CAPTURING_CLASS,
 ];
 
+const SILENT_AUTO_PRINT_CLASSES = [
+  PRINT_THERMAL_CLASS,
+  PRINT_THERMAL_MODAL_CLASS,
+  ELECTRON_SILENT_PRINT_CLASS,
+];
+
+const SILENT_PRINT_MAX_ATTEMPTS = 3;
+
 export function isDesktopCashier() {
   return typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
 }
@@ -69,7 +77,7 @@ async function prepareDesktopForPrint() {
 async function waitForReceiptDomReady({ useModalShell = false } = {}) {
   const preferFiscalShell = useModalShell || shouldUseModalPrintShell();
   await document.fonts?.ready;
-  for (let i = 0; i < 50; i += 1) {
+  for (let i = 0; i < 60; i += 1) {
     await new Promise((r) => setTimeout(r, 100));
     const area = receiptPrintElement({ preferFiscalShell });
     if (!area) continue;
@@ -85,11 +93,30 @@ async function waitForReceiptDomReady({ useModalShell = false } = {}) {
       return;
     }
   }
+  throw new Error('Чек не готов для печати');
 }
 
 async function waitForPaintSettled() {
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   await new Promise((r) => setTimeout(r, 350));
+}
+
+async function invokeDesktopSilentPrint() {
+  let lastErr;
+  for (let attempt = 1; attempt <= SILENT_PRINT_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      await window.desktopCashier.printReceiptAuto();
+      return;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[Aurent] silent print attempt ${attempt}/${SILENT_PRINT_MAX_ATTEMPTS}`, err);
+      if (attempt < SILENT_PRINT_MAX_ATTEMPTS) {
+        await waitForPaintSettled();
+        await new Promise((r) => setTimeout(r, 400 * attempt));
+      }
+    }
+  }
+  throw lastErr || new Error('Тихая печать не выполнена');
 }
 
 /**
@@ -124,32 +151,24 @@ export async function printThermalReceiptDialog({ useModalShell } = {}) {
 
 /**
  * Автопечать после продажи.
- * Десктоп: одна тихая попытка на #fiscal-print-shell (portal), иначе диалог как при ручной печати.
+ * Десктоп: тихая печать (без диалога). Браузер: window.print().
  */
 export async function printThermalReceiptAuto() {
-  await waitForReceiptDomReady({ useModalShell: true });
+  if (!isDesktopCashier() || typeof window.desktopCashier?.printReceiptAuto !== 'function') {
+    return printThermalReceiptDialog({ useModalShell: true });
+  }
+
   await prepareDesktopForPrint();
-
-  const silentClasses = [PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS, ELECTRON_SILENT_PRINT_CLASS];
-
+  const cleanup = prepareThermalPrint(SILENT_AUTO_PRINT_CLASSES);
   try {
-    if (isDesktopCashier() && typeof window.desktopCashier?.printReceiptAuto === 'function') {
-      const cleanup = prepareThermalPrint(silentClasses);
-      try {
-        await waitForPaintSettled();
-        await new Promise((r) => setTimeout(r, 500));
-        await window.desktopCashier.printReceiptAuto();
-        return 'silent';
-      } finally {
-        cleanup();
-        cleanupDesktopPrintState();
-      }
-    }
-    return printThermalReceiptDialog({ useModalShell: true });
-  } catch (err) {
-    console.warn('[Aurent] silent auto print failed, dialog fallback', err);
+    await waitForReceiptDomReady({ useModalShell: true });
+    await waitForPaintSettled();
+    await new Promise((r) => setTimeout(r, 600));
+    await invokeDesktopSilentPrint();
+    return 'silent';
+  } finally {
+    cleanup();
     cleanupDesktopPrintState();
-    return printThermalReceiptDialog({ useModalShell: true });
   }
 }
 
@@ -190,6 +209,18 @@ export async function printBrowserTestReceipt() {
     document.body.appendChild(host);
   }
   try {
+    if (isDesktopCashier() && typeof window.desktopCashier?.printReceiptAuto === 'function') {
+      const cleanup = prepareThermalPrint(SILENT_AUTO_PRINT_CLASSES);
+      try {
+        await waitForReceiptDomReady({ useModalShell: true });
+        await waitForPaintSettled();
+        await invokeDesktopSilentPrint();
+        return 'silent';
+      } finally {
+        cleanup();
+        cleanupDesktopPrintState();
+      }
+    }
     await printThermalReceiptDialog({ useModalShell: true });
   } finally {
     host.remove();

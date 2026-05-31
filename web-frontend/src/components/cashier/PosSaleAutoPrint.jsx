@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
 import ReceiptPrintingOverlay from './ReceiptPrintingOverlay';
-import { cleanupDesktopPrintState, printThermalReceiptAuto } from '../../utils/printReceipt';
+import { cleanupDesktopPrintState, isDesktopCashier, printThermalReceiptAuto } from '../../utils/printReceipt';
 
 const QR_WAIT_MS = 2000;
 
@@ -46,17 +46,25 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
       if (cancelled) return;
 
       try {
-        await printThermalReceiptAuto();
+        const mode = await printThermalReceiptAuto();
         if (!cancelled) {
-          toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
-            id: 'pos-auto-print',
-            duration: 3000,
-          });
+          if (mode === 'silent') {
+            toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
+              id: 'pos-auto-print',
+              duration: 3000,
+            });
+          }
         }
       } catch (err) {
         if (!cancelled) {
           console.warn('[Aurent] auto print failed', err);
-          toast.error(err?.message || t('pos.printFailed'), { id: 'pos-auto-print' });
+          const msg = err?.message || t('pos.printFailed');
+          toast.error(
+            isDesktopCashier()
+              ? `${msg}. ${t('pos.printFailedDesktopHint', { defaultValue: 'Aurent → «Принтер чека», затем повторите продажу.' })}`
+              : msg,
+            { id: 'pos-auto-print', duration: 6000 }
+          );
         }
       } finally {
         if (!cancelled) {

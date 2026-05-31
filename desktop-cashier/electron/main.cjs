@@ -444,23 +444,34 @@ ipcMain.handle('print-label-page', async (event) => {
   return { ok: true };
 });
 
+const RECEIPT_READY_JS = `
+  (() => {
+    const shell = document.getElementById('fiscal-print-shell');
+    if (!shell) return false;
+    const area = shell.querySelector('#receipt-print-area') || shell.querySelector('.receipt-print-root') || shell;
+    const textLen = (area.innerText || '').trim().length;
+    const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
+    const imgs = Array.from(area.querySelectorAll('img'));
+    const imgsReady = imgs.length === 0 || imgs.every((i) => i.complete);
+    return textLen >= 80 && h >= 120 && imgsReady;
+  })()
+`;
+
+async function waitReceiptReadyForAutoPrint(wc, attempts = 6) {
+  for (let i = 0; i < attempts; i += 1) {
+    const ready = await wc.executeJavaScript(RECEIPT_READY_JS);
+    if (ready) return true;
+    await new Promise((r) => setTimeout(r, 180 + i * 120));
+  }
+  return false;
+}
+
 ipcMain.handle('desktop:print-receipt-auto', async (event) => {
   const wc = event.sender;
   if (!wc || wc.isDestroyed()) {
     throw new Error('Окно печати недоступно');
   }
-  const ready = await wc.executeJavaScript(`
-    (() => {
-      const shell = document.getElementById('fiscal-print-shell');
-      if (!shell) return false;
-      const area = shell.querySelector('#receipt-print-area') || shell.querySelector('.receipt-print-root') || shell;
-      const textLen = (area.innerText || '').trim().length;
-      const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
-      const imgs = Array.from(area.querySelectorAll('img'));
-      const imgsReady = imgs.length === 0 || imgs.every((i) => i.complete);
-      return textLen >= 80 && h >= 120 && imgsReady;
-    })()
-  `);
+  const ready = await waitReceiptReadyForAutoPrint(wc);
   if (!ready) {
     throw new Error('Чек не готов для автопечати');
   }
