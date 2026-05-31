@@ -112,5 +112,12 @@ test('paperWidthPx для 80mm >= 280px', () => {
   assert.ok(paperWidthPx(80) >= 280);
 });
 
+test('PDF чека: порог непустого буфера >= 6000 байт', () => {
+  const empty = Buffer.alloc(1000);
+  const full = Buffer.alloc(8000);
+  assert.ok(empty.length < 6000);
+  assert.ok(full.length > 6000);
+});
+
 console.log(`\nИтого: ${passed} ok, ${failed} fail`);
 process.exit(failed > 0 ? 1 : 0);

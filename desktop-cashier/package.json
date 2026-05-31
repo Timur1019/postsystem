@@ -1,6 +1,6 @@
 {
   "name": "masterpiece-pos-cashier-desktop",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "Desktop shell for Aurent cashier (same UI as web)",
   "main": "electron/main.cjs",
@@ -72,7 +72,8 @@
   "dependencies": {
     "electron-updater": "^6.8.3",
     "express": "^4.21.2",
-    "http-proxy-middleware": "^3.0.3"
+    "http-proxy-middleware": "^3.0.3",
+    "pdf-to-printer": "^5.6.0"
   },
   "devDependencies": {
     "electron": "^28.3.3",
