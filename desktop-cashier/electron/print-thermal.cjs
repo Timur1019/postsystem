@@ -75,7 +75,8 @@ function waitForPaintFrames(webContents) {
 function buildStandardSilentPrintOpts(deviceName) {
   const opts = {
     silent: true,
-    printBackground: true,
+    /* Серый «грязный» фон на POS-80 — от полупрозрачных UI-слоёв при printBackground: true */
+    printBackground: false,
     margins: { marginType: 'none' },
     copies: 1,
   };

@@ -53,16 +53,17 @@ html.electron-silent-print {
   -webkit-print-color-adjust: exact !important;
   print-color-adjust: exact !important;
 }
+html.electron-silent-print,
 html.electron-silent-print body {
   margin: 0 !important;
   padding: 0 !important;
-  background: white !important;
+  background: #ffffff !important;
 }
 
-/* Автопечать: экран как у модалки «Печатается…», без белого кадра */
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job,
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job body {
-  background: rgba(15, 23, 42, 0.58) !important;
+/* Модалка «Печатается…» не должна попадать в bitmap тихой печати (серый фон на чеке) */
+html.electron-silent-print.print-thermal-modal .receipt-printing-overlay {
+  display: none !important;
+  visibility: hidden !important;
 }
 
 html.electron-silent-print.print-thermal-only .receipt-page,
@@ -93,11 +94,6 @@ html.electron-silent-print.print-thermal-modal
   display: none !important;
   visibility: hidden !important;
 }
-html.electron-silent-print.print-thermal-modal .receipt-printing-overlay {
-  display: flex !important;
-  visibility: visible !important;
-  z-index: 2147483647 !important;
-}
 html.electron-silent-print.print-thermal-modal .fiscal-print-scene,
 html.electron-silent-print.print-thermal-modal .thermal-report-print-host,
 html.electron-silent-print.print-thermal-modal .pos-sale-print-host {
@@ -120,12 +116,17 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host {
 html.electron-silent-print.print-thermal-modal .pos-sale-auto-print {
   display: none !important;
 }
+html.electron-silent-print.print-thermal-modal .fiscal-print-dialog,
 html.electron-silent-print.print-thermal-modal #fiscal-print-shell,
 html.electron-silent-print.print-thermal-modal #fiscal-print-shell #receipt-print-area,
+html.electron-silent-print.print-thermal-modal #fiscal-print-shell .receipt-print-root,
 html.electron-silent-print.print-thermal-modal #fiscal-print-shell * {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
   color: #000 !important;
   opacity: 1 !important;
   visibility: visible !important;
+  box-shadow: none !important;
 }
 #receipt-print-area,
 #receipt-print-area *,

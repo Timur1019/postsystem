@@ -3,7 +3,6 @@ import {
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
   ELECTRON_SILENT_PRINT_CLASS,
-  ELECTRON_AUTO_PRINT_JOB_CLASS,
 } from './printWithHtmlClass';
 
 /** Классы печати — снимаем после job. */
@@ -11,7 +10,6 @@ const PRINT_HTML_CLASSES = [
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
   ELECTRON_SILENT_PRINT_CLASS,
-  ELECTRON_AUTO_PRINT_JOB_CLASS,
 ];
 
 export function isDesktopCashier() {
@@ -130,30 +128,26 @@ export async function printThermalReceiptAuto() {
   await waitForReceiptDomReady({ useModalShell: true });
   await prepareDesktopForPrint();
 
-  const classes = [
-    PRINT_THERMAL_CLASS,
-    PRINT_THERMAL_MODAL_CLASS,
-    ELECTRON_SILENT_PRINT_CLASS,
-    ELECTRON_AUTO_PRINT_JOB_CLASS,
-  ];
-  const cleanup = prepareThermalPrint(classes);
+  const silentClasses = [PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS, ELECTRON_SILENT_PRINT_CLASS];
 
   try {
     if (isDesktopCashier() && typeof window.desktopCashier?.printReceiptAuto === 'function') {
-      await waitForPaintSettled();
-      await new Promise((r) => setTimeout(r, 500));
-      await window.desktopCashier.printReceiptAuto();
-      return 'silent';
+      const cleanup = prepareThermalPrint(silentClasses);
+      try {
+        await waitForPaintSettled();
+        await new Promise((r) => setTimeout(r, 500));
+        await window.desktopCashier.printReceiptAuto();
+        return 'silent';
+      } finally {
+        cleanup();
+        cleanupDesktopPrintState();
+      }
     }
     return printThermalReceiptDialog({ useModalShell: true });
   } catch (err) {
     console.warn('[Aurent] silent auto print failed, dialog fallback', err);
-    cleanup();
     cleanupDesktopPrintState();
     return printThermalReceiptDialog({ useModalShell: true });
-  } finally {
-    cleanup();
-    cleanupDesktopPrintState();
   }
 }
 
