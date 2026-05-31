@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('desktopCashier', {
   printReceipt: (receiptNumber) => ipcRenderer.invoke('print-receipt', receiptNumber),
   /** Тихая печать готового HTML чека (скрытое окно). */
   printReceiptHtml: (bodyHtml) => ipcRenderer.invoke('print-receipt-html', bodyHtml),
+  /** X/Z-отчёт смены — скрытое окно Electron (не window.print). */
+  printShiftReport: (report) => ipcRenderer.invoke('print-shift-report', report),
   /** @deprecated Используйте printReceipt / printReceiptHtml */
   printCurrentPage: () => ipcRenderer.invoke('print-current-page'),
   /** Тихая печать текущей страницы как этикетки/штрих-кода. */

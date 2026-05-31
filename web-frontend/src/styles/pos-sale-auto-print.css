@@ -1,30 +1,15 @@
-/* Превью чека на POS после продажи (как на экране кассы) */
+/* Превью чека внутри модалки «Печатается чек…» */
 .pos-sale-auto-print {
-  position: fixed;
-  inset: 0;
-  z-index: 250;
   pointer-events: none;
 }
 
-.pos-sale-auto-print__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-}
-
 .pos-sale-auto-print__paper {
-  position: absolute;
-  left: 1.25rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: min(320px, var(--print-paper-w, 80mm));
-  max-height: min(92vh, 720px);
+  width: min(280px, var(--print-paper-w, 80mm));
+  max-height: min(50vh, 400px);
   overflow-x: hidden;
   overflow-y: auto;
   background: #fff;
   color: #000;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
-  border-radius: 4px;
 }
 
 .pos-sale-auto-print__shell {

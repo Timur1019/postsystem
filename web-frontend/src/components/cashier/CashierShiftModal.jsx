@@ -8,6 +8,8 @@ import { cashierShiftApi } from '../../services/api';
 import PosModalPortal from './PosModalPortal';
 import ShiftReportPrintBody from './ShiftReportPrintBody';
 import ThermalReportPrintPortal from '../reports/ThermalReportPrintPortal';
+import DesktopPrintOverlay from './DesktopPrintOverlay';
+import { isDesktopCashier, printDesktopShiftReport } from '../../utils/printReceipt';
 import { useAuthStore } from '../../store/authStore';
 import { useOpenCashierShift } from '../../hooks/useCashierShift';
 
@@ -26,9 +28,30 @@ export default function CashierShiftModal({
   const shiftId = shift?.id;
   const [printReport, setPrintReport] = useState(null);
   const [printToken, setPrintToken] = useState(0);
+  const [printingReport, setPrintingReport] = useState(false);
   const printAfterLoadRef = useRef(null);
 
-  const queuePrint = (data) => {
+  const queuePrint = async (data) => {
+    if (isDesktopCashier()) {
+      setPrintingReport(true);
+      try {
+        const result = await printDesktopShiftReport(data, t);
+        if (result.ok) {
+          if (result.mode === 'dialog') {
+            toast('Нажмите «Печать» в окне Windows', { duration: 5000 });
+          } else {
+            toast.success(t('receipt.printSent'));
+          }
+        } else {
+          toast.error(t('receipt.printFailed'));
+        }
+      } catch (e) {
+        toast.error(e?.message ?? t('receipt.printFailed'));
+      } finally {
+        setPrintingReport(false);
+      }
+      return;
+    }
     setPrintToken((n) => n + 1);
     setPrintReport(data);
   };
@@ -88,7 +111,8 @@ export default function CashierShiftModal({
     zMutation.isPending ||
     closeMutation.isPending ||
     openMutation.isPending ||
-    Boolean(printReport);
+    Boolean(printReport) ||
+    printingReport;
 
   const handleXReport = () => {
     printAfterLoadRef.current = 'X';
@@ -188,11 +212,18 @@ export default function CashierShiftModal({
       <ThermalReportPrintPortal
         open={Boolean(printReport)}
         printToken={printReport ? printToken : null}
+        shiftReport={printReport}
         onClose={() => setPrintReport(null)}
         onPrinted={() => toast.success(t('receipt.printSent'))}
+        onError={() => toast.error(t('receipt.printFailed'))}
       >
         {printReport ? <ShiftReportPrintBody report={printReport} /> : null}
       </ThermalReportPrintPortal>
+
+      <DesktopPrintOverlay
+        open={printingReport}
+        messageKey="receipt.printingReport"
+      />
     </>
   );
 }

@@ -1238,6 +1238,8 @@
     "backPos": "Bosh sahifaga",
     "backCashier": "Kassaga qaytish",
     "print": "Chek chop etish",
+    "printing": "Chek chop etilmoqda…",
+    "printingReport": "Hisobot chop etilmoqda…",
     "printSent": "Chek printerga yuborildi",
     "printFailed": "Chek chop etilmadi",
     "storeBrand": "Aurent",

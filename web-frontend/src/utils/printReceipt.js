@@ -24,6 +24,7 @@ export function isDesktopSilentPrintAvailable() {
   return (
     isDesktopCashier() &&
     (typeof window.desktopCashier?.printReceiptSale === 'function' ||
+      typeof window.desktopCashier?.printShiftReport === 'function' ||
       typeof window.desktopCashier?.printReceipt === 'function' ||
       typeof window.desktopCashier?.printReceiptHtml === 'function')
   );
@@ -60,6 +61,51 @@ export function buildDesktopSalePrintPayload(sale, qrDataUrl = null) {
       logoDataUrl: td.receiptLogoDataUrl || undefined,
     },
   };
+}
+
+/** X/Z-отчёт смены для Electron printShiftReport. */
+export function buildDesktopShiftPrintPayload(report, t) {
+  if (!report?.reportType) return null;
+  const td = useTenantDisplayStore.getState();
+  return {
+    ...report,
+    _branding: {
+      companyName: td.receiptCompanyName || td.displayAppName?.() || undefined,
+    },
+    _labels: {
+      xReport: t('pos.xReport'),
+      zReport: t('pos.zReport'),
+      openedAt: t('zReports.openedAt'),
+      reportAt: t('pos.reportAt'),
+      shiftSales: t('pos.shiftSales'),
+      shiftTotal: t('pos.shiftTotal'),
+      shiftCash: t('pos.shiftCash'),
+      shiftCard: t('pos.shiftCard'),
+      shiftVat: t('pos.shiftVat'),
+      lineDiscountsSum: t('fiscalReceipt.lineDiscountsSum'),
+      orderDiscountSum: t('fiscalReceipt.orderDiscountSum'),
+      discountsSum: t('fiscalReceipt.discountsSum'),
+      currency: t('fiscalReceipt.currency'),
+    },
+  };
+}
+
+/** Печать X/Z-отчёта на десктопе через скрытое окно Electron. */
+export async function printDesktopShiftReport(report, t) {
+  if (!isDesktopCashier() || !report?.reportType) {
+    return { ok: false };
+  }
+  if (typeof window.desktopCashier?.printShiftReport !== 'function') {
+    return { ok: false };
+  }
+  const payload = buildDesktopShiftPrintPayload(report, t);
+  if (!payload) return { ok: false };
+  try {
+    const result = await window.desktopCashier.printShiftReport(payload);
+    return { ok: true, mode: result?.mode || 'silent' };
+  } catch (err) {
+    throw err;
+  }
 }
 
 /** Печать чека на десктопе: Electron собирает HTML из JSON продажи. */

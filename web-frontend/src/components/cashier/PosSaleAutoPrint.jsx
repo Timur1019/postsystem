@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
+import DesktopPrintOverlay from './DesktopPrintOverlay';
 import { cleanupDesktopPrintState, printDesktopReceiptSale } from '../../utils/printReceipt';
 import '../../styles/pos-sale-auto-print.css';
 
@@ -68,10 +69,15 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
         }
       } catch (err) {
         console.warn('[Aurent] auto print failed', err);
+        if (!cancelled) {
+          toast.error(err?.message || t('pos.printFailed'), { id: 'pos-auto-print' });
+          await finish();
+        }
+        return;
       }
 
       if (!cancelled) {
-        toast.error(err?.message || t('pos.printFailed'), { id: 'pos-auto-print' });
+        toast.error(t('pos.printFailed'), { id: 'pos-auto-print' });
         await finish();
       }
     };
@@ -86,13 +92,14 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
   if (!sale) return null;
 
   return (
-    <div className="pos-sale-auto-print" role="status" aria-live="polite">
-      <div className="pos-sale-auto-print__backdrop" aria-hidden />
-      <div className="pos-sale-auto-print__paper">
-        <div id="pos-sale-print-shell" className="pos-sale-auto-print__shell">
-          <FiscalReceiptBody sale={sale} />
+    <DesktopPrintOverlay open messageKey="receipt.printing">
+      <div className="pos-sale-auto-print" role="status" aria-live="polite">
+        <div className="pos-sale-auto-print__paper">
+          <div id="pos-sale-print-shell" className="pos-sale-auto-print__shell">
+            <FiscalReceiptBody sale={sale} />
+          </div>
         </div>
       </div>
-    </div>
+    </DesktopPrintOverlay>
   );
 }

@@ -507,12 +507,14 @@ function forceClosePrintWindow(win) {
   }
 }
 
-function defaultReceiptDims(bodyHtml) {
+function defaultReceiptDims(bodyHtml, options = {}) {
   const plainLen = String(bodyHtml || '')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim().length;
-  const heightMm = Math.min(600, Math.max(180, Math.ceil(plainLen / 2.5) + 40 + CUT_FEED_MM));
+  const isShift = options.kind === 'shift';
+  const baseMm = isShift ? Math.ceil(plainLen / 3.2) + 28 : Math.ceil(plainLen / 2.5) + 40;
+  const heightMm = Math.min(isShift ? 320 : 600, Math.max(isShift ? 90 : 180, baseMm + CUT_FEED_MM));
   return {
     paperMm: 80,
     heightMm,
@@ -554,7 +556,7 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
 
     let dims;
     if (standaloneReceipt) {
-      dims = defaultReceiptDims(bodyHtml);
+      dims = defaultReceiptDims(bodyHtml, { kind: options.contentKind || 'receipt' });
     } else {
       dims = await prepareThermalPrintInPage(printWin.webContents);
       if (!dims?.textLen || dims.textLen < 40 || dims.contentHeightPx < 80) {

@@ -1,19 +1,36 @@
 /** Полные стили чека для скрытого окна печати (без Tailwind). */
 const RECEIPT_PRINT_CSS = `
 @page { size: 80mm auto; margin: 0; }
-html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: #000;
+  width: 80mm;
+  max-width: 80mm;
+}
 body {
-  font-family: 'Courier New', 'Liberation Mono', Consolas, monospace;
-  font-size: 13px; line-height: 1.5; font-weight: 700;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 #receipt-print-area, .receipt-print-root {
-  width: 72mm; max-width: 72mm; margin: 0; padding: 2mm 3mm;
-  box-sizing: border-box; background: #fff; color: #000;
+  width: 76mm;
+  max-width: 76mm;
+  margin: 0 auto;
+  padding: 1mm 2mm;
+  box-sizing: border-box;
+  background: #fff;
+  color: #000;
   overflow: visible;
 }
 #receipt-print-area *, .receipt-print-root * {
   color: #000 !important; opacity: 1 !important; visibility: visible !important;
+}
+body, #receipt-print-area, .receipt-print-root {
+  font-family: 'Courier New', 'Liberation Mono', Consolas, monospace;
+  font-size: 13px; line-height: 1.5; font-weight: 700;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .receipt-section { margin-bottom: 0.35em; text-align: left; }
 .receipt-section--center { text-align: center; }
@@ -46,12 +63,17 @@ body {
 .receipt-qr { display: block; margin: 8px auto 0; max-width: 112px; height: auto; }
 .receipt-footer { font-size: 12px; text-align: center; margin: 4px 0; }
 .receipt-logo { display: block; margin: 0 auto 4px; max-height: 32mm; max-width: 100%; object-fit: contain; }
-#receipt-print-area::after { content: ''; display: block; height: 20mm; min-height: 20mm; }
+#receipt-print-area::after { content: ''; display: block; height: 12mm; min-height: 12mm; }
+.receipt-print-root--shift { padding-top: 0; }
+.receipt-print-root--shift::after { height: 8mm; min-height: 8mm; }
 @media print {
   html, body { margin: 0 !important; padding: 0 !important; height: auto !important; background: #fff !important; }
   #receipt-print-area, .receipt-print-root {
-    width: 72mm !important; max-width: 72mm !important;
-    overflow: visible !important; page-break-inside: avoid;
+    width: 76mm !important; max-width: 76mm !important;
+    margin: 0 auto !important;
+    padding: 1mm 2mm !important;
+    overflow: visible !important;
+    page-break-inside: avoid;
   }
 }
 `;

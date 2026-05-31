@@ -10,6 +10,7 @@ import SalePartialReturnModal from '../../components/sales/SalePartialReturnModa
 import FiscalReceiptBody from '../../components/receipt/FiscalReceiptBody';
 import ThermalReportPrintPortal from '../../components/reports/ThermalReportPrintPortal';
 import { isDesktopCashier, printDesktopReceiptSale } from '../../utils/printReceipt';
+import DesktopPrintOverlay from '../../components/cashier/DesktopPrintOverlay';
 import { useCashierShift } from '../../hooks/useCashierShift';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -465,6 +466,9 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
 
   return (
     <aside className="cashier-sales-receipt-pane" aria-label={t('pos.receipt')}>
+      {printing && isDesktopCashier() ? (
+        <DesktopPrintOverlay open messageKey="receipt.printing" />
+      ) : null}
       <header className="cashier-sales-receipt-pane__head">
         <button
           type="button"

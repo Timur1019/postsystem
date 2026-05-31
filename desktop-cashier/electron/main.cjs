@@ -14,6 +14,7 @@ const { showSetupWindow, configPath } = require('./setup-window.cjs');
 const { showPrinterPickerWindow } = require('./printer-picker-window.cjs');
 const { matchPrinterName } = require('./printer-match.cjs');
 const { buildReceiptBodyHtml } = require('./receipt-html-builder.cjs');
+const { buildShiftReportBodyHtml } = require('./shift-report-html-builder.cjs');
 const {
   paperWidthPx,
   waitForImages,
@@ -599,7 +600,7 @@ async function printReceiptSaleInHiddenWindow(payload, options = {}) {
   }
 }
 
-async function printReceiptHtmlInHiddenWindow(bodyHtml) {
+async function printReceiptHtmlInHiddenWindow(bodyHtml, options = {}) {
   const deviceName = await resolveReceiptPrinterName({ promptIfMissing: false });
   const printers = await listSystemPrinters();
   const mainSession =
@@ -617,8 +618,56 @@ async function printReceiptHtmlInHiddenWindow(bodyHtml) {
     printers,
     session: mainSession,
     standaloneReceipt: html.includes('receipt-print-area'),
+    contentKind: options.contentKind || 'receipt',
     mainWindow,
   });
+}
+
+async function printShiftReportInHiddenWindow(payload) {
+  const report = payload && typeof payload === 'object' ? { ...payload } : null;
+  if (!report?.reportType) {
+    throw new Error('Некорректные данные отчёта');
+  }
+  const labels = report._labels || {};
+  delete report._labels;
+  const branding = report._branding || {};
+  delete report._branding;
+  const bodyHtml = buildShiftReportBodyHtml({ ...report, _labels: labels, _branding: branding });
+  const plainLen = bodyHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length;
+  if (plainLen < 20) {
+    throw new Error('Отчёт без текста для печати');
+  }
+  const deviceName = await resolveReceiptPrinterName({ promptIfMissing: false });
+  const printers = await listSystemPrinters();
+  const mainSession =
+    mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
+  const useDialog = resolveReceiptPrintUseDialog({});
+
+  try {
+    return await printHtmlInHiddenWindow(bodyHtml, {
+      deviceName,
+      printers,
+      session: mainSession,
+      useDialog,
+      standaloneReceipt: true,
+      contentKind: 'shift',
+      mainWindow,
+    });
+  } catch (err) {
+    console.warn('[Aurent print] shift report failed:', err?.message || err);
+    if (!useDialog) {
+      return printHtmlInHiddenWindow(bodyHtml, {
+        deviceName,
+        printers,
+        session: mainSession,
+        useDialog: true,
+        standaloneReceipt: true,
+        contentKind: 'shift',
+        mainWindow,
+      });
+    }
+    throw err;
+  }
 }
 
 function buildTestReceiptDataUrl() {
@@ -734,6 +783,11 @@ ipcMain.handle('print-receipt-sale-dialog', async (_event, salePayload) => {
 ipcMain.handle('print-receipt-html', async (_event, bodyHtml) => {
   await printReceiptHtmlInHiddenWindow(bodyHtml);
   return { ok: true };
+});
+
+ipcMain.handle('print-shift-report', async (_event, reportPayload) => {
+  const result = await printShiftReportInHiddenWindow(reportPayload);
+  return { ok: true, ...(result || {}) };
 });
 
 ipcMain.handle('print-label-page', async (event) => {

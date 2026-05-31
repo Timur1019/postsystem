@@ -41,7 +41,7 @@ test('buildThermalReceiptDocument включает текст чека и скр
   assert.ok(doc.includes('AURENT'), 'должен быть текст чека');
   assert.ok(doc.includes('__posReceiptReady'), 'должен быть флаг готовности');
   assert.ok(doc.includes('@page'), 'должен быть @page для 80mm');
-  assert.ok(doc.includes('20mm'), 'должен быть запас под отрез');
+  assert.ok(doc.includes('12mm'), 'должен быть запас под отрез');
 });
 
 test('buildSilentPrintOpts без pageSize — запасной вариант Windows', () => {

@@ -1238,6 +1238,8 @@
     "backPos": "На главную",
     "backCashier": "Вернуться на кассу",
     "print": "Печать чека",
+    "printing": "Печатается чек…",
+    "printingReport": "Печатается отчёт…",
     "printSent": "Чек отправлен на принтер",
     "printFailed": "Не удалось напечатать чек",
     "storeBrand": "Aurent",
