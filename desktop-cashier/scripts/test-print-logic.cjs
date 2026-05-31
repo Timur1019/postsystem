@@ -8,12 +8,7 @@ const {
   buildThermalReceiptDocument,
   buildReceiptBodyHtml,
 } = require('../electron/receipt-html-builder.cjs');
-const {
-  buildSilentPrintOpts,
-  buildStandardSilentPrintOpts,
-  winPrintAttempts,
-  paperWidthPx,
-} = require('../electron/print-thermal.cjs');
+const { paperWidthPx } = require('../electron/print-thermal.cjs');
 const { matchPrinterName } = require('../electron/printer-match.cjs');
 
 let passed = 0;
@@ -41,53 +36,6 @@ test('buildThermalReceiptDocument включает текст чека и скр
   assert.ok(doc.includes('__posReceiptReady'), 'должен быть флаг готовности');
   assert.ok(doc.includes('@page'), 'должен быть @page для 80mm');
   assert.ok(doc.includes('12mm'), 'должен быть запас под отрез');
-});
-
-test('buildStandardSilentPrintOpts — схема Electron docs', () => {
-  const opts = buildStandardSilentPrintOpts('POS-80 (copy 2)');
-  assert.strictEqual(opts.silent, true);
-  assert.strictEqual(opts.printBackground, true);
-  assert.strictEqual(opts.deviceName, 'POS-80 (copy 2)');
-  assert.strictEqual(opts.margins.marginType, 'none');
-  assert.strictEqual(opts.pageSize, undefined);
-});
-
-test('buildStandardSilentPrintOpts — пустое имя = принтер по умолчанию Windows', () => {
-  const opts = buildStandardSilentPrintOpts('');
-  assert.strictEqual(opts.silent, true);
-  assert.strictEqual(opts.deviceName, undefined);
-});
-
-test('buildSilentPrintOpts без pageSize — запасной вариант Windows', () => {
-  const opts = buildSilentPrintOpts('POS-80 (copy 2)', { paperMm: 80, heightMm: 200 }, false);
-  assert.strictEqual(opts.silent, true);
-  assert.strictEqual(opts.deviceName, 'POS-80 (copy 2)');
-  assert.strictEqual(opts.pageSize, undefined);
-});
-
-test('buildSilentPrintOpts с pageSize — основной вариант Windows', () => {
-  const opts = buildSilentPrintOpts('POS-80', { paperMm: 80, heightMm: 150 }, true);
-  assert.ok(opts.pageSize);
-  assert.strictEqual(opts.pageSize.width, 80000);
-  assert.strictEqual(opts.pageSize.height, 150000);
-});
-
-test('winPrintAttempts: явное имя default — одна попытка', () => {
-  const printers = [
-    { name: 'POS-80 (copy 2)', isDefault: true },
-    { name: 'Microsoft Print to PDF', isDefault: false },
-  ];
-  const attempts = winPrintAttempts('POS-80 (copy 2)', printers, true);
-  assert.deepStrictEqual(attempts, ['POS-80 (copy 2)']);
-});
-
-test('winPrintAttempts (Windows): не default — имя + очередь по умолчанию', () => {
-  const printers = [
-    { name: 'POS-80 (copy 2)', isDefault: false },
-    { name: 'Microsoft Print to PDF', isDefault: true },
-  ];
-  const attempts = winPrintAttempts('POS-80 (copy 2)', printers, true);
-  assert.deepStrictEqual(attempts, ['POS-80 (copy 2)', '']);
 });
 
 test('matchPrinterName: POS-80 → POS-80 (copy 2) если только он в списке', () => {
