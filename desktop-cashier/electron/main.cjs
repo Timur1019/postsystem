@@ -466,46 +466,60 @@ async function printReceiptInHiddenWindow(receiptNumber) {
   const printers = await listSystemPrinters();
   const mainSession =
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
-  const printWin = createReceiptPrintWindow({
-    width: paperWidthPx(paperMm),
-    height: 1600,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      preload: path.join(__dirname, 'preload.cjs'),
-      ...(mainSession ? { session: mainSession } : {}),
-    },
-  });
-  printWin.webContents.setZoomFactor(1);
 
-  try {
-    await printWin.loadURL(url);
-    const ready = await waitForReceiptReady(printWin.webContents);
-    if (!ready) {
-      throw new Error('Чек не успел загрузиться для печати');
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 900 : 400));
     }
-    await ensureWindowPainted(printWin);
-    await waitForImages(printWin.webContents);
-    await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 1400 : 400));
-    await waitForPaintFrames(printWin.webContents);
-    const dims = await prepareThermalPrintInPage(printWin.webContents);
-    if (!dims?.textLen || dims.textLen < 80 || dims.contentHeightPx < 120) {
-      throw new Error('Чек пустой — проверьте вход в кассу и связь с сервером');
-    }
-    if (!printWin.isDestroyed()) {
-      const h = Math.min(5000, Math.max(900, Math.ceil(dims.contentHeightPx * 1.15)));
-      printWin.setSize(paperWidthPx(paperMm), h);
-    }
-    await waitForPaintFrames(printWin.webContents);
-    await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 120));
-    await runSilentPrint(printWin.webContents, dims, { deviceName, printers });
-    await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 600 : 200));
-  } finally {
-    await cleanupThermalPrintInPage(printWin.webContents);
-    if (!printWin.isDestroyed()) {
-      printWin.close();
+    const printWin = createReceiptPrintWindow({
+      width: paperWidthPx(paperMm),
+      height: 1600,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        preload: path.join(__dirname, 'preload.cjs'),
+        ...(mainSession ? { session: mainSession } : {}),
+      },
+    });
+    printWin.webContents.setZoomFactor(1);
+
+    try {
+      await printWin.loadURL(url);
+      const ready = await waitForReceiptReady(printWin.webContents);
+      if (!ready) {
+        throw new Error('Чек не успел загрузиться для печати');
+      }
+      await ensureWindowPainted(printWin);
+      await waitForImages(printWin.webContents);
+      await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 1400 : 400));
+      await waitForPaintFrames(printWin.webContents);
+      const dims = await prepareThermalPrintInPage(printWin.webContents);
+      if (!dims?.textLen || dims.textLen < 80 || dims.contentHeightPx < 120) {
+        throw new Error('Чек пустой — проверьте вход в кассу и связь с сервером');
+      }
+      if (!printWin.isDestroyed()) {
+        const h = Math.min(5000, Math.max(900, Math.ceil(dims.contentHeightPx * 1.15)));
+        printWin.setSize(paperWidthPx(paperMm), h);
+      }
+      await waitForPaintFrames(printWin.webContents);
+      await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 120));
+      await runSilentPrint(printWin.webContents, dims, { deviceName, printers });
+      await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 600 : 200));
+      await cleanupThermalPrintInPage(printWin.webContents);
+      if (!printWin.isDestroyed()) {
+        printWin.close();
+      }
+      return;
+    } catch (err) {
+      lastErr = err;
+      await cleanupThermalPrintInPage(printWin.webContents);
+      if (!printWin.isDestroyed()) {
+        printWin.close();
+      }
     }
   }
+  throw lastErr || new Error('Печать чека не выполнена');
 }
 
 async function printReceiptHtmlInHiddenWindow(bodyHtml) {

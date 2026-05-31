@@ -4,7 +4,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { isDesktopCashier, printReceiptAfterSale } from '../../utils/printReceipt';
+import { isDesktopCashier } from '../../utils/printReceipt';
 import PosSaleAutoPrint from '../../components/cashier/PosSaleAutoPrint';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import { clampPayAmount, round2 } from '../../utils/taxAmounts';
@@ -320,15 +320,7 @@ export default function PosPage() {
       qc.invalidateQueries({ queryKey: ['sales-ledger'] });
       const receiptNum = res.data.receiptNumber;
       if (isDesktopCashier()) {
-        try {
-          const printed = await printReceiptAfterSale(receiptNum);
-          if (printed) {
-            toast.success(t('pos.saleSuccess'));
-            return;
-          }
-        } catch (e) {
-          console.warn('[Aurent] auto print failed, opening dialog fallback', e);
-        }
+        toast.success(t('pos.saleSuccess'));
         setAutoPrintSale(res.data);
         return;
       }

@@ -97,15 +97,7 @@ export async function printThermalReceipt({ useModalShell = false, receiptNumber
   if (isDesktopCashier()) {
     const num = receiptNumber != null ? String(receiptNumber).trim() : '';
 
-    if (num && typeof window.desktopCashier?.printReceipt === 'function') {
-      try {
-        await window.desktopCashier.printReceipt(num);
-        return 'silent';
-      } catch (err) {
-        console.warn('[Aurent] printReceipt hidden window failed', err);
-      }
-    }
-
+    // Сначала HTML из уже отрисованного чека (продажа / portal)
     await waitForReceiptDomReady();
     const html = captureReceiptHtml();
     if (html && typeof window.desktopCashier?.printReceiptHtml === 'function') {
@@ -115,6 +107,16 @@ export async function printThermalReceipt({ useModalShell = false, receiptNumber
       } catch (err) {
         console.warn('[Aurent] printReceiptHtml failed', err);
         cleanupDesktopPrintState();
+      }
+    }
+
+    // Повторная печать по номеру (чек уже в базе)
+    if (num && typeof window.desktopCashier?.printReceipt === 'function') {
+      try {
+        await window.desktopCashier.printReceipt(num);
+        return 'silent';
+      } catch (err) {
+        console.warn('[Aurent] printReceipt hidden window failed', err);
       }
     }
 
@@ -152,11 +154,10 @@ export async function printReceipt(receiptNumber, { preferSilent: _preferSilent 
   return 'dialog';
 }
 
-/** Автопечать после продажи на десктопе — только тихая (без диалога). */
-export async function printReceiptAfterSale(receiptNumber) {
-  if (!isDesktopCashier() || !receiptNumber) return false;
-  const mode = await printThermalReceipt({ receiptNumber });
-  return mode === 'silent';
+/** Автопечать после продажи: рендер sale из ответа API → printReceiptHtml (см. PosSaleAutoPrint). */
+export async function printReceiptAfterSale(_receiptNumber, saleData = null) {
+  if (!isDesktopCashier() || !saleData) return false;
+  return Boolean(saleData.receiptNumber);
 }
 
 /** Ручная печать со страницы чека. */
