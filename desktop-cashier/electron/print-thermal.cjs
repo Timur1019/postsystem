@@ -427,19 +427,22 @@ async function runSilentPdfReceiptPrint(pdfBuffer, deviceName, printers) {
 }
 
 /**
- * Перед печатью: на Windows окно должно быть отрисовано; диалог — поверх fullscreen.
+ * Перед печатью: HTML-страница чека на экране → webContents.print → окно закрывается.
  */
-/**
- * Перед печатью: выход из fullscreen главного окна; окно чека всегда за экраном.
- */
-function preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx) {
-  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isFullScreen()) {
+function preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx, options = {}) {
+  const useDialog = Boolean(options.useDialog);
+  const visible = options.visible !== false;
+  if (useDialog && mainWindow && !mainWindow.isDestroyed() && mainWindow.isFullScreen()) {
     mainWindow.setFullScreen(false);
   }
-  showWindowForPrint(printWin, widthPx, heightPx, { visible: false });
+  showWindowForPrint(printWin, widthPx, heightPx, { visible });
+  if (useDialog && printWin && !printWin.isDestroyed()) {
+    printWin.focus();
+    printWin.moveTop();
+  }
 }
 
-/** Windows: скрытое HTML-окно → webContents.print (документация Electron). */
+/** Windows: HTML-страница на экране → silent print (документация Electron). */
 async function runWindowsReceiptPrint(
   printWin,
   webContents,
@@ -454,10 +457,17 @@ async function runWindowsReceiptPrint(
   const forceDialog = Boolean(options.useDialog);
   const allowDialogFallback = options.allowDialogFallback !== false;
 
-  const runSystemPrintDialog = async () => {
-    preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx);
+  const showHtmlAndWait = async (forDialog = false) => {
+    preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx, {
+      visible: true,
+      useDialog: forDialog,
+    });
     await waitForPaintFrames(webContents);
-    await new Promise((r) => setTimeout(r, IS_WIN ? 400 : 150));
+    await new Promise((r) => setTimeout(r, IS_WIN ? 700 : 200));
+  };
+
+  const runSystemPrintDialog = async () => {
+    await showHtmlAndWait(true);
     await runDialogReceiptPrint(webContents, deviceName);
     return { mode: 'dialog' };
   };
@@ -466,13 +476,11 @@ async function runWindowsReceiptPrint(
     return runSystemPrintDialog();
   }
 
-  preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx);
-  await waitForPaintFrames(webContents);
-  await new Promise((r) => setTimeout(r, IS_WIN ? 500 : 150));
+  await showHtmlAndWait(false);
 
   try {
     const result = await runStandardSilentReceiptPrint(webContents, deviceName, printers);
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 400));
     return { mode: 'silent', deviceName: result.deviceName };
   } catch (standardErr) {
     console.warn('[Aurent print] standard silent failed:', standardErr?.message || standardErr);
@@ -480,7 +488,7 @@ async function runWindowsReceiptPrint(
 
   try {
     await runSilentPrint(webContents, dims, { deviceName, printers });
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 400));
     return { mode: 'silent' };
   } catch (silentErr) {
     console.warn('[Aurent print] silent HTML failed:', silentErr?.message || silentErr);
@@ -625,7 +633,7 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
 
   try {
     await loadReceiptHtmlInWindow(printWin, bodyHtml);
-    await ensureWindowPainted(printWin, { visible: false });
+    await ensureWindowPainted(printWin, { visible: IS_WIN });
     await waitForImages(printWin.webContents);
     await new Promise((r) => setTimeout(r, IS_WIN ? 800 : 300));
     await waitForPaintFrames(printWin.webContents);
@@ -651,7 +659,7 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
       });
     }
 
-    preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx);
+    preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx, { visible: true });
     await waitForPaintFrames(printWin.webContents);
     await new Promise((r) => setTimeout(r, 200));
 

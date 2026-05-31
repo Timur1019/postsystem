@@ -580,7 +580,7 @@ async function printReceiptSaleInHiddenWindow(payload, options = {}) {
     useDialog,
     standaloneReceipt: true,
     mainWindow,
-    allowDialogFallback: !autoPrint,
+    allowDialogFallback: true,
   };
 
   try {
