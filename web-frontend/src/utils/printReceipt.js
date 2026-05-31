@@ -10,12 +10,11 @@ export function isDesktopCashier() {
   return typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
 }
 
-/**
- * Тихая печать через IPC отключена: на Windows/POS-80 стабильнее window.print(),
- * как в веб-версии при кнопке «Печать чека».
- */
+/** Тихая печать текущего чека в DOM (без диалога Windows). */
 export function isDesktopSilentPrintAvailable() {
-  return false;
+  return (
+    isDesktopCashier() && typeof window.desktopCashier?.printCurrentPage === 'function'
+  );
 }
 
 function receiptPrintElement() {
@@ -45,8 +44,7 @@ async function waitForReceiptDomReady() {
 }
 
 /**
- * Тот же способ, что в браузере: @page 80mm + window.print() + диалог Windows.
- * @param {{ useModalShell?: boolean }} options — true для скрытого чека в portal (автопродажа)
+ * Диалог печати (запасной путь, если тихая печать не сработала).
  * @returns {Promise<'dialog'>}
  */
 export async function printThermalReceiptDialog({ useModalShell = false } = {}) {
@@ -67,21 +65,48 @@ export async function printThermalReceiptDialog({ useModalShell = false } = {}) 
 }
 
 /**
- * Печать чека (десктоп = диалог Windows; веб = диалог браузера).
- * @returns {Promise<'dialog'|false>}
+ * Печать чека: сначала тихо (Electron → POS-80), при ошибке — диалог Windows.
+ * @returns {Promise<'silent'|'dialog'>}
+ */
+export async function printThermalReceipt({ useModalShell = false } = {}) {
+  await waitForReceiptDomReady();
+  if (isDesktopSilentPrintAvailable()) {
+    try {
+      await window.desktopCashier.printCurrentPage();
+      return 'silent';
+    } catch (err) {
+      console.warn('[Aurent] silent print failed, opening dialog', err);
+      return printThermalReceiptDialog({ useModalShell });
+    }
+  }
+  const classes = useModalShell
+    ? [PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS]
+    : [PRINT_THERMAL_CLASS];
+  const cleanup = prepareThermalPrint(classes);
+  return new Promise((resolve) => {
+    const done = () => {
+      cleanup();
+      window.removeEventListener('afterprint', done);
+      resolve('dialog');
+    };
+    window.addEventListener('afterprint', done);
+    requestAnimationFrame(() => window.print());
+  });
+}
+
+/**
+ * Печать чека по номеру / со страницы чека.
+ * @returns {Promise<'silent'|'dialog'|false>}
  */
 export async function printReceipt(_receiptNumber, { preferSilent: _preferSilent = true } = {}) {
   if (isDesktopCashier() && isOnReceiptPage()) {
-    return printThermalReceiptDialog({ useModalShell: false });
+    return printThermalReceipt({ useModalShell: false });
   }
   printWithHtmlClass(PRINT_THERMAL_CLASS);
   return 'dialog';
 }
 
-/**
- * Автопечать после продажи: чек в DOM (PosSaleAutoPrint) + window.print().
- * Прямой вызов IPC не используем.
- */
+/** Автопечать после продажи — через PosSaleAutoPrint + printThermalReceipt. */
 export async function printReceiptAfterSale() {
   return false;
 }

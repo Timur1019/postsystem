@@ -7,6 +7,9 @@ const { BrowserWindow } = require('electron');
 
 const IS_WIN = process.platform === 'win32';
 
+/** Запас внизу листа — драйвер POS-80 чаще отрезает после подачи бумаги. */
+const CUT_FEED_MM = 22;
+
 function paperWidthPx(paperMm) {
   return Math.max(280, Math.round((paperMm / 25.4) * 96) + 48);
 }
@@ -142,7 +145,7 @@ function prepareThermalPrintInPage(webContents, extraClasses = []) {
       const pxPerMm = 96 / 25.4;
       const bodyH = document.body.scrollHeight || 0;
       const contentPx = Math.max(best.h, bodyH, best.area ? best.area.scrollHeight : 0);
-      const heightMm = Math.max(100, Math.ceil(contentPx / pxPerMm) + 20);
+      const heightMm = Math.max(100, Math.ceil(contentPx / pxPerMm) + 20 + CUT_FEED_MM);
       return {
         paperMm: parseFloat(paper) || 80,
         heightMm,

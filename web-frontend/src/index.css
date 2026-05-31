@@ -332,6 +332,16 @@ html.dark .receipt-page__card {
     image-rendering: pixelated !important;
     image-rendering: crisp-edges !important;
   }
+  /* Подача бумаги вниз — чтобы драйвер POS-80 успел отрезать чек */
+  html.print-thermal-only #receipt-print-area::after,
+  html.print-thermal-modal #fiscal-print-shell::after,
+  html.electron-silent-print.print-thermal-only #receipt-print-area::after,
+  html.electron-silent-print.print-thermal-modal #fiscal-print-shell::after {
+    content: '';
+    display: block;
+    height: 20mm;
+    min-height: 20mm;
+  }
   /* Термочек из модалки / X-Z отчёта: только .fiscal-print-scene, без UI приложения */
   html.print-thermal-modal #root,
   html.print-thermal-modal .pos-pay-overlay,

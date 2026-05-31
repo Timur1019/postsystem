@@ -2,7 +2,7 @@ import { syncPrintCssVars } from './syncPrintCssVars';
 import { usePrintSettingsStore } from '../store/printSettingsStore';
 
 function useElectronSilentPrintStyles() {
-  return false;
+  return typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
 }
 
 export const POS_RECEIPT_PRINT_EVENT = 'pos-request-receipt-print';

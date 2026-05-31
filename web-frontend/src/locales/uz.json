@@ -1650,6 +1650,7 @@
     "saleSuccess": "Savdo muvaffaqiyatli",
     "printFailed": "Chek chop etilmadi",
     "printDialogAuto": "Windows chop etish oynasi — «Chop etish», POS-80 printer",
+    "printSilentHint": "Aurent menyusida printerni Windows dagidek tanlang. Printer sozlamalarida «Chop etgandan keyin kesish» yoqing.",
     "saleFailed": "Savdo amalga oshmadi",
     "mySalesTitle": "Mening savdolarim",
     "salesListTitle": "Savdolar",

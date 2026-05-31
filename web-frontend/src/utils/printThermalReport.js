@@ -1,40 +1,8 @@
 // src/utils/printThermalReport.js
-import {
-  prepareThermalPrint,
-  printWithHtmlClass,
-  PRINT_THERMAL_CLASS,
-  PRINT_THERMAL_MODAL_CLASS,
-} from './printWithHtmlClass';
-import { isDesktopCashier, printThermalReceiptDialog } from './printReceipt';
-
-const THERMAL_REPORT_CLASSES = [PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS];
-
-/**
- * Печать X/Z-отчёта как термочека (72/80 мм), не как страница A4.
- * @returns {Promise<'silent'|'dialog'>}
- */
-async function waitForThermalPrintDom() {
-  await document.fonts?.ready;
-  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  const shell = document.getElementById('fiscal-print-shell');
-  if (shell) {
-    let n = 0;
-    while (n < 20 && shell.scrollHeight < 8) {
-      await new Promise((r) => setTimeout(r, 50));
-      n += 1;
-    }
-  }
-  await new Promise((r) => setTimeout(r, 200));
-}
+import { printThermalReceipt } from './printReceipt';
 
 export async function printThermalReport() {
-  if (isDesktopCashier()) {
-    await printThermalReceiptDialog({ useModalShell: true });
-    return 'dialog';
-  }
-
-  printWithHtmlClass(THERMAL_REPORT_CLASSES);
-  return 'dialog';
+  return printThermalReceipt({ useModalShell: true });
 }
 
 export function waitForPrintDialogClose(timeoutMs = 120_000) {

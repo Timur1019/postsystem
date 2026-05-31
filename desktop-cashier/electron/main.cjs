@@ -367,10 +367,17 @@ function matchPrinterName(saved, printers) {
   const lower = want.toLowerCase();
   const ci = printers.find((p) => p.name.toLowerCase() === lower);
   if (ci) return ci.name;
-  const partial = printers.find(
+  const partialMatches = printers.filter(
     (p) => p.name.toLowerCase().includes(lower) || lower.includes(p.name.toLowerCase())
   );
-  return partial?.name || null;
+  if (partialMatches.length === 1) {
+    return partialMatches[0].name;
+  }
+  if (partialMatches.length > 1) {
+    const def = partialMatches.find((p) => p.isDefault);
+    return (def || partialMatches[0]).name;
+  }
+  return null;
 }
 
 async function resolvePrinterByKind(kind, { promptIfMissing = true } = {}) {
@@ -428,12 +435,14 @@ function waitForReceiptReady(webContents, timeoutMs = 25000) {
       const deadline = Date.now() + ${timeoutMs};
       const finish = (ok) => resolve(Boolean(ok));
       const isLayoutReady = () => {
-        const area = document.getElementById('receipt-print-area');
+        const area =
+          document.getElementById('receipt-print-area') ||
+          document.getElementById('fiscal-print-shell');
         if (!area) return false;
         const textLen = (area.innerText || '').trim().length;
         const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
         const imgsReady = Array.from(document.images).every((img) => img.complete);
-        return textLen >= 80 && h >= 120 && imgsReady;
+        return textLen >= 40 && h >= 80 && imgsReady;
       };
       const done = () => {
         window.removeEventListener('pos-receipt-ready', done);
@@ -661,7 +670,7 @@ ipcMain.handle('print-current-page', async (event) => {
   );
   const extra = hasModal ? ['print-thermal-modal'] : [];
   await waitForImages(wc);
-  await new Promise((r) => setTimeout(r, 200));
+  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 700 : 200));
   const dims = await prepareThermalPrintInPage(wc, extra);
   if (!dims?.textLen || dims.contentHeightPx < 20) {
     throw new Error('Нет содержимого для печати');
