@@ -49,6 +49,29 @@ const PAY_METHODS = [
   { id: 'mixed', icon: Split, labelKey: 'pos.payMixed', action: 'mixed' },
 ];
 
+const STEPS_WITH_PRINT_TOGGLE = new Set(['cash', 'mixedCash', 'mixedCard', 'cardType']);
+
+function PrintReceiptToggle({ checked, onChange, t }) {
+  const fullLabel = t('pos.printReceiptAfterSale');
+  return (
+    <label
+      className="pos-pay-print-toggle pos-pay-print-toggle--footer"
+      title={fullLabel}
+    >
+      <input
+        type="checkbox"
+        className="pos-pay-print-toggle__input"
+        checked={checked}
+        onChange={onChange}
+        aria-label={fullLabel}
+      />
+      <span className="pos-pay-print-toggle__box" aria-hidden />
+      <Printer size={18} strokeWidth={1.75} className="pos-pay-print-toggle__icon" aria-hidden />
+      <span className="pos-pay-print-toggle__text">{t('pos.printReceiptShort')}</span>
+    </label>
+  );
+}
+
 export default function PosPaymentFlow({
   open,
   onClose,
@@ -191,12 +214,10 @@ export default function PosPaymentFlow({
     });
   };
 
-  const togglePrintReceipt = () => {
-    setPrintReceiptEnabled((prev) => {
-      const next = !prev;
-      setPosReceiptPrintEnabled(next);
-      return next;
-    });
+  const handlePrintReceiptChange = (e) => {
+    const next = Boolean(e.target.checked);
+    setPrintReceiptEnabled(next);
+    setPosReceiptPrintEnabled(next);
   };
 
   const selectReceiptType = (id) => {
@@ -275,6 +296,23 @@ export default function PosPaymentFlow({
 
   const registerBack = step === 'receipt' ? handleClose : stepBack;
   const showRegisterBackToCheck = step === 'method' || step === 'cash';
+  const showPrintToggle = STEPS_WITH_PRINT_TOGGLE.has(step);
+
+  const printToggle = showPrintToggle ? (
+    <PrintReceiptToggle checked={printReceiptEnabled} onChange={handlePrintReceiptChange} t={t} />
+  ) : null;
+
+  const footerMain =
+    footerPrimary && showPrintToggle ? (
+      <div className="pos-pay-panel__footer-row">
+        <div className="pos-pay-panel__footer-row__primary">{footerPrimary}</div>
+        {printToggle}
+      </div>
+    ) : footerPrimary && !showPrintToggle ? (
+      footerPrimary
+    ) : showPrintToggle ? (
+      <div className="pos-pay-panel__footer-row pos-pay-panel__footer-row--toggle-only">{printToggle}</div>
+    ) : null;
 
   return (
     <section
@@ -344,17 +382,6 @@ export default function PosPaymentFlow({
                     <span className="pos-pay-method-step__due-value">{fmt(toPay)}</span>
                   </div>
                 </div>
-                <label className="pos-pay-print-toggle">
-                  <input
-                    type="checkbox"
-                    className="pos-pay-print-toggle__input"
-                    checked={printReceiptEnabled}
-                    onChange={togglePrintReceipt}
-                  />
-                  <span className="pos-pay-print-toggle__box" aria-hidden />
-                  <Printer size={20} strokeWidth={1.75} className="pos-pay-print-toggle__icon" aria-hidden />
-                  <span className="pos-pay-print-toggle__text">{t('pos.printReceiptAfterSale')}</span>
-                </label>
                 <div className="pos-pay-method-cards pos-pay-method-cards--register-stack pos-pay-method-cards--terminal">
                   {PAY_METHODS.map(({ id, icon: Icon, labelKey, action }) => (
                     <button
@@ -504,7 +531,7 @@ export default function PosPaymentFlow({
       </div>
 
       <div className="pos-pay-panel__actions-wrap">
-        {footerPrimary}
+        {footerMain}
         {showRegisterBackToCheck ? (
           <button type="button" className="pos-pay-panel__back-check" onClick={handleClose}>
             <ArrowLeft size={18} aria-hidden />

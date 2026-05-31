@@ -1559,6 +1559,7 @@
     "productCode": "Код",
     "choosePaymentMethod": "Выберите способ оплаты",
     "printReceiptAfterSale": "Печатать чек после продажи",
+    "printReceiptShort": "Печать чека",
     "mixedDistributed": "Распределено",
     "colNo": "№",
     "colName": "Наименование",

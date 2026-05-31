@@ -276,6 +276,60 @@
   line-height: 1.3;
 }
 
+/* Нижняя строка: завершить продажу слева, печать чека справа */
+.pos-pay-panel--register-rail .pos-pay-panel__footer-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__footer-row__primary {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__footer-row__primary .pos-pay-panel__primary {
+  width: 100%;
+  height: 100%;
+  min-height: 52px;
+}
+
+.pos-pay-panel--register-rail .pos-pay-print-toggle--footer {
+  flex: 0 0 clamp(7.5rem, 32%, 9.5rem);
+  width: auto;
+  max-width: 9.5rem;
+  margin: 0;
+  padding: 8px 10px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.pos-pay-panel--register-rail .pos-pay-print-toggle--footer .pos-pay-print-toggle__text {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__footer-row--toggle-only {
+  justify-content: flex-end;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__footer-row--toggle-only .pos-pay-print-toggle--footer {
+  max-width: 100%;
+  flex: 0 0 auto;
+  min-width: 7.5rem;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-panel__footer-row__primary .pos-pay-panel__primary,
+.pos-pay-panel--register-rail.is-step-mixedCash .pos-pay-panel__footer-row__primary .pos-pay-panel__primary {
+  min-height: 44px;
+}
+
 /* Способы оплаты: три одинаковые кнопки на всю ширину колонки */
 .pos-pay-panel--register-rail .pos-pay-method-cards--register-stack {
   display: flex;
