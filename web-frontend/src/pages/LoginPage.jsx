@@ -82,12 +82,10 @@ export default function LoginPage() {
   }, [searchParams, desktopCompanyCode]);
 
   const schema = useMemo(() => z.object({
-    companyLoginCode: lockedCompanyCode
-      ? z.string().optional()
-      : z.string().min(1, t('validation.required')),
+    companyLoginCode: z.string().optional(),
     username: z.string().min(1, t('validation.required')),
     password: z.string().min(1, t('validation.required')),
-  }), [t, lockedCompanyCode]);
+  }), [t]);
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
@@ -110,8 +108,9 @@ export default function LoginPage() {
       const companyLoginCode = (lockedCompanyCode ? desktopCompanyCode : data.companyLoginCode || '')
         .trim()
         .toUpperCase();
-      if (!lockedCompanyCode && companyLoginCode) {
-        persistCompanyCode(companyLoginCode);
+      if (!lockedCompanyCode) {
+        if (companyLoginCode) persistCompanyCode(companyLoginCode);
+        else persistCompanyCode('');
       }
       const res = await authApi.login({
         companyLoginCode: companyLoginCode || undefined,
