@@ -6,6 +6,8 @@ import {
   ELECTRON_SILENT_PRINT_CLASS,
 } from './printWithHtmlClass';
 import { useTenantDisplayStore } from '../store/tenantDisplayStore';
+import { buildQrPayload } from './fiscalReceiptFormat';
+import i18n from '../i18n/config';
 
 /** Классы, которые Electron вешает на <html> при тихой печати — снимаем, иначе белый экран. */
 const DESKTOP_PRINT_HTML_CLASSES = [
@@ -36,7 +38,21 @@ export function cleanupDesktopPrintState() {
   document.getElementById('pos-print-job-page')?.remove();
 }
 
+/** Контейнеры, где на экране уже отрисован FiscalReceiptBody (превью = то, что нужно на принтер). */
+const RECEIPT_CAPTURE_ROOTS = [
+  '#pos-sale-print-shell',
+  '#fiscal-print-shell',
+  '.cashier-sales-receipt-pane__card',
+];
+
 function receiptPrintElement() {
+  for (const rootSel of RECEIPT_CAPTURE_ROOTS) {
+    const root = document.querySelector(rootSel);
+    if (!root) continue;
+    const area =
+      root.querySelector('#receipt-print-area') || root.querySelector('.receipt-print-root');
+    if (area) return area;
+  }
   return (
     document.getElementById('receipt-print-area') ||
     document.getElementById('fiscal-print-shell')
@@ -47,19 +63,54 @@ function isOnReceiptPage() {
   return Boolean(receiptPrintElement());
 }
 
-/** JSON продажи + брендинг для Electron printReceiptSale (без React/Tailwind). */
+/** Подписи чека на текущем языке кассы (uz/ru) для ESC/POS в Electron. */
+export function buildDesktopSaleLabels() {
+  const t = (key, opts) => i18n.t(key, opts);
+  return {
+    date: t('fiscalReceipt.date'),
+    time: t('fiscalReceipt.time'),
+    receiptNoShort: t('fiscalReceipt.receiptNoShort'),
+    employee: t('fiscalReceipt.employee'),
+    shift: t('fiscalReceipt.shift'),
+    stir: t('fiscalReceipt.stir'),
+    item: t('receipt.item'),
+    qtyShort: t('receipt.qtyShort'),
+    lineTotalShort: t('receipt.lineTotalShort'),
+    grandTotal: t('fiscalReceipt.grandTotal'),
+    vatTotalLine: t('fiscalReceipt.vatTotalLine', { rate: '12' }),
+    discountsSum: t('fiscalReceipt.discountsSum'),
+    paymentForm: t('fiscalReceipt.paymentForm'),
+    cash: t('fiscalReceipt.cash'),
+    plastic: t('fiscalReceipt.plastic'),
+    currency: t('fiscalReceipt.currency'),
+    change: t('receipt.change'),
+    fiscalSection: t('fiscalReceipt.fiscalSection'),
+    fmNumber: t('fiscalReceipt.fmNumber'),
+    fiscalSign: t('fiscalReceipt.fiscalSign'),
+    footer: t('fiscalReceipt.footer'),
+    paymentCash: t('sales.paymentCash'),
+    paymentCard: t('sales.paymentCard'),
+    paymentMpesa: t('sales.paymentMpesa'),
+    paymentMixed: t('salesLedger.filters.mixed'),
+  };
+}
+
+/** JSON продажи + брендинг + подписи для Electron (ESC/POS Xprinter POS-80). */
 export function buildDesktopSalePrintPayload(sale, qrDataUrl = null) {
   if (!sale?.receiptNumber) return null;
   const td = useTenantDisplayStore.getState();
   return {
     ...sale,
     qrDataUrl: qrDataUrl || sale.qrDataUrl || null,
+    qrPayload: buildQrPayload(sale),
     _branding: {
       companyName: td.receiptCompanyName || sale.storeName || undefined,
       companyAddress: td.receiptCompanyAddress || undefined,
       stir: td.receiptStir || undefined,
       logoDataUrl: td.receiptLogoDataUrl || undefined,
     },
+    _labels: buildDesktopSaleLabels(),
+    _fields: { ...td.receiptFields },
   };
 }
 
@@ -108,11 +159,35 @@ export async function printDesktopShiftReport(report, t) {
   }
 }
 
-/** Печать чека на десктопе: Electron собирает HTML из JSON продажи. */
-export async function printDesktopReceiptSale(sale, { qrDataUrl = null, autoPrint = false } = {}) {
+/**
+ * Печать чека на десктопе.
+ * Автопечать → JSON + ESC/POS (Xprinter POS-80).
+ * Ручная → превью HTML, иначе JSON/HTML.
+ */
+export async function printDesktopReceiptSale(
+  sale,
+  { qrDataUrl = null, autoPrint = false, usePreviewHtml = true } = {}
+) {
   if (!isDesktopCashier() || !sale?.receiptNumber) {
     return { ok: false };
   }
+
+  const preferPreviewHtml = usePreviewHtml && !autoPrint;
+
+  if (preferPreviewHtml && typeof window.desktopCashier?.printReceiptHtml === 'function') {
+    try {
+      await waitForReceiptDomReady();
+      const html = captureReceiptHtml();
+      if (html) {
+        await window.desktopCashier.printReceiptHtml(html);
+        return { ok: true, mode: 'silent', source: 'preview-html' };
+      }
+    } catch (err) {
+      console.warn('[Aurent] printReceiptHtml (preview) failed, fallback to JSON', err);
+      cleanupDesktopPrintState();
+    }
+  }
+
   const payload = buildDesktopSalePrintPayload(
     sale,
     qrDataUrl ?? captureReceiptQrDataUrl()
@@ -123,21 +198,24 @@ export async function printDesktopReceiptSale(sale, { qrDataUrl = null, autoPrin
   const invokeOpts = { autoPrint: Boolean(autoPrint) };
   try {
     const result = await window.desktopCashier.printReceiptSale(payload, invokeOpts);
-    return { ok: true, mode: result?.mode || 'silent' };
+    return { ok: true, mode: result?.mode || 'silent', source: 'json' };
   } catch (err) {
     if (typeof window.desktopCashier?.printReceiptSaleDialog === 'function') {
       await window.desktopCashier.printReceiptSaleDialog(payload);
-      return { ok: true, mode: 'dialog' };
+      return { ok: true, mode: 'dialog', source: 'json' };
     }
     throw err;
   }
 }
 
 function captureReceiptHtml() {
-  const area =
-    document.querySelector('#fiscal-print-shell #receipt-print-area') ||
-    document.getElementById('receipt-print-area');
-  if (!area) return '';
+  const area = receiptPrintElement();
+  if (
+    !area ||
+    (area.id !== 'receipt-print-area' && !area.classList.contains('receipt-print-root'))
+  ) {
+    return '';
+  }
   const textLen = (area.innerText || '').trim().length;
   if (textLen < 40) return '';
   return area.outerHTML;
@@ -147,6 +225,7 @@ function captureReceiptQrDataUrl() {
   const img =
     document.querySelector('#pos-sale-print-shell .receipt-qr') ||
     document.querySelector('#fiscal-print-shell .receipt-qr') ||
+    document.querySelector('.cashier-sales-receipt-pane__card .receipt-qr') ||
     document.querySelector('#receipt-print-area .receipt-qr');
   if (img?.complete && img.naturalWidth > 0 && img.src) {
     return img.src;

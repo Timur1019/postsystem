@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 /**
  * Десктоп API для веб-кассы.
- * Печать: рендер → ipcRenderer.invoke → main → скрытое окно → webContents.print({ silent: true }).
+ * Печать: IPC → ESC/POS (Xprinter POS-80) или HTML → webContents.print({ silent: true }).
  * На фронте не вызывать window.print() — только методы ниже.
  */
 contextBridge.exposeInMainWorld('desktopCashier', {

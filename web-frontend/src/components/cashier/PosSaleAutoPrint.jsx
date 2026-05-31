@@ -1,5 +1,5 @@
 /**
- * Автопечать: превью HTML чека слева, печать в Electron (HTML-страница → print).
+ * Автопечать: превью FiscalReceiptBody слева, на принтер — тот же HTML (printReceiptHtml).
  */
 import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -17,6 +17,7 @@ const {
   paperWidthPx,
 } = require('../electron/print-thermal.cjs');
 const { matchPrinterName } = require('../electron/printer-match.cjs');
+const { isThermalPrinterName } = require('../electron/print-escpos.cjs');
 
 let passed = 0;
 let failed = 0;
@@ -122,6 +123,13 @@ test('buildReceiptBodyHtml: полный чек из JSON продажи', () =>
   assert.ok(html.includes('Test'));
   assert.ok(html.includes('50 000.00'));
   assert.ok(html.includes('receipt-items-table__row'));
+});
+
+test('isThermalPrinterName — Xprinter POS-80', () => {
+  assert.strictEqual(isThermalPrinterName('XP-80'), true);
+  assert.strictEqual(isThermalPrinterName('Xprinter POS-80'), true);
+  assert.strictEqual(isThermalPrinterName('POS-80'), true);
+  assert.strictEqual(isThermalPrinterName('HP LaserJet'), false);
 });
 
 test('paperWidthPx для 80mm >= 280px', () => {

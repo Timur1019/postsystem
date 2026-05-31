@@ -32,6 +32,7 @@ const {
   forceClosePrintWindow,
   PRINT_JOB_TIMEOUT_MS,
 } = require('./print-thermal.cjs');
+const { printSaleEscPos, printTestEscPos, isThermalPrinterName } = require('./print-escpos.cjs');
 const { setupAutoUpdater, checkForUpdatesNow } = require('./auto-update.cjs');
 
 const ALLOWED_PATH_PREFIXES = ['/login', '/cashier', '/receipt', '/users/barcode-print'];
@@ -561,12 +562,14 @@ async function printReceiptSaleInHiddenWindow(payload, options = {}) {
     throw new Error('Некорректные данные чека');
   }
   const branding = sale._branding || {};
+  const labels = sale._labels || {};
+  const fields = sale._fields || {};
+  const qrPayload = sale.qrPayload || '';
   delete sale._branding;
-  const bodyHtml = buildReceiptBodyHtml(sale, branding);
-  const plainLen = bodyHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length;
-  if (plainLen < 40) {
-    throw new Error('Чек без текста для печати');
-  }
+  delete sale._labels;
+  delete sale._fields;
+  delete sale.qrPayload;
+
   const deviceName = await resolveReceiptPrinterName({ promptIfMissing: false });
   const printers = await listSystemPrinters();
   const mainSession =
@@ -582,6 +585,27 @@ async function printReceiptSaleInHiddenWindow(payload, options = {}) {
     mainWindow,
     allowDialogFallback: true,
   };
+
+  /** Xprinter POS-80: ESC/POS — тихо, отрез, как в утилите принтера. */
+  if (!useDialog && isThermalPrinterName(deviceName)) {
+    try {
+      return await printSaleEscPos(sale, {
+        deviceName,
+        labels,
+        fields,
+        branding,
+        qrPayload,
+      });
+    } catch (escErr) {
+      console.warn('[Aurent print] ESC/POS failed, HTML fallback:', escErr?.message || escErr);
+    }
+  }
+
+  const bodyHtml = buildReceiptBodyHtml(sale, branding);
+  const plainLen = bodyHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length;
+  if (plainLen < 40) {
+    throw new Error('Чек без текста для печати');
+  }
 
   try {
     return await printHtmlInHiddenWindow(bodyHtml, printOpts);
@@ -665,6 +689,13 @@ async function printShiftReportInHiddenWindow(payload) {
 
 async function printTestReceiptInHiddenWindow() {
   const deviceName = await resolveReceiptPrinterName();
+  if (isThermalPrinterName(deviceName)) {
+    try {
+      return await printTestEscPos(deviceName);
+    } catch (escErr) {
+      console.warn('[Aurent print] test ESC/POS failed:', escErr?.message || escErr);
+    }
+  }
   const printers = await listSystemPrinters();
   const bodyHtml = `<div id="receipt-print-area" class="receipt-print-root">
     <p class="receipt-title">AURENT — Тест</p>
