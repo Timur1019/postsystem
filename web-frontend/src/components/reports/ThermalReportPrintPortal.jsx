@@ -1,24 +1,17 @@
 // src/components/reports/ThermalReportPrintPortal.jsx
 import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useTranslation } from 'react-i18next';
-import {
-  isDesktopCashier,
-  printDesktopReceiptSale,
-  printDesktopShiftReport,
-  printThermalReceiptDialog,
-} from '../../utils/printReceipt';
 import { printThermalReport, waitForPrintDialogClose } from '../../utils/printThermalReport';
+import { printThermalReceiptDialog } from '../../utils/printReceipt';
 
 /**
- * Скрытый термочек в DOM + автопечать (только веб-браузер).
- * На десктопе — только Electron IPC, без window.print.
+ * Скрытый термочек в DOM + window.print (браузер и десктоп Electron).
  */
 export default function ThermalReportPrintPortal({
   open,
   printToken,
-  receiptNumber,
-  sale = null,
+  receiptNumber: _receiptNumber,
+  sale: _sale,
   shiftReport = null,
   printMode = 'auto',
   children,
@@ -26,7 +19,6 @@ export default function ThermalReportPrintPortal({
   onClose,
   onError,
 }) {
-  const { t } = useTranslation();
   const onPrintedRef = useRef(onPrinted);
   const onCloseRef = useRef(onClose);
   const onErrorRef = useRef(onError);
@@ -40,34 +32,6 @@ export default function ThermalReportPrintPortal({
     let cancelled = false;
 
     const run = async () => {
-      if (isDesktopCashier()) {
-        try {
-          if (shiftReport?.reportType) {
-            const result = await printDesktopShiftReport(shiftReport, t);
-            if (!result.ok) {
-              throw new Error(t('receipt.printFailed'));
-            }
-          } else if (sale?.receiptNumber) {
-            const result = await printDesktopReceiptSale(sale);
-            if (!result.ok) {
-              throw new Error(t('receipt.printFailed'));
-            }
-          } else {
-            throw new Error(t('receipt.printFailed'));
-          }
-          if (!cancelled) {
-            onPrintedRef.current?.();
-            onCloseRef.current?.();
-          }
-        } catch (err) {
-          if (!cancelled) {
-            onErrorRef.current?.(err);
-            onCloseRef.current?.();
-          }
-        }
-        return;
-      }
-
       await document.fonts?.ready;
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       let shell = null;
@@ -79,7 +43,7 @@ export default function ThermalReportPrintPortal({
           ? Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height)
           : 0;
         const imgsReady = Array.from(document.images).every((img) => img.complete);
-        if (shell && textLen >= 80 && h >= 120 && imgsReady) break;
+        if (shell && textLen >= 20 && h >= 80 && imgsReady) break;
         await new Promise((r) => setTimeout(r, 100));
       }
       if (cancelled) return;
@@ -92,6 +56,8 @@ export default function ThermalReportPrintPortal({
       try {
         let mode = 'dialog';
         if (printMode === 'dialog') {
+          mode = await printThermalReceiptDialog({ useModalShell: true });
+        } else if (shiftReport?.reportType) {
           mode = await printThermalReceiptDialog({ useModalShell: true });
         } else {
           mode = await printThermalReport();
@@ -116,9 +82,9 @@ export default function ThermalReportPrintPortal({
     return () => {
       cancelled = true;
     };
-  }, [open, printToken, printMode, receiptNumber, sale, shiftReport, t]);
+  }, [open, printToken, printMode, shiftReport?.reportType]);
 
-  if (!open || !children || isDesktopCashier()) return null;
+  if (!open || !children) return null;
 
   const host = (
     <div className="fiscal-print-scene thermal-report-print-host" aria-hidden>

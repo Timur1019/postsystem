@@ -1,10 +1,6 @@
 import { syncPrintCssVars } from './syncPrintCssVars';
 import { usePrintSettingsStore } from '../store/printSettingsStore';
 
-function useElectronSilentPrintStyles() {
-  return typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
-}
-
 export const POS_RECEIPT_PRINT_EVENT = 'pos-request-receipt-print';
 
 /** Класс на `<html>` для печати фискального чека. */
@@ -51,9 +47,6 @@ function removeThermalPageRule() {
  */
 export function prepareThermalPrint(className) {
   const classes = (Array.isArray(className) ? className : [className]).filter(Boolean);
-  if (useElectronSilentPrintStyles()) {
-    classes.push(ELECTRON_SILENT_PRINT_CLASS);
-  }
   const state = usePrintSettingsStore.getState();
   syncPrintCssVars(state);
   const useThermalPage = classes.some((c) => THERMAL_PRINT_CLASSES.has(c));

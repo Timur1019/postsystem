@@ -7,8 +7,6 @@ const assert = require('assert');
 const {
   buildThermalReceiptDocument,
   buildReceiptBodyHtml,
-  fmtMoney,
-  buildFiscalSign,
 } = require('../electron/receipt-html-builder.cjs');
 const {
   buildSilentPrintOpts,
@@ -17,10 +15,6 @@ const {
   paperWidthPx,
 } = require('../electron/print-thermal.cjs');
 const { matchPrinterName } = require('../electron/printer-match.cjs');
-const {
-  isThermalPrinterName,
-  createEscPosBufferPrinter,
-} = require('../electron/print-escpos.cjs');
 
 let passed = 0;
 let failed = 0;
@@ -128,29 +122,8 @@ test('buildReceiptBodyHtml: полный чек из JSON продажи', () =>
   assert.ok(html.includes('receipt-items-table__row'));
 });
 
-test('isThermalPrinterName — Xprinter POS-80', () => {
-  assert.strictEqual(isThermalPrinterName('XP-80'), true);
-  assert.strictEqual(isThermalPrinterName('Xprinter POS-80'), true);
-  assert.strictEqual(isThermalPrinterName('POS-80'), true);
-  assert.strictEqual(isThermalPrinterName('HP LaserJet'), false);
-});
-
-test('createEscPosBufferPrinter — непустой ESC/POS буфер', () => {
-  const p = createEscPosBufferPrinter();
-  p.println('AURENT TEST');
-  p.cut();
-  assert.ok(p.buffer && p.buffer.length > 20, 'должен быть RAW-буфер');
-});
-
 test('paperWidthPx для 80mm >= 280px', () => {
   assert.ok(paperWidthPx(80) >= 280);
-});
-
-test('PDF чека: порог непустого буфера >= 6000 байт', () => {
-  const empty = Buffer.alloc(1000);
-  const full = Buffer.alloc(8000);
-  assert.ok(empty.length < 6000);
-  assert.ok(full.length > 6000);
 });
 
 console.log(`\nИтого: ${passed} ok, ${failed} fail`);

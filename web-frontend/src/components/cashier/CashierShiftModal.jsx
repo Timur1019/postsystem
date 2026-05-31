@@ -8,7 +8,6 @@ import { cashierShiftApi } from '../../services/api';
 import PosModalPortal from './PosModalPortal';
 import ShiftReportPrintBody from './ShiftReportPrintBody';
 import ThermalReportPrintPortal from '../reports/ThermalReportPrintPortal';
-import { isDesktopCashier, printDesktopShiftReport } from '../../utils/printReceipt';
 import { useAuthStore } from '../../store/authStore';
 import { useOpenCashierShift } from '../../hooks/useCashierShift';
 
@@ -29,24 +28,7 @@ export default function CashierShiftModal({
   const [printToken, setPrintToken] = useState(0);
   const printAfterLoadRef = useRef(null);
 
-  const queuePrint = async (data) => {
-    if (isDesktopCashier()) {
-      try {
-        const result = await printDesktopShiftReport(data, t);
-        if (result.ok) {
-          if (result.mode === 'dialog') {
-            toast('Нажмите «Печать» в окне Windows', { duration: 5000 });
-          } else {
-            toast.success(t('receipt.printSent'));
-          }
-        } else {
-          toast.error(t('receipt.printFailed'));
-        }
-      } catch (e) {
-        toast.error(e?.message ?? t('receipt.printFailed'));
-      }
-      return;
-    }
+  const queuePrint = (data) => {
     setPrintToken((n) => n + 1);
     setPrintReport(data);
   };

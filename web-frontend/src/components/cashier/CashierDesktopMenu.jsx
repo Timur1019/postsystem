@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Barcode, ChevronDown, Maximize, Printer, RefreshCw, Server, LogOut, FileText, Tag, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { printBrowserTestReceipt } from '../../utils/printReceipt';
 
 function isDesktopCashier() {
   return typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
@@ -109,7 +110,7 @@ export default function CashierDesktopMenu({ appName }) {
   const runTestPrint = async () => {
     close();
     try {
-      await window.desktopCashier.printTestReceipt();
+      await printBrowserTestReceipt();
       toast.success(t('desktop.testReceiptSent'));
     } catch (e) {
       toast.error(e?.message ?? t('desktop.testReceiptFailed'));

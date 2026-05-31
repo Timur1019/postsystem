@@ -1,15 +1,15 @@
 /**
- * Автопечать: превью FiscalReceiptBody слева, на принтер — тот же HTML (printReceiptHtml).
+ * Автопечать после продажи — как в браузере: превью чека → window.print().
  */
 import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
-import { cleanupDesktopPrintState, printDesktopReceiptSale } from '../../utils/printReceipt';
+import { cleanupDesktopPrintState, printThermalReceiptDialog } from '../../utils/printReceipt';
 import '../../styles/pos-sale-auto-print.css';
 
 const QR_WAIT_MS = 2000;
-const PREVIEW_MIN_MS = 2000;
+const PREVIEW_MIN_MS = 1500;
 
 async function waitForQrInShell(maxMs = QR_WAIT_MS) {
   const deadline = Date.now() + maxMs;
@@ -24,8 +24,7 @@ async function waitForQrInShell(maxMs = QR_WAIT_MS) {
     }
     await new Promise((r) => setTimeout(r, 100));
   }
-  const img = document.querySelector('#pos-sale-print-shell .receipt-qr');
-  return img?.src || null;
+  return document.querySelector('#pos-sale-print-shell .receipt-qr')?.src || null;
 }
 
 export default function PosSaleAutoPrint({ sale, onDone }) {
@@ -49,31 +48,23 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     };
 
     const run = async () => {
-      const qrDataUrl = await waitForQrInShell();
+      await waitForQrInShell();
       if (cancelled) return;
 
-      printDesktopReceiptSale(sale, { qrDataUrl, autoPrint: true })
-        .then((result) => {
-          if (cancelled) return;
-          if (!result?.ok) {
-            toast.error(t('pos.printFailed'), { id: 'pos-auto-print' });
-            return;
-          }
-          if (result.mode === 'dialog') {
-            toast('Нажмите «Печать» в окне Windows', { id: 'pos-auto-print', duration: 6000 });
-          } else {
-            toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
-              id: 'pos-auto-print',
-              duration: 3000,
-            });
-          }
-        })
-        .catch((err) => {
-          if (!cancelled) {
-            console.warn('[Aurent] auto print failed', err);
-            toast.error(err?.message || t('pos.printFailed'), { id: 'pos-auto-print' });
-          }
-        });
+      try {
+        await printThermalReceiptDialog({ useModalShell: false });
+        if (!cancelled) {
+          toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
+            id: 'pos-auto-print',
+            duration: 3000,
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('[Aurent] auto print failed', err);
+          toast.error(err?.message || t('pos.printFailed'), { id: 'pos-auto-print' });
+        }
+      }
 
       await finish();
     };
