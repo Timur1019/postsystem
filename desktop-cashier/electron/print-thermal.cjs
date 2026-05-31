@@ -315,8 +315,8 @@ function runSilentPrint(webContents, dims, options = {}) {
   const printers = options.printers || [];
   const attempts = winPrintAttempts(requested, printers);
   const printerLabel = requested || 'принтер по умолчанию';
-  /** POS-80: сначала явный pageSize (высота чека), затем драйвер по умолчанию. */
-  const pageSizeStrategies = IS_WIN ? [true, false] : [true];
+  /** POS-80: сначала без pageSize (драйвер), затем с явной высотой. */
+  const pageSizeStrategies = IS_WIN ? [false, true] : [true];
 
   const tryOnce = async (name, useCustomPageSize) => {
     const opts = buildSilentPrintOpts(name, dims, useCustomPageSize);
@@ -438,7 +438,7 @@ function preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx, useDi
   }
 }
 
-/** Windows: silent HTML → PDF → диалог (схема 1.0.7). */
+/** Windows: только HTML silent → диалог (без PDF). */
 async function runWindowsReceiptPrint(
   printWin,
   webContents,
@@ -469,22 +469,19 @@ async function runWindowsReceiptPrint(
   await new Promise((r) => setTimeout(r, IS_WIN ? 500 : 150));
 
   try {
+    const result = await runStandardSilentReceiptPrint(webContents, deviceName, printers);
+    await new Promise((r) => setTimeout(r, 400));
+    return { mode: 'silent', deviceName: result.deviceName };
+  } catch (standardErr) {
+    console.warn('[Aurent print] standard silent failed:', standardErr?.message || standardErr);
+  }
+
+  try {
     await runSilentPrint(webContents, dims, { deviceName, printers });
     await new Promise((r) => setTimeout(r, 400));
     return { mode: 'silent' };
   } catch (silentErr) {
     console.warn('[Aurent print] silent HTML failed:', silentErr?.message || silentErr);
-  }
-
-  try {
-    const pdfBuffer = await buildReceiptPdfBuffer(webContents, dims);
-    if (pdfBuffer && pdfBuffer.length >= 6000) {
-      await runSilentPdfReceiptPrint(pdfBuffer, deviceName, printers);
-      await new Promise((r) => setTimeout(r, 400));
-      return { mode: 'pdf' };
-    }
-  } catch (pdfErr) {
-    console.warn('[Aurent print] pdf-to-printer failed:', pdfErr?.message || pdfErr);
   }
 
   return openDialog();
