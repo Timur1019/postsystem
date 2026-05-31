@@ -249,6 +249,49 @@ function buildSilentPrintOpts(deviceName, dims, useCustomPageSize = true) {
   return opts;
 }
 
+/**
+ * Параметры по документации Electron webContents.print:
+ * silent: true, printBackground: false, deviceName, margins: none.
+ * Размер 80 mm — в свойствах принтера Windows.
+ */
+function buildStandardSilentPrintOpts(deviceName) {
+  const opts = {
+    silent: true,
+    printBackground: false,
+    margins: { marginType: 'none' },
+    copies: 1,
+  };
+  const name = String(deviceName || '').trim();
+  if (name) {
+    opts.deviceName = name;
+  }
+  return opts;
+}
+
+/** Тихая печать чека — webContents.print({ silent: true }) как в документации Electron. */
+async function runStandardSilentReceiptPrint(webContents, deviceName, printers) {
+  const attempts = winPrintAttempts(deviceName, printers);
+  const printerLabel = String(deviceName || '').trim() || 'принтер по умолчанию';
+  let lastErr;
+  for (const name of attempts) {
+    try {
+      const opts = buildStandardSilentPrintOpts(name);
+      const result = await invokeWebContentsPrint(webContents, opts);
+      if (result.callbackTimeout) {
+        console.warn('[Aurent print] silent — задание в очереди Windows');
+      }
+      return { mode: 'silent', deviceName: name || deviceName || '' };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  const detail = lastErr?.message || 'Печать не выполнена';
+  throw new Error(
+    `${detail} (принтер: ${printerLabel}). ` +
+      'Проверьте POS-80 в Windows и меню Aurent → «Принтер чека».'
+  );
+}
+
 /** Windows: очередь «по умолчанию» иногда печатает, когда явное имя (POS-80) даёт Print job failed. */
 function winPrintAttempts(requestedName, printers, platformIsWin = IS_WIN) {
   const requested = String(requestedName || '').trim();
@@ -552,16 +595,15 @@ function defaultReceiptDims(bodyHtml, options = {}) {
 }
 
 async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
-  const paperMm = 80;
-  const widthPx = paperWidthPx(paperMm);
+  const widthPx = paperWidthPx(80);
   const deviceName = options.deviceName || '';
   const printers = options.printers || [];
   const useDialog = Boolean(options.useDialog);
-  const standaloneReceipt = Boolean(options.standaloneReceipt);
   const mainWindow = options.mainWindow || null;
+
   const printWin = createReceiptPrintWindow({
     width: widthPx,
-    height: 1600,
+    height: 1200,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -579,44 +621,18 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
     await loadReceiptHtmlInWindow(printWin, bodyHtml);
     await ensureWindowPainted(printWin, { visible: false });
     await waitForImages(printWin.webContents);
-    await new Promise((r) => setTimeout(r, IS_WIN ? 800 : 300));
+    await new Promise((r) => setTimeout(r, IS_WIN ? 500 : 200));
     await waitForPaintFrames(printWin.webContents);
-
-    let dims;
-    if (standaloneReceipt) {
-      dims = defaultReceiptDims(bodyHtml, { kind: options.contentKind || 'receipt' });
-    } else {
-      dims = await prepareThermalPrintInPage(printWin.webContents);
-      if (!dims?.textLen || dims.textLen < 40 || dims.contentHeightPx < 80) {
-        dims = defaultReceiptDims(bodyHtml);
-      }
-    }
-
-    const heightPx = Math.min(5000, Math.max(400, Math.ceil(dims.contentHeightPx + 80)));
-    printWin.setSize(widthPx, heightPx);
-
-    if (IS_WIN) {
-      return runWindowsReceiptPrint(printWin, printWin.webContents, dims, deviceName, printers, {
-        useDialog,
-        mainWindow,
-      });
-    }
-
-    preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx, useDialog);
-    await waitForPaintFrames(printWin.webContents);
-    await new Promise((r) => setTimeout(r, 200));
 
     if (useDialog) {
+      preparePrintWindowForJob(mainWindow, printWin, widthPx, 800, true);
       await runDialogReceiptPrint(printWin.webContents, deviceName);
       return { mode: 'dialog' };
     }
 
-    await runSilentPrint(printWin.webContents, dims, { deviceName, printers });
-    await new Promise((r) => setTimeout(r, 150));
-    return { mode: 'silent' };
+    return runStandardSilentReceiptPrint(printWin.webContents, deviceName, printers);
   } finally {
     clearTimeout(killTimer);
-    await cleanupThermalPrintInPage(printWin.webContents);
     forceClosePrintWindow(printWin);
   }
 }
@@ -711,6 +727,8 @@ module.exports = {
   PRINT_JOB_TIMEOUT_MS,
   createReceiptPrintWindow,
   ensureWindowPainted,
+  runStandardSilentReceiptPrint,
+  buildStandardSilentPrintOpts,
   /** @internal unit tests */
   buildSilentPrintOpts,
   winPrintAttempts,

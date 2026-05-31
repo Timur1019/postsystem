@@ -1,20 +1,21 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+/**
+ * Десктоп API для веб-кассы.
+ * Печать: рендер → ipcRenderer.invoke → main → скрытое окно → webContents.print({ silent: true }).
+ * На фронте не вызывать window.print() — только методы ниже.
+ */
 contextBridge.exposeInMainWorld('desktopCashier', {
   isDesktop: true,
-  /** Тихая / диалоговая печать из JSON продажи. options.autoPrint=true — после продажи. */
+  /** Тихая автопечать чека из JSON продажи (silent: true, deviceName из настроек). */
   printReceiptSale: (sale, options) => ipcRenderer.invoke('print-receipt-sale', sale, options || {}),
-  /** Диалог печати чека из JSON (Windows POS-80, если тихая печать пустая). */
+  /** Диалог печати — только если явно нужен (receiptUsePrintDialog в config). */
   printReceiptSaleDialog: (sale) => ipcRenderer.invoke('print-receipt-sale-dialog', sale),
-  /** Тихая печать по номеру чека (скрытое окно /receipt). */
   printReceipt: (receiptNumber) => ipcRenderer.invoke('print-receipt', receiptNumber),
-  /** Тихая печать готового HTML чека (скрытое окно). */
   printReceiptHtml: (bodyHtml) => ipcRenderer.invoke('print-receipt-html', bodyHtml),
-  /** X/Z-отчёт смены — скрытое окно Electron (не window.print). */
   printShiftReport: (report) => ipcRenderer.invoke('print-shift-report', report),
-  /** @deprecated Используйте printReceipt / printReceiptHtml */
+  /** @deprecated Не печатать текущую страницу — используйте printReceiptSale */
   printCurrentPage: () => ipcRenderer.invoke('print-current-page'),
-  /** Тихая печать текущей страницы как этикетки/штрих-кода. */
   printLabelPage: () => ipcRenderer.invoke('print-label-page'),
   openServerSetup: () => ipcRenderer.invoke('desktop:open-server-setup'),
   reload: () => ipcRenderer.invoke('desktop:reload'),

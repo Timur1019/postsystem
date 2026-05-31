@@ -22,13 +22,12 @@ const {
   cleanupThermalPrintInPage,
   waitForPaintFrames,
   runSilentPrint,
-  runSilentReceiptPrint,
   runSilentLabelPrint,
   createReceiptPrintWindow,
   ensureWindowPainted,
   printHtmlInHiddenWindow,
+  runStandardSilentReceiptPrint,
   showWindowForPrint,
-  runWindowsReceiptPrint,
   forceClosePrintWindow,
   PRINT_JOB_TIMEOUT_MS,
 } = require('./print-thermal.cjs');
@@ -519,14 +518,7 @@ async function printReceiptInHiddenWindow(receiptNumber) {
       showWindowForPrint(printWin, paperWidthPx(paperMm), heightPx, { visible: false });
       await waitForPaintFrames(printWin.webContents);
       await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 120));
-      if (process.platform === 'win32') {
-        await runWindowsReceiptPrint(printWin, printWin.webContents, dims, deviceName, printers, {
-          useDialog: false,
-          mainWindow,
-        });
-      } else {
-        await runSilentReceiptPrint(printWin.webContents, { deviceName, printers, dims });
-      }
+      await runStandardSilentReceiptPrint(printWin.webContents, deviceName, printers);
       await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 600 : 200));
       await cleanupThermalPrintInPage(printWin.webContents);
       forceClosePrintWindow(printWin);
@@ -574,30 +566,14 @@ async function printReceiptSaleInHiddenWindow(payload, options = {}) {
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
   const useDialog = resolveReceiptPrintUseDialog(options);
 
-  try {
-    const result = await printHtmlInHiddenWindow(bodyHtml, {
-      deviceName,
-      printers,
-      session: mainSession,
-      useDialog,
-      standaloneReceipt: true,
-      mainWindow,
-    });
-    return result;
-  } catch (err) {
-    console.warn('[Aurent print] printReceiptSale failed:', err?.message || err);
-    if (!useDialog) {
-      return printHtmlInHiddenWindow(bodyHtml, {
-        deviceName,
-        printers,
-        session: mainSession,
-        useDialog: true,
-        standaloneReceipt: true,
-        mainWindow,
-      });
-    }
-    throw err;
-  }
+  return printHtmlInHiddenWindow(bodyHtml, {
+    deviceName,
+    printers,
+    session: mainSession,
+    useDialog,
+    standaloneReceipt: true,
+    mainWindow,
+  });
 }
 
 async function printReceiptHtmlInHiddenWindow(bodyHtml, options = {}) {
@@ -641,118 +617,31 @@ async function printShiftReportInHiddenWindow(payload) {
   const printers = await listSystemPrinters();
   const mainSession =
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
-  const useDialog = resolveReceiptPrintUseDialog({});
-
-  try {
-    return await printHtmlInHiddenWindow(bodyHtml, {
-      deviceName,
-      printers,
-      session: mainSession,
-      useDialog,
-      standaloneReceipt: true,
-      contentKind: 'shift',
-      mainWindow,
-    });
-  } catch (err) {
-    console.warn('[Aurent print] shift report failed:', err?.message || err);
-    if (!useDialog) {
-      return printHtmlInHiddenWindow(bodyHtml, {
-        deviceName,
-        printers,
-        session: mainSession,
-        useDialog: true,
-        standaloneReceipt: true,
-        contentKind: 'shift',
-        mainWindow,
-      });
-    }
-    throw err;
-  }
-}
-
-function buildTestReceiptDataUrl() {
-  const html = `<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8" />
-  <title>Aurent — тестовый чек</title>
-  <style>
-    @page { size: 80mm auto; margin: 0; }
-    html, body { margin: 0; padding: 0; background: #fff; color: #000; }
-    body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; }
-    .wrap { padding: 6mm 3mm; width: 72mm; box-sizing: border-box; }
-    h1 { font-size: 16px; margin: 0 0 4mm; text-align: center; }
-    .hr { border-top: 1px dashed #000; margin: 3mm 0; }
-    .row { display: flex; justify-content: space-between; padding: 1mm 0; }
-    .center { text-align: center; }
-    .muted { color: #444; font-size: 11px; }
-  </style>
-</head>
-<body>
-  <div id="receipt-print-area" class="wrap">
-    <h1>AURENT — Тест</h1>
-    <div class="center muted">Тестовая печать термопринтера</div>
-    <div class="hr"></div>
-    <div class="row"><span>Чек</span><span>TEST-0001</span></div>
-    <div class="row"><span>Принтер</span><span>OK</span></div>
-    <div class="row"><span>Ширина</span><span>80 мм</span></div>
-    <div class="hr"></div>
-    <div class="center">Если этот лист вышел —<br/>автопечать настроена.</div>
-    <div class="hr"></div>
-    <div class="center muted">aurent.uz</div>
-  </div>
-  <script>
-    window.__posReceiptReady = true;
-    window.dispatchEvent(new CustomEvent('pos-receipt-ready'));
-  </script>
-</body>
-</html>`;
-  return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
+  return printHtmlInHiddenWindow(bodyHtml, {
+    deviceName,
+    printers,
+    session: mainSession,
+    useDialog: false,
+    standaloneReceipt: true,
+    contentKind: 'shift',
+    mainWindow,
+  });
 }
 
 async function printTestReceiptInHiddenWindow() {
-  const paperMm = 80;
   const deviceName = await resolveReceiptPrinterName();
   const printers = await listSystemPrinters();
-  const printWin = createReceiptPrintWindow({
-    width: paperWidthPx(paperMm),
-    height: 800,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
-  printWin.webContents.setZoomFactor(1);
-
-  return new Promise((resolve, reject) => {
-    const cleanup = () => {
-      if (!printWin.isDestroyed()) {
-        printWin.close();
-      }
-    };
-
-    printWin.webContents.on('did-fail-load', () => {
-      cleanup();
-      reject(new Error('Не удалось подготовить тестовый чек'));
-    });
-
-    printWin
-      .loadURL(buildTestReceiptDataUrl())
-      .then(() => ensureWindowPainted(printWin))
-      .then(() => waitForImages(printWin.webContents))
-      .then(() => new Promise((r) => setTimeout(r, 200)))
-      .then(() => prepareThermalPrintInPage(printWin.webContents))
-      .then((dims) =>
-        runSilentReceiptPrint(printWin.webContents, { deviceName, printers, dims })
-      )
-      .then(() => {
-        cleanup();
-      })
-      .then(resolve)
-      .catch((err) => {
-        cleanup();
-        reject(err);
-      });
+  const bodyHtml = `<div id="receipt-print-area" class="receipt-print-root">
+    <p class="receipt-title">AURENT — Тест</p>
+    <p>Тестовая печать термопринтера</p>
+    <p>Чек TEST-0001 · 80 mm</p>
+    <p>Если этот лист вышел — автопечать настроена.</p>
+  </div>`;
+  await printHtmlInHiddenWindow(bodyHtml, {
+    deviceName,
+    printers,
+    standaloneReceipt: true,
+    mainWindow,
   });
 }
 

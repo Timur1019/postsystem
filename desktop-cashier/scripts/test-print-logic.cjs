@@ -12,6 +12,7 @@ const {
 } = require('../electron/receipt-html-builder.cjs');
 const {
   buildSilentPrintOpts,
+  buildStandardSilentPrintOpts,
   winPrintAttempts,
   paperWidthPx,
 } = require('../electron/print-thermal.cjs');
@@ -42,6 +43,21 @@ test('buildThermalReceiptDocument включает текст чека и скр
   assert.ok(doc.includes('__posReceiptReady'), 'должен быть флаг готовности');
   assert.ok(doc.includes('@page'), 'должен быть @page для 80mm');
   assert.ok(doc.includes('12mm'), 'должен быть запас под отрез');
+});
+
+test('buildStandardSilentPrintOpts — схема Electron docs', () => {
+  const opts = buildStandardSilentPrintOpts('POS-80 (copy 2)');
+  assert.strictEqual(opts.silent, true);
+  assert.strictEqual(opts.printBackground, false);
+  assert.strictEqual(opts.deviceName, 'POS-80 (copy 2)');
+  assert.strictEqual(opts.margins.marginType, 'none');
+  assert.strictEqual(opts.pageSize, undefined);
+});
+
+test('buildStandardSilentPrintOpts — пустое имя = принтер по умолчанию Windows', () => {
+  const opts = buildStandardSilentPrintOpts('');
+  assert.strictEqual(opts.silent, true);
+  assert.strictEqual(opts.deviceName, undefined);
 });
 
 test('buildSilentPrintOpts без pageSize — запасной вариант Windows', () => {
