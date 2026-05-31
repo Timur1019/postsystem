@@ -57,6 +57,11 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
         if (result.ok) {
           if (result.mode === 'dialog') {
             toast('Нажмите «Печать» в окне Windows', { id: 'pos-auto-print', duration: 6000 });
+          } else {
+            toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
+              id: 'pos-auto-print',
+              duration: 3000,
+            });
           }
           await finish();
           return;
@@ -66,7 +71,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
       }
 
       if (!cancelled) {
-        toast.error(t('pos.printFailed'), { id: 'pos-auto-print' });
+        toast.error(err?.message || t('pos.printFailed'), { id: 'pos-auto-print' });
         await finish();
       }
     };

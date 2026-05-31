@@ -521,6 +521,7 @@ async function printReceiptInHiddenWindow(receiptNumber) {
       if (process.platform === 'win32') {
         await runWindowsReceiptPrint(printWin, printWin.webContents, dims, deviceName, printers, {
           useDialog: false,
+          mainWindow,
         });
       } else {
         await runSilentReceiptPrint(printWin.webContents, { deviceName, printers, dims });
@@ -544,17 +545,14 @@ function resolveReceiptPrintUseDialog(options = {}) {
   if (options.useDialog) {
     return true;
   }
-  if (process.platform !== 'win32') {
-    return false;
+  if (config?.receiptUsePrintDialog === true) {
+    return true;
   }
   if (config?.receiptUsePrintDialog === false) {
     return false;
   }
-  if (config?.receiptUsePrintDialog === true) {
-    return true;
-  }
-  /** После продажи на Windows по умолчанию — диалог (как раньше, надёжно на POS-80). */
-  return options.autoPrint === true;
+  /** По умолчанию — тихая печать (webContents.print silent: true). Диалог только при явном useDialog или сбое. */
+  return false;
 }
 
 async function printReceiptSaleInHiddenWindow(payload, options = {}) {
@@ -581,15 +579,20 @@ async function printReceiptSaleInHiddenWindow(payload, options = {}) {
       printers,
       session: mainSession,
       useDialog,
+      standaloneReceipt: true,
+      mainWindow,
     });
     return result;
   } catch (err) {
-    if (process.platform === 'win32' && !useDialog) {
+    console.warn('[Aurent print] printReceiptSale failed:', err?.message || err);
+    if (!useDialog) {
       return printHtmlInHiddenWindow(bodyHtml, {
         deviceName,
         printers,
         session: mainSession,
         useDialog: true,
+        standaloneReceipt: true,
+        mainWindow,
       });
     }
     throw err;
@@ -613,6 +616,8 @@ async function printReceiptHtmlInHiddenWindow(bodyHtml) {
     deviceName,
     printers,
     session: mainSession,
+    standaloneReceipt: html.includes('receipt-print-area'),
+    mainWindow,
   });
 }
 

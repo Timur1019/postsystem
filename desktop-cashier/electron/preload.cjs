@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('desktopCashier', {
   isDesktop: true,
-  /** Тихая / диалоговая печать из JSON продажи. options.autoPrint=true — после продажи (Windows: диалог). */
+  /** Тихая / диалоговая печать из JSON продажи. options.autoPrint=true — после продажи. */
   printReceiptSale: (sale, options) => ipcRenderer.invoke('print-receipt-sale', sale, options || {}),
   /** Диалог печати чека из JSON (Windows POS-80, если тихая печать пустая). */
   printReceiptSaleDialog: (sale) => ipcRenderer.invoke('print-receipt-sale-dialog', sale),
