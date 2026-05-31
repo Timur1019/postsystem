@@ -315,8 +315,8 @@ function runSilentPrint(webContents, dims, options = {}) {
   const printers = options.printers || [];
   const attempts = winPrintAttempts(requested, printers);
   const printerLabel = requested || 'принтер по умолчанию';
-  /** POS-80: сначала явный pageSize (высота чека), затем драйвер по умолчанию. */
-  const pageSizeStrategies = IS_WIN ? [true, false] : [true];
+  /** POS-80: сначала без pageSize (драйвер сам), затем с явной высотой. */
+  const pageSizeStrategies = IS_WIN ? [false, true] : [true];
 
   const tryOnce = async (name, useCustomPageSize) => {
     const opts = buildSilentPrintOpts(name, dims, useCustomPageSize);
@@ -438,7 +438,7 @@ function preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx, useDi
   }
 }
 
-/** Windows: silent webContents.print → PDF → диалог. */
+/** Windows: простая HTML-печать → с pageSize → диалог (без PDF — POS-80 PDF не печатает). */
 async function runWindowsReceiptPrint(
   printWin,
   webContents,
@@ -468,23 +468,22 @@ async function runWindowsReceiptPrint(
   await waitForPaintFrames(webContents);
   await new Promise((r) => setTimeout(r, IS_WIN ? 500 : 150));
 
+  /** 1. Простая схема Electron: HTML → webContents.print silent (без pageSize, без PDF). */
+  try {
+    const result = await runStandardSilentReceiptPrint(webContents, deviceName, printers);
+    await new Promise((r) => setTimeout(r, 400));
+    return { mode: 'silent', deviceName: result.deviceName };
+  } catch (standardErr) {
+    console.warn('[Aurent print] standard silent failed:', standardErr?.message || standardErr);
+  }
+
+  /** 2. С pageSize из CSS (@page 80mm) — запасной вариант. */
   try {
     await runSilentPrint(webContents, dims, { deviceName, printers });
     await new Promise((r) => setTimeout(r, 400));
     return { mode: 'silent' };
   } catch (silentErr) {
-    console.warn('[Aurent print] silent HTML failed:', silentErr?.message || silentErr);
-  }
-
-  try {
-    const pdfBuffer = await buildReceiptPdfBuffer(webContents, dims);
-    if (pdfBuffer && pdfBuffer.length >= 6000) {
-      await runSilentPdfReceiptPrint(pdfBuffer, deviceName, printers);
-      await new Promise((r) => setTimeout(r, 400));
-      return { mode: 'pdf' };
-    }
-  } catch (pdfErr) {
-    console.warn('[Aurent print] pdf-to-printer failed:', pdfErr?.message || pdfErr);
+    console.warn('[Aurent print] silent HTML+pageSize failed:', silentErr?.message || silentErr);
   }
 
   return openDialog();
