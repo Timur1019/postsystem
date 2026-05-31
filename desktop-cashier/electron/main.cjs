@@ -27,6 +27,13 @@ const ALLOWED_PATH_PREFIXES = ['/login', '/cashier', '/receipt', '/users/barcode
 let mainWindow;
 let config;
 
+function buildLoginUrl(cfg) {
+  const base = `${String(cfg.cashierUrl || '').replace(/\/$/, '')}/login`;
+  const code = String(cfg.companyLoginCode || '').trim();
+  if (!code) return base;
+  return `${base}?${new URLSearchParams({ companyLoginCode: code })}`;
+}
+
 function hasUserServerConfig() {
   try {
     return fs.existsSync(configPath());
@@ -53,7 +60,7 @@ async function openServerSettings() {
       config.cashierUrl = `http://127.0.0.1:${config.embeddedPort}`.replace(/\/$/, '');
     }
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.loadURL(`${config.cashierUrl}/login`);
+      mainWindow.loadURL(buildLoginUrl(config));
     }
   } catch {
     // cancelled
@@ -118,6 +125,11 @@ function buildAppMenu() {
 }
 
 function registerDesktopIpc() {
+  ipcMain.handle('desktop:get-company-login-code', () => {
+    const cfg = loadConfig();
+    return cfg.companyLoginCode || '';
+  });
+
   ipcMain.handle('desktop:open-server-setup', async () => {
     await openServerSettings();
     return { ok: true };
@@ -527,7 +539,7 @@ function createWindow() {
     );
   });
 
-  mainWindow.loadURL(`${config.cashierUrl}/login`);
+  mainWindow.loadURL(buildLoginUrl(config));
 }
 
 function registerTrustedCertificateHandler() {

@@ -16,6 +16,7 @@ import com.pos.service.UserService;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
 import com.pos.util.PersonNameUtil;
+import com.pos.util.UserLoginUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -56,18 +57,16 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponse create(CreateUserRequest req) {
-        if (userRepository.existsByUsername(req.username())) {
-            throw new BadRequestException("Username already taken");
-        }
-        if (userRepository.existsByEmail(req.email())) {
-            throw new BadRequestException("Email already registered");
-        }
-
         Role role = roleRepository.findByName(req.role())
             .orElseThrow(() -> new BadRequestException("Invalid role: " + req.role()));
         assertRoleAllowedForCreate(role.getName());
 
         Integer companyId = resolveCompanyIdForUser(req.companyId(), role.getName());
+        String username = UserLoginUtil.normalizeUsername(req.username());
+        String email = UserLoginUtil.normalizeEmail(req.email());
+        assertUsernameAvailable(companyId, username, null);
+        assertEmailAvailable(companyId, email, null);
+
         Company company = companyId != null ? tenantAccess.requireCompany(companyId) : null;
         assertCashierStoreAssignment(role.getName(), req.storeIds());
         Set<Store> stores = companyId != null
@@ -75,8 +74,8 @@ public class UserServiceImpl implements UserService {
             : Set.of();
 
         User user = User.builder()
-            .username(req.username().trim())
-            .email(req.email().trim())
+            .username(username)
+            .email(email)
             .password(passwordEncoder.encode(req.password()))
             .firstName(trimOrNull(req.firstName()))
             .lastName(trimOrNull(req.lastName()))
@@ -109,10 +108,12 @@ public class UserServiceImpl implements UserService {
         }
 
         if (req.email() != null) {
-            if (!req.email().equalsIgnoreCase(user.getEmail()) && userRepository.existsByEmail(req.email())) {
-                throw new BadRequestException("Email already registered");
+            String email = UserLoginUtil.normalizeEmail(req.email());
+            Integer companyId = user.getCompany() != null ? user.getCompany().getId() : null;
+            if (!email.equalsIgnoreCase(user.getEmail())) {
+                assertEmailAvailable(companyId, email, user.getId());
             }
-            user.setEmail(req.email().trim());
+            user.setEmail(email);
         }
 
         if (StringUtils.hasText(req.password())) {
@@ -235,6 +236,24 @@ public class UserServiceImpl implements UserService {
         }
         if (storeIds == null || storeIds.size() != 1) {
             throw new BadRequestException("Cashier must be assigned to exactly one store");
+        }
+    }
+
+    private void assertUsernameAvailable(Integer companyId, String username, UUID excludeUserId) {
+        boolean taken = companyId == null
+            ? userRepository.existsPlatformUsernameIgnoreCase(username, excludeUserId)
+            : userRepository.existsByCompanyIdAndUsernameIgnoreCase(companyId, username, excludeUserId);
+        if (taken) {
+            throw new BadRequestException("Username already taken in this company");
+        }
+    }
+
+    private void assertEmailAvailable(Integer companyId, String email, UUID excludeUserId) {
+        boolean taken = companyId == null
+            ? userRepository.existsPlatformEmailIgnoreCase(email, excludeUserId)
+            : userRepository.existsByCompanyIdAndEmailIgnoreCase(companyId, email, excludeUserId);
+        if (taken) {
+            throw new BadRequestException("Email already registered in this company");
         }
     }
 }

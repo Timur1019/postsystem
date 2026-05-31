@@ -39,6 +39,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -60,8 +61,8 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
     private final TenantAccessSupport tenantAccess;
 
     @Override
-    public SaleResponse processSale(CreateSaleRequest req, String cashierUsername) {
-        User cashier = userRepository.findByUsernameWithDetails(cashierUsername)
+    public SaleResponse processSale(CreateSaleRequest req, UUID cashierId) {
+        User cashier = userRepository.findByIdWithDetails(cashierId)
             .orElseThrow(() -> new ResourceNotFoundException("Cashier not found"));
 
         Store store = cashierSaleSupport.requireStoreForSale(cashier, req.storeId());

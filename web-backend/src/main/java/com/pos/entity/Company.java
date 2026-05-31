@@ -21,6 +21,9 @@ public class Company {
     @Column(nullable = false, length = 200)
     private String name;
 
+    @Column(name = "login_code", nullable = false, length = 32)
+    private String loginCode;
+
     @Column(name = "legal_name", length = 255)
     private String legalName;
 

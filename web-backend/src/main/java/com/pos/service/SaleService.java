@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public interface SaleService {
 
-    SaleResponse processSale(CreateSaleRequest req, String cashierUsername);
+    SaleResponse processSale(CreateSaleRequest req, java.util.UUID cashierId);
 
     SaleResponse getSale(UUID id);
 
@@ -47,7 +47,7 @@ public interface SaleService {
     );
 
     PageResponse<SaleResponse> getSalesByCashier(
-        String username,
+        UUID cashierId,
         UUID shiftId,
         UUID excludeShiftId,
         String receiptNumber,

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public record CreateCompanyRequest(
     @NotBlank String name,
+    String loginCode,
     String legalName,
     String tin,
     String address,

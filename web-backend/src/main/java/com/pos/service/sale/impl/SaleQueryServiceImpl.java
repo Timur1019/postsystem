@@ -102,7 +102,7 @@ public class SaleQueryServiceImpl implements SaleQueryService {
 
     @Override
     public PageResponse<SaleResponse> getSalesByCashier(
-        String username,
+        UUID cashierId,
         UUID shiftId,
         UUID excludeShiftId,
         String receiptNumber,
@@ -121,7 +121,7 @@ public class SaleQueryServiceImpl implements SaleQueryService {
 
         Page<Sale> page = saleRepository.findAll(
             SaleSpecifications.cashierSalesFilter(
-                username,
+                cashierId,
                 shiftId,
                 excludeShiftId,
                 receipt,

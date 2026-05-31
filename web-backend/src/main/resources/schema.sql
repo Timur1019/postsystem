@@ -19,6 +19,7 @@ CREATE TABLE roles (
 CREATE TABLE companies (
     id           SERIAL PRIMARY KEY,
     name         VARCHAR(200) NOT NULL,
+    login_code   VARCHAR(32) NOT NULL,
     legal_name   VARCHAR(255),
     tin          VARCHAR(20),
     address      TEXT,
@@ -28,10 +29,12 @@ CREATE TABLE companies (
     updated_at   TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE UNIQUE INDEX uq_companies_login_code ON companies (LOWER(login_code));
+
 CREATE TABLE users (
     id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    username     VARCHAR(100) UNIQUE NOT NULL,
-    email        VARCHAR(255) UNIQUE NOT NULL,
+    username     VARCHAR(100) NOT NULL,
+    email        VARCHAR(255) NOT NULL,
     password     VARCHAR(255) NOT NULL,
     full_name    VARCHAR(255) NOT NULL,
     first_name   VARCHAR(100),
@@ -43,6 +46,15 @@ CREATE TABLE users (
     created_at   TIMESTAMPTZ DEFAULT NOW(),
     updated_at   TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX uq_users_company_username ON users (company_id, LOWER(username))
+  WHERE company_id IS NOT NULL;
+CREATE UNIQUE INDEX uq_users_company_email ON users (company_id, LOWER(email))
+  WHERE company_id IS NOT NULL;
+CREATE UNIQUE INDEX uq_users_platform_username ON users (LOWER(username))
+  WHERE company_id IS NULL;
+CREATE UNIQUE INDEX uq_users_platform_email ON users (LOWER(email))
+  WHERE company_id IS NULL;
 
 -- ============================================================
 -- PRODUCTS & INVENTORY
@@ -383,8 +395,8 @@ INSERT INTO categories (name, description) VALUES
     ('Clothing',      'Apparel and fashion'),
     ('Stationery',    'Office and school supplies');
 
-INSERT INTO companies (name, legal_name, address, is_active) VALUES
-    ('MIRONKUL AGRO GLOBAL', 'MIRONKUL AGRO GLOBAL',
+INSERT INTO companies (name, login_code, legal_name, address, is_active) VALUES
+    ('MIRONKUL AGRO GLOBAL', 'MIRONKULAGROGLOBAL', 'MIRONKUL AGRO GLOBAL',
      'Samarqand vil., Samarqan tuman., O''rtashiq MSG., Mardi Maydon ko''chasi 403 uy', TRUE);
 
 INSERT INTO stores (name, code, address, company_id, is_active) VALUES

@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Component
@@ -46,9 +47,12 @@ public class JwtService {
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        String subject = userDetails instanceof User userEntity
+            ? userEntity.getId().toString()
+            : userDetails.getUsername();
         return Jwts.builder()
             .claims(extraClaims)
-            .subject(userDetails.getUsername())
+            .subject(subject)
             .issuedAt(new Date(System.currentTimeMillis()))
             .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
             .signWith(getSigningKey())
@@ -56,10 +60,18 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        if (!(userDetails instanceof User user)) {
+            return false;
+        }
+        return extractSubjectUserId(token).equals(user.getId()) && !isTokenExpired(token);
     }
 
+    /** JWT subject — UUID пользователя (логин может повторяться в разных компаниях). */
+    public UUID extractSubjectUserId(String token) {
+        return UUID.fromString(extractClaim(token, Claims::getSubject));
+    }
+
+    /** @deprecated use extractSubjectUserId */
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }

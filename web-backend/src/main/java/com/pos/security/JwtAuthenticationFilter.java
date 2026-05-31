@@ -1,5 +1,7 @@
 package com.pos.security;
 
+import com.pos.entity.User;
+import com.pos.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,21 +10,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserDetailsService userDetailsService;
+    private final UserRepository userRepository;
     private final CurrentUserProvider currentUserProvider;
 
     @Override
@@ -47,35 +48,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         final String jwt = authHeader.substring(7);
-        final String username;
+        final UUID userId;
         try {
-            username = jwtService.extractUsername(jwt);
+            userId = jwtService.extractSubjectUserId(jwt);
         } catch (Exception ex) {
             return;
         }
 
-        if (!StringUtils.hasText(username) || SecurityContextHolder.getContext().getAuthentication() != null) {
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
             return;
         }
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        User user = userRepository.findByIdWithDetails(userId).orElse(null);
+        if (user == null || !user.isActive()) {
+            return;
+        }
 
         try {
-            if (!jwtService.isTokenValid(jwt, userDetails)) {
+            if (!jwtService.isTokenValid(jwt, user)) {
                 return;
             }
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.getAuthorities()
+                user, null, user.getAuthorities()
             );
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
 
             Integer companyId = jwtService.extractCompanyId(jwt);
-            if (companyId == null && userDetails instanceof com.pos.entity.User user && user.getCompany() != null) {
+            if (companyId == null && user.getCompany() != null) {
                 companyId = user.getCompany().getId();
             }
-            boolean bypassRls = userDetails instanceof com.pos.entity.User user
-                && currentUserProvider.isSuperAdmin(user);
+            boolean bypassRls = currentUserProvider.isSuperAdmin(user);
             TenantContext.set(companyId, bypassRls);
         } catch (Exception ignored) {
             // Treat as unauthenticated

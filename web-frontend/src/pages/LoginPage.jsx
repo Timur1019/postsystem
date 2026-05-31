@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff, Loader, Download } from 'lucide-react';
@@ -13,16 +13,44 @@ import LanguageSwitcher from '../components/shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../store/tenantDisplayStore';
 import BrandMark from '../components/shared/BrandMark';
 
+const COMPANY_CODE_STORAGE_KEY = 'pos.companyLoginCode';
+
+function readStoredCompanyCode() {
+  try {
+    return localStorage.getItem(COMPANY_CODE_STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function persistCompanyCode(code) {
+  const normalized = (code || '').trim().toUpperCase();
+  try {
+    if (normalized) {
+      localStorage.setItem(COMPANY_CODE_STORAGE_KEY, normalized);
+    } else {
+      localStorage.removeItem(COMPANY_CODE_STORAGE_KEY);
+    }
+  } catch {
+    // ignore private mode / quota
+  }
+}
+
 export default function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [desktopCompanyCode, setDesktopCompanyCode] = useState('');
   const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
+
+  const isDesktop = Boolean(window.desktopCashier?.isDesktop);
+  const lockedCompanyCode = isDesktop && Boolean(desktopCompanyCode?.trim());
 
   useEffect(() => {
     if (!hasHydrated || !token) return;
@@ -31,25 +59,71 @@ export default function LoginPage() {
     else navigate('/dashboard', { replace: true });
   }, [hasHydrated, token, user, navigate]);
 
+  useEffect(() => {
+    const fromUrl = searchParams.get('companyLoginCode');
+    if (fromUrl) {
+      persistCompanyCode(fromUrl);
+    }
+    if (window.desktopCashier?.getCompanyLoginCode) {
+      window.desktopCashier.getCompanyLoginCode().then((code) => {
+        if (code) {
+          setDesktopCompanyCode(String(code).trim().toUpperCase());
+          persistCompanyCode(code);
+        }
+      }).catch(() => {});
+    }
+  }, [searchParams]);
+
+  const defaultCompanyCode = useMemo(() => {
+    const fromUrl = searchParams.get('companyLoginCode');
+    if (fromUrl) return fromUrl.trim().toUpperCase();
+    if (desktopCompanyCode) return desktopCompanyCode;
+    return readStoredCompanyCode();
+  }, [searchParams, desktopCompanyCode]);
+
   const schema = useMemo(() => z.object({
+    companyLoginCode: lockedCompanyCode
+      ? z.string().optional()
+      : z.string().min(1, t('validation.required')),
     username: z.string().min(1, t('validation.required')),
     password: z.string().min(1, t('validation.required')),
-  }), [t]);
+  }), [t, lockedCompanyCode]);
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
+    defaultValues: {
+      companyLoginCode: defaultCompanyCode,
+      username: '',
+      password: '',
+    },
   });
+
+  useEffect(() => {
+    if (defaultCompanyCode) {
+      setValue('companyLoginCode', defaultCompanyCode);
+    }
+  }, [defaultCompanyCode, setValue]);
 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const res = await authApi.login(data);
-      const { token, ...profile } = res.data;
-      if (!token) {
+      const companyLoginCode = (lockedCompanyCode ? desktopCompanyCode : data.companyLoginCode || '')
+        .trim()
+        .toUpperCase();
+      if (!lockedCompanyCode && companyLoginCode) {
+        persistCompanyCode(companyLoginCode);
+      }
+      const res = await authApi.login({
+        companyLoginCode: companyLoginCode || undefined,
+        username: data.username,
+        password: data.password,
+      });
+      const { token: accessToken, ...profile } = res.data;
+      if (!accessToken) {
         toast.error(t('login.failed'));
         return;
       }
-      setAuth(token, profile);
+      setAuth(accessToken, profile);
       toast.success(t('login.welcome', { name: profile.fullName }));
       const target =
         profile.role === 'SUPER_ADMIN'
@@ -63,7 +137,13 @@ export default function LoginPage() {
       if (!err.response) {
         toast.error(t('login.networkError'), { id: 'login-network-error' });
       } else if (apiMsg) {
-        toast.error(apiMsg === 'Invalid username or password' ? t('login.badCredentials') : apiMsg);
+        const msg =
+          apiMsg === 'Invalid username or password'
+            ? t('login.badCredentials')
+            : apiMsg === 'Invalid company code'
+              ? t('login.badCompanyCode')
+              : apiMsg;
+        toast.error(msg);
       } else {
         toast.error(t('login.failed'));
       }
@@ -78,7 +158,6 @@ export default function LoginPage() {
         <LanguageSwitcher />
       </div>
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="mb-7 text-center">
           <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500">
             <BrandMark size={32} iconClassName="text-white" />
@@ -87,10 +166,31 @@ export default function LoginPage() {
           <p className="mt-1.5 text-base text-slate-600">{t('login.subtitle')}</p>
         </div>
 
-        {/* Card */}
         <form onSubmit={handleSubmit(onSubmit)}
           className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
         >
+          {lockedCompanyCode ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
+              <span className="font-semibold">{t('login.companyCode')}:</span>{' '}
+              <span className="font-mono tracking-wide">{desktopCompanyCode}</span>
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700">
+                {t('login.companyCode')}
+              </label>
+              <input
+                {...register('companyLoginCode')}
+                autoComplete="organization"
+                placeholder={t('login.companyCodePh')}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-3 font-mono text-sm uppercase tracking-wide text-slate-900 shadow-sm transition placeholder:normal-case placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <p className="mt-1 text-xs text-slate-500">{t('login.companyCodeHint')}</p>
+              {errors.companyLoginCode && (
+                <p className="mt-1 text-sm text-red-500">{errors.companyLoginCode.message}</p>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-slate-700">
@@ -141,15 +241,17 @@ export default function LoginPage() {
         <p className="mt-6 text-center text-xs text-slate-500">
           {t('login.footer', { year: new Date().getFullYear() })}
         </p>
-        <p className="mt-3 text-center text-sm">
-          <Link
-            to="/install"
-            className="inline-flex items-center gap-1.5 font-medium text-emerald-600 hover:text-emerald-700"
-          >
-            <Download size={16} />
-            {t('login.downloadCashier')}
-          </Link>
-        </p>
+        {!isDesktop && (
+          <p className="mt-3 text-center text-sm">
+            <Link
+              to="/install"
+              className="inline-flex items-center gap-1.5 font-medium text-emerald-600 hover:text-emerald-700"
+            >
+              <Download size={16} />
+              {t('login.downloadCashier')}
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

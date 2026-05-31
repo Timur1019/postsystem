@@ -113,6 +113,7 @@ function loadConfig() {
     labelPrinterName: fileConfig.labelPrinterName || '',
     /** Windows: false = пробовать тихую PDF-печать даже после продажи. */
     receiptUsePrintDialog: fileConfig.receiptUsePrintDialog,
+    companyLoginCode: String(fileConfig.companyLoginCode || '').trim().toUpperCase(),
   };
 }
 

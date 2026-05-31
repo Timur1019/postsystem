@@ -15,8 +15,8 @@ import com.pos.spreadsheet.SpreadsheetDownloadSupport;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.pos.entity.User;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -32,10 +32,10 @@ public class SaleController {
     @PostMapping
     public ResponseEntity<SaleResponse> createSale(
         @Valid @RequestBody CreateSaleRequest request,
-        @AuthenticationPrincipal UserDetails currentUser
+        @AuthenticationPrincipal User currentUser
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(saleService.processSale(request, currentUser.getUsername()));
+            .body(saleService.processSale(request, currentUser.getId()));
     }
 
     @GetMapping
@@ -115,7 +115,7 @@ public class SaleController {
 
     @GetMapping("/my-sales")
     public ResponseEntity<PageResponse<SaleResponse>> mySales(
-        @AuthenticationPrincipal UserDetails currentUser,
+        @AuthenticationPrincipal User currentUser,
         @RequestParam(required = false) UUID shiftId,
         @RequestParam(required = false) UUID excludeShiftId,
         @RequestParam(required = false) String receiptNumber,
@@ -130,7 +130,7 @@ public class SaleController {
         }
         return ResponseEntity.ok(
             saleService.getSalesByCashier(
-                currentUser.getUsername(),
+                currentUser.getId(),
                 shiftId,
                 excludeShiftId,
                 receiptNumber,

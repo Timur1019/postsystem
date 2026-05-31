@@ -34,8 +34,8 @@ public class SaleServiceImpl implements SaleService {
 
     @Override
     @Transactional
-    public SaleResponse processSale(CreateSaleRequest req, String cashierUsername) {
-        return checkoutService.processSale(req, cashierUsername);
+    public SaleResponse processSale(CreateSaleRequest req, UUID cashierId) {
+        return checkoutService.processSale(req, cashierId);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class SaleServiceImpl implements SaleService {
 
     @Override
     public PageResponse<SaleResponse> getSalesByCashier(
-        String username,
+        UUID cashierId,
         UUID shiftId,
         UUID excludeShiftId,
         String receiptNumber,
@@ -82,7 +82,7 @@ public class SaleServiceImpl implements SaleService {
         Pageable pageable
     ) {
         return queryService.getSalesByCashier(
-            username, shiftId, excludeShiftId, receiptNumber,
+            cashierId, shiftId, excludeShiftId, receiptNumber,
             paymentMethodStr, statusStr, from, to, pageable
         );
     }

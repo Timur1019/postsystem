@@ -12,6 +12,7 @@ import com.pos.repository.CompanyRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.repository.spec.CompanySpecifications;
 import com.pos.service.CompanyService;
+import com.pos.util.CompanyLoginCodeUtil;
 import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -59,8 +60,10 @@ public class CompanyServiceImpl implements CompanyService {
         if (companyRepository.existsByNameIgnoreCase(name)) {
             throw new BadRequestException("Company name already exists");
         }
+        String loginCode = resolveLoginCode(request.loginCode(), name, null);
         Company company = Company.builder()
             .name(name)
+            .loginCode(loginCode)
             .legalName(trimOrNull(request.legalName()))
             .tin(trimOrNull(request.tin()))
             .address(trimOrNull(request.address()))
@@ -82,6 +85,9 @@ public class CompanyServiceImpl implements CompanyService {
                 throw new BadRequestException("Company name already exists");
             }
             company.setName(name);
+        }
+        if (request.loginCode() != null) {
+            company.setLoginCode(resolveLoginCode(request.loginCode(), company.getName(), id));
         }
         if (request.legalName() != null) company.setLegalName(trimOrNull(request.legalName()));
         if (request.tin() != null) company.setTin(trimOrNull(request.tin()));
@@ -112,6 +118,23 @@ public class CompanyServiceImpl implements CompanyService {
     private CompanyResponse toResponse(Company company) {
         int storeCount = storeRepository.findByCompanyIdOrderByNameAsc(company.getId()).size();
         return companyMapper.toResponse(company, storeCount);
+    }
+
+    private String resolveLoginCode(String requested, String companyName, Integer excludeId) {
+        String code = CompanyLoginCodeUtil.normalize(requested);
+        if (!StringUtils.hasText(code)) {
+            code = CompanyLoginCodeUtil.suggestFromName(companyName);
+        }
+        if (!StringUtils.hasText(code)) {
+            throw new BadRequestException("Company login code is required");
+        }
+        boolean taken = excludeId == null
+            ? companyRepository.existsByLoginCodeIgnoreCase(code)
+            : companyRepository.existsByLoginCodeIgnoreCaseAndIdNot(code, excludeId);
+        if (taken) {
+            throw new BadRequestException("Company login code already exists");
+        }
+        return code;
     }
 
     private static String trimOrNull(String value) {

@@ -7,6 +7,7 @@ const { contextBridge, ipcRenderer } = require('electron');
  */
 contextBridge.exposeInMainWorld('desktopCashier', {
   isDesktop: true,
+  getCompanyLoginCode: () => ipcRenderer.invoke('desktop:get-company-login-code'),
   printReceiptAuto: () => ipcRenderer.invoke('desktop:print-receipt-auto'),
   printLabelPage: () => ipcRenderer.invoke('print-label-page'),
   openServerSetup: () => ipcRenderer.invoke('desktop:open-server-setup'),

@@ -124,14 +124,14 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
 
     @Override
     @Transactional
-    public CustomerOrderCreatedResponse createOrder(CreateCustomerOrderRequest req, String username) {
+    public CustomerOrderCreatedResponse createOrder(CreateCustomerOrderRequest req, UUID creatorId) {
         Store store = storeRepository.findById(req.storeId())
             .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
         if (!store.isActive()) {
             throw new BadRequestException("Store is inactive");
         }
 
-        User creator = userRepository.findByUsername(username)
+        User creator = userRepository.findByIdWithDetails(creatorId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         User courier = null;
@@ -166,7 +166,7 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
 
     @Override
     @Transactional
-    public CustomerOrderCreatedResponse createWithPhotos(int storeId, List<MultipartFile> photos, String username) {
+    public CustomerOrderCreatedResponse createWithPhotos(int storeId, List<MultipartFile> photos, UUID creatorId) {
         if (photos == null || photos.size() != 5) {
             throw new BadRequestException("Exactly 5 image files are required (photo1 … photo5)");
         }
@@ -180,7 +180,7 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
             throw new BadRequestException("Store is inactive");
         }
 
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByIdWithDetails(creatorId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Instant now = Instant.now();

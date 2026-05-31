@@ -19,7 +19,9 @@ export default function PlatformCompaniesPage() {
   const [page, setPage] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', legalName: '', tin: '', address: '', phone: '', active: true });
+  const [form, setForm] = useState({
+    name: '', loginCode: '', legalName: '', tin: '', address: '', phone: '', active: true,
+  });
   const [menuId, setMenuId] = useState(null);
 
   const params = useMemo(() => ({ page, size: PAGE_SIZE, search: search.trim() || undefined }), [page, search]);
@@ -58,7 +60,7 @@ export default function PlatformCompaniesPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', legalName: '', tin: '', address: '', phone: '', active: true });
+    setForm({ name: '', loginCode: '', legalName: '', tin: '', address: '', phone: '', active: true });
     setModalOpen(true);
   };
 
@@ -66,6 +68,7 @@ export default function PlatformCompaniesPage() {
     setEditing(row);
     setForm({
       name: row.name,
+      loginCode: row.loginCode ?? '',
       legalName: row.legalName ?? '',
       tin: row.tin ?? '',
       address: row.address ?? '',
@@ -96,6 +99,7 @@ export default function PlatformCompaniesPage() {
           <thead>
             <tr className="border-b bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-800/50">
               <th className="px-4 py-3">{t('platform.colName')}</th>
+              <th className="px-4 py-3">{t('platform.colLoginCode')}</th>
               <th className="px-4 py-3">{t('platform.colStores')}</th>
               <th className="px-4 py-3">{t('common.status')}</th>
               <th className="w-12" />
@@ -103,10 +107,13 @@ export default function PlatformCompaniesPage() {
           </thead>
           <tbody className="divide-y dark:divide-slate-800">
             {isPending ? (
-              <tr><td colSpan={4} className="px-4 py-8 text-center">{t('common.loading')}</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-center">{t('common.loading')}</td></tr>
             ) : rows.map((row) => (
               <tr key={row.id}>
                 <td className="px-4 py-3 font-medium">{row.name}</td>
+                <td className="px-4 py-3 font-mono text-xs tracking-wide text-slate-600 dark:text-slate-400">
+                  {row.loginCode || '—'}
+                </td>
                 <td className="px-4 py-3">{row.storeCount}</td>
                 <td className="px-4 py-3">{row.active ? t('common.active') : t('common.inactive')}</td>
                 <td className="px-4 py-3">
@@ -140,10 +147,20 @@ export default function PlatformCompaniesPage() {
               <h2 className="text-lg font-bold">{editing ? t('platform.editCompany') : t('platform.addCompany')}</h2>
               <button type="button" onClick={() => setModalOpen(false)}><X size={20} /></button>
             </div>
-            {['name','legalName','tin','phone'].map((field) => (
+            {['name','loginCode','legalName','tin','phone'].map((field) => (
               <div key={field} className="mb-3">
                 <label className="mb-1 block text-xs text-slate-500">{t(`platform.field_${field}`)}</label>
-                <input className={inputCls} value={form[field]} onChange={(e) => setForm({ ...form, [field]: e.target.value })} />
+                <input
+                  className={inputCls + (field === 'loginCode' ? ' font-mono uppercase tracking-wide' : '')}
+                  value={form[field]}
+                  onChange={(e) => setForm({
+                    ...form,
+                    [field]: field === 'loginCode' ? e.target.value.toUpperCase() : e.target.value,
+                  })}
+                />
+                {field === 'loginCode' && (
+                  <p className="mt-1 text-xs text-slate-500">{t('platform.field_loginCodeHint')}</p>
+                )}
               </div>
             ))}
             <div className="mb-3">

@@ -18,3 +18,4 @@ migration_manual_stock_inventory_transfer.sql
 migration_manual_sale_order_discount.sql
 migration_manual_z_report_discount.sql
 migration_manual_tenant_isolation.sql
+migration_manual_company_login_code.sql

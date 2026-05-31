@@ -17,7 +17,9 @@ import java.util.stream.Stream;
 
 @Entity
 @Table(name = "users")
-@Getter @Setter @Builder
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor @AllArgsConstructor
 public class User implements UserDetails {
 
@@ -25,10 +27,10 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false, length = 100)
     private String username;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)

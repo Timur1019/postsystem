@@ -18,7 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import com.pos.entity.User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -63,10 +63,10 @@ public class CustomerOrderController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CustomerOrderCreatedResponse> create(
         @Valid @RequestBody CreateCustomerOrderRequest body,
-        @AuthenticationPrincipal UserDetails user
+        @AuthenticationPrincipal User user
     ) {
         return ResponseEntity.status(201)
-            .body(customerOrderService.createOrder(body, user.getUsername()));
+            .body(customerOrderService.createOrder(body, user.getId()));
     }
 
     @GetMapping("/{id}/photos/{slot}")

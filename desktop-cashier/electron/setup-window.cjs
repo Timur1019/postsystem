@@ -51,6 +51,7 @@ function buildSetupHtml(current) {
   const host = current?.host || defaults.host;
   const apiPort = current?.apiPort ?? defaults.apiPort;
   const webPort = current?.webPort ?? defaults.webPort;
+  const companyLoginCode = current?.companyLoginCode || '';
   const hasEmbedded = Boolean(resolveWebDist());
   const intro = hasEmbedded
     ? 'Укажите адрес магазина (как сказал администратор). Обычно это IP или имя сервера — ничего сложного настраивать не нужно.'
@@ -107,6 +108,8 @@ function buildSetupHtml(current) {
   <form id="f">
     <label for="host">Адрес сервера (IP или домен)</label>
     <input id="host" name="host" placeholder="www.aurent.uz или IP сервера" value="${host}" required autocomplete="off" />
+    <label for="companyLoginCode">Код компании (для входа кассиров)</label>
+    <input id="companyLoginCode" name="companyLoginCode" placeholder="MIRONKUL" value="${companyLoginCode}" required autocomplete="off" style="text-transform:uppercase;letter-spacing:0.05em;font-family:ui-monospace,monospace;" />
     ${portFields}
     <button type="submit">Продолжить</button>
   </form>
@@ -118,7 +121,8 @@ function buildSetupHtml(current) {
       const webEl = document.getElementById('webPort');
       const apiPort = document.getElementById('apiPort').value.trim() || '8081';
       const webPort = webEl && webEl.type === 'hidden' ? apiPort : (webEl.value.trim() || apiPort);
-      window.setupApi.save({ host, webPort, apiPort });
+      const companyLoginCode = document.getElementById('companyLoginCode').value.trim().toUpperCase();
+      window.setupApi.save({ host, webPort, apiPort, companyLoginCode });
     });
   </script>
 </body>
@@ -158,7 +162,15 @@ function shouldUseRemoteUi(host, webPort, apiPort) {
   return !isLanHost(host);
 }
 
-function saveConfig({ host, webPort, apiPort }) {
+function normalizeCompanyLoginCode(raw) {
+  return String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function saveConfig({ host, webPort, apiPort, companyLoginCode }) {
+  const code = normalizeCompanyLoginCode(companyLoginCode);
+  if (!code) {
+    throw new Error('Укажите код компании');
+  }
   const { host: h } = normalizeHostPort(host, apiPort);
   let web = String(webPort || DEFAULT_API_PORT).trim() || DEFAULT_API_PORT;
   const api = String(apiPort || DEFAULT_API_PORT).trim() || DEFAULT_API_PORT;
@@ -181,6 +193,7 @@ function saveConfig({ host, webPort, apiPort }) {
         apiPort: api,
         embeddedPort,
         apiHealthUrl: buildHealthUrl(origin),
+        companyLoginCode: code,
       }
     : {
         useRemoteUi: false,
@@ -190,24 +203,35 @@ function saveConfig({ host, webPort, apiPort }) {
         apiPort: api,
         embeddedPort,
         apiHealthUrl: buildHealthUrl(buildOrigin(h, api)),
+        companyLoginCode: code,
       };
   return writeUserConfig(payload);
 }
 
 function showSetupWindow(existing) {
-  let parsed = { host: '', apiPort: DEFAULT_API_PORT, webPort: DEFAULT_WEB_PORT };
+  let parsed = { host: '', apiPort: DEFAULT_API_PORT, webPort: DEFAULT_WEB_PORT, companyLoginCode: '' };
   if (existing?.cashierUrl && existing.useRemoteUi) {
     const web = parseOrigin(existing.cashierUrl);
-    parsed = { host: web.host, webPort: web.webPort || DEFAULT_WEB_PORT, apiPort: existing.apiPort || DEFAULT_API_PORT };
+    parsed = {
+      host: web.host,
+      webPort: web.webPort || DEFAULT_WEB_PORT,
+      apiPort: existing.apiPort || DEFAULT_API_PORT,
+      companyLoginCode: existing.companyLoginCode || '',
+    };
   } else if (existing?.backendOrigin) {
     const api = parseOrigin(existing.backendOrigin);
-    parsed = { host: api.host, apiPort: api.port, webPort: existing.webPort || DEFAULT_WEB_PORT };
+    parsed = {
+      host: api.host,
+      apiPort: api.port,
+      webPort: existing.webPort || DEFAULT_WEB_PORT,
+      companyLoginCode: existing.companyLoginCode || '',
+    };
   }
 
   return new Promise((resolve, reject) => {
     const win = new BrowserWindow({
       width: 440,
-      height: 480,
+      height: 540,
       resizable: false,
       title: 'Aurent — настройка сервера',
       autoHideMenuBar: true,

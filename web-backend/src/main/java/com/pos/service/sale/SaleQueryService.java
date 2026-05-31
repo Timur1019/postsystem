@@ -29,7 +29,7 @@ public interface SaleQueryService {
     );
 
     PageResponse<SaleResponse> getSalesByCashier(
-        String username,
+        UUID cashierId,
         UUID shiftId,
         UUID excludeShiftId,
         String receiptNumber,

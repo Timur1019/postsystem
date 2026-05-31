@@ -29,9 +29,9 @@ public interface CustomerOrderService {
 
     List<CourierOptionResponse> listCourierCandidates();
 
-    CustomerOrderCreatedResponse createOrder(CreateCustomerOrderRequest req, String username);
+    CustomerOrderCreatedResponse createOrder(CreateCustomerOrderRequest req, UUID creatorId);
 
-    CustomerOrderCreatedResponse createWithPhotos(int storeId, List<MultipartFile> photos, String username);
+    CustomerOrderCreatedResponse createWithPhotos(int storeId, List<MultipartFile> photos, UUID creatorId);
 
     PhotoDownload loadPhoto(long orderId, int slot);
 }

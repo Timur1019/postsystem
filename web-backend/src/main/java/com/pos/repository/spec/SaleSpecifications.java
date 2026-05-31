@@ -16,7 +16,7 @@ public final class SaleSpecifications {
     }
 
     public static Specification<Sale> cashierSalesFilter(
-        String username,
+        UUID cashierId,
         UUID shiftId,
         UUID excludeShiftId,
         String receiptNumber,
@@ -28,7 +28,7 @@ public final class SaleSpecifications {
         return (root, query, cb) -> {
             List<Predicate> parts = new ArrayList<>();
 
-            parts.add(cb.equal(root.get("cashier").get("username"), username));
+            parts.add(cb.equal(root.get("cashier").get("id"), cashierId));
 
             if (shiftId != null) {
                 parts.add(cb.equal(root.get("cashierShift").get("id"), shiftId));
