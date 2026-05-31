@@ -439,18 +439,14 @@ ipcMain.handle('desktop:print-receipt-auto', async (event) => {
   }
   const ready = await wc.executeJavaScript(`
     (() => {
-      const roots = ['#pos-sale-print-shell', '#fiscal-print-shell'];
-      for (const sel of roots) {
-        const root = document.querySelector(sel);
-        if (!root) continue;
-        const area = root.querySelector('#receipt-print-area') || root.querySelector('.receipt-print-root') || root;
-        const textLen = (area.innerText || '').trim().length;
-        const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
-        const imgs = Array.from(area.querySelectorAll('img'));
-        const imgsReady = imgs.length === 0 || imgs.every((i) => i.complete);
-        if (textLen >= 80 && h >= 120 && imgsReady) return true;
-      }
-      return false;
+      const shell = document.getElementById('fiscal-print-shell');
+      if (!shell) return false;
+      const area = shell.querySelector('#receipt-print-area') || shell.querySelector('.receipt-print-root') || shell;
+      const textLen = (area.innerText || '').trim().length;
+      const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
+      const imgs = Array.from(area.querySelectorAll('img'));
+      const imgsReady = imgs.length === 0 || imgs.every((i) => i.complete);
+      return textLen >= 80 && h >= 120 && imgsReady;
     })()
   `);
   if (!ready) {
@@ -458,7 +454,7 @@ ipcMain.handle('desktop:print-receipt-auto', async (event) => {
   }
   await waitForImages(wc);
   await waitForPaintFrames(wc);
-  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 900 : 300));
+  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 200));
   const dims = await wc.executeJavaScript(MEASURE_RECEIPT_DIMS_JS);
   if (!dims?.textLen || dims.textLen < 80) {
     throw new Error('Чек пустой для автопечати');
@@ -466,7 +462,7 @@ ipcMain.handle('desktop:print-receipt-auto', async (event) => {
   await waitForPaintFrames(wc);
   const deviceName = await resolveReceiptPrinterName({ promptIfMissing: false });
   const printers = await listSystemPrinters();
-  const result = await runSilentReceiptAutoPrint(wc, { deviceName, printers, dims });
+  const result = await runSilentReceiptAutoPrint(wc, { deviceName, printers });
   return { ok: true, ...result };
 });
 

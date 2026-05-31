@@ -87,18 +87,6 @@ function buildStandardSilentPrintOpts(deviceName) {
   return opts;
 }
 
-function buildSizedSilentPrintOpts(deviceName, dims) {
-  const opts = buildStandardSilentPrintOpts(deviceName);
-  const paperMm = dims?.paperMm || 80;
-  const heightMm = Math.max(dims?.heightMm || 200, 120);
-  opts.pageSize = {
-    width: Math.round(paperMm * 1000),
-    height: Math.round(heightMm * 1000),
-  };
-  delete opts.usePrinterDefaultPageSize;
-  return opts;
-}
-
 function winPrintAttempts(requestedName, printers, platformIsWin = IS_WIN) {
   const requested = String(requestedName || '').trim();
   if (!platformIsWin) {
@@ -117,59 +105,46 @@ function winPrintAttempts(requestedName, printers, platformIsWin = IS_WIN) {
 
 const MEASURE_RECEIPT_DIMS_JS = `
 (() => {
-  const roots = ['#pos-sale-print-shell', '#fiscal-print-shell'];
-  for (const sel of roots) {
-    const root = document.querySelector(sel);
-    if (!root) continue;
-    const area = root.querySelector('#receipt-print-area') || root.querySelector('.receipt-print-root') || root;
-    const textLen = (area.innerText || '').trim().length;
-    const contentPx = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
-    if (textLen < 40 || contentPx < 80) continue;
-    const paperRaw = getComputedStyle(document.documentElement).getPropertyValue('--print-paper-w-mm').trim();
-    const paperMm = parseFloat(paperRaw) || 80;
-    const pxPerMm = 96 / 25.4;
-    const heightMm = Math.max(120, Math.ceil(contentPx / pxPerMm) + 24);
-    return { paperMm, heightMm, textLen, contentPx };
-  }
-  return null;
+  const shell = document.getElementById('fiscal-print-shell');
+  if (!shell) return null;
+  const area = shell.querySelector('#receipt-print-area') || shell.querySelector('.receipt-print-root') || shell;
+  const textLen = (area.innerText || '').trim().length;
+  const contentPx = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
+  if (textLen < 80 || contentPx < 120) return null;
+  const paperRaw = getComputedStyle(document.documentElement).getPropertyValue('--print-paper-w-mm').trim();
+  const paperMm = parseFloat(paperRaw) || 80;
+  const pxPerMm = 96 / 25.4;
+  const heightMm = Math.max(120, Math.ceil(contentPx / pxPerMm) + 24);
+  return { paperMm, heightMm, textLen, contentPx };
 })()
 `;
 
+const AUTO_PRINT_TIMEOUT_MS = IS_WIN ? 8000 : 6000;
+
 /**
- * Тихая автопечать: классы print-* на <html>, чек уже на экране (превью POS).
+ * Одна тихая попытка — без циклов по 12 с (иначе ~40 с белый экран).
  */
 async function runSilentReceiptAutoPrint(webContents, options = {}) {
   const deviceName = options.deviceName ? String(options.deviceName) : '';
   const printers = options.printers || [];
-  const dims = options.dims || null;
   const attempts = winPrintAttempts(deviceName, printers);
   const printerLabel = deviceName || 'принтер по умолчанию';
+  const name = attempts[0] ?? deviceName;
+  const opts = buildStandardSilentPrintOpts(name);
 
-  const strategies = [buildStandardSilentPrintOpts];
-  if (dims?.heightMm && IS_WIN) {
-    strategies.push((name) => buildSizedSilentPrintOpts(name, dims));
-  }
-
-  let lastErr;
-  for (const name of attempts) {
-    for (const buildOpts of strategies) {
-      try {
-        const opts = buildOpts(name);
-        const result = await invokeWebContentsPrint(webContents, opts);
-        if (result.callbackTimeout) {
-          console.warn('[Aurent print] auto receipt — задание в очереди Windows');
-        }
-        return { mode: 'silent', deviceName: name || deviceName || '' };
-      } catch (err) {
-        lastErr = err;
-      }
+  try {
+    const result = await invokeWebContentsPrint(webContents, opts, AUTO_PRINT_TIMEOUT_MS);
+    if (result.callbackTimeout) {
+      console.warn('[Aurent print] auto receipt — задание в очереди Windows');
     }
+    return { mode: 'silent', deviceName: name || deviceName || '' };
+  } catch (err) {
+    const detail = err?.message || 'Печать не выполнена';
+    throw new Error(
+      `${detail} (принтер: ${printerLabel}). ` +
+        'Aurent → «Принтер чека»: выберите POS-80 и сохраните.'
+    );
   }
-  const detail = lastErr?.message || 'Печать не выполнена';
-  throw new Error(
-    `${detail} (принтер: ${printerLabel}). ` +
-      'Aurent → «Принтер чека»: выберите POS-80 и сохраните.'
-  );
 }
 
 function runSilentLabelPrint(webContents, options = {}) {

@@ -2,7 +2,6 @@ import {
   prepareThermalPrint,
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
-  PRINT_THERMAL_POS_PREVIEW_CLASS,
   ELECTRON_SILENT_PRINT_CLASS,
 } from './printWithHtmlClass';
 
@@ -10,7 +9,6 @@ import {
 const PRINT_HTML_CLASSES = [
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
-  PRINT_THERMAL_POS_PREVIEW_CLASS,
   ELECTRON_SILENT_PRINT_CLASS,
 ];
 
@@ -24,21 +22,7 @@ export function cleanupDesktopPrintState() {
   document.getElementById('pos-print-job-page')?.remove();
 }
 
-function hasPosSalePrintPreview() {
-  return Boolean(document.getElementById('pos-sale-print-shell'));
-}
-
-function receiptPrintElement({ preferFiscalShell = false, preferPosPreview = false } = {}) {
-  if (preferPosPreview || hasPosSalePrintPreview()) {
-    const posRoot = document.getElementById('pos-sale-print-shell');
-    if (posRoot) {
-      const area =
-        posRoot.querySelector('#receipt-print-area') || posRoot.querySelector('.receipt-print-root');
-      if (area) return area;
-      return posRoot;
-    }
-  }
-
+function receiptPrintElement({ preferFiscalShell = false } = {}) {
   if (preferFiscalShell) {
     const shell = document.getElementById('fiscal-print-shell');
     if (shell) {
@@ -49,11 +33,7 @@ function receiptPrintElement({ preferFiscalShell = false, preferPosPreview = fal
     }
   }
 
-  const roots = [
-    '#pos-sale-print-shell',
-    '#fiscal-print-shell',
-    '.cashier-sales-receipt-pane__card',
-  ];
+  const roots = ['#fiscal-print-shell', '#pos-sale-print-shell', '.cashier-sales-receipt-pane__card'];
   for (const rootSel of roots) {
     const root = document.querySelector(rootSel);
     if (!root) continue;
@@ -84,13 +64,12 @@ async function prepareDesktopForPrint() {
   }
 }
 
-async function waitForReceiptDomReady({ useModalShell = false, preferPosPreview = false } = {}) {
+async function waitForReceiptDomReady({ useModalShell = false } = {}) {
   const preferFiscalShell = useModalShell || shouldUseModalPrintShell();
-  const usePosPreview = preferPosPreview || hasPosSalePrintPreview();
   await document.fonts?.ready;
-  for (let i = 0; i < 60; i += 1) {
+  for (let i = 0; i < 50; i += 1) {
     await new Promise((r) => setTimeout(r, 100));
-    const area = receiptPrintElement({ preferFiscalShell, preferPosPreview: usePosPreview });
+    const area = receiptPrintElement({ preferFiscalShell });
     if (!area) continue;
     const textLen = (area.innerText || '').trim().length;
     const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
@@ -104,12 +83,12 @@ async function waitForReceiptDomReady({ useModalShell = false, preferPosPreview 
 
 async function waitForPaintSettled() {
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  await new Promise((r) => setTimeout(r, 600));
+  await new Promise((r) => setTimeout(r, 350));
 }
 
 /**
  * Печать чека: только термоблок (print-thermal-modal скрывает #root и UI кассы).
- * @returns {Promise<'dialog'|'silent'>}
+ * @returns {Promise<'dialog'>}
  */
 export async function printThermalReceiptDialog({ useModalShell } = {}) {
   const modal = shouldUseModalPrintShell(useModalShell);
@@ -138,44 +117,29 @@ export async function printThermalReceiptDialog({ useModalShell } = {}) {
 }
 
 /**
- * Автопечать после продажи: десктоп — тихо с видимого превью; браузер — диалог.
- * @returns {Promise<'dialog'|'silent'>}
+ * Автопечать после продажи.
+ * Десктоп: одна тихая попытка на #fiscal-print-shell (portal), иначе диалог как при ручной печати.
  */
 export async function printThermalReceiptAuto() {
-  const usePosPreview = hasPosSalePrintPreview();
-  await waitForReceiptDomReady({ useModalShell: true, preferPosPreview: usePosPreview });
+  await waitForReceiptDomReady({ useModalShell: true });
   await prepareDesktopForPrint();
 
-  const classes = [
-    PRINT_THERMAL_CLASS,
-    PRINT_THERMAL_MODAL_CLASS,
-    ELECTRON_SILENT_PRINT_CLASS,
-  ];
-  if (usePosPreview) {
-    classes.push(PRINT_THERMAL_POS_PREVIEW_CLASS);
-  }
-
+  const classes = [PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS, ELECTRON_SILENT_PRINT_CLASS];
   const cleanup = prepareThermalPrint(classes);
 
   try {
     if (isDesktopCashier() && typeof window.desktopCashier?.printReceiptAuto === 'function') {
       await waitForPaintSettled();
       await window.desktopCashier.printReceiptAuto();
-      await new Promise((r) => setTimeout(r, 400));
       return 'silent';
     }
     return printThermalReceiptDialog({ useModalShell: true });
   } catch (err) {
-    if (isDesktopCashier()) {
-      try {
-        return await printThermalReceiptDialog({ useModalShell: true });
-      } catch {
-        /* fall through */
-      }
-    }
-    throw err;
+    console.warn('[Aurent] silent auto print failed, dialog fallback', err);
+    cleanup();
+    cleanupDesktopPrintState();
+    return printThermalReceiptDialog({ useModalShell: true });
   } finally {
-    await new Promise((r) => setTimeout(r, 300));
     cleanup();
     cleanupDesktopPrintState();
   }
