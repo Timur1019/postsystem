@@ -15,6 +15,7 @@ const { showPrinterPickerWindow } = require('./printer-picker-window.cjs');
 const { matchPrinterName } = require('./printer-match.cjs');
 const {
   waitForImages,
+  runSilentReceiptAutoPrint,
   runSilentLabelPrint,
 } = require('./print-thermal.cjs');
 const { setupAutoUpdater, checkForUpdatesNow } = require('./auto-update.cjs');
@@ -427,6 +428,34 @@ ipcMain.handle('print-label-page', async (event) => {
   const deviceName = await resolveLabelPrinterName();
   await runSilentLabelPrint(wc, { deviceName });
   return { ok: true };
+});
+
+ipcMain.handle('desktop:print-receipt-auto', async (event) => {
+  const wc = event.sender;
+  if (!wc || wc.isDestroyed()) {
+    throw new Error('Окно печати недоступно');
+  }
+  const ready = await wc.executeJavaScript(`
+    (() => {
+      const shell = document.getElementById('fiscal-print-shell');
+      const area = shell?.querySelector('#receipt-print-area') || shell;
+      if (!area) return false;
+      const textLen = (area.innerText || '').trim().length;
+      const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
+      const imgs = Array.from(area.querySelectorAll('img'));
+      const imgsReady = imgs.length === 0 || imgs.every((i) => i.complete);
+      return textLen >= 80 && h >= 120 && imgsReady;
+    })()
+  `);
+  if (!ready) {
+    throw new Error('Чек не готов для автопечати');
+  }
+  await waitForImages(wc);
+  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 500 : 200));
+  const deviceName = await resolveReceiptPrinterName({ promptIfMissing: false });
+  const printers = await listSystemPrinters();
+  const result = await runSilentReceiptAutoPrint(wc, { deviceName, printers });
+  return { ok: true, ...result };
 });
 
 function createWindow() {

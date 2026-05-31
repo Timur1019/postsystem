@@ -2,10 +2,15 @@ import {
   prepareThermalPrint,
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
+  ELECTRON_SILENT_PRINT_CLASS,
 } from './printWithHtmlClass';
 
 /** Классы печати — снимаем после job. */
-const PRINT_HTML_CLASSES = [PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS];
+const PRINT_HTML_CLASSES = [
+  PRINT_THERMAL_CLASS,
+  PRINT_THERMAL_MODAL_CLASS,
+  ELECTRON_SILENT_PRINT_CLASS,
+];
 
 export function isDesktopCashier() {
   return typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
@@ -82,7 +87,7 @@ async function waitForReceiptDomReady({ useModalShell = false } = {}) {
 
 /**
  * Печать чека: только термоблок (print-thermal-modal скрывает #root и UI кассы).
- * @returns {Promise<'dialog'>}
+ * @returns {Promise<'dialog'|'silent'>}
  */
 export async function printThermalReceiptDialog({ useModalShell } = {}) {
   const modal = shouldUseModalPrintShell(useModalShell);
@@ -108,6 +113,41 @@ export async function printThermalReceiptDialog({ useModalShell } = {}) {
       });
     });
   });
+}
+
+/**
+ * Автопечать после продажи: десктоп — тихо на POS-80; браузер — диалог печати.
+ * @returns {Promise<'dialog'|'silent'>}
+ */
+export async function printThermalReceiptAuto() {
+  const modal = shouldUseModalPrintShell(true);
+  await waitForReceiptDomReady({ useModalShell: modal });
+  await prepareDesktopForPrint();
+
+  const classes = [PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS, ELECTRON_SILENT_PRINT_CLASS];
+  const cleanup = prepareThermalPrint(classes);
+
+  try {
+    if (isDesktopCashier() && typeof window.desktopCashier?.printReceiptAuto === 'function') {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      await new Promise((r) => setTimeout(r, 450));
+      await window.desktopCashier.printReceiptAuto();
+      return 'silent';
+    }
+    return printThermalReceiptDialog({ useModalShell: true });
+  } catch (err) {
+    if (isDesktopCashier()) {
+      try {
+        return await printThermalReceiptDialog({ useModalShell: true });
+      } catch {
+        /* fall through */
+      }
+    }
+    throw err;
+  } finally {
+    cleanup();
+    cleanupDesktopPrintState();
+  }
 }
 
 export async function printThermalReceipt({

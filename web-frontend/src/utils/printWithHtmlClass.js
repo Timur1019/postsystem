@@ -9,7 +9,7 @@ export const PRINT_THERMAL_CLASS = 'print-thermal-only';
 /** Доп. класс: печать из модалки журнала (скрывает #root). */
 export const PRINT_THERMAL_MODAL_CLASS = 'print-thermal-modal';
 
-/** Electron: стили чека на экране (silent print не всегда применяет @media print). */
+/** Electron: дублируем @media print на экран для webContents.print({ silent: true }). */
 export const ELECTRON_SILENT_PRINT_CLASS = 'electron-silent-print';
 
 const THERMAL_PRINT_CLASSES = new Set([

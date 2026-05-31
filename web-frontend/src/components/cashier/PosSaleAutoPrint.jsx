@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
-import { cleanupDesktopPrintState, printThermalReceiptDialog } from '../../utils/printReceipt';
+import { cleanupDesktopPrintState, printThermalReceiptAuto } from '../../utils/printReceipt';
 import '../../styles/pos-sale-auto-print.css';
 
 const QR_WAIT_MS = 2000;
@@ -51,7 +51,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
       if (cancelled) return;
 
       try {
-        await printThermalReceiptDialog({ useModalShell: true });
+        await printThermalReceiptAuto();
         if (!cancelled) {
           toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
             id: 'pos-auto-print',
