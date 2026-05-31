@@ -3,6 +3,9 @@
  * На Windows скрытое окно (show:false) часто даёт пустой лист — нужен show + ready-to-show.
  */
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { BrowserWindow } = require('electron');
 const { buildThermalReceiptDocument } = require('./receipt-html-builder.cjs');
 
@@ -216,8 +219,8 @@ function runSilentPrint(webContents, dims, options = {}) {
   const printers = options.printers || [];
   const attempts = winPrintAttempts(requested, printers);
   const printerLabel = requested || 'принтер по умолчанию';
-  /** POS-80 на Windows часто печатает пустую полоску с кастомным pageSize — сначала драйвер по умолчанию. */
-  const pageSizeStrategies = IS_WIN ? [false, true] : [true];
+  /** POS-80: сначала явный pageSize (высота чека), затем драйвер по умолчанию. */
+  const pageSizeStrategies = IS_WIN ? [true, false] : [true];
 
   const tryOnce = (name, useCustomPageSize) =>
     new Promise((resolve, reject) => {
@@ -253,9 +256,73 @@ function runSilentPrint(webContents, dims, options = {}) {
   })();
 }
 
+function runDialogReceiptPrint(webContents, deviceName) {
+  const opts = {
+    silent: false,
+    printBackground: true,
+    margins: { marginType: 'none' },
+    copies: 1,
+  };
+  if (deviceName) {
+    opts.deviceName = deviceName;
+  }
+  return new Promise((resolve, reject) => {
+    webContents.print(opts, (success, failureReason) => {
+      if (success) {
+        resolve({ dialog: true });
+        return;
+      }
+      const detail =
+        failureReason && failureReason !== 'cancelled' ? failureReason : 'Печать отменена';
+      reject(new Error(detail));
+    });
+  });
+}
+
+async function verifyReceiptPdf(webContents, dims) {
+  try {
+    const paperMm = dims?.paperMm || 80;
+    const heightMm = Math.max(dims?.heightMm || 200, 100);
+    const pdf = await webContents.printToPDF({
+      printBackground: true,
+      margins: { marginType: 'none' },
+      pageSize: {
+        width: Math.round(paperMm * 1000),
+        height: Math.round(heightMm * 1000),
+      },
+    });
+    return Boolean(pdf && pdf.length > 6000);
+  } catch {
+    return false;
+  }
+}
+
+async function loadReceiptHtmlInWindow(printWin, bodyHtml) {
+  const fullDoc = buildThermalReceiptDocument(bodyHtml);
+  if (IS_WIN) {
+    const tmpPath = path.join(
+      os.tmpdir(),
+      `aurent-receipt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.html`
+    );
+    fs.writeFileSync(tmpPath, fullDoc, 'utf8');
+    try {
+      await printWin.loadFile(tmpPath);
+    } finally {
+      fs.unlink(tmpPath, () => {});
+    }
+    return;
+  }
+  const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(fullDoc)}`;
+  await printWin.loadURL(dataUrl);
+}
+
 function runSilentReceiptPrint(webContents, options = {}) {
   const requested = options.deviceName ? String(options.deviceName) : '';
   const printers = options.printers || [];
+  const dims = options.dims || null;
+  if (dims) {
+    return runSilentPrint(webContents, dims, { deviceName: requested, printers });
+  }
   const attempts = winPrintAttempts(requested, printers);
   const printerLabel = requested || 'принтер по умолчанию';
 
@@ -309,6 +376,7 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
   const widthPx = paperWidthPx(paperMm);
   const deviceName = options.deviceName || '';
   const printers = options.printers || [];
+  const useDialog = Boolean(options.useDialog);
   const printWin = createReceiptPrintWindow({
     width: widthPx,
     height: 1600,
@@ -319,24 +387,39 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
     },
   });
   printWin.webContents.setZoomFactor(1);
-  const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(buildThermalReceiptDocument(bodyHtml))}`;
 
   try {
-    await printWin.loadURL(dataUrl);
+    await loadReceiptHtmlInWindow(printWin, bodyHtml);
     await ensureWindowPainted(printWin);
     await waitForImages(printWin.webContents);
-    await new Promise((r) => setTimeout(r, IS_WIN ? 600 : 250));
+    await new Promise((r) => setTimeout(r, IS_WIN ? 1200 : 300));
     await waitForPaintFrames(printWin.webContents);
     const dims = await prepareThermalPrintInPage(printWin.webContents);
-    if (!dims?.textLen || dims.textLen < 80 || dims.contentHeightPx < 120) {
+    if (!dims?.textLen || dims.textLen < 40 || dims.contentHeightPx < 80) {
       throw new Error('Чек пустой — не удалось подготовить печать');
     }
-    const heightPx = Math.min(5000, Math.max(900, Math.ceil(dims.contentHeightPx * 1.2)));
+    const heightPx = Math.min(5000, Math.max(400, Math.ceil(dims.contentHeightPx + 80)));
+    printWin.setSize(widthPx, heightPx);
     showWindowForPrint(printWin, widthPx, heightPx);
     await waitForPaintFrames(printWin.webContents);
-    await new Promise((r) => setTimeout(r, IS_WIN ? 500 : 150));
-    await runSilentReceiptPrint(printWin.webContents, { deviceName, printers });
-    await new Promise((r) => setTimeout(r, IS_WIN ? 500 : 150));
+    await new Promise((r) => setTimeout(r, IS_WIN ? 800 : 200));
+
+    if (useDialog) {
+      await runDialogReceiptPrint(printWin.webContents, deviceName);
+      return { mode: 'dialog' };
+    }
+
+    if (IS_WIN) {
+      const rendered = await verifyReceiptPdf(printWin.webContents, dims);
+      if (!rendered) {
+        await runDialogReceiptPrint(printWin.webContents, deviceName);
+        return { mode: 'dialog' };
+      }
+    }
+
+    await runSilentPrint(printWin.webContents, dims, { deviceName, printers });
+    await new Promise((r) => setTimeout(r, IS_WIN ? 600 : 150));
+    return { mode: 'silent' };
   } finally {
     await cleanupThermalPrintInPage(printWin.webContents);
     if (!printWin.isDestroyed()) {
@@ -362,8 +445,8 @@ function createReceiptPrintWindow({ width, height, webPreferences }) {
   });
 
   if (IS_WIN) {
-    win.setPosition(-3200, 0);
-    win.setOpacity(0.01);
+    win.setPosition(80, 80);
+    win.setOpacity(1);
   }
 
   return win;
@@ -419,9 +502,12 @@ module.exports = {
   cleanupThermalPrintInPage,
   runSilentPrint,
   runSilentReceiptPrint,
+  runDialogReceiptPrint,
   runSilentLabelPrint,
   buildThermalReceiptDocument,
   printHtmlInHiddenWindow,
+  loadReceiptHtmlInWindow,
+  verifyReceiptPdf,
   showWindowForPrint,
   createReceiptPrintWindow,
   ensureWindowPainted,

@@ -44,14 +44,14 @@ test('buildThermalReceiptDocument включает текст чека и скр
   assert.ok(doc.includes('20mm'), 'должен быть запас под отрез');
 });
 
-test('buildSilentPrintOpts без pageSize — для POS-80 на Windows', () => {
+test('buildSilentPrintOpts без pageSize — запасной вариант Windows', () => {
   const opts = buildSilentPrintOpts('POS-80 (copy 2)', { paperMm: 80, heightMm: 200 }, false);
   assert.strictEqual(opts.silent, true);
   assert.strictEqual(opts.deviceName, 'POS-80 (copy 2)');
-  assert.strictEqual(opts.pageSize, undefined, 'pageSize не задаём — драйвер сам');
+  assert.strictEqual(opts.pageSize, undefined);
 });
 
-test('buildSilentPrintOpts с pageSize — запасной вариант', () => {
+test('buildSilentPrintOpts с pageSize — основной вариант Windows', () => {
   const opts = buildSilentPrintOpts('POS-80', { paperMm: 80, heightMm: 150 }, true);
   assert.ok(opts.pageSize);
   assert.strictEqual(opts.pageSize.width, 80000);

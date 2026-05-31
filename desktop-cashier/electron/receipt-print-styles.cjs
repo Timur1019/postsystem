@@ -47,6 +47,13 @@ body {
 .receipt-footer { font-size: 12px; text-align: center; margin: 4px 0; }
 .receipt-logo { display: block; margin: 0 auto 4px; max-height: 32mm; max-width: 100%; object-fit: contain; }
 #receipt-print-area::after { content: ''; display: block; height: 20mm; min-height: 20mm; }
+@media print {
+  html, body { margin: 0 !important; padding: 0 !important; height: auto !important; background: #fff !important; }
+  #receipt-print-area, .receipt-print-root {
+    width: 72mm !important; max-width: 72mm !important;
+    overflow: visible !important; page-break-inside: avoid;
+  }
+}
 `;
 
 module.exports = { RECEIPT_PRINT_CSS };

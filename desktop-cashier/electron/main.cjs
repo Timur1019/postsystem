@@ -510,7 +510,7 @@ async function printReceiptInHiddenWindow(receiptNumber) {
       showWindowForPrint(printWin, paperWidthPx(paperMm), Math.min(5000, Math.max(900, Math.ceil(dims.contentHeightPx * 1.2))));
       await waitForPaintFrames(printWin.webContents);
       await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 120));
-      await runSilentReceiptPrint(printWin.webContents, { deviceName, printers });
+      await runSilentReceiptPrint(printWin.webContents, { deviceName, printers, dims });
       await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 600 : 200));
       await cleanupThermalPrintInPage(printWin.webContents);
       if (!printWin.isDestroyed()) {
@@ -528,7 +528,7 @@ async function printReceiptInHiddenWindow(receiptNumber) {
   throw lastErr || new Error('Печать чека не выполнена');
 }
 
-async function printReceiptSaleInHiddenWindow(payload) {
+async function printReceiptSaleInHiddenWindow(payload, options = {}) {
   const sale = payload && typeof payload === 'object' ? { ...payload } : null;
   if (!sale?.receiptNumber) {
     throw new Error('Некорректные данные чека');
@@ -544,11 +544,26 @@ async function printReceiptSaleInHiddenWindow(payload) {
   const printers = await listSystemPrinters();
   const mainSession =
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
-  await printHtmlInHiddenWindow(bodyHtml, {
-    deviceName,
-    printers,
-    session: mainSession,
-  });
+
+  try {
+    const result = await printHtmlInHiddenWindow(bodyHtml, {
+      deviceName,
+      printers,
+      session: mainSession,
+      useDialog: Boolean(options.useDialog),
+    });
+    return result;
+  } catch (err) {
+    if (process.platform === 'win32' && !options.useDialog) {
+      return printHtmlInHiddenWindow(bodyHtml, {
+        deviceName,
+        printers,
+        session: mainSession,
+        useDialog: true,
+      });
+    }
+    throw err;
+  }
 }
 
 async function printReceiptHtmlInHiddenWindow(bodyHtml) {
@@ -643,7 +658,9 @@ async function printTestReceiptInHiddenWindow() {
       .then(() => waitForImages(printWin.webContents))
       .then(() => new Promise((r) => setTimeout(r, 200)))
       .then(() => prepareThermalPrintInPage(printWin.webContents))
-      .then((dims) => runSilentReceiptPrint(printWin.webContents, { deviceName, printers }))
+      .then((dims) =>
+        runSilentReceiptPrint(printWin.webContents, { deviceName, printers, dims })
+      )
       .then(() => {
         cleanup();
       })
@@ -667,8 +684,13 @@ ipcMain.handle('print-receipt', async (_event, receiptNumber) => {
 });
 
 ipcMain.handle('print-receipt-sale', async (_event, salePayload) => {
-  await printReceiptSaleInHiddenWindow(salePayload);
-  return { ok: true };
+  const result = await printReceiptSaleInHiddenWindow(salePayload);
+  return { ok: true, ...(result || {}) };
+});
+
+ipcMain.handle('print-receipt-sale-dialog', async (_event, salePayload) => {
+  await printReceiptSaleInHiddenWindow(salePayload, { useDialog: true });
+  return { ok: true, dialog: true };
 });
 
 ipcMain.handle('print-receipt-html', async (_event, bodyHtml) => {
