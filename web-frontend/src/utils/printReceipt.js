@@ -3,7 +3,15 @@ import {
   printWithHtmlClass,
   PRINT_THERMAL_CLASS,
   PRINT_THERMAL_MODAL_CLASS,
+  ELECTRON_SILENT_PRINT_CLASS,
 } from './printWithHtmlClass';
+
+/** Классы, которые Electron вешает на <html> при тихой печати — снимаем, иначе белый экран. */
+const DESKTOP_PRINT_HTML_CLASSES = [
+  PRINT_THERMAL_CLASS,
+  PRINT_THERMAL_MODAL_CLASS,
+  ELECTRON_SILENT_PRINT_CLASS,
+];
 
 /** Десктоп-оболочка Electron (не веб-браузер). */
 export function isDesktopCashier() {
@@ -15,6 +23,12 @@ export function isDesktopSilentPrintAvailable() {
   return (
     isDesktopCashier() && typeof window.desktopCashier?.printCurrentPage === 'function'
   );
+}
+
+export function cleanupDesktopPrintState() {
+  if (typeof document === 'undefined') return;
+  DESKTOP_PRINT_HTML_CLASSES.forEach((c) => document.documentElement.classList.remove(c));
+  document.getElementById('pos-print-job-page')?.remove();
 }
 
 function receiptPrintElement() {
@@ -30,17 +44,21 @@ function isOnReceiptPage() {
 
 async function waitForReceiptDomReady() {
   await document.fonts?.ready;
-  for (let i = 0; i < 45; i += 1) {
+  for (let i = 0; i < 50; i += 1) {
     await new Promise((r) => setTimeout(r, 100));
     const area = receiptPrintElement();
     if (!area) continue;
     const textLen = (area.innerText || '').trim().length;
     const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
     const imgsReady = Array.from(document.images).every((img) => img.complete);
-    if (textLen >= 40 && h >= 80 && imgsReady) {
+    if (textLen >= 80 && h >= 120 && imgsReady) {
       return;
     }
   }
+}
+
+function delayAfterSilentPrintMs() {
+  return typeof navigator !== 'undefined' && /Windows/i.test(navigator.userAgent) ? 700 : 200;
 }
 
 /**
@@ -73,10 +91,14 @@ export async function printThermalReceipt({ useModalShell = false } = {}) {
   if (isDesktopSilentPrintAvailable()) {
     try {
       await window.desktopCashier.printCurrentPage();
+      await new Promise((r) => setTimeout(r, delayAfterSilentPrintMs()));
       return 'silent';
     } catch (err) {
       console.warn('[Aurent] silent print failed, opening dialog', err);
+      cleanupDesktopPrintState();
       return printThermalReceiptDialog({ useModalShell });
+    } finally {
+      cleanupDesktopPrintState();
     }
   }
   const classes = useModalShell

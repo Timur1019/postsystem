@@ -81,13 +81,15 @@ html.electron-silent-print.print-thermal-modal body > *:not(.fiscal-print-scene)
   display: none !important;
   visibility: hidden !important;
 }
-html.electron-silent-print.print-thermal-modal .fiscal-print-scene {
+html.electron-silent-print.print-thermal-modal .fiscal-print-scene,
+html.electron-silent-print.print-thermal-modal .thermal-report-print-host {
   display: block !important;
   visibility: visible !important;
   position: static !important;
   left: auto !important;
   top: auto !important;
   opacity: 1 !important;
+  pointer-events: none !important;
   width: var(--print-content-w, 72mm) !important;
   max-width: var(--print-content-w, 72mm) !important;
   margin: 0 auto !important;
@@ -96,6 +98,7 @@ html.electron-silent-print.print-thermal-modal .fiscal-print-scene {
   z-index: auto !important;
 }
 html.electron-silent-print.print-thermal-modal #fiscal-print-shell,
+html.electron-silent-print.print-thermal-modal #fiscal-print-shell #receipt-print-area,
 html.electron-silent-print.print-thermal-modal #fiscal-print-shell * {
   color: #000 !important;
   opacity: 1 !important;

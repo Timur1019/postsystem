@@ -32,9 +32,17 @@ export default function ThermalReportPrintPortal({
       await document.fonts?.ready;
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       let shell = null;
-      for (let i = 0; i < 40 && !cancelled; i += 1) {
+      for (let i = 0; i < 50 && !cancelled; i += 1) {
         shell = document.getElementById('fiscal-print-shell');
-        if (shell && shell.scrollHeight >= 8) break;
+        const area =
+          document.getElementById('receipt-print-area') ||
+          shell;
+        const textLen = area ? (area.innerText || '').trim().length : 0;
+        const h = area
+          ? Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height)
+          : 0;
+        const imgsReady = Array.from(document.images).every((img) => img.complete);
+        if (shell && textLen >= 80 && h >= 120 && imgsReady) break;
         await new Promise((r) => setTimeout(r, 100));
       }
       if (cancelled) return;
@@ -50,6 +58,8 @@ export default function ThermalReportPrintPortal({
           : await printThermalReport();
         if (mode === 'dialog') {
           await waitForPrintDialogClose();
+        } else if (mode === 'silent') {
+          await new Promise((r) => setTimeout(r, 400));
         }
         if (!cancelled) {
           onPrintedRef.current?.();

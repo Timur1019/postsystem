@@ -103,6 +103,22 @@ function waitForWindowReady(win, timeoutMs = 20000) {
   });
 }
 
+function cleanupThermalPrintInPage(webContents) {
+  if (!webContents || webContents.isDestroyed()) {
+    return Promise.resolve();
+  }
+  return webContents
+    .executeJavaScript(`
+    (() => {
+      ['print-thermal-only', 'electron-silent-print', 'print-thermal-modal'].forEach((c) => {
+        document.documentElement.classList.remove(c);
+      });
+      document.getElementById('pos-print-job-page')?.remove();
+    })()
+  `)
+    .catch(() => {});
+}
+
 function prepareThermalPrintInPage(webContents, extraClasses = []) {
   const classes = ['print-thermal-only', 'electron-silent-print', ...extraClasses];
   const classList = classes.map((c) => `'${c}'`).join(', ');
@@ -301,6 +317,7 @@ module.exports = {
   waitForPaintFrames,
   waitForImages,
   prepareThermalPrintInPage,
+  cleanupThermalPrintInPage,
   runSilentPrint,
   runSilentLabelPrint,
   createReceiptPrintWindow,

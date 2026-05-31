@@ -16,6 +16,8 @@ const {
   paperWidthPx,
   waitForImages,
   prepareThermalPrintInPage,
+  cleanupThermalPrintInPage,
+  waitForPaintFrames,
   runSilentPrint,
   runSilentLabelPrint,
   createReceiptPrintWindow,
@@ -665,20 +667,29 @@ ipcMain.handle('print-current-page', async (event) => {
   if (!wc || wc.isDestroyed()) {
     throw new Error('Окно печати недоступно');
   }
-  const hasModal = await wc.executeJavaScript(
-    'Boolean(document.getElementById("fiscal-print-shell"))'
-  );
-  const extra = hasModal ? ['print-thermal-modal'] : [];
-  await waitForImages(wc);
-  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 700 : 200));
-  const dims = await prepareThermalPrintInPage(wc, extra);
-  if (!dims?.textLen || dims.contentHeightPx < 20) {
-    throw new Error('Нет содержимого для печати');
+  try {
+    const hasModal = await wc.executeJavaScript(
+      'Boolean(document.getElementById("fiscal-print-shell"))'
+    );
+    const extra = hasModal ? ['print-thermal-modal'] : [];
+    await waitForImages(wc);
+    await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 900 : 250));
+    const dims = await prepareThermalPrintInPage(wc, extra);
+    const minText = hasModal ? 80 : 40;
+    const minPx = hasModal ? 120 : 80;
+    if (!dims?.textLen || dims.textLen < minText || dims.contentHeightPx < minPx) {
+      throw new Error('Чек не успел подготовиться для печати');
+    }
+    await waitForPaintFrames(wc);
+    await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 450 : 150));
+    const deviceName = await resolveReceiptPrinterName();
+    const printers = await listSystemPrinters();
+    await runSilentPrint(wc, dims, { deviceName, printers });
+    await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 500 : 150));
+    return { ok: true };
+  } finally {
+    await cleanupThermalPrintInPage(wc);
   }
-  const deviceName = await resolveReceiptPrinterName();
-  const printers = await listSystemPrinters();
-  await runSilentPrint(wc, dims, { deviceName, printers });
-  return { ok: true };
 });
 
 function createWindow() {
