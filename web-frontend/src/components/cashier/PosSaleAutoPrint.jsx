@@ -1,57 +1,34 @@
 /**
  * Автопечать после продажи на десктопе.
- * 1. Чек из ответа API → DOM
- * 2. printReceiptHtml → скрытое окно → silent print
- * 3. printReceipt(номер) — запасной путь
- * 4. window.print — диалог Windows
+ * Чек собирается в Electron из JSON продажи (полные стили, без Tailwind).
+ * Запасной путь — window.print (диалог Windows).
  */
 import { useLayoutEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
 import { printThermalReceiptDialog } from '../../utils/printReceipt';
-import { syncPrintCssVars } from '../../utils/syncPrintCssVars';
-import { usePrintSettingsStore } from '../../store/printSettingsStore';
+import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 
-async function waitForReceiptInDom() {
-  await document.fonts?.ready;
-  for (let i = 0; i < 60; i += 1) {
-    await new Promise((r) => setTimeout(r, 100));
-    const area = document.getElementById('receipt-print-area');
-    if (!area) continue;
-    const textLen = (area.innerText || '').trim().length;
-    const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
-    const imgs = Array.from(area.querySelectorAll('img'));
-    const imgsReady =
-      imgs.length === 0 || imgs.every((img) => img.complete && img.naturalWidth > 0);
-    if (textLen >= 80 && h >= 120 && imgsReady) {
-      return { area, textLen };
+async function waitForQrInDom(maxMs = 6000) {
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    const img = document.querySelector('#receipt-print-area .receipt-qr');
+    if (img && img.complete && img.naturalWidth > 0 && img.src) {
+      return img.src;
     }
+    if (!document.querySelector('#receipt-print-area')) {
+      await new Promise((r) => setTimeout(r, 80));
+      continue;
+    }
+    const imgs = document.querySelectorAll('#receipt-print-area img');
+    if (imgs.length === 0) {
+      return null;
+    }
+    await new Promise((r) => setTimeout(r, 100));
   }
-  const area = document.getElementById('receipt-print-area');
-  const textLen = area ? (area.innerText || '').trim().length : 0;
-  return { area, textLen };
-}
-
-async function trySilentPrintAfterSale(sale, html, textLen) {
-  const num = sale?.receiptNumber != null ? String(sale.receiptNumber).trim() : '';
-
-  if (
-    html.length >= 40 &&
-    textLen >= 80 &&
-    typeof window.desktopCashier?.printReceiptHtml === 'function'
-  ) {
-    await window.desktopCashier.printReceiptHtml(html);
-    return true;
-  }
-
-  if (num && typeof window.desktopCashier?.printReceipt === 'function') {
-    await window.desktopCashier.printReceipt(num);
-    return true;
-  }
-
-  return false;
+  const img = document.querySelector('#receipt-print-area .receipt-qr');
+  return img?.src || null;
 }
 
 export default function PosSaleAutoPrint({ sale, onDone }) {
@@ -63,28 +40,33 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     if (!sale?.receiptNumber) return undefined;
 
     let cancelled = false;
-    syncPrintCssVars(usePrintSettingsStore.getState());
-
     const finish = () => {
       if (!cancelled) onDoneRef.current?.();
     };
 
     const run = async () => {
-      const { area, textLen } = await waitForReceiptInDom();
+      const qrDataUrl = await waitForQrInDom();
       if (cancelled) return;
 
-      const html = area?.outerHTML?.trim() || '';
+      const td = useTenantDisplayStore.getState();
+      const payload = {
+        ...sale,
+        qrDataUrl,
+        _branding: {
+          companyName: td.receiptCompanyName || sale.storeName || undefined,
+          companyAddress: td.receiptCompanyAddress || undefined,
+          stir: td.receiptStir || undefined,
+          logoDataUrl: td.receiptLogoDataUrl || undefined,
+        },
+      };
 
-      if (typeof window.desktopCashier?.printReceiptHtml === 'function' ||
-          typeof window.desktopCashier?.printReceipt === 'function') {
+      if (typeof window.desktopCashier?.printReceiptSale === 'function') {
         try {
-          const ok = await trySilentPrintAfterSale(sale, html, textLen);
-          if (ok) {
-            finish();
-            return;
-          }
+          await window.desktopCashier.printReceiptSale(payload);
+          finish();
+          return;
         } catch (err) {
-          console.warn('[Aurent] silent print after sale failed', err);
+          console.warn('[Aurent] printReceiptSale failed', err);
         }
       }
 
@@ -109,15 +91,11 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
 
   if (!sale) return null;
 
-  const host = (
-    <div className="fiscal-print-scene thermal-report-print-host" aria-hidden>
+  return (
+    <div className="fiscal-print-scene thermal-report-print-host" aria-hidden style={{ position: 'fixed', left: -10000, top: 0 }}>
       <div id="fiscal-print-shell">
-        <div className="receipt-print-root bg-white text-black">
-          <FiscalReceiptBody sale={sale} />
-        </div>
+        <FiscalReceiptBody sale={sale} />
       </div>
     </div>
   );
-
-  return createPortal(host, document.body);
 }

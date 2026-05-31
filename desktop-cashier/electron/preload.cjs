@@ -2,6 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('desktopCashier', {
   isDesktop: true,
+  /** Тихая печать из JSON продажи (после checkout, без загрузки URL). */
+  printReceiptSale: (sale) => ipcRenderer.invoke('print-receipt-sale', sale),
   /** Тихая печать по номеру чека (скрытое окно /receipt). */
   printReceipt: (receiptNumber) => ipcRenderer.invoke('print-receipt', receiptNumber),
   /** Тихая печать готового HTML чека (скрытое окно). */

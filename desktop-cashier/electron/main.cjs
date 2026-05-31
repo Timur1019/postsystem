@@ -13,6 +13,7 @@ const { startEmbeddedUi, stopEmbeddedUi } = require('./embedded-server.cjs');
 const { showSetupWindow, configPath } = require('./setup-window.cjs');
 const { showPrinterPickerWindow } = require('./printer-picker-window.cjs');
 const { matchPrinterName } = require('./printer-match.cjs');
+const { buildReceiptBodyHtml } = require('./receipt-html-builder.cjs');
 const {
   paperWidthPx,
   waitForImages,
@@ -20,10 +21,12 @@ const {
   cleanupThermalPrintInPage,
   waitForPaintFrames,
   runSilentPrint,
+  runSilentReceiptPrint,
   runSilentLabelPrint,
   createReceiptPrintWindow,
   ensureWindowPainted,
   printHtmlInHiddenWindow,
+  showWindowForPrint,
 } = require('./print-thermal.cjs');
 const { setupAutoUpdater, checkForUpdatesNow } = require('./auto-update.cjs');
 
@@ -504,7 +507,10 @@ async function printReceiptInHiddenWindow(receiptNumber) {
       }
       await waitForPaintFrames(printWin.webContents);
       await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 120));
-      await runSilentPrint(printWin.webContents, dims, { deviceName, printers });
+      showWindowForPrint(printWin, paperWidthPx(paperMm), Math.min(5000, Math.max(900, Math.ceil(dims.contentHeightPx * 1.2))));
+      await waitForPaintFrames(printWin.webContents);
+      await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 120));
+      await runSilentReceiptPrint(printWin.webContents, { deviceName, printers });
       await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 600 : 200));
       await cleanupThermalPrintInPage(printWin.webContents);
       if (!printWin.isDestroyed()) {
@@ -520,6 +526,29 @@ async function printReceiptInHiddenWindow(receiptNumber) {
     }
   }
   throw lastErr || new Error('Печать чека не выполнена');
+}
+
+async function printReceiptSaleInHiddenWindow(payload) {
+  const sale = payload && typeof payload === 'object' ? { ...payload } : null;
+  if (!sale?.receiptNumber) {
+    throw new Error('Некорректные данные чека');
+  }
+  const branding = sale._branding || {};
+  delete sale._branding;
+  const bodyHtml = buildReceiptBodyHtml(sale, branding);
+  const plainLen = bodyHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length;
+  if (plainLen < 40) {
+    throw new Error('Чек без текста для печати');
+  }
+  const deviceName = await resolveReceiptPrinterName({ promptIfMissing: false });
+  const printers = await listSystemPrinters();
+  const mainSession =
+    mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
+  await printHtmlInHiddenWindow(bodyHtml, {
+    deviceName,
+    printers,
+    session: mainSession,
+  });
 }
 
 async function printReceiptHtmlInHiddenWindow(bodyHtml) {
@@ -614,7 +643,7 @@ async function printTestReceiptInHiddenWindow() {
       .then(() => waitForImages(printWin.webContents))
       .then(() => new Promise((r) => setTimeout(r, 200)))
       .then(() => prepareThermalPrintInPage(printWin.webContents))
-      .then((dims) => runSilentPrint(printWin.webContents, dims, { deviceName, printers }))
+      .then((dims) => runSilentReceiptPrint(printWin.webContents, { deviceName, printers }))
       .then(() => {
         cleanup();
       })
@@ -634,6 +663,11 @@ ipcMain.handle('print-receipt', async (_event, receiptNumber) => {
     throw new Error('Недопустимый URL чека');
   }
   await printReceiptInHiddenWindow(receiptNumber);
+  return { ok: true };
+});
+
+ipcMain.handle('print-receipt-sale', async (_event, salePayload) => {
+  await printReceiptSaleInHiddenWindow(salePayload);
   return { ok: true };
 });
 

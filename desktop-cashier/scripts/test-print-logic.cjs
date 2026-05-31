@@ -6,6 +6,11 @@
 const assert = require('assert');
 const {
   buildThermalReceiptDocument,
+  buildReceiptBodyHtml,
+  fmtMoney,
+  buildFiscalSign,
+} = require('../electron/receipt-html-builder.cjs');
+const {
   buildSilentPrintOpts,
   winPrintAttempts,
   paperWidthPx,
@@ -81,14 +86,26 @@ test('matchPrinterName: точное совпадение', () => {
   assert.strictEqual(matchPrinterName('POS-80 (copy 2)', printers), 'POS-80 (copy 2)');
 });
 
-test('buildThermalReceiptDocument: фискальный HTML с QR data URL', () => {
-  const body =
-    '<div id="receipt-print-area"><p class="receipt-title">MAGAZIN</p>' +
-    '<p>Chek №1001</p><img class="receipt-qr" src="data:image/png;base64,abc" alt="" /></div>';
-  const doc = buildThermalReceiptDocument(body);
-  assert.ok(doc.includes('MAGAZIN'));
-  assert.ok(doc.includes('data:image/png;base64,abc'));
-  assert.ok(doc.includes('receipt-qr'));
+test('buildReceiptBodyHtml: полный чек из JSON продажи', () => {
+  const sale = {
+    id: 'abc',
+    receiptNumber: '1001',
+    cashierName: 'Ali',
+    storeName: 'Shop',
+    createdAt: '2026-05-31T12:00:00.000Z',
+    totalAmount: 50000,
+    taxTotal: 5357.14,
+    discountTotal: 0,
+    paymentMethod: 'CASH',
+    amountTendered: 50000,
+    changeGiven: 0,
+    items: [{ productName: 'Test', quantity: 1, lineTotal: 50000 }],
+  };
+  const html = buildReceiptBodyHtml(sale, { companyName: 'AURENT TEST' });
+  assert.ok(html.includes('1001'));
+  assert.ok(html.includes('Test'));
+  assert.ok(html.includes('50 000.00'));
+  assert.ok(html.includes('receipt-items-table__row'));
 });
 
 test('paperWidthPx для 80mm >= 280px', () => {

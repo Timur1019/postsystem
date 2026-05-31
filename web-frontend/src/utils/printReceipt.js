@@ -22,7 +22,8 @@ export function isDesktopCashier() {
 export function isDesktopSilentPrintAvailable() {
   return (
     isDesktopCashier() &&
-    (typeof window.desktopCashier?.printReceipt === 'function' ||
+    (typeof window.desktopCashier?.printReceiptSale === 'function' ||
+      typeof window.desktopCashier?.printReceipt === 'function' ||
       typeof window.desktopCashier?.printReceiptHtml === 'function')
   );
 }
