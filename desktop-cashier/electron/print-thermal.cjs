@@ -64,6 +64,14 @@ function waitForImages(webContents) {
   `);
 }
 
+function waitForPaintFrames(webContents) {
+  return webContents.executeJavaScript(`
+    new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    })
+  `);
+}
+
 function buildStandardSilentPrintOpts(deviceName) {
   const opts = {
     silent: true,
@@ -76,6 +84,18 @@ function buildStandardSilentPrintOpts(deviceName) {
     opts.deviceName = name;
     opts.usePrinterDefaultPageSize = true;
   }
+  return opts;
+}
+
+function buildSizedSilentPrintOpts(deviceName, dims) {
+  const opts = buildStandardSilentPrintOpts(deviceName);
+  const paperMm = dims?.paperMm || 80;
+  const heightMm = Math.max(dims?.heightMm || 200, 120);
+  opts.pageSize = {
+    width: Math.round(paperMm * 1000),
+    height: Math.round(heightMm * 1000),
+  };
+  delete opts.usePrinterDefaultPageSize;
   return opts;
 }
 
@@ -95,25 +115,54 @@ function winPrintAttempts(requestedName, printers, platformIsWin = IS_WIN) {
   return [...new Set(attempts)];
 }
 
+const MEASURE_RECEIPT_DIMS_JS = `
+(() => {
+  const roots = ['#pos-sale-print-shell', '#fiscal-print-shell'];
+  for (const sel of roots) {
+    const root = document.querySelector(sel);
+    if (!root) continue;
+    const area = root.querySelector('#receipt-print-area') || root.querySelector('.receipt-print-root') || root;
+    const textLen = (area.innerText || '').trim().length;
+    const contentPx = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
+    if (textLen < 40 || contentPx < 80) continue;
+    const paperRaw = getComputedStyle(document.documentElement).getPropertyValue('--print-paper-w-mm').trim();
+    const paperMm = parseFloat(paperRaw) || 80;
+    const pxPerMm = 96 / 25.4;
+    const heightMm = Math.max(120, Math.ceil(contentPx / pxPerMm) + 24);
+    return { paperMm, heightMm, textLen, contentPx };
+  }
+  return null;
+})()
+`;
+
 /**
- * Тихая автопечать чека из #fiscal-print-shell (классы print-* на <html> уже с фронта).
+ * Тихая автопечать: классы print-* на <html>, чек уже на экране (превью POS).
  */
 async function runSilentReceiptAutoPrint(webContents, options = {}) {
   const deviceName = options.deviceName ? String(options.deviceName) : '';
   const printers = options.printers || [];
+  const dims = options.dims || null;
   const attempts = winPrintAttempts(deviceName, printers);
   const printerLabel = deviceName || 'принтер по умолчанию';
+
+  const strategies = [buildStandardSilentPrintOpts];
+  if (dims?.heightMm && IS_WIN) {
+    strategies.push((name) => buildSizedSilentPrintOpts(name, dims));
+  }
+
   let lastErr;
   for (const name of attempts) {
-    try {
-      const opts = buildStandardSilentPrintOpts(name);
-      const result = await invokeWebContentsPrint(webContents, opts);
-      if (result.callbackTimeout) {
-        console.warn('[Aurent print] auto receipt — задание в очереди Windows');
+    for (const buildOpts of strategies) {
+      try {
+        const opts = buildOpts(name);
+        const result = await invokeWebContentsPrint(webContents, opts);
+        if (result.callbackTimeout) {
+          console.warn('[Aurent print] auto receipt — задание в очереди Windows');
+        }
+        return { mode: 'silent', deviceName: name || deviceName || '' };
+      } catch (err) {
+        lastErr = err;
       }
-      return { mode: 'silent', deviceName: name || deviceName || '' };
-    } catch (err) {
-      lastErr = err;
     }
   }
   const detail = lastErr?.message || 'Печать не выполнена';
@@ -149,8 +198,10 @@ module.exports = {
   IS_WIN,
   paperWidthPx,
   waitForImages,
+  waitForPaintFrames,
   runSilentReceiptAutoPrint,
   runSilentLabelPrint,
   buildStandardSilentPrintOpts,
   winPrintAttempts,
+  MEASURE_RECEIPT_DIMS_JS,
 };

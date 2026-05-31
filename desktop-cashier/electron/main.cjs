@@ -15,8 +15,10 @@ const { showPrinterPickerWindow } = require('./printer-picker-window.cjs');
 const { matchPrinterName } = require('./printer-match.cjs');
 const {
   waitForImages,
+  waitForPaintFrames,
   runSilentReceiptAutoPrint,
   runSilentLabelPrint,
+  MEASURE_RECEIPT_DIMS_JS,
 } = require('./print-thermal.cjs');
 const { setupAutoUpdater, checkForUpdatesNow } = require('./auto-update.cjs');
 
@@ -437,24 +439,34 @@ ipcMain.handle('desktop:print-receipt-auto', async (event) => {
   }
   const ready = await wc.executeJavaScript(`
     (() => {
-      const shell = document.getElementById('fiscal-print-shell');
-      const area = shell?.querySelector('#receipt-print-area') || shell;
-      if (!area) return false;
-      const textLen = (area.innerText || '').trim().length;
-      const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
-      const imgs = Array.from(area.querySelectorAll('img'));
-      const imgsReady = imgs.length === 0 || imgs.every((i) => i.complete);
-      return textLen >= 80 && h >= 120 && imgsReady;
+      const roots = ['#pos-sale-print-shell', '#fiscal-print-shell'];
+      for (const sel of roots) {
+        const root = document.querySelector(sel);
+        if (!root) continue;
+        const area = root.querySelector('#receipt-print-area') || root.querySelector('.receipt-print-root') || root;
+        const textLen = (area.innerText || '').trim().length;
+        const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
+        const imgs = Array.from(area.querySelectorAll('img'));
+        const imgsReady = imgs.length === 0 || imgs.every((i) => i.complete);
+        if (textLen >= 80 && h >= 120 && imgsReady) return true;
+      }
+      return false;
     })()
   `);
   if (!ready) {
     throw new Error('Чек не готов для автопечати');
   }
   await waitForImages(wc);
-  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 500 : 200));
+  await waitForPaintFrames(wc);
+  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 900 : 300));
+  const dims = await wc.executeJavaScript(MEASURE_RECEIPT_DIMS_JS);
+  if (!dims?.textLen || dims.textLen < 80) {
+    throw new Error('Чек пустой для автопечати');
+  }
+  await waitForPaintFrames(wc);
   const deviceName = await resolveReceiptPrinterName({ promptIfMissing: false });
   const printers = await listSystemPrinters();
-  const result = await runSilentReceiptAutoPrint(wc, { deviceName, printers });
+  const result = await runSilentReceiptAutoPrint(wc, { deviceName, printers, dims });
   return { ok: true, ...result };
 });
 
