@@ -572,27 +572,25 @@ async function printReceiptSaleInHiddenWindow(payload, options = {}) {
   const mainSession =
     mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.session : undefined;
   const useDialog = resolveReceiptPrintUseDialog(options);
+  const autoPrint = options.autoPrint === true;
+  const printOpts = {
+    deviceName,
+    printers,
+    session: mainSession,
+    useDialog,
+    standaloneReceipt: true,
+    mainWindow,
+    allowDialogFallback: !autoPrint,
+  };
 
   try {
-    const result = await printHtmlInHiddenWindow(bodyHtml, {
-      deviceName,
-      printers,
-      session: mainSession,
-      useDialog,
-      standaloneReceipt: true,
-      mainWindow,
-    });
-    return result;
+    return await printHtmlInHiddenWindow(bodyHtml, printOpts);
   } catch (err) {
     console.warn('[Aurent print] printReceiptSale failed:', err?.message || err);
-    if (!useDialog) {
+    if (!useDialog && !autoPrint) {
       return printHtmlInHiddenWindow(bodyHtml, {
-        deviceName,
-        printers,
-        session: mainSession,
+        ...printOpts,
         useDialog: true,
-        standaloneReceipt: true,
-        mainWindow,
       });
     }
     throw err;

@@ -264,6 +264,8 @@ function buildStandardSilentPrintOpts(deviceName) {
   const name = String(deviceName || '').trim();
   if (name) {
     opts.deviceName = name;
+    /** Размер 80 mm из драйвера POS-80 (документация Electron). */
+    opts.usePrinterDefaultPageSize = true;
   }
   return opts;
 }
@@ -427,18 +429,17 @@ async function runSilentPdfReceiptPrint(pdfBuffer, deviceName, printers) {
 /**
  * Перед печатью: на Windows окно должно быть отрисовано; диалог — поверх fullscreen.
  */
-function preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx, useDialog) {
-  if (useDialog && mainWindow && !mainWindow.isDestroyed() && mainWindow.isFullScreen()) {
+/**
+ * Перед печатью: выход из fullscreen главного окна; окно чека всегда за экраном.
+ */
+function preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx) {
+  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isFullScreen()) {
     mainWindow.setFullScreen(false);
   }
-  showWindowForPrint(printWin, widthPx, heightPx, { visible: useDialog });
-  if (useDialog && printWin && !printWin.isDestroyed()) {
-    printWin.focus();
-    printWin.moveTop();
-  }
+  showWindowForPrint(printWin, widthPx, heightPx, { visible: false });
 }
 
-/** Windows: только HTML silent → диалог (без PDF). */
+/** Windows: скрытое HTML-окно → webContents.print (документация Electron). */
 async function runWindowsReceiptPrint(
   printWin,
   webContents,
@@ -451,26 +452,27 @@ async function runWindowsReceiptPrint(
   const heightPx = Math.min(5000, Math.max(400, Math.ceil((dims?.contentHeightPx || 900) + 80)));
   const mainWindow = options.mainWindow || null;
   const forceDialog = Boolean(options.useDialog);
+  const allowDialogFallback = options.allowDialogFallback !== false;
 
-  const openDialog = async () => {
-    preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx, true);
+  const runSystemPrintDialog = async () => {
+    preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx);
     await waitForPaintFrames(webContents);
-    await new Promise((r) => setTimeout(r, IS_WIN ? 500 : 150));
+    await new Promise((r) => setTimeout(r, IS_WIN ? 400 : 150));
     await runDialogReceiptPrint(webContents, deviceName);
     return { mode: 'dialog' };
   };
 
   if (forceDialog) {
-    return openDialog();
+    return runSystemPrintDialog();
   }
 
-  preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx, false);
+  preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx);
   await waitForPaintFrames(webContents);
   await new Promise((r) => setTimeout(r, IS_WIN ? 500 : 150));
 
   try {
     const result = await runStandardSilentReceiptPrint(webContents, deviceName, printers);
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 300));
     return { mode: 'silent', deviceName: result.deviceName };
   } catch (standardErr) {
     console.warn('[Aurent print] standard silent failed:', standardErr?.message || standardErr);
@@ -478,13 +480,19 @@ async function runWindowsReceiptPrint(
 
   try {
     await runSilentPrint(webContents, dims, { deviceName, printers });
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 300));
     return { mode: 'silent' };
   } catch (silentErr) {
     console.warn('[Aurent print] silent HTML failed:', silentErr?.message || silentErr);
   }
 
-  return openDialog();
+  if (allowDialogFallback) {
+    return runSystemPrintDialog();
+  }
+
+  throw new Error(
+    'Тихая печать не выполнена. Проверьте POS-80 в меню Aurent → «Принтер чека».'
+  );
 }
 
 async function loadReceiptHtmlInWindow(printWin, bodyHtml) {
@@ -638,11 +646,12 @@ async function printHtmlInHiddenWindow(bodyHtml, options = {}) {
     if (IS_WIN) {
       return runWindowsReceiptPrint(printWin, printWin.webContents, dims, deviceName, printers, {
         useDialog,
+        allowDialogFallback: options.allowDialogFallback !== false,
         mainWindow,
       });
     }
 
-    preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx, useDialog);
+    preparePrintWindowForJob(mainWindow, printWin, widthPx, heightPx);
     await waitForPaintFrames(printWin.webContents);
     await new Promise((r) => setTimeout(r, 200));
 
