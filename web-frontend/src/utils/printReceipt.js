@@ -101,18 +101,47 @@ async function waitForPaintSettled() {
   await new Promise((r) => setTimeout(r, 350));
 }
 
+function assertAutoPrintShellReady() {
+  const shell = document.getElementById('fiscal-print-shell');
+  if (!shell) {
+    throw new Error('Чек не найден в окне');
+  }
+  const area =
+    shell.querySelector('#receipt-print-area') || shell.querySelector('.receipt-print-root') || shell;
+  const textLen = (area.innerText || '').trim().length;
+  if (textLen < 80) {
+    throw new Error('Чек не готов для печати');
+  }
+}
+
+function normalizeDesktopPrintError(err) {
+  const raw = err?.message || String(err || '');
+  if (/Script failed to execute/i.test(raw)) {
+    return new Error('Чек исчез из окна во время печати. Повторите продажу или тест из меню Aurent.');
+  }
+  if (/Error invoking remote method/i.test(raw)) {
+    const inner = raw.replace(/^Error invoking remote method[^:]+:\s*/i, '').trim();
+    if (inner && !/Script failed to execute/i.test(inner)) {
+      return new Error(inner);
+    }
+  }
+  return err instanceof Error ? err : new Error(raw || 'Тихая печать не выполнена');
+}
+
 async function invokeDesktopSilentPrint() {
   let lastErr;
   for (let attempt = 1; attempt <= SILENT_PRINT_MAX_ATTEMPTS; attempt += 1) {
     try {
+      assertAutoPrintShellReady();
       await window.desktopCashier.printReceiptAuto();
       return;
     } catch (err) {
-      lastErr = err;
-      console.warn(`[Aurent] silent print attempt ${attempt}/${SILENT_PRINT_MAX_ATTEMPTS}`, err);
+      lastErr = normalizeDesktopPrintError(err);
+      console.warn(`[Aurent] silent print attempt ${attempt}/${SILENT_PRINT_MAX_ATTEMPTS}`, lastErr);
       if (attempt < SILENT_PRINT_MAX_ATTEMPTS) {
+        await waitForReceiptDomReady({ useModalShell: true }).catch(() => undefined);
         await waitForPaintSettled();
-        await new Promise((r) => setTimeout(r, 400 * attempt));
+        await new Promise((r) => setTimeout(r, 350 * attempt));
       }
     }
   }
@@ -163,7 +192,7 @@ export async function printThermalReceiptAuto() {
   try {
     await waitForReceiptDomReady({ useModalShell: true });
     await waitForPaintSettled();
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 400));
     await invokeDesktopSilentPrint();
     return 'silent';
   } finally {

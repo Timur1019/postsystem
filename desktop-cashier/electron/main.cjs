@@ -476,9 +476,23 @@ const RECEIPT_READY_JS = `
   })()
 `;
 
-async function waitReceiptReadyForAutoPrint(wc, attempts = 6) {
+async function safeExecuteJavaScript(wc, script, stepLabel) {
+  try {
+    return await wc.executeJavaScript(script);
+  } catch (err) {
+    const detail = err?.message || String(err);
+    if (/Script failed to execute/i.test(detail)) {
+      throw new Error(
+        `Чек не найден в окне (${stepLabel}). Повторите продажу или тест: Aurent → «Принтер чека».`
+      );
+    }
+    throw err;
+  }
+}
+
+async function waitReceiptReadyForAutoPrint(wc, attempts = 10) {
   for (let i = 0; i < attempts; i += 1) {
-    const ready = await wc.executeJavaScript(RECEIPT_READY_JS);
+    const ready = await safeExecuteJavaScript(wc, RECEIPT_READY_JS, 'готовность');
     if (ready) return true;
     await new Promise((r) => setTimeout(r, 180 + i * 120));
   }
@@ -497,7 +511,7 @@ ipcMain.handle('desktop:print-receipt-auto', async (event) => {
   await waitForImages(wc);
   await waitForPaintFrames(wc);
   await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 200));
-  const dims = await wc.executeJavaScript(MEASURE_RECEIPT_DIMS_JS);
+  const dims = await safeExecuteJavaScript(wc, MEASURE_RECEIPT_DIMS_JS, 'размер');
   if (!dims?.textLen || dims.textLen < 80) {
     throw new Error('Чек пустой для автопечати');
   }
@@ -506,15 +520,19 @@ ipcMain.handle('desktop:print-receipt-auto', async (event) => {
   const printers = await listSystemPrinters();
   const CAPTURE_CLASS = 'electron-print-capturing';
   try {
-    await wc.executeJavaScript(`
+    await safeExecuteJavaScript(
+      wc,
+      `
       document.documentElement.classList.add('${CAPTURE_CLASS}');
       return new Promise((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(resolve));
       });
-    `);
+    `,
+      'кадр'
+    );
     await waitForPaintFrames(wc);
     await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 280 : 150));
-    const result = await runSilentReceiptAutoPrint(wc, { deviceName, printers });
+    const result = await runSilentReceiptAutoPrint(wc, { deviceName, printers, dims });
     return { ok: true, ...result };
   } finally {
     try {

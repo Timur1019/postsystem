@@ -2,14 +2,21 @@
  * Автопечать после продажи: скрытый чек в DOM + модалка «Печатается чек…».
  */
 import { useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
 import ReceiptPrintingOverlay from './ReceiptPrintingOverlay';
+import {
+  cancelScheduledAutoPrintUnmount,
+  getAutoPrintMountEl,
+  scheduleAutoPrintUnmount,
+  teardownAutoPrintMount,
+} from '../../utils/autoPrintMount';
 import { cleanupDesktopPrintState, isDesktopCashier, printThermalReceiptAuto } from '../../utils/printReceipt';
 
 const QR_WAIT_MS = 2000;
+const STRICT_REMOUNT_UNMOUNT_MS = 280;
 
 async function waitForQrInShell(maxMs = QR_WAIT_MS) {
   const deadline = Date.now() + maxMs;
@@ -27,34 +34,59 @@ async function waitForQrInShell(maxMs = QR_WAIT_MS) {
   return null;
 }
 
+function renderReceiptIntoMount(sale) {
+  const host = getAutoPrintMountEl();
+  host.replaceChildren();
+  const dialog = document.createElement('div');
+  dialog.className = 'fiscal-print-dialog';
+  const shell = document.createElement('div');
+  shell.id = 'fiscal-print-shell';
+  dialog.appendChild(shell);
+  host.appendChild(dialog);
+
+  const root = createRoot(shell);
+  root.render(<FiscalReceiptBody sale={sale} />);
+  return { root, host };
+}
+
 export default function PosSaleAutoPrint({ sale, onDone }) {
   const { t } = useTranslation();
   const onDoneRef = useRef(onDone);
+  const inFlightKeyRef = useRef(null);
   const [showOverlay, setShowOverlay] = useState(true);
   onDoneRef.current = onDone;
 
   useLayoutEffect(() => {
-    if (!sale?.receiptNumber) return undefined;
+    const key = sale?.receiptNumber;
+    if (!key) return undefined;
 
-    let cancelled = false;
+    // React StrictMode: второй mount не трогает DOM и не запускает вторую печать.
+    if (inFlightKeyRef.current === key) {
+      return undefined;
+    }
+    inFlightKeyRef.current = key;
+    cancelScheduledAutoPrintUnmount();
     setShowOverlay(true);
+
+    const { root } = renderReceiptIntoMount(sale);
 
     const run = async () => {
       await waitForQrInShell();
-      if (cancelled) return;
+      if (inFlightKeyRef.current !== key) return;
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-      if (cancelled) return;
+      if (inFlightKeyRef.current !== key) return;
 
       try {
+        cancelScheduledAutoPrintUnmount();
         const mode = await printThermalReceiptAuto();
-        if (!cancelled && (mode === 'silent' || mode === 'dialog')) {
+        if (inFlightKeyRef.current === key && (mode === 'silent' || mode === 'dialog')) {
           toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
             id: 'pos-auto-print',
             duration: 3000,
           });
         }
       } catch (err) {
-        if (!cancelled) {
+        if (inFlightKeyRef.current === key) {
           console.warn('[Aurent] auto print failed', err);
           const msg = err?.message || t('pos.printFailed');
           toast.error(
@@ -65,39 +97,37 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
           );
         }
       } finally {
-        if (!cancelled) {
-          setShowOverlay(false);
-          cleanupDesktopPrintState();
-          onDoneRef.current?.();
+        if (inFlightKeyRef.current !== key) return;
+        inFlightKeyRef.current = null;
+        setShowOverlay(false);
+        cleanupDesktopPrintState();
+        cancelScheduledAutoPrintUnmount();
+        try {
+          root.unmount();
+        } catch {
+          /* ignore */
         }
+        teardownAutoPrintMount();
+        onDoneRef.current?.();
       }
     };
 
     run();
 
     return () => {
-      cancelled = true;
-      setShowOverlay(false);
+      scheduleAutoPrintUnmount(() => {
+        if (inFlightKeyRef.current === key) return;
+        try {
+          root.unmount();
+        } catch {
+          /* ignore */
+        }
+        teardownAutoPrintMount();
+      }, STRICT_REMOUNT_UNMOUNT_MS);
     };
   }, [sale?.receiptNumber, t]);
 
   if (!sale) return null;
 
-  const printPortal = createPortal(
-    <div className="fiscal-print-scene fiscal-print-scene--offscreen pos-sale-print-host" aria-hidden>
-      <div className="fiscal-print-dialog">
-        <div id="fiscal-print-shell">
-          <FiscalReceiptBody sale={sale} />
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-
-  return (
-    <>
-      <ReceiptPrintingOverlay open={showOverlay} />
-      {printPortal}
-    </>
-  );
+  return <ReceiptPrintingOverlay open={showOverlay} />;
 }

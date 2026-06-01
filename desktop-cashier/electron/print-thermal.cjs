@@ -50,17 +50,23 @@ function invokeWebContentsPrint(webContents, opts, timeoutMs = PRINT_CALLBACK_TI
 
 function waitForImages(webContents) {
   return webContents.executeJavaScript(`
-    Promise.all(
-      Array.from(document.images).map(
-        (img) =>
-          img.complete
-            ? Promise.resolve()
-            : new Promise((r) => {
-                img.onload = r;
-                img.onerror = r;
-              })
-      )
-    )
+    (() => {
+      const shell = document.getElementById('fiscal-print-shell');
+      const imgs = shell
+        ? Array.from(shell.querySelectorAll('img'))
+        : Array.from(document.images);
+      return Promise.all(
+        imgs.map(
+          (img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise((r) => {
+                  img.onload = r;
+                  img.onerror = r;
+                })
+        )
+      );
+    })()
   `);
 }
 
