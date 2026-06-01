@@ -1,12 +1,18 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { APP_NAME } from '../config/brand';
+import { tenantDisplayApi } from '../services/api';
 import {
   syncReceiptDisplayCssVars,
   RECEIPT_LOGO_HEIGHT_DEFAULT_MM,
   RECEIPT_LOGO_HEIGHT_MIN_MM,
   RECEIPT_LOGO_HEIGHT_MAX_MM,
 } from '../utils/syncReceiptDisplayCssVars';
+import {
+  applyPrintSettingsFromPayload,
+  printSettingsToPayload,
+  isPrintDirtySuppressed,
+} from '../utils/tenantDisplaySync';
+import { usePrintSettingsStore } from './printSettingsStore';
 
 export {
   RECEIPT_LOGO_HEIGHT_DEFAULT_MM,
@@ -18,11 +24,14 @@ export const SYSTEM_LOGO_SIZE_DEFAULT_PX = 32;
 export const SYSTEM_LOGO_SIZE_MIN_PX = 20;
 export const SYSTEM_LOGO_SIZE_MAX_PX = 96;
 
+const LEGACY_STORAGE_KEY = 'pos-tenant-display';
+
 /** Поля фискального чека (вкл./выкл. в настройках принтера). */
 export const RECEIPT_FIELD_DEFS = [
   { key: 'logo', labelKey: 'tenantSettings.receiptFields.logo' },
   { key: 'companyName', labelKey: 'tenantSettings.receiptFields.companyName' },
   { key: 'companyAddress', labelKey: 'tenantSettings.receiptFields.companyAddress' },
+  { key: 'companyPhone', labelKey: 'tenantSettings.receiptFields.companyPhone' },
   { key: 'stir', labelKey: 'tenantSettings.receiptFields.stir' },
   { key: 'dateTime', labelKey: 'tenantSettings.receiptFields.dateTime' },
   { key: 'receiptNo', labelKey: 'tenantSettings.receiptFields.receiptNo' },
@@ -55,99 +64,252 @@ function defaultFieldMap(defs) {
   return Object.fromEntries(defs.map((d) => [d.key, true]));
 }
 
-export const useTenantDisplayStore = create(
-  persist(
-    (set, get) => ({
-      systemLogoDataUrl: null,
-      systemLogoSizePx: SYSTEM_LOGO_SIZE_DEFAULT_PX,
-      systemAppName: '',
+function emptyDisplayState() {
+  return {
+    systemLogoDataUrl: null,
+    systemLogoSizePx: SYSTEM_LOGO_SIZE_DEFAULT_PX,
+    systemAppName: '',
+    receiptLogoDataUrl: null,
+    receiptLogoMaxHeightMm: RECEIPT_LOGO_HEIGHT_DEFAULT_MM,
+    receiptCompanyName: '',
+    receiptCompanyAddress: '',
+    receiptCompanyPhone: '',
+    receiptStir: '',
+    receiptFields: defaultFieldMap(RECEIPT_FIELD_DEFS),
+    userFormFields: defaultFieldMap(USER_FORM_FIELD_DEFS),
+  };
+}
 
-      receiptLogoDataUrl: null,
-      receiptLogoMaxHeightMm: RECEIPT_LOGO_HEIGHT_DEFAULT_MM,
-      receiptCompanyName: '',
-      receiptCompanyAddress: '',
-      receiptStir: '',
-      receiptFields: defaultFieldMap(RECEIPT_FIELD_DEFS),
-      userFormFields: defaultFieldMap(USER_FORM_FIELD_DEFS),
+function mergeFieldMap(defs, saved) {
+  const base = defaultFieldMap(defs);
+  if (!saved || typeof saved !== 'object') return base;
+  for (const d of defs) {
+    if (typeof saved[d.key] === 'boolean') base[d.key] = saved[d.key];
+  }
+  return base;
+}
 
-      setSystemLogo: (dataUrl) => set({ systemLogoDataUrl: dataUrl || null }),
-      clearSystemLogo: () => set({ systemLogoDataUrl: null }),
-      setSystemLogoSizePx: (px) => {
-        const n = Number(px);
-        const clamped = Number.isFinite(n)
-          ? Math.min(SYSTEM_LOGO_SIZE_MAX_PX, Math.max(SYSTEM_LOGO_SIZE_MIN_PX, Math.round(n)))
-          : SYSTEM_LOGO_SIZE_DEFAULT_PX;
-        set({ systemLogoSizePx: clamped });
+function payloadToDisplay(payload) {
+  const p = payload ?? {};
+  return {
+    systemLogoDataUrl: p.systemLogoDataUrl || null,
+    systemLogoSizePx: clampLogoSize(p.systemLogoSizePx),
+    systemAppName: String(p.systemAppName ?? '').trim(),
+    receiptLogoDataUrl: p.receiptLogoDataUrl || null,
+    receiptLogoMaxHeightMm: clampLogoHeightMm(p.receiptLogoMaxHeightMm),
+    receiptCompanyName: String(p.receiptCompanyName ?? '').trim(),
+    receiptCompanyAddress: String(p.receiptCompanyAddress ?? '').trim(),
+    receiptCompanyPhone: String(p.receiptCompanyPhone ?? '').trim(),
+    receiptStir: String(p.receiptStir ?? '').trim(),
+    receiptFields: mergeFieldMap(RECEIPT_FIELD_DEFS, p.receiptFields),
+    userFormFields: mergeFieldMap(USER_FORM_FIELD_DEFS, p.userFormFields),
+  };
+}
+
+function displayToPayload(display) {
+  const d = display ?? emptyDisplayState();
+  return {
+    systemLogoDataUrl: d.systemLogoDataUrl,
+    systemLogoSizePx: d.systemLogoSizePx,
+    systemAppName: d.systemAppName || null,
+    receiptLogoDataUrl: d.receiptLogoDataUrl,
+    receiptLogoMaxHeightMm: d.receiptLogoMaxHeightMm,
+    receiptCompanyName: d.receiptCompanyName || null,
+    receiptCompanyAddress: d.receiptCompanyAddress || null,
+    receiptCompanyPhone: d.receiptCompanyPhone || null,
+    receiptStir: d.receiptStir || null,
+    receiptFields: d.receiptFields,
+    userFormFields: d.userFormFields,
+    printSettings: printSettingsToPayload(),
+  };
+}
+
+function isPayloadEmpty(payload) {
+  if (!payload || typeof payload !== 'object') return true;
+  const keys = [
+    'systemLogoDataUrl',
+    'systemAppName',
+    'receiptLogoDataUrl',
+    'receiptCompanyName',
+    'receiptCompanyAddress',
+    'receiptCompanyPhone',
+    'receiptStir',
+  ];
+  return !keys.some((k) => {
+    const v = payload[k];
+    return v != null && String(v).trim() !== '';
+  });
+}
+
+function readLegacyLocalStorage() {
+  try {
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state ?? parsed;
+  } catch {
+    return null;
+  }
+}
+
+function readLegacyPrintSettings() {
+  try {
+    const raw = localStorage.getItem('pos-print-settings');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state ?? parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clampLogoSize(px) {
+  const n = Number(px);
+  if (!Number.isFinite(n)) return SYSTEM_LOGO_SIZE_DEFAULT_PX;
+  return Math.min(SYSTEM_LOGO_SIZE_MAX_PX, Math.max(SYSTEM_LOGO_SIZE_MIN_PX, Math.round(n)));
+}
+
+function clampLogoHeightMm(mm) {
+  const n = Number(mm);
+  if (!Number.isFinite(n)) return RECEIPT_LOGO_HEIGHT_DEFAULT_MM;
+  return Math.min(RECEIPT_LOGO_HEIGHT_MAX_MM, Math.max(RECEIPT_LOGO_HEIGHT_MIN_MM, n));
+}
+
+function patchDraft(set, patch) {
+  set((s) => ({
+    draft: { ...s.draft, ...patch },
+    isDirty: true,
+  }));
+}
+
+export const useTenantDisplayStore = create((set, get) => ({
+  committed: emptyDisplayState(),
+  draft: emptyDisplayState(),
+  isDirty: false,
+  isLoading: false,
+  isSaving: false,
+
+  displayAppName: () => {
+    const custom = get().committed.systemAppName;
+    return custom || APP_NAME;
+  },
+
+  isReceiptFieldOn: (key) => get().committed.receiptFields[key] !== false,
+  isUserFormFieldOn: (key) => get().committed.userFormFields[key] !== false,
+
+  setSystemLogo: (dataUrl) => patchDraft(set, { systemLogoDataUrl: dataUrl || null }),
+  clearSystemLogo: () => patchDraft(set, { systemLogoDataUrl: null }),
+  setSystemLogoSizePx: (px) => patchDraft(set, { systemLogoSizePx: clampLogoSize(px) }),
+  setSystemAppName: (name) => patchDraft(set, { systemAppName: String(name ?? '').trim() }),
+
+  setReceiptLogo: (dataUrl) => patchDraft(set, { receiptLogoDataUrl: dataUrl || null }),
+  clearReceiptLogo: () => patchDraft(set, { receiptLogoDataUrl: null }),
+  setReceiptLogoMaxHeightMm: (mm) => {
+    const clamped = clampLogoHeightMm(mm);
+    patchDraft(set, { receiptLogoMaxHeightMm: clamped });
+    queueMicrotask(() => syncReceiptDisplayCssVars({ ...get().draft, receiptLogoMaxHeightMm: clamped }));
+  },
+  setReceiptCompanyName: (v) => patchDraft(set, { receiptCompanyName: String(v ?? '').trim() }),
+  setReceiptCompanyAddress: (v) => patchDraft(set, { receiptCompanyAddress: String(v ?? '').trim() }),
+  setReceiptCompanyPhone: (v) => patchDraft(set, { receiptCompanyPhone: String(v ?? '').trim() }),
+  setReceiptStir: (v) => patchDraft(set, { receiptStir: String(v ?? '').trim() }),
+
+  setReceiptField: (key, enabled) =>
+    set((s) => ({
+      draft: {
+        ...s.draft,
+        receiptFields: { ...s.draft.receiptFields, [key]: !!enabled },
       },
-      setSystemAppName: (name) => set({ systemAppName: String(name ?? '').trim() }),
-
-      setReceiptLogo: (dataUrl) => set({ receiptLogoDataUrl: dataUrl || null }),
-      clearReceiptLogo: () => set({ receiptLogoDataUrl: null }),
-      setReceiptLogoMaxHeightMm: (mm) => {
-        const n = Number(mm);
-        const clamped = Number.isFinite(n)
-          ? Math.min(RECEIPT_LOGO_HEIGHT_MAX_MM, Math.max(RECEIPT_LOGO_HEIGHT_MIN_MM, n))
-          : RECEIPT_LOGO_HEIGHT_DEFAULT_MM;
-        set({ receiptLogoMaxHeightMm: clamped });
-        queueMicrotask(() => syncReceiptDisplayCssVars(get()));
+      isDirty: true,
+    })),
+  setUserFormField: (key, enabled) =>
+    set((s) => ({
+      draft: {
+        ...s.draft,
+        userFormFields: { ...s.draft.userFormFields, [key]: !!enabled },
       },
-      setReceiptCompanyName: (v) => set({ receiptCompanyName: String(v ?? '').trim() }),
-      setReceiptCompanyAddress: (v) => set({ receiptCompanyAddress: String(v ?? '').trim() }),
-      setReceiptStir: (v) => set({ receiptStir: String(v ?? '').trim() }),
+      isDirty: true,
+    })),
 
-      setReceiptField: (key, enabled) =>
-        set((s) => ({
-          receiptFields: { ...s.receiptFields, [key]: !!enabled },
-        })),
-      setUserFormField: (key, enabled) =>
-        set((s) => ({
-          userFormFields: { ...s.userFormFields, [key]: !!enabled },
-        })),
+  resetReceiptFields: () =>
+    patchDraft(set, { receiptFields: defaultFieldMap(RECEIPT_FIELD_DEFS) }),
+  resetUserFormFields: () =>
+    patchDraft(set, { userFormFields: defaultFieldMap(USER_FORM_FIELD_DEFS) }),
 
-      resetReceiptFields: () => set({ receiptFields: defaultFieldMap(RECEIPT_FIELD_DEFS) }),
-      resetUserFormFields: () => set({ userFormFields: defaultFieldMap(USER_FORM_FIELD_DEFS) }),
+  applyDraftToCommitted: () => {
+    const { draft } = get();
+    set({ committed: { ...draft }, isDirty: false });
+    syncReceiptDisplayCssVars(draft);
+  },
 
-      isReceiptFieldOn: (key) => get().receiptFields[key] !== false,
-      isUserFormFieldOn: (key) => get().userFormFields[key] !== false,
+  discardDraft: () => {
+    const { committed } = get();
+    set({ draft: { ...committed }, isDirty: false });
+    syncReceiptDisplayCssVars(committed);
+  },
 
-      displayAppName: () => {
-        const custom = get().systemAppName;
-        return custom || APP_NAME;
-      },
-    }),
-    {
-      name: 'pos-tenant-display',
-      version: 3,
-      migrate: (persisted, version) => {
-        if (!persisted) return persisted;
-        let next = persisted;
-        if (version < 2) {
-          next = { ...next, receiptLogoMaxHeightMm: RECEIPT_LOGO_HEIGHT_DEFAULT_MM };
+  hydrateFromPayload: (payload) => {
+    const display = payloadToDisplay(payload);
+    set({
+      draft: display,
+      committed: display,
+      isDirty: false,
+    });
+    syncReceiptDisplayCssVars(display);
+    applyPrintSettingsFromPayload(payload?.printSettings);
+  },
+
+  fetchFromServer: async () => {
+    if (get().isLoading) return;
+    set({ isLoading: true });
+    try {
+      const { data } = await tenantDisplayApi.get();
+      if (isPayloadEmpty(data)) {
+        const legacy = readLegacyLocalStorage();
+        if (legacy) {
+          const legacyDisplay = payloadToDisplay(legacy);
+          get().hydrateFromPayload({
+            ...displayToPayload(legacyDisplay),
+            printSettings: readLegacyPrintSettings(),
+          });
+          try {
+            await get().saveToServer();
+          } catch {
+            /* migration best-effort */
+          }
+          return;
         }
-        if (version < 3) {
-          next = { ...next, systemLogoSizePx: SYSTEM_LOGO_SIZE_DEFAULT_PX };
-        }
-        return next;
-      },
-      partialize: (s) => ({
-        systemLogoDataUrl: s.systemLogoDataUrl,
-        systemLogoSizePx: s.systemLogoSizePx,
-        systemAppName: s.systemAppName,
-        receiptLogoDataUrl: s.receiptLogoDataUrl,
-        receiptLogoMaxHeightMm: s.receiptLogoMaxHeightMm,
-        receiptCompanyName: s.receiptCompanyName,
-        receiptCompanyAddress: s.receiptCompanyAddress,
-        receiptStir: s.receiptStir,
-        receiptFields: s.receiptFields,
-        userFormFields: s.userFormFields,
-      }),
-      onRehydrateStorage: () => (state) => {
-        if (state) syncReceiptDisplayCssVars(state);
-      },
+      }
+      get().hydrateFromPayload(data);
+    } catch {
+      /* offline / not migrated yet — keep local defaults */
+    } finally {
+      set({ isLoading: false });
     }
-  )
-);
+  },
 
-useTenantDisplayStore.subscribe(() => {
-  syncReceiptDisplayCssVars(useTenantDisplayStore.getState());
+  saveToServer: async () => {
+    if (get().isSaving) return;
+    set({ isSaving: true });
+    try {
+      const body = displayToPayload(get().draft);
+      const { data } = await tenantDisplayApi.save(body);
+      get().hydrateFromPayload(data);
+    } finally {
+      set({ isSaving: false });
+    }
+  },
+}));
+
+useTenantDisplayStore.subscribe((state, prev) => {
+  if (state.committed.receiptLogoMaxHeightMm !== prev.committed.receiptLogoMaxHeightMm) {
+    syncReceiptDisplayCssVars(state.committed);
+  }
+});
+
+usePrintSettingsStore.subscribe(() => {
+  if (isPrintDirtySuppressed()) return;
+  const { isLoading } = useTenantDisplayStore.getState();
+  if (isLoading) return;
+  useTenantDisplayStore.setState({ isDirty: true });
 });

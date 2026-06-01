@@ -47,10 +47,11 @@ function ReceiptDivider() {
 export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-area', className = '' }) {
   const { t } = useTranslation();
   const isOn = useTenantDisplayStore((s) => s.isReceiptFieldOn);
-  const receiptLogoDataUrl = useTenantDisplayStore((s) => s.receiptLogoDataUrl);
-  const customCompanyName = useTenantDisplayStore((s) => s.receiptCompanyName);
-  const customCompanyAddress = useTenantDisplayStore((s) => s.receiptCompanyAddress);
-  const customStir = useTenantDisplayStore((s) => s.receiptStir);
+  const receiptLogoDataUrl = useTenantDisplayStore((s) => s.committed.receiptLogoDataUrl);
+  const customCompanyName = useTenantDisplayStore((s) => s.committed.receiptCompanyName);
+  const customCompanyAddress = useTenantDisplayStore((s) => s.committed.receiptCompanyAddress);
+  const customCompanyPhone = useTenantDisplayStore((s) => s.committed.receiptCompanyPhone);
+  const customStir = useTenantDisplayStore((s) => s.committed.receiptStir);
 
   if (!sale) return null;
 
@@ -63,6 +64,10 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
     customCompanyAddress ||
     import.meta.env.VITE_COMPANY_ADDRESS ||
     t('fiscalReceipt.defaultAddress');
+  const companyPhone =
+    customCompanyPhone ||
+    import.meta.env.VITE_COMPANY_PHONE ||
+    t('fiscalReceipt.defaultPhone');
   const stir =
     customStir || import.meta.env.VITE_COMPANY_STIR || import.meta.env.VITE_STIR || '';
   const fiscalCardId =
@@ -113,6 +118,7 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
     isOn('logo') ||
     isOn('companyName') ||
     isOn('companyAddress') ||
+    (isOn('companyPhone') && companyPhone) ||
     (isOn('stir') && stir);
   const showMeta =
     isOn('dateTime') || isOn('receiptNo') || isOn('employee') || isOn('shift');
@@ -130,8 +136,13 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
           {isOn('companyName') ? (
             <p className="receipt-title break-words">{companyName}</p>
           ) : null}
-          {isOn('companyAddress') ? (
+          {isOn('companyAddress') && companyAddress ? (
             <p className="receipt-subtitle mt-1 whitespace-pre-line break-words">{companyAddress}</p>
+          ) : null}
+          {isOn('companyPhone') && companyPhone ? (
+            <p className="receipt-subtitle mt-1 break-words">
+              {t('fiscalReceipt.phoneLabel')}: {companyPhone}
+            </p>
           ) : null}
           {isOn('stir') && stir ? (
             <p className="receipt-subtitle mt-1">

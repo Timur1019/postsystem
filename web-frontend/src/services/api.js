@@ -312,3 +312,8 @@ export const supplierApi = {
   getAll: (params) => api.get('/suppliers', { params }),
   create: (data) => api.post('/suppliers', data),
 };
+
+export const tenantDisplayApi = {
+  get: () => api.get('/tenant-display-settings'),
+  save: (data) => api.put('/tenant-display-settings', data),
+};

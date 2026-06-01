@@ -31,6 +31,7 @@ services:
       - ./web-backend/src/main/resources/db/migration_manual_tenant_isolation.sql:/docker-entrypoint-initdb.d/19-tenant_isolation.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_company_login_code.sql:/docker-entrypoint-initdb.d/20-company_login_code.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_cashier_pin_login.sql:/docker-entrypoint-initdb.d/21-cashier_pin_login.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_company_tenant_display_settings.sql:/docker-entrypoint-initdb.d/22-company_tenant_display_settings.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pos_user -d pos_db"]
       interval: 5s

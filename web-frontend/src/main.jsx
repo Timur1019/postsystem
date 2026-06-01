@@ -13,13 +13,7 @@ import { syncReceiptDisplayCssVars } from './utils/syncReceiptDisplayCssVars';
 
 syncRootTheme();
 syncPrintCssVars(usePrintSettingsStore.getState());
-syncReceiptDisplayCssVars(useTenantDisplayStore.getState());
-usePrintSettingsStore.persist.onFinishHydration(() => {
-  syncPrintCssVars(usePrintSettingsStore.getState());
-});
-useTenantDisplayStore.persist.onFinishHydration(() => {
-  syncReceiptDisplayCssVars(useTenantDisplayStore.getState());
-});
+syncReceiptDisplayCssVars(useTenantDisplayStore.getState().committed);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

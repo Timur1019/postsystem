@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Printer } from 'lucide-react';
 import ThermalPrintSettingsPanel from '../receipt/ThermalPrintSettingsPanel';
@@ -11,26 +12,34 @@ import {
 } from '../../utils/syncReceiptDisplayCssVars';
 import LogoUploadField from './LogoUploadField';
 import SettingsFieldToggles from './SettingsFieldToggles';
+import TenantSettingsSaveBar from './TenantSettingsSaveBar';
 
 const inputCls =
   'mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
 
 export default function ReceiptPrinterSettingsPanel() {
   const { t } = useTranslation();
-  const receiptLogoDataUrl = useTenantDisplayStore((s) => s.receiptLogoDataUrl);
-  const receiptLogoMaxHeightMm = useTenantDisplayStore((s) => s.receiptLogoMaxHeightMm);
+  const fetchFromServer = useTenantDisplayStore((s) => s.fetchFromServer);
+  const receiptLogoDataUrl = useTenantDisplayStore((s) => s.draft.receiptLogoDataUrl);
+  const receiptLogoMaxHeightMm = useTenantDisplayStore((s) => s.draft.receiptLogoMaxHeightMm);
   const setReceiptLogoMaxHeightMm = useTenantDisplayStore((s) => s.setReceiptLogoMaxHeightMm);
-  const receiptCompanyName = useTenantDisplayStore((s) => s.receiptCompanyName);
-  const receiptCompanyAddress = useTenantDisplayStore((s) => s.receiptCompanyAddress);
-  const receiptStir = useTenantDisplayStore((s) => s.receiptStir);
-  const receiptFields = useTenantDisplayStore((s) => s.receiptFields);
+  const receiptCompanyName = useTenantDisplayStore((s) => s.draft.receiptCompanyName);
+  const receiptCompanyAddress = useTenantDisplayStore((s) => s.draft.receiptCompanyAddress);
+  const receiptCompanyPhone = useTenantDisplayStore((s) => s.draft.receiptCompanyPhone);
+  const receiptStir = useTenantDisplayStore((s) => s.draft.receiptStir);
+  const receiptFields = useTenantDisplayStore((s) => s.draft.receiptFields);
   const setReceiptLogo = useTenantDisplayStore((s) => s.setReceiptLogo);
   const clearReceiptLogo = useTenantDisplayStore((s) => s.clearReceiptLogo);
   const setReceiptCompanyName = useTenantDisplayStore((s) => s.setReceiptCompanyName);
   const setReceiptCompanyAddress = useTenantDisplayStore((s) => s.setReceiptCompanyAddress);
+  const setReceiptCompanyPhone = useTenantDisplayStore((s) => s.setReceiptCompanyPhone);
   const setReceiptStir = useTenantDisplayStore((s) => s.setReceiptStir);
   const setReceiptField = useTenantDisplayStore((s) => s.setReceiptField);
   const resetReceiptFields = useTenantDisplayStore((s) => s.resetReceiptFields);
+
+  useEffect(() => {
+    fetchFromServer();
+  }, [fetchFromServer]);
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -121,6 +130,17 @@ export default function ReceiptPrinterSettingsPanel() {
               placeholder={t('tenantSettings.receiptAddressPh')}
             />
           </div>
+          <div className="md:col-span-2">
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+              {t('tenantSettings.receiptPhone')}
+            </label>
+            <input
+              className={inputCls}
+              value={receiptCompanyPhone}
+              onChange={(e) => setReceiptCompanyPhone(e.target.value)}
+              placeholder={t('tenantSettings.receiptPhonePh')}
+            />
+          </div>
         </div>
 
         <div>
@@ -145,6 +165,8 @@ export default function ReceiptPrinterSettingsPanel() {
         </div>
 
         <ThermalPrintSettingsPanel compact />
+
+        <TenantSettingsSaveBar />
       </div>
     </section>
   );

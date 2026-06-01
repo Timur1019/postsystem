@@ -1,6 +1,5 @@
 // src/store/printSettingsStore.js
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { syncPrintCssVars } from '../utils/syncPrintCssVars';
 
 /**
@@ -22,9 +21,7 @@ function clamp(n, min, max) {
   return Math.min(max, Math.max(min, x));
 }
 
-export const usePrintSettingsStore = create(
-  persist(
-    (set, get) => ({
+export const usePrintSettingsStore = create((set, get) => ({
       ...PRINT_SETTINGS_DEFAULTS,
 
       /** Быстрый выбор: подставляет типичные ширины под 58 / 80 мм */
@@ -78,41 +75,7 @@ export const usePrintSettingsStore = create(
         set({ ...PRINT_SETTINGS_DEFAULTS });
         queueMicrotask(() => syncPrintCssVars(get()));
       },
-    }),
-    {
-      name: 'pos-print-settings',
-      version: 5,
-      migrate: (persisted, version) => {
-        if (!persisted) return persisted;
-        const paper = Number(persisted.paperWidthMm) || 80;
-        if (version < 5) {
-          return {
-            ...persisted,
-            pageMarginMm: 0,
-            padHorizontalMm: paper <= 58 ? 2 : 3,
-            padVerticalMm: paper <= 58 ? 1 : 2,
-            contentWidthMm: paper <= 58 ? 52 : 72,
-            fontSizePx: paper <= 58 ? 11 : 13,
-            lineHeight: paper <= 58 ? 1.4 : 1.5,
-          };
-        }
-        return persisted;
-      },
-      partialize: (s) => ({
-        paperWidthMm: s.paperWidthMm,
-        contentWidthMm: s.contentWidthMm,
-        pageMarginMm: s.pageMarginMm,
-        padHorizontalMm: s.padHorizontalMm,
-        padVerticalMm: s.padVerticalMm,
-        fontSizePx: s.fontSizePx,
-        lineHeight: s.lineHeight,
-      }),
-      onRehydrateStorage: () => (state) => {
-        if (state) syncPrintCssVars(state);
-      },
-    }
-  )
-);
+}));
 
 usePrintSettingsStore.subscribe(() => {
   syncPrintCssVars(usePrintSettingsStore.getState());

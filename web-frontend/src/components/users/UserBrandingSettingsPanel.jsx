@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UserCog } from 'lucide-react';
 import { APP_NAME } from '../../config/brand';
@@ -11,18 +12,20 @@ import LogoUploadField from './LogoUploadField';
 import ReceiptLogoSizeControl from './ReceiptLogoSizeControl';
 import SettingsFieldToggles from './SettingsFieldToggles';
 import BrandMark from '../shared/BrandMark';
+import TenantSettingsSaveBar from './TenantSettingsSaveBar';
 
 const inputCls =
   'mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
 
 export default function UserBrandingSettingsPanel() {
   const { t } = useTranslation();
-  const systemLogoDataUrl = useTenantDisplayStore((s) => s.systemLogoDataUrl);
-  const systemLogoSizePx = useTenantDisplayStore((s) => s.systemLogoSizePx);
-  const systemAppName = useTenantDisplayStore((s) => s.systemAppName);
-  const receiptLogoDataUrl = useTenantDisplayStore((s) => s.receiptLogoDataUrl);
-  const receiptLogoMaxHeightMm = useTenantDisplayStore((s) => s.receiptLogoMaxHeightMm);
-  const userFormFields = useTenantDisplayStore((s) => s.userFormFields);
+  const fetchFromServer = useTenantDisplayStore((s) => s.fetchFromServer);
+  const systemLogoDataUrl = useTenantDisplayStore((s) => s.draft.systemLogoDataUrl);
+  const systemLogoSizePx = useTenantDisplayStore((s) => s.draft.systemLogoSizePx);
+  const systemAppName = useTenantDisplayStore((s) => s.draft.systemAppName);
+  const receiptLogoDataUrl = useTenantDisplayStore((s) => s.draft.receiptLogoDataUrl);
+  const receiptLogoMaxHeightMm = useTenantDisplayStore((s) => s.draft.receiptLogoMaxHeightMm);
+  const userFormFields = useTenantDisplayStore((s) => s.draft.userFormFields);
   const setSystemLogo = useTenantDisplayStore((s) => s.setSystemLogo);
   const clearSystemLogo = useTenantDisplayStore((s) => s.clearSystemLogo);
   const setSystemLogoSizePx = useTenantDisplayStore((s) => s.setSystemLogoSizePx);
@@ -32,7 +35,12 @@ export default function UserBrandingSettingsPanel() {
   const setSystemAppName = useTenantDisplayStore((s) => s.setSystemAppName);
   const setUserFormField = useTenantDisplayStore((s) => s.setUserFormField);
   const resetUserFormFields = useTenantDisplayStore((s) => s.resetUserFormFields);
-  const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
+
+  const previewAppName = systemAppName.trim() || APP_NAME;
+
+  useEffect(() => {
+    fetchFromServer();
+  }, [fetchFromServer]);
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -86,7 +94,7 @@ export default function UserBrandingSettingsPanel() {
           </div>
           <div className="min-w-0">
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('tenantSettings.preview')}</p>
-            <p className="truncate font-semibold text-slate-900 dark:text-white">{displayAppName()}</p>
+            <p className="truncate font-semibold text-slate-900 dark:text-white">{previewAppName}</p>
           </div>
         </div>
 
@@ -145,6 +153,8 @@ export default function UserBrandingSettingsPanel() {
             labelFor={(key) => t(key)}
           />
         </div>
+
+        <TenantSettingsSaveBar />
       </div>
     </section>
   );
