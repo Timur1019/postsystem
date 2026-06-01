@@ -13,6 +13,8 @@ import java.util.UUID;
 
 public interface StockMovementRepository extends JpaRepository<StockMovement, UUID> {
 
+    long countByStore_Id(Integer storeId);
+
     @Query("""
         SELECT COALESCE(SUM(sm.quantity), 0)
         FROM StockMovement sm

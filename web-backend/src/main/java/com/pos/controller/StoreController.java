@@ -64,4 +64,11 @@ public class StoreController {
     public ResponseEntity<StoreResponse> toggle(@PathVariable Integer id) {
         return ResponseEntity.ok(storeService.toggleActive(id));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+        storeService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

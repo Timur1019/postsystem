@@ -59,6 +59,19 @@ export default function StoresPage({ showCompanySelect = false, companyIdFilter,
     onError: (e) => toast.error(e.response?.data?.message ?? t('stores.saveFailed')),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => storeApi.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['stores-manage'] });
+      qc.invalidateQueries({ queryKey: ['stores'] });
+      qc.invalidateQueries({ queryKey: ['companies'] });
+      qc.invalidateQueries({ queryKey: ['companies-all'] });
+      toast.success(t('stores.deleted'));
+      setMenuId(null);
+    },
+    onError: (e) => toast.error(e.response?.data?.message ?? t('stores.deleteFailed')),
+  });
+
   const rows = data?.content ?? [];
   const total = data?.totalElements ?? 0;
   const totalPages = data?.totalPages ?? 0;
@@ -141,6 +154,15 @@ export default function StoresPage({ showCompanySelect = false, companyIdFilter,
                       {
                         label: row.active ? t('stores.deactivate') : t('stores.activate'),
                         onClick: () => toggleMutation.mutate(row.id),
+                      },
+                      {
+                        label: t('common.delete'),
+                        danger: true,
+                        onClick: () => {
+                          if (window.confirm(t('stores.deleteConfirm', { name: row.name }))) {
+                            deleteMutation.mutate(row.id);
+                          }
+                        },
                       },
                     ]}
                   />

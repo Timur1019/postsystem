@@ -12,6 +12,8 @@ import java.util.UUID;
 
 public interface CashierShiftRepository extends JpaRepository<CashierShift, UUID> {
 
+    long countByStore_Id(Integer storeId);
+
     Optional<CashierShift> findByCashierIdAndStoreIdAndStatus(
         UUID cashierId,
         Integer storeId,

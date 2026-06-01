@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Long>, JpaSpecificationExecutor<CustomerOrder> {
 
+    long countByStore_Id(Integer storeId);
+
     @EntityGraph(attributePaths = {"store", "createdBy", "courier"})
     Page<CustomerOrder> findAll(Specification<CustomerOrder> spec, Pageable pageable);
 }

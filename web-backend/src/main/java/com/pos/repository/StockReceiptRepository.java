@@ -13,6 +13,8 @@ import java.util.UUID;
 
 public interface StockReceiptRepository extends JpaRepository<StockReceipt, UUID> {
 
+    long countByStore_Id(Integer storeId);
+
     long countByCreatedAtGreaterThanEqual(Instant start);
 
     @Query("""

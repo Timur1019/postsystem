@@ -10,6 +10,13 @@ import com.pos.entity.User;
 import com.pos.exception.BadRequestException;
 import com.pos.exception.ResourceNotFoundException;
 import com.pos.mapper.StoreMapper;
+import com.pos.repository.CashierShiftRepository;
+import com.pos.repository.CustomerOrderRepository;
+import com.pos.repository.SaleRepository;
+import com.pos.repository.StockInventoryRepository;
+import com.pos.repository.StockMovementRepository;
+import com.pos.repository.StockReceiptRepository;
+import com.pos.repository.StockTransferRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.repository.spec.StoreSpecifications;
 import com.pos.service.StoreService;
@@ -26,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -36,6 +44,13 @@ public class StoreServiceImpl implements StoreService {
     private final StoreRepository storeRepository;
     private final StoreMapper storeMapper;
     private final TenantAccessSupport tenantAccess;
+    private final SaleRepository saleRepository;
+    private final CashierShiftRepository cashierShiftRepository;
+    private final StockMovementRepository stockMovementRepository;
+    private final StockReceiptRepository stockReceiptRepository;
+    private final StockInventoryRepository stockInventoryRepository;
+    private final StockTransferRepository stockTransferRepository;
+    private final CustomerOrderRepository customerOrderRepository;
 
     @Override
     @Cacheable(value = "stores", key = "@tenantCacheKeyResolver.stores()")
@@ -127,6 +142,54 @@ public class StoreServiceImpl implements StoreService {
         Store saved = storeRepository.save(store);
         LogUtil.info(StoreServiceImpl.class, "Store active toggled: id={}, active={}", id, saved.isActive());
         return storeMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "stores", allEntries = true)
+    public void delete(Integer id) {
+        Store store = requireStore(id);
+        tenantAccess.assertCanAccessStore(store);
+        assertDeletable(id);
+        storeRepository.delete(store);
+        LogUtil.info(StoreServiceImpl.class, "Store deleted: id={}, name={}", id, store.getName());
+    }
+
+    private void assertDeletable(Integer storeId) {
+        List<String> blocks = new ArrayList<>();
+        long sales = saleRepository.countByStore_Id(storeId);
+        if (sales > 0) {
+            blocks.add("продажи — " + sales);
+        }
+        long shifts = cashierShiftRepository.countByStore_Id(storeId);
+        if (shifts > 0) {
+            blocks.add("смены кассиров — " + shifts);
+        }
+        long movements = stockMovementRepository.countByStore_Id(storeId);
+        if (movements > 0) {
+            blocks.add("складские движения — " + movements);
+        }
+        long receipts = stockReceiptRepository.countByStore_Id(storeId);
+        if (receipts > 0) {
+            blocks.add("приходы — " + receipts);
+        }
+        long inventories = stockInventoryRepository.countByStore_Id(storeId);
+        if (inventories > 0) {
+            blocks.add("инвентаризации — " + inventories);
+        }
+        long transfers = stockTransferRepository.countByFromStore_IdOrToStore_Id(storeId, storeId);
+        if (transfers > 0) {
+            blocks.add("перемещения — " + transfers);
+        }
+        long orders = customerOrderRepository.countByStore_Id(storeId);
+        if (orders > 0) {
+            blocks.add("заказы — " + orders);
+        }
+        if (!blocks.isEmpty()) {
+            throw new BadRequestException(
+                "Нельзя удалить магазин: есть связанные данные (" + String.join("; ", blocks) + ")"
+            );
+        }
     }
 
     private Integer resolveListCompanyId(Integer companyId) {

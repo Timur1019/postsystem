@@ -14,6 +14,8 @@ import java.util.UUID;
 
 public interface StockInventoryRepository extends JpaRepository<StockInventory, UUID> {
 
+    long countByStore_Id(Integer storeId);
+
     long countByCreatedAtGreaterThanEqual(Instant dayStart);
 
     @EntityGraph(attributePaths = {"store", "createdBy", "lines", "lines.product"})

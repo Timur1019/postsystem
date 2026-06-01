@@ -21,4 +21,6 @@ public interface StoreService {
     StoreResponse update(Integer id, UpdateStoreRequest request);
 
     StoreResponse toggleActive(Integer id);
+
+    void delete(Integer id);
 }

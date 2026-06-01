@@ -150,6 +150,7 @@ export const storeApi = {
   create: (data) => api.post('/stores', data),
   update: (id, data) => api.put(`/stores/${id}`, data),
   toggle: (id) => api.patch(`/stores/${id}/toggle-active`),
+  delete: (id) => api.delete(`/stores/${id}`),
 };
 
 export const companyApi = {

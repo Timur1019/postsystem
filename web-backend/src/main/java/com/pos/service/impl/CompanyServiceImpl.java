@@ -99,9 +99,13 @@ public class CompanyServiceImpl implements CompanyService {
     @Transactional
     public void delete(Integer id) {
         Company company = requireCompany(id);
-        long storeCount = storeRepository.findByCompanyIdOrderByNameAsc(id).size();
+        long storeCount = storeRepository.countByCompanyId(id);
         if (storeCount > 0) {
-            throw new BadRequestException("Cannot delete company with assigned stores");
+            throw new BadRequestException(
+                "Нельзя удалить компанию: привязано магазинов — "
+                    + storeCount
+                    + ". Сначала удалите или отвяжите магазины (Платформа → Магазины), затем повторите."
+            );
         }
         companyRepository.delete(company);
         LogUtil.info(CompanyServiceImpl.class, "Company deleted: id={}", id);

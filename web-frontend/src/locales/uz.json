@@ -977,6 +977,9 @@
     "saveFailed": "Saqlab bo‘lmadi",
     "activate": "Faollashtirish",
     "deactivate": "O‘chirish",
+    "deleteConfirm": "«{{name}}» do‘konini o‘chirasizmi? Bu qaytarib bo‘lmaydi.",
+    "deleted": "Do‘kon o‘chirildi",
+    "deleteFailed": "Do‘konni o‘chirib bo‘lmadi",
     "pageSize": "Sahifadagi yozuvlar",
     "range": "Yozuvlar {{from}} - {{to}} / {{total}}"
   },
@@ -998,6 +1001,7 @@
     "companyDeleted": "Kompaniya o‘chirildi",
     "saveFailed": "Saqlash xatosi",
     "deleteCompanyConfirm": "Kompaniyani o‘chirasizmi?",
+    "deleteCompanyBlockedStores": "O‘chirib bo‘lmaydi: kompaniyada {{count}} ta do‘kon bor. Avval «Do‘konlar» bo‘limida do‘konlarni olib tashlang (yoki kompaniyani faolsizlantiring).",
     "field_name": "Nomi",
     "field_loginCode": "Kirish kodi",
     "field_loginCodeHint": "Kod tizim tomonidan avtomatik beriladi.",

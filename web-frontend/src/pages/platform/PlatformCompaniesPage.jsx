@@ -129,6 +129,11 @@ export default function PlatformCompaniesPage() {
                         label: t('common.delete'),
                         danger: true,
                         onClick: () => {
+                          const stores = row.storeCount ?? 0;
+                          if (stores > 0) {
+                            toast.error(t('platform.deleteCompanyBlockedStores', { count: stores }));
+                            return;
+                          }
                           if (window.confirm(t('platform.deleteCompanyConfirm'))) {
                             deleteMutation.mutate(row.id);
                           }

@@ -21,6 +21,8 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
 
     long countByReceiptNumberStartingWith(String prefix);
 
+    long countByStore_Id(Integer storeId);
+
     @EntityGraph(attributePaths = {"cashier", "store", "cashierShift", "cashierShift.zReport"})
     @Query(
         value = """

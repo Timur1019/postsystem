@@ -14,6 +14,8 @@ import java.util.UUID;
 
 public interface StockTransferRepository extends JpaRepository<StockTransfer, UUID> {
 
+    long countByFromStore_IdOrToStore_Id(Integer fromStoreId, Integer toStoreId);
+
     long countByCreatedAtGreaterThanEqual(Instant dayStart);
 
     @EntityGraph(attributePaths = {"fromStore", "toStore", "createdBy", "lines", "lines.product"})
