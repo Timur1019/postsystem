@@ -396,7 +396,7 @@ INSERT INTO categories (name, description) VALUES
     ('Stationery',    'Office and school supplies');
 
 INSERT INTO companies (name, login_code, legal_name, address, is_active) VALUES
-    ('MIRONKUL AGRO GLOBAL', 'MIRONKULAGROGLOBAL', 'MIRONKUL AGRO GLOBAL',
+    ('MIRONKUL AGRO GLOBAL', '10000', 'MIRONKUL AGRO GLOBAL',
      'Samarqand vil., Samarqan tuman., O''rtashiq MSG., Mardi Maydon ko''chasi 403 uy', TRUE);
 
 INSERT INTO stores (name, code, address, company_id, is_active) VALUES

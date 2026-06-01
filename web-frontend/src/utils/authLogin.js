@@ -17,8 +17,16 @@ export function adminLoginPath() {
   return `/login?${ADMIN_LOGIN_QUERY}`;
 }
 
+export function normalizeCompanyLoginCode(code) {
+  const digits = String(code || '').trim().replace(/\D/g, '');
+  if (!digits) return '';
+  const n = parseInt(digits, 10);
+  if (!Number.isFinite(n) || n < 10000 || n > 99999) return '';
+  return String(n).padStart(5, '0');
+}
+
 export function persistCompanyLoginCode(code) {
-  const normalized = String(code || '').trim().toUpperCase();
+  const normalized = normalizeCompanyLoginCode(code);
   try {
     if (normalized) {
       localStorage.setItem(COMPANY_CODE_STORAGE_KEY, normalized);
@@ -49,7 +57,7 @@ export async function resolveCashierCompanyCode(searchParams) {
 
   try {
     const stored = localStorage.getItem(COMPANY_CODE_STORAGE_KEY);
-    if (stored) return String(stored).trim().toUpperCase();
+    if (stored) return normalizeCompanyLoginCode(stored);
   } catch {
     /* ignore */
   }
@@ -87,9 +95,9 @@ export function redirectToLogin() {
 
 export function cashierSessionMatchesCompany(user, companyCode) {
   if (!user || user.role !== 'CASHIER') return true;
-  const expected = String(companyCode || '').trim().toUpperCase();
+  const expected = normalizeCompanyLoginCode(companyCode);
   if (!expected) return true;
-  const sessionCode = String(user.companyLoginCode || '').trim().toUpperCase();
+  const sessionCode = normalizeCompanyLoginCode(user.companyLoginCode);
   if (!sessionCode) return false;
   return sessionCode === expected;
 }

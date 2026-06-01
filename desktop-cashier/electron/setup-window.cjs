@@ -109,7 +109,7 @@ function buildSetupHtml(current) {
     <label for="host">Адрес сервера (IP или домен)</label>
     <input id="host" name="host" placeholder="www.aurent.uz или IP сервера" value="${host}" required autocomplete="off" />
     <label for="companyLoginCode">Код компании (для входа кассиров)</label>
-    <input id="companyLoginCode" name="companyLoginCode" placeholder="MIRONKUL" value="${companyLoginCode}" required autocomplete="off" style="text-transform:uppercase;letter-spacing:0.05em;font-family:ui-monospace,monospace;" />
+    <input id="companyLoginCode" name="companyLoginCode" placeholder="10000" inputmode="numeric" maxlength="5" pattern="[0-9]{5}" value="${companyLoginCode}" required autocomplete="off" style="letter-spacing:0.08em;font-family:ui-monospace,monospace;" />
     ${portFields}
     <button type="submit">Продолжить</button>
   </form>
@@ -121,7 +121,7 @@ function buildSetupHtml(current) {
       const webEl = document.getElementById('webPort');
       const apiPort = document.getElementById('apiPort').value.trim() || '8081';
       const webPort = webEl && webEl.type === 'hidden' ? apiPort : (webEl.value.trim() || apiPort);
-      const companyLoginCode = document.getElementById('companyLoginCode').value.trim().toUpperCase();
+      const companyLoginCode = document.getElementById('companyLoginCode').value.replace(/\\D/g, '').slice(0, 5);
       window.setupApi.save({ host, webPort, apiPort, companyLoginCode });
     });
   </script>
@@ -163,13 +163,17 @@ function shouldUseRemoteUi(host, webPort, apiPort) {
 }
 
 function normalizeCompanyLoginCode(raw) {
-  return String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const digits = String(raw || '').trim().replace(/\D/g, '');
+  if (!digits) return '';
+  const n = parseInt(digits, 10);
+  if (!Number.isFinite(n) || n < 10000 || n > 99999) return '';
+  return String(n).padStart(5, '0');
 }
 
 function saveConfig({ host, webPort, apiPort, companyLoginCode }) {
   const code = normalizeCompanyLoginCode(companyLoginCode);
   if (!code) {
-    throw new Error('Укажите код компании');
+    throw new Error('Код компании: 5 цифр, от 10000 до 99999');
   }
   const { host: h } = normalizeHostPort(host, apiPort);
   let web = String(webPort || DEFAULT_API_PORT).trim() || DEFAULT_API_PORT;

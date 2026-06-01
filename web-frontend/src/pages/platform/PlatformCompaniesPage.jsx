@@ -151,12 +151,16 @@ export default function PlatformCompaniesPage() {
               <div key={field} className="mb-3">
                 <label className="mb-1 block text-xs text-slate-500">{t(`platform.field_${field}`)}</label>
                 <input
-                  className={inputCls + (field === 'loginCode' ? ' font-mono uppercase tracking-wide' : '')}
+                  className={inputCls + (field === 'loginCode' ? ' font-mono tracking-wide' : '')}
                   value={form[field]}
-                  placeholder={field === 'loginCode' && !editing ? t('platform.field_loginCodeAuto') : undefined}
+                  placeholder={field === 'loginCode' && !editing ? t('platform.field_loginCodeAuto') : '10000'}
+                  inputMode={field === 'loginCode' ? 'numeric' : undefined}
+                  maxLength={field === 'loginCode' ? 5 : undefined}
                   onChange={(e) => setForm({
                     ...form,
-                    [field]: field === 'loginCode' ? e.target.value.toUpperCase() : e.target.value,
+                    [field]: field === 'loginCode'
+                      ? e.target.value.replace(/\D/g, '').slice(0, 5)
+                      : e.target.value,
                   })}
                 />
                 {field === 'loginCode' && (

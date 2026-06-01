@@ -21,3 +21,4 @@ migration_manual_tenant_isolation.sql
 migration_manual_company_login_code.sql
 migration_manual_cashier_pin_login.sql
 migration_manual_tenant_username_global.sql
+migration_manual_company_login_code_numeric.sql

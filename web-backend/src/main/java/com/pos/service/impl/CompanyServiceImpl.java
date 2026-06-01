@@ -60,7 +60,7 @@ public class CompanyServiceImpl implements CompanyService {
         if (companyRepository.existsByNameIgnoreCase(name)) {
             throw new BadRequestException("Company name already exists");
         }
-        String loginCode = resolveLoginCode(request.loginCode(), name, null);
+        String loginCode = resolveLoginCode(request.loginCode(), null);
         Company company = Company.builder()
             .name(name)
             .loginCode(loginCode)
@@ -87,7 +87,7 @@ public class CompanyServiceImpl implements CompanyService {
             company.setName(name);
         }
         if (request.loginCode() != null) {
-            company.setLoginCode(resolveLoginCode(request.loginCode(), company.getName(), id));
+            company.setLoginCode(resolveLoginCode(request.loginCode(), id));
         }
         if (request.legalName() != null) company.setLegalName(trimOrNull(request.legalName()));
         if (request.tin() != null) company.setTin(trimOrNull(request.tin()));
@@ -120,31 +120,34 @@ public class CompanyServiceImpl implements CompanyService {
         return companyMapper.toResponse(company, storeCount);
     }
 
-    private String resolveLoginCode(String requested, String companyName, Integer excludeId) {
-        String code = CompanyLoginCodeUtil.normalize(requested);
-        if (!StringUtils.hasText(code)) {
-            code = CompanyLoginCodeUtil.suggestFromName(companyName);
+    private String resolveLoginCode(String requested, Integer excludeId) {
+        if (StringUtils.hasText(requested)) {
+            String code = CompanyLoginCodeUtil.normalize(requested);
+            if (!CompanyLoginCodeUtil.isValid(code)) {
+                throw CompanyLoginCodeUtil.invalidFormat();
+            }
+            if (isLoginCodeTaken(code, excludeId)) {
+                throw CompanyLoginCodeUtil.codeAlreadyUsed();
+            }
+            return code;
         }
-        if (!StringUtils.hasText(code)) {
-            code = "CO";
-        }
-        return ensureUniqueLoginCode(code, excludeId);
+        return allocateNextLoginCode(excludeId);
     }
 
-    private String ensureUniqueLoginCode(String base, Integer excludeId) {
-        String candidate = base;
-        int suffix = 2;
-        while (isLoginCodeTaken(candidate, excludeId)) {
-            String tail = String.valueOf(suffix);
-            int maxBaseLen = Math.max(1, 24 - tail.length());
-            String trimmed = base.length() > maxBaseLen ? base.substring(0, maxBaseLen) : base;
-            candidate = trimmed + tail;
-            suffix++;
-            if (suffix > 9999) {
-                throw new BadRequestException("Could not generate unique company login code");
+    private String allocateNextLoginCode(Integer excludeId) {
+        Integer max = companyRepository.findMaxNumericLoginCode(
+            CompanyLoginCodeUtil.MIN_CODE,
+            CompanyLoginCodeUtil.MAX_CODE
+        );
+        int candidate = max == null ? CompanyLoginCodeUtil.MIN_CODE : max + 1;
+        while (candidate <= CompanyLoginCodeUtil.MAX_CODE) {
+            String code = CompanyLoginCodeUtil.format(candidate);
+            if (!isLoginCodeTaken(code, excludeId)) {
+                return code;
             }
+            candidate++;
         }
-        return candidate;
+        throw new BadRequestException("Нет свободных кодов входа (диапазон исчерпан)");
     }
 
     private boolean isLoginCodeTaken(String code, Integer excludeId) {

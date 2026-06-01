@@ -1,38 +1,66 @@
 package com.pos.util;
 
+import com.pos.exception.BadRequestException;
 import org.springframework.util.StringUtils;
 
-import java.text.Normalizer;
-import java.util.Locale;
-
+/**
+ * Код компании для входа кассира: ровно 5 цифр, диапазон 10000–99999.
+ */
 public final class CompanyLoginCodeUtil {
 
-    private static final int MAX_LEN = 24;
+    public static final int MIN_CODE = 10_000;
+    public static final int MAX_CODE = 99_999;
 
     private CompanyLoginCodeUtil() {
     }
 
+    /** Нормализует ввод: только цифры, без ведущих нулей (кроме самого числа). */
     public static String normalize(String raw) {
         if (!StringUtils.hasText(raw)) {
             return "";
         }
-        String s = raw.trim().toUpperCase(Locale.ROOT);
-        s = Normalizer.normalize(s, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
-        s = s.replaceAll("[^A-Z0-9]+", "");
-        if (s.length() > MAX_LEN) {
-            s = s.substring(0, MAX_LEN);
-        }
-        return s;
-    }
-
-    public static String suggestFromName(String companyName) {
-        String base = normalize(companyName);
-        if (!StringUtils.hasText(base)) {
+        String digits = raw.trim().replaceAll("\\D", "");
+        if (!StringUtils.hasText(digits)) {
             return "";
         }
-        if (base.length() < 3) {
-            return base + "CO";
+        int value;
+        try {
+            value = Integer.parseInt(digits);
+        } catch (NumberFormatException ex) {
+            throw invalidFormat();
         }
-        return base;
+        return format(value);
+    }
+
+    public static String format(int code) {
+        if (!isValidValue(code)) {
+            throw invalidFormat();
+        }
+        return String.format("%05d", code);
+    }
+
+    public static boolean isValid(String code) {
+        if (!StringUtils.hasText(code) || !code.matches("\\d{5}")) {
+            return false;
+        }
+        try {
+            return isValidValue(Integer.parseInt(code));
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    public static boolean isValidValue(int code) {
+        return code >= MIN_CODE && code <= MAX_CODE;
+    }
+
+    public static BadRequestException invalidFormat() {
+        return new BadRequestException(
+            "Код входа: 5 цифр, от " + MIN_CODE + " до " + MAX_CODE
+        );
+    }
+
+    public static BadRequestException codeAlreadyUsed() {
+        return new BadRequestException("Такой код входа уже используется");
     }
 }
