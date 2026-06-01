@@ -153,6 +153,7 @@ export default function PlatformCompaniesPage() {
                 <input
                   className={inputCls + (field === 'loginCode' ? ' font-mono uppercase tracking-wide' : '')}
                   value={form[field]}
+                  placeholder={field === 'loginCode' && !editing ? t('platform.field_loginCodeAuto') : undefined}
                   onChange={(e) => setForm({
                     ...form,
                     [field]: field === 'loginCode' ? e.target.value.toUpperCase() : e.target.value,

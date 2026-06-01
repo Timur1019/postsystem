@@ -262,11 +262,17 @@ public class UserServiceImpl implements UserService {
     }
 
     private void assertUsernameAvailable(Integer companyId, String username, UUID excludeUserId) {
-        boolean taken = companyId == null
-            ? userRepository.existsPlatformUsernameIgnoreCase(username, excludeUserId)
-            : userRepository.existsByCompanyIdAndUsernameIgnoreCase(companyId, username, excludeUserId);
-        if (taken) {
-            throw new BadRequestException("Username already taken in this company");
+        if (companyId == null) {
+            if (userRepository.existsPlatformUsernameIgnoreCase(username, excludeUserId)) {
+                throw new BadRequestException("Username already taken");
+            }
+            return;
+        }
+        if (userRepository.existsTenantUsernameIgnoreCase(username, excludeUserId)) {
+            throw new BadRequestException("Username already taken");
+        }
+        if (userRepository.existsPlatformUsernameIgnoreCase(username, excludeUserId)) {
+            throw new BadRequestException("Username already taken");
         }
     }
 

@@ -126,15 +126,31 @@ public class CompanyServiceImpl implements CompanyService {
             code = CompanyLoginCodeUtil.suggestFromName(companyName);
         }
         if (!StringUtils.hasText(code)) {
-            throw new BadRequestException("Company login code is required");
+            code = "CO";
         }
-        boolean taken = excludeId == null
+        return ensureUniqueLoginCode(code, excludeId);
+    }
+
+    private String ensureUniqueLoginCode(String base, Integer excludeId) {
+        String candidate = base;
+        int suffix = 2;
+        while (isLoginCodeTaken(candidate, excludeId)) {
+            String tail = String.valueOf(suffix);
+            int maxBaseLen = Math.max(1, 24 - tail.length());
+            String trimmed = base.length() > maxBaseLen ? base.substring(0, maxBaseLen) : base;
+            candidate = trimmed + tail;
+            suffix++;
+            if (suffix > 9999) {
+                throw new BadRequestException("Could not generate unique company login code");
+            }
+        }
+        return candidate;
+    }
+
+    private boolean isLoginCodeTaken(String code, Integer excludeId) {
+        return excludeId == null
             ? companyRepository.existsByLoginCodeIgnoreCase(code)
             : companyRepository.existsByLoginCodeIgnoreCaseAndIdNot(code, excludeId);
-        if (taken) {
-            throw new BadRequestException("Company login code already exists");
-        }
-        return code;
     }
 
     private static String trimOrNull(String value) {

@@ -47,7 +47,7 @@ CREATE TABLE users (
     updated_at   TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX uq_users_company_username ON users (company_id, LOWER(username))
+CREATE UNIQUE INDEX uq_users_tenant_username ON users (LOWER(username))
   WHERE company_id IS NOT NULL;
 CREATE UNIQUE INDEX uq_users_company_email ON users (company_id, LOWER(email))
   WHERE company_id IS NOT NULL;

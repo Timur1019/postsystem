@@ -172,19 +172,20 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private User resolveUserForLogin(String companyCode, String username) {
-        if (!StringUtils.hasText(companyCode)) {
-            return userRepository.findPlatformUserByUsernameIgnoreCase(username)
+        if (StringUtils.hasText(companyCode)) {
+            Company company = companyRepository.findByLoginCodeIgnoreCase(companyCode)
+                .orElseThrow(() -> new BadRequestException("Invalid company code"));
+
+            if (!company.isActive()) {
+                throw new BadRequestException("Company is inactive");
+            }
+
+            return userRepository.findByCompanyIdAndUsernameIgnoreCase(company.getId(), username)
                 .orElseThrow(() -> new BadRequestException("Invalid username or password"));
         }
 
-        Company company = companyRepository.findByLoginCodeIgnoreCase(companyCode)
-            .orElseThrow(() -> new BadRequestException("Invalid company code"));
-
-        if (!company.isActive()) {
-            throw new BadRequestException("Company is inactive");
-        }
-
-        return userRepository.findByCompanyIdAndUsernameIgnoreCase(company.getId(), username)
+        return userRepository.findPlatformUserByUsernameIgnoreCase(username)
+            .or(() -> userRepository.findTenantUserByUsernameIgnoreCase(username))
             .orElseThrow(() -> new BadRequestException("Invalid username or password"));
     }
 

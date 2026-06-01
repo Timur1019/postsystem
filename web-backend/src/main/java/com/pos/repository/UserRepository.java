@@ -37,6 +37,25 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("""
         SELECT u FROM User u
         JOIN FETCH u.role
+        JOIN FETCH u.company
+        LEFT JOIN FETCH u.stores
+        WHERE u.company IS NOT NULL AND LOWER(u.username) = LOWER(:username)
+        """)
+    Optional<User> findTenantUserByUsernameIgnoreCase(@Param("username") String username);
+
+    @Query("""
+        SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
+        WHERE u.company IS NOT NULL AND LOWER(u.username) = LOWER(:username)
+        AND (:excludeId IS NULL OR u.id <> :excludeId)
+        """)
+    boolean existsTenantUsernameIgnoreCase(
+        @Param("username") String username,
+        @Param("excludeId") UUID excludeId
+    );
+
+    @Query("""
+        SELECT u FROM User u
+        JOIN FETCH u.role
         LEFT JOIN FETCH u.company
         LEFT JOIN FETCH u.stores
         WHERE u.company.id = :companyId
