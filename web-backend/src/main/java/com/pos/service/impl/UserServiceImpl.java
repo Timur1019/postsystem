@@ -230,10 +230,8 @@ public class UserServiceImpl implements UserService {
     }
 
     private RuntimeException mapPersistenceFailure(PersistenceException ex) {
-        String detail = ex.getMostSpecificCause() != null
-            ? ex.getMostSpecificCause().getMessage()
-            : ex.getMessage();
-        String lower = detail != null ? detail.toLowerCase() : "";
+        String detail = rootCauseMessage(ex);
+        String lower = detail.toLowerCase();
         LogUtil.warn(UserServiceImpl.class, "User persistence failure: {}", detail);
         if (lower.contains("pin_digest") || lower.contains("module_access_custom")) {
             return new BadRequestException(
@@ -382,6 +380,14 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("PIN already used in this company");
         }
         user.setPinDigest(digest);
+    }
+
+    private static String rootCauseMessage(Throwable ex) {
+        Throwable cause = ex;
+        while (cause.getCause() != null && cause.getCause() != cause) {
+            cause = cause.getCause();
+        }
+        return cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
     }
 
     private static ConflictException toUserConflict(DataIntegrityViolationException ex) {
