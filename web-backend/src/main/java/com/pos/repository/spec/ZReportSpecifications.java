@@ -1,6 +1,8 @@
 package com.pos.repository.spec;
 
+import com.pos.entity.Store;
 import com.pos.entity.ZReport;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
@@ -25,7 +27,7 @@ public final class ZReportSpecifications {
     ) {
         return (root, query, cb) -> {
             List<Predicate> parts = new ArrayList<>();
-            var store = root.join("store");
+            Join<ZReport, Store> store = root.join("store");
 
             parts.add(TenantSpecifications.storeCompanyEqualsPredicate(store, cb, companyId));
 
