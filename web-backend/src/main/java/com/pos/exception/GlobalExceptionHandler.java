@@ -1,5 +1,6 @@
 package com.pos.exception;
 
+import com.pos.util.DbExceptionTranslator;
 import com.pos.util.LogUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
@@ -225,31 +226,11 @@ public class GlobalExceptionHandler {
     }
 
     private static String mapPersistenceClientMessage(Exception ex) {
-        String lower = rootMessage(ex).toLowerCase();
-        if (lower.contains("pin_digest") || lower.contains("module_access_custom")) {
-            return "Схема БД устарела: выполните deploy/git-update.sh на сервере";
-        }
-        if (lower.contains("read-only transaction")) {
-            return "Ошибка записи в БД (read-only transaction). Перезапустите backend после обновления.";
-        }
-        if (lower.contains("lazyinitialization")) {
-            return "Ошибка загрузки данных пользователя. Повторите запрос или обновите backend.";
-        }
-        return "Ошибка базы данных при сохранении. Проверьте миграции и логи backend.";
+        return DbExceptionTranslator.clientMessage(ex);
     }
 
     private static String mapDataIntegrityMessage(DataIntegrityViolationException ex) {
-        String lower = rootMessage(ex).toLowerCase();
-        if (lower.contains("uq_users_tenant_username") || lower.contains("users_username")) {
-            return "Логин уже занят";
-        }
-        if (lower.contains("uq_users_company_email") || lower.contains("users_email")) {
-            return "Email уже зарегистрирован в этой компании";
-        }
-        if (lower.contains("uq_users_company_pin_digest") || lower.contains("pin_digest")) {
-            return "Такой PIN уже используется в компании";
-        }
-        return "Запись конфликтует с данными в системе (дубликат или связь)";
+        return DbExceptionTranslator.clientMessage(ex);
     }
 
     @ExceptionHandler(Exception.class)

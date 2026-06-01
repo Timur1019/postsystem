@@ -19,12 +19,12 @@ import com.pos.util.LogUtil;
 import com.pos.util.CashierPinUtil;
 import com.pos.util.PersonNameUtil;
 import com.pos.util.UserLoginUtil;
-import jakarta.persistence.PersistenceException;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.pos.util.DbExceptionTranslator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -66,48 +66,52 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public UserResponse create(CreateUserRequest req) {
-        Role role = roleRepository.findByName(req.role())
-            .orElseThrow(() -> new BadRequestException("Invalid role: " + req.role()));
-        assertRoleAllowedForCreate(role.getName());
-
-        Integer companyId = resolveCompanyIdForUser(req.companyId(), role.getName());
-        String username = UserLoginUtil.normalizeUsername(req.username());
-        String email = UserLoginUtil.normalizeEmail(req.email());
-        assertUsernameAvailable(companyId, username, null);
-        assertEmailAvailable(companyId, email, null);
-
-        Company company = companyId != null ? tenantAccess.requireCompany(companyId) : null;
-        assertCashierStoreAssignment(role.getName(), req.storeIds());
-        Set<Store> stores = companyId != null
-            ? tenantAccess.resolveStoresForUser(companyId, req.storeIds())
-            : Set.of();
-
-        String rawPassword = resolvePasswordForCreate(role.getName(), req.password(), req.pin());
-
-        User user = User.builder()
-            .username(username)
-            .email(email)
-            .password(passwordEncoder.encode(rawPassword))
-            .firstName(trimOrNull(req.firstName()))
-            .lastName(trimOrNull(req.lastName()))
-            .patronymic(trimOrNull(req.patronymic()))
-            .fullName(resolveFullName(req))
-            .role(role)
-            .company(company)
-            .stores(new HashSet<>(stores))
-            .isActive(true)
-            .build();
-        user.syncFullName();
-        applyCashierPinForCreate(user, role.getName(), companyId, req.pin());
-
         try {
+            Role role = roleRepository.findByName(req.role())
+                .orElseThrow(() -> new BadRequestException("Invalid role: " + req.role()));
+            assertRoleAllowedForCreate(role.getName());
+
+            Integer companyId = resolveCompanyIdForUser(req.companyId(), role.getName());
+            String username = UserLoginUtil.normalizeUsername(req.username());
+            String email = UserLoginUtil.normalizeEmail(req.email());
+            assertUsernameAvailable(companyId, username, null);
+            assertEmailAvailable(companyId, email, null);
+
+            Company company = companyId != null ? tenantAccess.requireCompany(companyId) : null;
+            assertCashierStoreAssignment(role.getName(), req.storeIds());
+            Set<Store> stores = companyId != null
+                ? tenantAccess.resolveStoresForUser(companyId, req.storeIds())
+                : Set.of();
+
+            String rawPassword = resolvePasswordForCreate(role.getName(), req.password(), req.pin());
+
+            User user = User.builder()
+                .username(username)
+                .email(email)
+                .password(passwordEncoder.encode(rawPassword))
+                .firstName(trimOrNull(req.firstName()))
+                .lastName(trimOrNull(req.lastName()))
+                .patronymic(trimOrNull(req.patronymic()))
+                .fullName(resolveFullName(req))
+                .role(role)
+                .company(company)
+                .stores(new HashSet<>(stores))
+                .isActive(true)
+                .build();
+            user.syncFullName();
+            applyCashierPinForCreate(user, role.getName(), companyId, req.pin());
+
             User saved = userRepository.saveAndFlush(user);
             LogUtil.info(UserServiceImpl.class, "User created: id={}, username={}", saved.getId(), saved.getUsername());
             return userMapper.toResponse(loadUserForResponse(saved.getId(), saved));
-        } catch (DataIntegrityViolationException ex) {
-            throw toUserConflict(ex);
-        } catch (PersistenceException ex) {
-            throw mapPersistenceFailure(ex);
+        } catch (BadRequestException | ConflictException ex) {
+            throw ex;
+        } catch (DataAccessException ex) {
+            LogUtil.warn(UserServiceImpl.class, "User create DB error: {}", DbExceptionTranslator.rootCauseMessage(ex));
+            throw DbExceptionTranslator.toClientException(ex);
+        } catch (RuntimeException ex) {
+            LogUtil.warn(UserServiceImpl.class, "User create failed: {}", DbExceptionTranslator.rootCauseMessage(ex));
+            throw DbExceptionTranslator.toClientException(ex);
         }
     }
 
@@ -192,10 +196,10 @@ public class UserServiceImpl implements UserService {
         try {
             User saved = userRepository.saveAndFlush(user);
             return userMapper.toResponse(loadUserForResponse(saved.getId(), saved));
-        } catch (DataIntegrityViolationException ex) {
-            throw toUserConflict(ex);
-        } catch (PersistenceException ex) {
-            throw mapPersistenceFailure(ex);
+        } catch (BadRequestException | ConflictException ex) {
+            throw ex;
+        } catch (DataAccessException ex) {
+            throw DbExceptionTranslator.toClientException(ex);
         }
     }
 
@@ -211,10 +215,10 @@ public class UserServiceImpl implements UserService {
             User saved = userRepository.saveAndFlush(user);
             LogUtil.info(UserServiceImpl.class, "User active toggled: id={}, active={}", id, saved.isActive());
             return userMapper.toResponse(loadUserForResponse(saved.getId(), saved));
-        } catch (DataIntegrityViolationException ex) {
-            throw toUserConflict(ex);
-        } catch (PersistenceException ex) {
-            throw mapPersistenceFailure(ex);
+        } catch (BadRequestException | ConflictException ex) {
+            throw ex;
+        } catch (DataAccessException ex) {
+            throw DbExceptionTranslator.toClientException(ex);
         }
     }
 
@@ -227,24 +231,6 @@ public class UserServiceImpl implements UserService {
             Hibernate.initialize(fallback.getStores());
             return fallback;
         });
-    }
-
-    private RuntimeException mapPersistenceFailure(PersistenceException ex) {
-        String detail = rootCauseMessage(ex);
-        String lower = detail.toLowerCase();
-        LogUtil.warn(UserServiceImpl.class, "User persistence failure: {}", detail);
-        if (lower.contains("pin_digest") || lower.contains("module_access_custom")) {
-            return new BadRequestException(
-                "Схема БД устарела: на сервере выполните bash deploy/git-update.sh (миграции users)"
-            );
-        }
-        if (lower.contains("read-only transaction")) {
-            return new BadRequestException("Операция записи недоступна (read-only transaction)");
-        }
-        if (lower.contains("duplicate key") || lower.contains("unique constraint")) {
-            return toUserConflict(new DataIntegrityViolationException(detail != null ? detail : "duplicate", ex));
-        }
-        return new BadRequestException("Не удалось сохранить пользователя. Проверьте логин, email и привязку к магазину.");
     }
 
     private boolean canView(User user) {
@@ -380,31 +366,6 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("PIN already used in this company");
         }
         user.setPinDigest(digest);
-    }
-
-    private static String rootCauseMessage(Throwable ex) {
-        Throwable cause = ex;
-        while (cause.getCause() != null && cause.getCause() != cause) {
-            cause = cause.getCause();
-        }
-        return cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
-    }
-
-    private static ConflictException toUserConflict(DataIntegrityViolationException ex) {
-        String detail = ex.getMostSpecificCause() != null
-            ? ex.getMostSpecificCause().getMessage()
-            : ex.getMessage();
-        String lower = detail != null ? detail.toLowerCase() : "";
-        if (lower.contains("uq_users_tenant_username") || lower.contains("users_username")) {
-            return new ConflictException("Логин уже занят (такой username есть в другой компании или у платформы)");
-        }
-        if (lower.contains("uq_users_company_email") || lower.contains("users_email")) {
-            return new ConflictException("Email уже зарегистрирован в этой компании");
-        }
-        if (lower.contains("uq_users_company_pin_digest") || lower.contains("pin_digest")) {
-            return new ConflictException("Такой PIN уже используется в компании");
-        }
-        return new ConflictException("Пользователь с такими данными уже существует");
     }
 
     private void applyCashierPinForUpdate(User user, Integer companyId, String pin) {
