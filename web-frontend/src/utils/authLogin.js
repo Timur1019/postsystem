@@ -2,6 +2,7 @@
 
 export const CASHIER_LOGIN_PATH = '/cashier/login';
 export const ADMIN_LOGIN_QUERY = 'admin=1';
+export const COMPANY_CODE_STORAGE_KEY = 'pos.companyLoginCode';
 
 export function isDesktopCashier() {
   return typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
@@ -16,10 +17,49 @@ export function adminLoginPath() {
   return `/login?${ADMIN_LOGIN_QUERY}`;
 }
 
-export function cashierLoginPath() {
-  if (typeof window === 'undefined') return CASHIER_LOGIN_PATH;
+export function persistCompanyLoginCode(code) {
+  const normalized = String(code || '').trim().toUpperCase();
   try {
-    const fromStorage = localStorage.getItem('pos.companyLoginCode');
+    if (normalized) {
+      localStorage.setItem(COMPANY_CODE_STORAGE_KEY, normalized);
+    } else {
+      localStorage.removeItem(COMPANY_CODE_STORAGE_KEY);
+    }
+  } catch {
+    /* ignore */
+  }
+  return normalized;
+}
+
+export async function resolveCashierCompanyCode(searchParams) {
+  if (isDesktopCashier() && window.desktopCashier?.getCompanyLoginCode) {
+    try {
+      const fromDesktop = await window.desktopCashier.getCompanyLoginCode();
+      const code = persistCompanyLoginCode(fromDesktop);
+      if (code) return code;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const fromUrl = searchParams?.get?.('companyLoginCode');
+  if (fromUrl) {
+    return persistCompanyLoginCode(fromUrl);
+  }
+
+  try {
+    const stored = localStorage.getItem(COMPANY_CODE_STORAGE_KEY);
+    if (stored) return String(stored).trim().toUpperCase();
+  } catch {
+    /* ignore */
+  }
+  return '';
+}
+
+export function cashierLoginPath() {
+  if (isDesktopCashier()) return CASHIER_LOGIN_PATH;
+  try {
+    const fromStorage = localStorage.getItem(COMPANY_CODE_STORAGE_KEY);
     if (fromStorage) {
       return `${CASHIER_LOGIN_PATH}?${new URLSearchParams({ companyLoginCode: fromStorage })}`;
     }
@@ -43,4 +83,13 @@ export function redirectToLogin() {
   const target = defaultLoginPath();
   if (window.location.pathname + window.location.search === target) return;
   window.location.href = target;
+}
+
+export function cashierSessionMatchesCompany(user, companyCode) {
+  if (!user || user.role !== 'CASHIER') return true;
+  const expected = String(companyCode || '').trim().toUpperCase();
+  if (!expected) return true;
+  const sessionCode = String(user.companyLoginCode || '').trim().toUpperCase();
+  if (!sessionCode) return false;
+  return sessionCode === expected;
 }

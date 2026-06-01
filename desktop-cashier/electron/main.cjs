@@ -48,6 +48,27 @@ async function configureServerInteractive() {
   return config;
 }
 
+async function clearCashierWebStorage(cfg) {
+  if (!mainWindow || mainWindow.isDestroyed() || !cfg?.cashierUrl) return;
+  try {
+    const origin = new URL(cfg.cashierUrl).origin;
+    await mainWindow.webContents.session.clearStorageData({
+      origin,
+      storages: ['localstorage'],
+    });
+  } catch {
+    // ignore invalid origin or session errors
+  }
+}
+
+async function reloadCashierLogin(cfg, { clearSession = false } = {}) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (clearSession) {
+    await clearCashierWebStorage(cfg);
+  }
+  mainWindow.loadURL(buildLoginUrl(cfg));
+}
+
 async function openServerSettings() {
   try {
     await configureServerInteractive();
@@ -59,9 +80,7 @@ async function openServerSettings() {
       });
       config.cashierUrl = `http://127.0.0.1:${config.embeddedPort}`.replace(/\/$/, '');
     }
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.loadURL(buildLoginUrl(config));
-    }
+    await reloadCashierLogin(config, { clearSession: true });
   } catch {
     // cancelled
   }

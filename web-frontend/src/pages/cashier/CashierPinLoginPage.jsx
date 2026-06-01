@@ -7,7 +7,7 @@ import { authApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import BrandMark from '../../components/shared/BrandMark';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
-import { adminLoginPath } from '../../utils/authLogin';
+import { adminLoginPath, resolveCashierCompanyCode, persistCompanyLoginCode, cashierSessionMatchesCompany } from '../../utils/authLogin';
 import '../../styles/cashier-pin-login.css';
 
 const PIN_MIN = 4;
@@ -22,6 +22,7 @@ export default function CashierPinLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const logout = useAuthStore((s) => s.logout);
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
@@ -32,31 +33,37 @@ export default function CashierPinLoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!hasHydrated || !token) return;
-    if (user?.role === 'CASHIER') navigate('/cashier/pos', { replace: true });
-  }, [hasHydrated, token, user, navigate]);
+    if (!hasHydrated || !token || user?.role !== 'CASHIER') return;
+
+    let cancelled = false;
+    (async () => {
+      const expectedCode = await resolveCashierCompanyCode(searchParams);
+      if (cancelled) return;
+      if (!cashierSessionMatchesCompany(user, expectedCode)) {
+        logout();
+        setPin('');
+        toast.error(t('cashierLogin.companyChanged', {
+          defaultValue: 'Код компании изменён — войдите с PIN снова',
+        }));
+        return;
+      }
+      navigate('/cashier/pos', { replace: true });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasHydrated, token, user, navigate, logout, searchParams, t]);
 
   useEffect(() => {
-    const fromUrl = searchParams.get('companyLoginCode');
-    if (fromUrl) {
-      setCompanyCode(String(fromUrl).trim().toUpperCase());
-      return;
-    }
-    if (window.desktopCashier?.getCompanyLoginCode) {
-      window.desktopCashier
-        .getCompanyLoginCode()
-        .then((c) => {
-          if (c) setCompanyCode(String(c).trim().toUpperCase());
-        })
-        .catch(() => {});
-      return;
-    }
-    try {
-      const stored = localStorage.getItem('pos.companyLoginCode');
-      if (stored) setCompanyCode(String(stored).trim().toUpperCase());
-    } catch {
-      /* ignore */
-    }
+    let cancelled = false;
+    (async () => {
+      const code = await resolveCashierCompanyCode(searchParams);
+      if (!cancelled && code) setCompanyCode(code);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams]);
 
   const canSubmit = useMemo(() => {
@@ -81,6 +88,7 @@ export default function CashierPinLoginPage() {
         toast.error(t('login.failed'));
         return;
       }
+      persistCompanyLoginCode(companyCode.trim().toUpperCase());
       navigate('/cashier/pos', { replace: true });
     } catch (err) {
       const apiMsg = err.response?.data?.message;

@@ -22,6 +22,7 @@ public interface AuthMapper {
     @Mapping(target = "fullName", source = "user.fullName")
     @Mapping(target = "role", source = "user.role.name")
     @Mapping(target = "companyId", source = "user.company.id")
+    @Mapping(target = "companyLoginCode", source = "user.company.loginCode")
     @Mapping(target = "storeIds", source = "user.stores", qualifiedByName = "storeIds")
     @Mapping(target = "allowedModules", source = "allowedModules")
     @Mapping(target = "moduleAccessCustom", source = "moduleAccessCustom")

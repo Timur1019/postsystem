@@ -112,6 +112,7 @@
     "subtitle": "Введите PIN-код",
     "adminLogin": "Вход администратора",
     "backToCashier": "Вход кассира",
+    "companyChanged": "Код компании изменён — войдите с PIN снова",
     "desktopHint": "Рекомендуется вход через программу кассы"
   },
   "installer": {

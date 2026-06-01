@@ -112,6 +112,7 @@
     "subtitle": "PIN-kodni kiriting",
     "adminLogin": "Administrator kirishi",
     "backToCashier": "Kassir kirishi",
+    "companyChanged": "Kompaniya kodi o‘zgartirildi — PIN bilan qayta kiring",
     "desktopHint": "Kassa dasturi orqali kirish tavsiya etiladi"
   },
   "installer": {

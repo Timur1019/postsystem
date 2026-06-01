@@ -13,6 +13,7 @@ public record AuthResponse(
     String fullName,
     String role,
     Integer companyId,
+    String companyLoginCode,
     List<Integer> storeIds,
     List<String> allowedModules,
     boolean moduleAccessCustom
