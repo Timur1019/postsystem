@@ -77,10 +77,12 @@ public class UserServiceImpl implements UserService {
             ? tenantAccess.resolveStoresForUser(companyId, req.storeIds())
             : Set.of();
 
+        String rawPassword = resolvePasswordForCreate(role.getName(), req.password(), req.pin());
+
         User user = User.builder()
             .username(username)
             .email(email)
-            .password(passwordEncoder.encode(req.password()))
+            .password(passwordEncoder.encode(rawPassword))
             .firstName(trimOrNull(req.firstName()))
             .lastName(trimOrNull(req.lastName()))
             .patronymic(trimOrNull(req.patronymic()))
@@ -142,6 +144,17 @@ public class UserServiceImpl implements UserService {
             Role role = roleRepository.findByName(req.role())
                 .orElseThrow(() -> new BadRequestException("Invalid role"));
             assertRoleAllowedForCreate(role.getName());
+            String oldRoleName = user.getRole().getName();
+            String newRoleName = role.getName();
+            if (!oldRoleName.equals(newRoleName)) {
+                if ("CASHIER".equals(oldRoleName) && !"CASHIER".equals(newRoleName)) {
+                    user.setPinDigest(null);
+                }
+                if ("CASHIER".equals(newRoleName) && !"CASHIER".equals(oldRoleName)
+                    && !StringUtils.hasText(req.pin())) {
+                    throw new BadRequestException("Cashier PIN is required when assigning CASHIER role");
+                }
+            }
             user.setRole(role);
         }
 
@@ -250,6 +263,19 @@ public class UserServiceImpl implements UserService {
     private static String trimOrNull(String value) {
         if (!StringUtils.hasText(value)) return null;
         return value.trim();
+    }
+
+    private static String resolvePasswordForCreate(String roleName, String password, String pin) {
+        if ("CASHIER".equalsIgnoreCase(roleName)) {
+            if (StringUtils.hasText(password) && password.trim().length() >= 6) {
+                return password.trim();
+            }
+            return UUID.randomUUID() + "Aa1!";
+        }
+        if (!StringUtils.hasText(password) || password.trim().length() < 6) {
+            throw new BadRequestException("Password must be at least 6 characters");
+        }
+        return password.trim();
     }
 
     private static void assertCashierStoreAssignment(String roleName, List<Integer> storeIds) {

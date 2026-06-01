@@ -60,6 +60,8 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
   const selectedRole = watch('role');
   const isCashierRole = selectedRole === 'CASHIER';
   const fieldOn = useTenantDisplayStore((s) => s.isUserFormFieldOn);
+  const pinRequired = !isEdit || (isCashierRole && user?.role !== 'CASHIER');
+  const showPasswordField = !isCashierRole && (fieldOn('password') || !isEdit);
 
   const { data: companies = [] } = useQuery({
     queryKey: ['companies-all'],
@@ -190,8 +192,18 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
       if (selectedStoreIds.length > 1) {
         selectedStoreIds = [selectedStoreIds[0]];
       }
-      if (!pin || pin.replace(/\D/g, '').length < 4) {
+      if (!pinRequired && pin && pin.replace(/\D/g, '').length > 0 && pin.replace(/\D/g, '').length < 4) {
         toast.error(t('users.pinRequired', { defaultValue: 'PIN обязателен (4–6 цифр)' }));
+        return;
+      }
+      if (pinRequired && (!pin || pin.replace(/\D/g, '').length < 4)) {
+        toast.error(t('users.pinRequired', { defaultValue: 'PIN обязателен (4–6 цифр)' }));
+        return;
+      }
+    } else if (!isEdit) {
+      const pwd = String(data.password || '').trim();
+      if (pwd.length < 6) {
+        toast.error(t('users.passwordMinLength'));
         return;
       }
     }
@@ -232,9 +244,7 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
       username,
       email,
       pin: role === 'CASHIER' ? pin : undefined,
-      password: role === 'CASHIER'
-        ? (String(data.password || '').trim() || `${pin}${pin}`.slice(0, 12))
-        : data.password,
+      password: role === 'CASHIER' ? undefined : data.password,
       role,
       companyId: isPlatform && companyId ? Number(companyId) : undefined,
       storeIds: selectedStoreIds,
@@ -287,20 +297,23 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
             />
             {errors.username && <p className="mt-1 text-xs text-red-400">{t('validation.required')}</p>}
           </div>
-          {selectedRole === 'CASHIER' ? (
+          {isCashierRole ? (
             <div>
               <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
-                {t('users.pin', { defaultValue: 'PIN-код кассира' })} *
+                {t('users.pin', { defaultValue: 'PIN-код кассира' })}
+                {pinRequired ? ' *' : ''}
               </label>
               <input
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 placeholder="••••"
-                {...register('pin', { required: !isEdit })}
+                {...register('pin', { required: pinRequired })}
                 className={inputCls}
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                {t('users.pinHint', { defaultValue: '4–6 цифр. Используется для входа кассира и разблокировки.' })}
+                {pinRequired
+                  ? t('users.pinHint', { defaultValue: '4–6 цифр. Используется для входа кассира и разблокировки.' })
+                  : t('users.pinEditHint', { defaultValue: 'Оставьте пустым, если менять PIN не нужно' })}
               </p>
             </div>
           ) : null}
@@ -310,7 +323,7 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
               <input type="email" {...register('email', { required: true })} className={inputCls} />
             </div>
           ) : null}
-          {(fieldOn('password') || !isEdit) ? (
+          {showPasswordField ? (
           <div>
             <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
               {t('users.password')}
@@ -357,7 +370,11 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
             <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{t('users.role')}</label>
             <select {...register('role')} className={inputCls}>
               {isPlatform ? (
-                <option value="ADMIN">{t('users.roleAdmin')}</option>
+                <>
+                  <option value="ADMIN">{t('users.roleAdmin')}</option>
+                  <option value="MANAGER">{t('users.roleManager')}</option>
+                  <option value="CASHIER">{t('users.roleCashier')}</option>
+                </>
               ) : (
                 <>
                   <option value="MANAGER">{t('users.roleManager')}</option>

@@ -13,7 +13,7 @@ public record CreateUserRequest(
     String fullName,
     @NotBlank String username,
     @NotBlank @Email String email,
-    @NotBlank @Size(min = 6) String password,
+    @Size(min = 6, message = "Password must be at least 6 characters") String password,
     /** Cashier PIN (4-6 digits), required when role=CASHIER for PIN login. */
     String pin,
     @NotBlank String role,

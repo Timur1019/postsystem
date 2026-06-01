@@ -1208,6 +1208,7 @@
     "pin": "Kassir PIN-kodi",
     "pinHint": "4–6 raqam. Kassir kirishi va blokdan chiqarish uchun.",
     "pinRequired": "PIN majburiy (4–6 raqam)",
+    "pinEditHint": "PIN o‘zgartirmasangiz, bo‘sh qoldiring",
     "passwordMinLength": "Parol kamida 6 belgidan iborat bo'lishi kerak",
     "role": "Rol",
     "roleCashier": "Kassir",
