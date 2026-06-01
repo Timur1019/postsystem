@@ -20,7 +20,7 @@ export default function PlatformCompaniesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
-    name: '', loginCode: '', legalName: '', tin: '', address: '', phone: '', active: true,
+    name: '', legalName: '', tin: '', address: '', phone: '', active: true,
   });
   const [menuId, setMenuId] = useState(null);
 
@@ -32,7 +32,11 @@ export default function PlatformCompaniesPage() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: () => (editing ? companyApi.update(editing.id, form) : companyApi.create(form)),
+    mutationFn: () => {
+      const { name, legalName, tin, address, phone, active } = form;
+      const payload = { name, legalName, tin, address, phone, active };
+      return editing ? companyApi.update(editing.id, payload) : companyApi.create(payload);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['companies'] });
       toast.success(t('platform.companySaved'));
@@ -60,7 +64,7 @@ export default function PlatformCompaniesPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', loginCode: '', legalName: '', tin: '', address: '', phone: '', active: true });
+    setForm({ name: '', legalName: '', tin: '', address: '', phone: '', active: true });
     setModalOpen(true);
   };
 
@@ -68,7 +72,6 @@ export default function PlatformCompaniesPage() {
     setEditing(row);
     setForm({
       name: row.name,
-      loginCode: row.loginCode ?? '',
       legalName: row.legalName ?? '',
       tin: row.tin ?? '',
       address: row.address ?? '',
@@ -147,25 +150,27 @@ export default function PlatformCompaniesPage() {
               <h2 className="text-lg font-bold">{editing ? t('platform.editCompany') : t('platform.addCompany')}</h2>
               <button type="button" onClick={() => setModalOpen(false)}><X size={20} /></button>
             </div>
-            {['name','loginCode','legalName','tin','phone'].map((field) => (
+            {!editing ? (
+              <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-100">
+                {t('platform.field_loginCodeAutoHint')}
+              </p>
+            ) : (
+              <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/50">
+                <p className="text-xs text-slate-500">{t('platform.field_loginCode')}</p>
+                <p className="mt-1 font-mono text-lg font-semibold tracking-wider text-slate-900 dark:text-white">
+                  {editing.loginCode || '—'}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">{t('platform.field_loginCodeReadonly')}</p>
+              </div>
+            )}
+            {['name', 'legalName', 'tin', 'phone'].map((field) => (
               <div key={field} className="mb-3">
                 <label className="mb-1 block text-xs text-slate-500">{t(`platform.field_${field}`)}</label>
                 <input
-                  className={inputCls + (field === 'loginCode' ? ' font-mono tracking-wide' : '')}
+                  className={inputCls}
                   value={form[field]}
-                  placeholder={field === 'loginCode' && !editing ? t('platform.field_loginCodeAuto') : '10000'}
-                  inputMode={field === 'loginCode' ? 'numeric' : undefined}
-                  maxLength={field === 'loginCode' ? 5 : undefined}
-                  onChange={(e) => setForm({
-                    ...form,
-                    [field]: field === 'loginCode'
-                      ? e.target.value.replace(/\D/g, '').slice(0, 5)
-                      : e.target.value,
-                  })}
+                  onChange={(e) => setForm({ ...form, [field]: e.target.value })}
                 />
-                {field === 'loginCode' && (
-                  <p className="mt-1 text-xs text-slate-500">{t('platform.field_loginCodeHint')}</p>
-                )}
               </div>
             ))}
             <div className="mb-3">

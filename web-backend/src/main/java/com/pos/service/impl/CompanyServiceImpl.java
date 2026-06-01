@@ -60,7 +60,7 @@ public class CompanyServiceImpl implements CompanyService {
         if (companyRepository.existsByNameIgnoreCase(name)) {
             throw new BadRequestException("Company name already exists");
         }
-        String loginCode = resolveLoginCode(request.loginCode(), null);
+        String loginCode = allocateNextLoginCode(null);
         Company company = Company.builder()
             .name(name)
             .loginCode(loginCode)
@@ -85,9 +85,6 @@ public class CompanyServiceImpl implements CompanyService {
                 throw new BadRequestException("Company name already exists");
             }
             company.setName(name);
-        }
-        if (request.loginCode() != null) {
-            company.setLoginCode(resolveLoginCode(request.loginCode(), id));
         }
         if (request.legalName() != null) company.setLegalName(trimOrNull(request.legalName()));
         if (request.tin() != null) company.setTin(trimOrNull(request.tin()));
@@ -118,20 +115,6 @@ public class CompanyServiceImpl implements CompanyService {
     private CompanyResponse toResponse(Company company) {
         int storeCount = storeRepository.findByCompanyIdOrderByNameAsc(company.getId()).size();
         return companyMapper.toResponse(company, storeCount);
-    }
-
-    private String resolveLoginCode(String requested, Integer excludeId) {
-        if (StringUtils.hasText(requested)) {
-            String code = CompanyLoginCodeUtil.normalize(requested);
-            if (!CompanyLoginCodeUtil.isValid(code)) {
-                throw CompanyLoginCodeUtil.invalidFormat();
-            }
-            if (isLoginCodeTaken(code, excludeId)) {
-                throw CompanyLoginCodeUtil.codeAlreadyUsed();
-            }
-            return code;
-        }
-        return allocateNextLoginCode(excludeId);
     }
 
     private String allocateNextLoginCode(Integer excludeId) {
