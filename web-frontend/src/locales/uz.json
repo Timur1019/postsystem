@@ -111,6 +111,7 @@
     "title": "Kassir kirishi",
     "subtitle": "PIN-kodni kiriting",
     "adminLogin": "Administrator kirishi",
+    "backToCashier": "Kassir kirishi",
     "desktopHint": "Kassa dasturi orqali kirish tavsiya etiladi"
   },
   "installer": {

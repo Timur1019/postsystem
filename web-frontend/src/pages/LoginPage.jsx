@@ -5,14 +5,14 @@ import { z } from 'zod';
 import { useNavigate, Link, useSearchParams, Navigate } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff, Loader, Download } from 'lucide-react';
+import { Eye, EyeOff, Loader, Download, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import LanguageSwitcher from '../components/shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../store/tenantDisplayStore';
 import BrandMark from '../components/shared/BrandMark';
-import { isDesktopCashier, cashierLoginPath, CASHIER_LOGIN_PATH } from '../utils/authLogin';
+import { isDesktopCashier, cashierLoginPath } from '../utils/authLogin';
 
 const COMPANY_CODE_STORAGE_KEY = 'pos.companyLoginCode';
 
@@ -162,6 +162,17 @@ export default function LoginPage() {
       <div className="absolute top-4 right-4">
         <LanguageSwitcher />
       </div>
+      {isDesktop ? (
+        <div className="absolute top-4 left-4">
+          <Link
+            to={cashierLoginPath()}
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+          >
+            <ArrowLeft size={16} />
+            {t('cashierLogin.backToCashier', { defaultValue: 'Вход кассира' })}
+          </Link>
+        </div>
+      ) : null}
       <div className="w-full max-w-md">
         <div className="mb-7 text-center">
           <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500">
@@ -246,16 +257,14 @@ export default function LoginPage() {
         <p className="mt-6 text-center text-xs text-slate-500">
           {t('login.footer', { year: new Date().getFullYear() })}
         </p>
-        {!isDesktop && (
-          <p className="mt-3 text-center text-sm">
-            <Link
-              to={CASHIER_LOGIN_PATH}
-              className="font-medium text-slate-500 hover:text-slate-700"
-            >
-              {t('cashierLogin.title', { defaultValue: 'Вход кассира' })}
-            </Link>
-          </p>
-        )}
+        <p className="mt-3 text-center text-sm">
+          <Link
+            to={cashierLoginPath()}
+            className="font-medium text-slate-500 hover:text-slate-700"
+          >
+            {t('cashierLogin.backToCashier', { defaultValue: 'Вход кассира' })}
+          </Link>
+        </p>
         {!isDesktop && (
           <p className="mt-3 text-center text-sm">
             <Link
