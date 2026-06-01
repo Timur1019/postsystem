@@ -906,4 +906,93 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Сенсор / POS-экран (1024×768, touch) — крупные зоны нажатия
+   ═══════════════════════════════════════════════════════════════ */
+
+.cashier-app.cashier-app--touch {
+  --cashier-touch-min: 48px;
+  --cashier-topbar-control-h: 44px;
+}
+
+@media (pointer: coarse), (hover: none) {
+  .cashier-app.cashier-app--pos-screen {
+    --cashier-touch-min: 48px;
+    --cashier-topbar-control-h: 44px;
+  }
+}
+
+.cashier-app.cashier-app--touch.cashier-app--pos-screen .pos-product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+}
+
+.cashier-app.cashier-app--touch .pos-product-card {
+  min-height: 96px;
+  touch-action: manipulation;
+}
+
+.cashier-app.cashier-app--touch .pos-category-nav__pill,
+.cashier-app.cashier-app--touch .pos-category-tile {
+  min-height: var(--cashier-touch-min, 48px);
+  touch-action: manipulation;
+}
+
+.cashier-app.cashier-app--touch .pos-qty-control__btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.cashier-app.cashier-app--touch .pos-cart-table__remove-btn,
+.cashier-app.cashier-app--touch .pos-order-panel__btn,
+.cashier-app.cashier-app--touch .pos-order-rail__btn,
+.cashier-app.cashier-app--touch .pos-order-rail__pay {
+  min-height: var(--cashier-touch-min, 48px);
+  touch-action: manipulation;
+}
+
+.cashier-app.cashier-app--touch .pos-search-bar__field {
+  min-height: 44px;
+}
+
+.cashier-app.cashier-app--touch .cashier-pos-tabs__btn {
+  min-height: 44px;
+}
+
+.cashier-app.cashier-app--touch .pos-keypad__key,
+.cashier-app.cashier-app--touch .pos-keypad__quick-btn,
+.cashier-app.cashier-app--touch .pos-keypad__clear {
+  min-height: 3.5rem;
+  font-size: 1.5rem;
+  touch-action: manipulation;
+}
+
+.cashier-app.cashier-app--touch .pos-pay-method-card--register,
+.cashier-app.cashier-app--touch .pos-pay-method-card--row,
+.cashier-app.cashier-app--touch .pos-pay-method-card--tile {
+  min-height: 56px;
+  touch-action: manipulation;
+}
+
+.cashier-app.cashier-app--touch .pos-topbar-nav__btn,
+.cashier-app.cashier-app--touch .pos-topbar-views__btn,
+.cashier-app.cashier-app--touch .cashier-topbar__menu {
+  min-height: 40px;
+  min-width: 40px;
+  touch-action: manipulation;
+}
+
+@media (min-width: 1024px) and (max-width: 1366px) and (max-height: 900px) {
+  .cashier-app.cashier-app--pos-screen.cashier-app--touch,
+  .cashier-app.cashier-app--pos-screen {
+    --cashier-gap: 6px;
+    --cashier-pad: 6px;
+  }
+
+  .cashier-app.cashier-app--pos-screen .pos-order-panel__grand span:last-child {
+    font-size: 1.25rem;
+  }
+}
+
 /* Колонка чека и оплата — без уменьшения (читаемость на кассе) */

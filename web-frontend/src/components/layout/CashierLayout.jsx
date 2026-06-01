@@ -26,6 +26,7 @@ import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 import { cashierLoginPath } from '../../utils/authLogin';
 import BrandMark from '../shared/BrandMark';
 import { useCashierShift } from '../../hooks/useCashierShift';
+import { useCashierTouchLayout } from '../../hooks/useCashierTouchLayout';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../styles/cashier-modals.css';
 import '../../styles/cashier-bootstrap.css';
@@ -98,6 +99,7 @@ function CashierLayoutShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const isPosRoute = location.pathname.startsWith('/cashier/pos');
+  const touchLayout = useCashierTouchLayout();
 
   /** На экране кассы <800px — сворачиваем боковое меню, остаётся верхняя навигация */
   useEffect(() => {
@@ -179,7 +181,7 @@ function CashierLayoutShell() {
     <div
       className={`cashier-app ${themeClass} d-flex${sidebarOpen ? '' : ' cashier-app--sidebar-collapsed'}${
         isPosRoute ? ' cashier-app--pos-screen' : ''
-      }${isDesktopApp ? ' cashier-app--desktop' : ''}`}
+      }${touchLayout ? ' cashier-app--touch' : ''}${isDesktopApp ? ' cashier-app--desktop' : ''}`}
     >
       <aside className={sidebarClass}>
         <div className="cashier-sidebar__head">

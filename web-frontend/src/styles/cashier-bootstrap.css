@@ -492,6 +492,19 @@
   text-align: center;
 }
 
+.cashier-lock-overlay__card--pin-touch {
+  width: min(100%, 26rem);
+}
+
+.cashier-lock-overlay__pin-display {
+  margin-bottom: 0.75rem;
+}
+
+.cashier-lock-overlay__keypad {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
 .cashier-topbar {
   min-height: 48px;
   background: var(--pos-surface) !important;

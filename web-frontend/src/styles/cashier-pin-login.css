@@ -1,10 +1,10 @@
 .cashier-pin-login {
   box-sizing: border-box;
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem 1rem;
+  padding: max(1.5rem, env(safe-area-inset-top, 0px)) 1rem max(1.5rem, env(safe-area-inset-bottom, 0px));
   background: #f1f5f9;
 }
 
@@ -192,5 +192,49 @@
   .cashier-pin-login__key {
     min-height: 3.75rem;
     font-size: 1.5rem;
+  }
+}
+
+/* Сенсорный POS / низкий монитор кассы */
+.cashier-pin-login--touch .cashier-pin-login__shell {
+  max-width: 28rem;
+}
+
+.cashier-pin-login--touch .cashier-pin-login__key {
+  min-height: 4rem;
+  font-size: 1.65rem;
+}
+
+.cashier-pin-login--touch .cashier-pin-login__submit {
+  min-height: 3.5rem;
+  font-size: 1.0625rem;
+}
+
+@media (max-height: 720px) {
+  .cashier-pin-login {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .cashier-pin-login__header {
+    margin-bottom: 1rem;
+  }
+
+  .cashier-pin-login__logo {
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .cashier-pin-login__title {
+    font-size: 1.5rem;
+  }
+
+  .cashier-pin-login__card {
+    padding: 1rem;
+  }
+
+  .cashier-pin-login--touch .cashier-pin-login__key {
+    min-height: 3.5rem;
   }
 }

@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 import BrandMark from '../../components/shared/BrandMark';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 import { adminLoginPath, resolveCashierCompanyCode, persistCompanyLoginCode, cashierSessionMatchesCompany } from '../../utils/authLogin';
+import { useCashierTouchLayout } from '../../hooks/useCashierTouchLayout';
 import '../../styles/cashier-pin-login.css';
 
 const PIN_MIN = 4;
@@ -31,6 +32,7 @@ export default function CashierPinLoginPage() {
   const [pin, setPin] = useState('');
   const [companyCode, setCompanyCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const touchLayout = useCashierTouchLayout();
 
   useEffect(() => {
     if (!hasHydrated || !token || user?.role !== 'CASHIER') return;
@@ -126,7 +128,7 @@ export default function CashierPinLoginPage() {
   const dotCount = Math.max(PIN_MIN, dots.length);
 
   return (
-    <div className="cashier-pin-login">
+    <div className={`cashier-pin-login${touchLayout ? ' cashier-pin-login--touch' : ''}`}>
       <div className="cashier-pin-login__shell">
         <header className="cashier-pin-login__header">
           <div className="cashier-pin-login__logo">

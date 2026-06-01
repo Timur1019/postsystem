@@ -527,6 +527,18 @@ ipcMain.handle('desktop:print-receipt-auto', async (event) => {
   }
 });
 
+function fitWindowToPosDisplay(win) {
+  try {
+    const { screen } = require('electron');
+    const area = screen.getPrimaryDisplay().workAreaSize;
+    if (area.width <= 1366 && area.height <= 900) {
+      win.maximize();
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1366,
@@ -569,6 +581,7 @@ function createWindow() {
     );
   });
 
+  fitWindowToPosDisplay(mainWindow);
   mainWindow.loadURL(buildLoginUrl(config));
 }
 
