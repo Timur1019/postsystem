@@ -1,46 +1,122 @@
 .cashier-pin-login {
+  box-sizing: border-box;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.5rem 1rem;
   background: #f1f5f9;
+}
+
+.cashier-pin-login *,
+.cashier-pin-login *::before,
+.cashier-pin-login *::after {
+  box-sizing: border-box;
+}
+
+.cashier-pin-login__shell {
+  width: 100%;
+  max-width: 24rem;
+  margin: 0 auto;
+}
+
+.cashier-pin-login__header {
+  margin-bottom: 1.75rem;
+  text-align: center;
+}
+
+.cashier-pin-login__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 1rem;
+  border-radius: 1rem;
+  background: #10b981;
+}
+
+.cashier-pin-login__title {
+  margin: 0;
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+}
+
+.cashier-pin-login__subtitle {
+  margin: 0.375rem 0 0;
+  font-size: 1rem;
+  color: #64748b;
 }
 
 .cashier-pin-login__card {
   width: 100%;
-  max-width: 22rem;
   border-radius: 1rem;
   border: 1px solid #e2e8f0;
   background: #fff;
-  padding: 1.25rem;
+  padding: 1.5rem;
   box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
 }
 
+.cashier-pin-login__pin-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
 .cashier-pin-login__dots {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cashier-pin-login__dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
   font-family: ui-monospace, monospace;
   font-size: 1.75rem;
-  letter-spacing: 0.45em;
-  padding: 0.75rem 0;
+  line-height: 1;
+  color: #cbd5e1;
+}
+
+.cashier-pin-login__dot.is-filled {
   color: #0f172a;
 }
 
 .cashier-pin-login__keypad {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.625rem;
+  width: 100%;
   margin-top: 1rem;
 }
 
 .cashier-pin-login__key {
-  min-height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 3.25rem;
+  margin: 0;
+  padding: 0;
   border-radius: 0.75rem;
   border: 1px solid #e2e8f0;
   background: #fff;
   font-size: 1.35rem;
   font-weight: 600;
   color: #0f172a;
+  cursor: pointer;
   touch-action: manipulation;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -51,33 +127,53 @@
   background: #f8fafc;
 }
 
+.cashier-pin-login__key:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .cashier-pin-login__key--action {
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
   color: #64748b;
 }
 
 .cashier-pin-login__submit {
-  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   width: 100%;
   min-height: 3rem;
-  border-radius: 0.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0 1rem;
   border: none;
-  background: #059669;
+  border-radius: 0.75rem;
+  background: #10b981;
   color: #fff;
   font-size: 1rem;
   font-weight: 600;
+  cursor: pointer;
   touch-action: manipulation;
+}
+
+.cashier-pin-login__submit:hover:not(:disabled) {
+  background: #059669;
 }
 
 .cashier-pin-login__submit:disabled {
   opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cashier-pin-login__footer {
+  margin-top: 1.5rem;
+  text-align: center;
 }
 
 .cashier-pin-login__admin-link {
-  display: block;
-  margin-top: 1.25rem;
-  text-align: center;
-  font-size: 0.7rem;
+  display: inline-block;
+  font-size: 0.8125rem;
   color: #94a3b8;
   text-decoration: none;
 }
@@ -86,9 +182,15 @@
   color: #64748b;
 }
 
+.cashier-pin-login__copyright {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
 @media (min-width: 768px) {
   .cashier-pin-login__key {
-    min-height: 4rem;
+    min-height: 3.75rem;
     font-size: 1.5rem;
   }
 }

@@ -115,26 +115,32 @@ export default function CashierPinLoginPage() {
   }, [loading, canSubmit, companyCode, pin]);
 
   const dots = normalizePin(pin);
+  const dotCount = Math.max(PIN_MIN, dots.length);
 
   return (
     <div className="cashier-pin-login">
-      <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500">
+      <div className="cashier-pin-login__shell">
+        <header className="cashier-pin-login__header">
+          <div className="cashier-pin-login__logo">
             <BrandMark size={32} iconClassName="text-white" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{displayAppName()}</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <h1 className="cashier-pin-login__title">{displayAppName()}</h1>
+          <p className="cashier-pin-login__subtitle">
             {t('cashierLogin.subtitle', { defaultValue: 'Введите PIN-код' })}
           </p>
-        </div>
+        </header>
 
         <div className="cashier-pin-login__card">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <div className="cashier-pin-login__dots">
-              {Array.from({ length: Math.max(PIN_MIN, dots.length) }).map((_, i) =>
-                dots[i] ? '•' : '○'
-              ).join(' ')}
+          <div className="cashier-pin-login__pin-display">
+            <div className="cashier-pin-login__dots" aria-label={t('cashierLogin.subtitle', { defaultValue: 'Введите PIN-код' })}>
+              {Array.from({ length: dotCount }).map((_, i) => (
+                <span
+                  key={i}
+                  className={`cashier-pin-login__dot${dots[i] ? ' is-filled' : ''}`}
+                >
+                  {dots[i] ? '•' : '○'}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -180,20 +186,21 @@ export default function CashierPinLoginPage() {
             type="button"
             onClick={submit}
             disabled={!canSubmit || loading}
-            className="cashier-pin-login__submit flex items-center justify-center gap-2"
+            className="cashier-pin-login__submit"
           >
             {loading ? <Loader size={18} className="animate-spin" /> : null}
             {t('login.signIn', { defaultValue: 'Войти' })}
           </button>
         </div>
 
-        <Link to={adminLoginPath()} className="cashier-pin-login__admin-link">
-          {t('cashierLogin.adminLogin', { defaultValue: 'Вход администратора' })}
-        </Link>
-
-        <p className="mt-4 text-center text-xs text-slate-500">
-          {t('login.footer', { year: new Date().getFullYear() })}
-        </p>
+        <footer className="cashier-pin-login__footer">
+          <Link to={adminLoginPath()} className="cashier-pin-login__admin-link">
+            {t('cashierLogin.adminLogin', { defaultValue: 'Вход администратора' })}
+          </Link>
+          <p className="cashier-pin-login__copyright">
+            {t('login.footer', { year: new Date().getFullYear() })}
+          </p>
+        </footer>
       </div>
     </div>
   );
