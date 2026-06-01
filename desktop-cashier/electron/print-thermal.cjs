@@ -70,6 +70,28 @@ function waitForImages(webContents) {
   `);
 }
 
+function waitForLabelImages(webContents) {
+  return webContents.executeJavaScript(`
+    (() => {
+      const layer = document.getElementById('shelf-label-print-layer');
+      const imgs = layer
+        ? Array.from(layer.querySelectorAll('img'))
+        : [];
+      return Promise.all(
+        imgs.map(
+          (img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise((r) => {
+                  img.onload = r;
+                  img.onerror = r;
+                })
+        )
+      );
+    })()
+  `);
+}
+
 function waitForPaintFrames(webContents) {
   return webContents.executeJavaScript(`
     new Promise((resolve) => {
@@ -200,6 +222,7 @@ module.exports = {
   IS_WIN,
   paperWidthPx,
   waitForImages,
+  waitForLabelImages,
   waitForPaintFrames,
   runSilentReceiptAutoPrint,
   runSilentLabelPrint,

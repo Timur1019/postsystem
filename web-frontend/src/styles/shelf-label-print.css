@@ -65,6 +65,51 @@
   align-items: flex-start;
 }
 
+/* Electron: тихая печать этикетки (как автопечать чека) */
+html.electron-silent-label {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+html.electron-silent-label.shelflabel-printing-active #root,
+html.electron-silent-label.shelflabel-printing-active .shelflabel-no-print-wrap,
+html.electron-silent-label.shelflabel-printing-active [data-sonner-toaster],
+html.electron-silent-label.shelflabel-printing-active
+  body > *:not(#pos-label-print-mount) {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+html.electron-silent-label.shelflabel-printing-active #pos-label-print-mount,
+html.electron-silent-label.shelflabel-printing-active #shelf-label-print-layer {
+  display: block !important;
+  visibility: visible !important;
+  position: fixed !important;
+  left: -10000px !important;
+  top: 0 !important;
+  width: 90mm !important;
+  max-width: 90mm !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+  overflow: visible !important;
+  z-index: 0 !important;
+  background: #fff !important;
+}
+
+html.electron-silent-label.shelflabel-printing-active.electron-print-capturing #pos-label-print-mount {
+  left: 0 !important;
+  top: 0 !important;
+  z-index: 2147483640 !important;
+}
+
+html.electron-silent-label.shelflabel-printing-active #shelf-label-print-layer,
+html.electron-silent-label.shelflabel-printing-active #shelf-label-print-layer * {
+  visibility: visible !important;
+  color: #000 !important;
+}
+
 @media print {
   body.shelflabel-printing-active * {
     visibility: hidden !important;

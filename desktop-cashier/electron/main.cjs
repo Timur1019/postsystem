@@ -15,6 +15,7 @@ const { showPrinterPickerWindow } = require('./printer-picker-window.cjs');
 const { matchPrinterName } = require('./printer-match.cjs');
 const {
   waitForImages,
+  waitForLabelImages,
   waitForPaintFrames,
   runSilentReceiptAutoPrint,
   runSilentLabelPrint,
@@ -445,20 +446,54 @@ function resolveLabelPrinterName(options) {
   return resolvePrinterByKind('label', options);
 }
 
+async function safeExecuteJavaScript(wc, script, stepLabel) {
+  try {
+    return await wc.executeJavaScript(script);
+  } catch (err) {
+    const detail = err?.message || String(err);
+    if (/Script failed to execute/i.test(detail)) {
+      throw new Error(`Сбой подготовки печати (${stepLabel}). Повторите операцию.`);
+    }
+    throw err;
+  }
+}
+
+const LABEL_READY_JS = `
+  (() => {
+    const layer = document.getElementById('shelf-label-print-layer');
+    if (!layer) return false;
+    const pages = layer.querySelectorAll('.shelflabel-print-page');
+    if (!pages.length) return false;
+    const h = Math.max(layer.scrollHeight, layer.offsetHeight, layer.getBoundingClientRect().height);
+    if (h < 30) return false;
+    const svgs = layer.querySelectorAll('.shelflabel-barcode-svg');
+    if (!svgs.length) return true;
+    return [...svgs].every((s) => s.querySelector('rect, path, line, g'));
+  })()
+`;
+
+async function waitLabelReadyForPrint(wc, attempts = 10) {
+  for (let i = 0; i < attempts; i += 1) {
+    const ready = await safeExecuteJavaScript(wc, LABEL_READY_JS, 'этикетка');
+    if (ready) return true;
+    await new Promise((r) => setTimeout(r, 120 + i * 100));
+  }
+  return false;
+}
+
 ipcMain.handle('print-label-page', async (event) => {
   const wc = event.sender;
   if (!wc || wc.isDestroyed()) {
     throw new Error('Окно печати недоступно');
   }
-  const hasLayer = await wc.executeJavaScript(
-    'Boolean(document.getElementById("shelf-label-print-layer"))'
-  );
-  if (!hasLayer) {
-    throw new Error('Нет этикеток для печати');
+  const ready = await waitLabelReadyForPrint(wc);
+  if (!ready) {
+    throw new Error('Этикетка не готова для печати (штрихкод или макет)');
   }
-  await waitForImages(wc);
-  await new Promise((r) => setTimeout(r, 200));
-  const deviceName = await resolveLabelPrinterName();
+  await waitForLabelImages(wc);
+  await waitForPaintFrames(wc);
+  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 350 : 200));
+  const deviceName = await resolveLabelPrinterName({ promptIfMissing: false });
   await runSilentLabelPrint(wc, { deviceName });
   return { ok: true };
 });
@@ -475,20 +510,6 @@ const RECEIPT_READY_JS = `
     return textLen >= 80 && h >= 120 && imgsReady;
   })()
 `;
-
-async function safeExecuteJavaScript(wc, script, stepLabel) {
-  try {
-    return await wc.executeJavaScript(script);
-  } catch (err) {
-    const detail = err?.message || String(err);
-    if (/Script failed to execute/i.test(detail)) {
-      throw new Error(
-        `Чек не найден в окне (${stepLabel}). Повторите продажу или тест: Aurent → «Принтер чека».`
-      );
-    }
-    throw err;
-  }
-}
 
 async function waitReceiptReadyForAutoPrint(wc, attempts = 10) {
   for (let i = 0; i < attempts; i += 1) {

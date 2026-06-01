@@ -1,20 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import JsBarcode from 'jsbarcode';
 import { fmtMoney } from '../../utils/formatMoney';
+import { getLabelPrintMountEl, teardownLabelPrintMount } from '../../utils/labelPrintMount';
+import {
+  isDesktopLabelPrintAvailable,
+  printShelfLabelSilent,
+} from '../../utils/printShelfLabel';
 
 import '../../styles/shelf-label-print.css';
-
-function isDesktopLabelPrintAvailable() {
-  return (
-    typeof window !== 'undefined' &&
-    Boolean(window.desktopCashier?.isDesktop) &&
-    typeof window.desktopCashier.printLabelPage === 'function'
-  );
-}
 
 function BarcodeBlock({ value }) {
   const svgRef = useRef(null);
@@ -76,8 +73,20 @@ function LabelSheet({
   );
 }
 
+function mountLabelPrintLayer(printNodes) {
+  const host = getLabelPrintMountEl();
+  host.replaceChildren();
+  const layer = document.createElement('div');
+  layer.id = 'shelf-label-print-layer';
+  layer.className = 'shelflabel-print-layer';
+  host.appendChild(layer);
+  const root = createRoot(layer);
+  root.render(<>{printNodes}</>);
+  return root;
+}
+
 /**
- * Этикетка / ценник для полки — предпросмотр и печать (browser print).
+ * Этикетка / ценник для полки — предпросмотр и печать.
  */
 export default function ShelfLabelPrintModal({
   open,
@@ -92,6 +101,7 @@ export default function ShelfLabelPrintModal({
   const [showBarcode, setShowBarcode] = React.useState(true);
   const [showPrice, setShowPrice] = React.useState(true);
   const [copies, setCopies] = React.useState(1);
+  const printRootRef = useRef(null);
 
   useEffect(() => {
     if (open) {
@@ -101,6 +111,17 @@ export default function ShelfLabelPrintModal({
       setShowPrice(true);
       setCopies(1);
     }
+    return () => {
+      if (!open) {
+        try {
+          printRootRef.current?.unmount();
+        } catch {
+          /* ignore */
+        }
+        printRootRef.current = null;
+        teardownLabelPrintMount();
+      }
+    };
   }, [open]);
 
   const currency = t('fiscalReceipt.currency');
@@ -124,30 +145,39 @@ export default function ShelfLabelPrintModal({
   }, [variant, productName, barcode, price, showName, showBarcode, showPrice, currency, copies]);
 
   const doPrint = useCallback(async () => {
-    document.body.classList.add('shelflabel-printing-active');
-    if (isDesktopLabelPrintAvailable()) {
-      try {
-        await document.fonts?.ready;
-        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-        await new Promise((r) => setTimeout(r, 100));
-        await window.desktopCashier.printLabelPage();
-        toast.success(t('usersBarcodePrint.printSent'));
-      } catch (e) {
-        toast.error(e?.message ?? t('usersBarcodePrint.printFailed'));
-      } finally {
-        document.body.classList.remove('shelflabel-printing-active');
-      }
+    if (showBarcode && !barcode?.trim()) {
+      toast.error(t('usersBarcodePrint.noBarcodeForPrint'));
       return;
     }
-    window.addEventListener(
-      'afterprint',
-      () => {
-        document.body.classList.remove('shelflabel-printing-active');
-      },
-      { once: true }
-    );
-    window.print();
-  }, [t]);
+
+    try {
+      printRootRef.current?.unmount();
+    } catch {
+      /* ignore */
+    }
+    printRootRef.current = mountLabelPrintLayer(printNodes);
+
+    try {
+      const mode = await printShelfLabelSilent({ requireBarcode: showBarcode });
+      if (mode === 'silent' || mode === 'dialog') {
+        toast.success(t('usersBarcodePrint.printSent'));
+      }
+    } catch (e) {
+      const msg = e?.message ?? t('usersBarcodePrint.printFailed');
+      const hint = t('desktop.labelPrinter', { defaultValue: 'Принтер штрих-кодов' });
+      const showHint =
+        isDesktopLabelPrintAvailable() && !/принтер/i.test(msg) && !/Aurent/i.test(msg);
+      toast.error(showHint ? `${msg}. Aurent → «${hint}».` : msg);
+    } finally {
+      try {
+        printRootRef.current?.unmount();
+      } catch {
+        /* ignore */
+      }
+      printRootRef.current = null;
+      teardownLabelPrintMount();
+    }
+  }, [barcode, printNodes, showBarcode, t]);
 
   useEffect(() => {
     void i18n.language;
@@ -183,96 +213,82 @@ export default function ShelfLabelPrintModal({
     </div>
   );
 
-  const printPortal =
-    typeof document !== 'undefined'
-      ? createPortal(
-          <div id="shelf-label-print-layer" className="shelflabel-print-layer">
-            {printNodes}
-          </div>,
-          document.body
-        )
-      : null;
-
   return (
-    <>
-      <div className="shelflabel-no-print-wrap fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
-        <div
-          role="dialog"
-          aria-modal
-          aria-labelledby="shelf-label-title"
-          className="relative flex max-h-[95vh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl dark:bg-slate-900 sm:rounded-2xl"
-        >
-          <header className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
-            <h2 id="shelf-label-title" className="text-lg font-semibold text-slate-900 dark:text-white">
-              {t('usersBarcodePrint.modalTitle')}
-            </h2>
-            <button type="button" className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={onClose}>
-              <X size={22} aria-hidden />
+    <div className="shelflabel-no-print-wrap fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
+      <div
+        role="dialog"
+        aria-modal
+        aria-labelledby="shelf-label-title"
+        className="relative flex max-h-[95vh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl dark:bg-slate-900 sm:rounded-2xl"
+      >
+        <header className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+          <h2 id="shelf-label-title" className="text-lg font-semibold text-slate-900 dark:text-white">
+            {t('usersBarcodePrint.modalTitle')}
+          </h2>
+          <button type="button" className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={onClose}>
+            <X size={22} aria-hidden />
+          </button>
+        </header>
+
+        <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-700">
+          <div className="flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+            <button type="button" className={tabCls(variant === 'label')} onClick={() => setVariant('label')}>
+              {t('usersBarcodePrint.tabLabel')}
             </button>
-          </header>
+            <button type="button" className={tabCls(variant === 'priceTag')} onClick={() => setVariant('priceTag')}>
+              {t('usersBarcodePrint.tabPriceTag')}
+            </button>
+          </div>
+        </div>
 
-          <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-700">
-            <div className="flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
-              <button type="button" className={tabCls(variant === 'label')} onClick={() => setVariant('label')}>
-                {t('usersBarcodePrint.tabLabel')}
-              </button>
-              <button type="button" className={tabCls(variant === 'priceTag')} onClick={() => setVariant('priceTag')}>
-                {t('usersBarcodePrint.tabPriceTag')}
-              </button>
-            </div>
+        <div className="grow overflow-y-auto px-4">
+          <div className="py-2">{toggleRow(t('usersBarcodePrint.showName'), showName, setShowName)}</div>
+          <div>{toggleRow(t('usersBarcodePrint.showBarcode'), showBarcode, setShowBarcode)}</div>
+          <div>{toggleRow(t('usersBarcodePrint.showPrice'), showPrice, setShowPrice)}</div>
+
+          <div className="mx-auto my-4 max-w-[280px] rounded-xl border border-slate-200 bg-white p-4 shadow-inner dark:border-slate-600 dark:bg-slate-950">
+            <LabelSheet
+              variant={variant}
+              productName={productName}
+              barcode={barcode}
+              price={price}
+              showName={showName}
+              showBarcode={showBarcode}
+              showPrice={showPrice}
+              currency={currency}
+            />
           </div>
 
-          <div className="grow overflow-y-auto px-4">
-            <div className="py-2">{toggleRow(t('usersBarcodePrint.showName'), showName, setShowName)}</div>
-            <div>{toggleRow(t('usersBarcodePrint.showBarcode'), showBarcode, setShowBarcode)}</div>
-            <div>{toggleRow(t('usersBarcodePrint.showPrice'), showPrice, setShowPrice)}</div>
-
-            <div className="mx-auto my-4 max-w-[280px] rounded-xl border border-slate-200 bg-white p-4 shadow-inner dark:border-slate-600 dark:bg-slate-950">
-              <LabelSheet
-                variant={variant}
-                productName={productName}
-                barcode={barcode}
-                price={price}
-                showName={showName}
-                showBarcode={showBarcode}
-                showPrice={showPrice}
-                currency={currency}
-              />
-            </div>
-
-            <div className="mb-6 flex items-center justify-center gap-3">
-              <span className="text-sm text-slate-600 dark:text-slate-400">{t('usersBarcodePrint.copies')}</span>
-              <button
-                type="button"
-                className="h-10 w-10 rounded-lg border border-slate-300 bg-white text-lg dark:border-slate-600 dark:bg-slate-800"
-                onClick={() => setCopies((c) => Math.max(1, c - 1))}
-              >
-                −
-              </button>
-              <span className="min-w-[2.5rem] text-center font-mono text-base">{copies}</span>
-              <button
-                type="button"
-                className="h-10 w-10 rounded-lg border border-slate-300 bg-white text-lg dark:border-slate-600 dark:bg-slate-800"
-                onClick={() => setCopies((c) => Math.min(999, c + 1))}
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          <footer className="shrink-0 border-t border-slate-200 p-4 dark:border-slate-700">
+          <div className="mb-6 flex items-center justify-center gap-3">
+            <span className="text-sm text-slate-600 dark:text-slate-400">{t('usersBarcodePrint.copies')}</span>
             <button
               type="button"
-              onClick={doPrint}
-              className="w-full rounded-xl bg-emerald-700 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              className="h-10 w-10 rounded-lg border border-slate-300 bg-white text-lg dark:border-slate-600 dark:bg-slate-800"
+              onClick={() => setCopies((c) => Math.max(1, c - 1))}
             >
-              {t('usersBarcodePrint.print')}
+              −
             </button>
-          </footer>
+            <span className="min-w-[2.5rem] text-center font-mono text-base">{copies}</span>
+            <button
+              type="button"
+              className="h-10 w-10 rounded-lg border border-slate-300 bg-white text-lg dark:border-slate-600 dark:bg-slate-800"
+              onClick={() => setCopies((c) => Math.min(999, c + 1))}
+            >
+              +
+            </button>
+          </div>
         </div>
-      </div>
 
-      {printPortal}
-    </>
+        <footer className="shrink-0 border-t border-slate-200 p-4 dark:border-slate-700">
+          <button
+            type="button"
+            onClick={doPrint}
+            className="w-full rounded-xl bg-emerald-700 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+          >
+            {t('usersBarcodePrint.print')}
+          </button>
+        </footer>
+      </div>
+    </div>
   );
 }
