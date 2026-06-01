@@ -8,6 +8,7 @@ import com.pos.repository.SaleRepository;
 import com.pos.repository.ZReportRepository;
 import com.pos.repository.spec.ZReportSpecifications;
 import com.pos.service.export.ZReportExportService;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.ExcelSpreadsheetWriter;
 import com.pos.spreadsheet.ExcelTemplate;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class ZReportExportServiceImpl implements ZReportExportService {
     private final ZReportRepository zReportRepository;
     private final SaleRepository saleRepository;
     private final ExcelSpreadsheetWriter excelWriter;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public byte[] exportListExcel(
@@ -47,7 +49,10 @@ public class ZReportExportServiceImpl implements ZReportExportService {
     ) {
         Instant from = closedFrom != null ? closedFrom.atStartOfDay(TZ).toInstant() : null;
         Instant to = closedTo != null ? closedTo.plusDays(1).atStartOfDay(TZ).toInstant() : null;
-        var spec = ZReportSpecifications.filter(employeeSearch, fiscalCardId, terminalSerial, storeId, from, to);
+        var spec = ZReportSpecifications.filter(
+            tenantAccess.requireEffectiveCompanyId(),
+            employeeSearch, fiscalCardId, terminalSerial, storeId, from, to
+        );
         List<ZReport> all = zReportRepository.findAll(spec);
 
         List<Map<String, Object>> rows = new ArrayList<>();

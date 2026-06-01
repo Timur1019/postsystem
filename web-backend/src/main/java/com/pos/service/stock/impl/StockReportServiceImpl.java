@@ -21,6 +21,7 @@ import com.pos.repository.SaleItemRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.repository.StockReceiptRepository;
 import com.pos.service.stock.StockReportService;
+import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -54,9 +55,11 @@ public class StockReportServiceImpl implements StockReportService {
     private final SaleItemRepository saleItemRepository;
     private final ProductRepository productRepository;
     private final StockReceiptRepository stockReceiptRepository;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public StockDashboardResponse dashboard(LocalDate from, LocalDate to, Integer storeId) {
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
         Instant start = from.atStartOfDay(ZONE).toInstant();
         Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
 
@@ -70,20 +73,20 @@ public class StockReportServiceImpl implements StockReportService {
         BigDecimal writeOffCost = nz(stockMovementRepository.sumWriteOffCostBetween(start, end, storeId));
 
         long soldUnits = 0;
-        for (Object[] row : saleItemRepository.dailySoldUnitsAggregates(start, end, storeId)) {
+        for (Object[] row : saleItemRepository.dailySoldUnitsAggregates(start, end, storeId, companyId)) {
             soldUnits += ((Number) row[1]).longValue();
         }
 
-        Object[] stockTotals = unwrapAggregateRow(productRepository.sumActiveStockUnitsAndCost());
+        Object[] stockTotals = unwrapAggregateRow(productRepository.sumActiveStockUnitsAndCost(companyId));
         long currentUnits = toLong(stockTotals[0]);
         BigDecimal currentCost = toBigDecimal(stockTotals[1]);
 
-        long lowStockCount = productRepository.countLowStock();
+        long lowStockCount = productRepository.countLowStockByCompanyId(companyId);
 
         List<StockDashboardDayPoint> daily = mergeDailyBreakdown(
             from, to,
             stockMovementRepository.dailyStockMovementAggregates(start, end, storeId),
-            saleItemRepository.dailySoldUnitsAggregates(start, end, storeId)
+            saleItemRepository.dailySoldUnitsAggregates(start, end, storeId, companyId)
         );
 
         return new StockDashboardResponse(
@@ -109,15 +112,18 @@ public class StockReportServiceImpl implements StockReportService {
         Pageable pageable
     ) {
         String q = StringUtils.hasText(search) ? search.trim() : "";
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
         Page<Object[]> page = productRepository.productSalesReportPage(
-            from, to, storeId, categoryId, q, pageable
+            from, to, storeId, categoryId, q, companyId, pageable
         );
         return PageResponse.from(page.map(this::toProductSalesRow));
     }
 
     @Override
     public PageResponse<LowStockRowResponse> lowStock(Pageable pageable) {
-        Page<Product> page = productRepository.findLowStockPage(pageable);
+        Page<Product> page = productRepository.findLowStockPageByCompanyId(
+            tenantAccess.requireEffectiveCompanyId(), pageable
+        );
         return PageResponse.from(page.map(this::toLowStockRow));
     }
 
@@ -178,7 +184,9 @@ public class StockReportServiceImpl implements StockReportService {
         Integer storeId,
         Pageable pageable
     ) {
-        Page<Object[]> page = productRepository.categorySalesReportPage(from, to, storeId, pageable);
+        Page<Object[]> page = productRepository.categorySalesReportPage(
+            from, to, storeId, tenantAccess.requireEffectiveCompanyId(), pageable
+        );
         return PageResponse.from(page.map(this::toCategorySalesRow));
     }
 
@@ -188,7 +196,9 @@ public class StockReportServiceImpl implements StockReportService {
         LocalDate to,
         Pageable pageable
     ) {
-        Page<Object[]> page = productRepository.storeSalesReportPage(from, to, pageable);
+        Page<Object[]> page = productRepository.storeSalesReportPage(
+            from, to, tenantAccess.requireEffectiveCompanyId(), pageable
+        );
         return PageResponse.from(page.map(this::toStoreSalesRow));
     }
 
@@ -216,7 +226,9 @@ public class StockReportServiceImpl implements StockReportService {
         Pageable pageable
     ) {
         String q = StringUtils.hasText(search) ? search.trim() : "";
-        Page<Product> page = productRepository.stockBalancesPage(categoryId, q, onlyWithStock, pageable);
+        Page<Product> page = productRepository.stockBalancesPage(
+            tenantAccess.requireEffectiveCompanyId(), categoryId, q, onlyWithStock, pageable
+        );
         return PageResponse.from(page.map(this::toBalanceRow));
     }
 

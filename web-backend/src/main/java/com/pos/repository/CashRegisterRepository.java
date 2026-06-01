@@ -31,9 +31,10 @@ public interface CashRegisterRepository extends JpaRepository<CashRegister, Long
         JOIN c.store s
         WHERE c.equipmentSerial IS NOT NULL AND TRIM(c.equipmentSerial) <> ''
           AND s.active = TRUE AND s.company IS NOT NULL
+          AND s.company.id = :companyId
         ORDER BY c.equipmentSerial
         """)
-    List<String> findDistinctEquipmentSerials();
+    List<String> findDistinctEquipmentSerials(@Param("companyId") Integer companyId);
 
     @Query("SELECT c FROM CashRegister c JOIN FETCH c.store WHERE c.id = :id")
     Optional<CashRegister> findDetailById(@Param("id") Long id);

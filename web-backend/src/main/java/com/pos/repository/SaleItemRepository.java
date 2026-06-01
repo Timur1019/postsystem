@@ -105,13 +105,15 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         WHERE s.created_at >= :start AND s.created_at < :end
           AND s.status = 'COMPLETED'
           AND (:storeId IS NULL OR s.store_id = :storeId)
+          AND s.company_id = :companyId
         GROUP BY CAST(s.created_at AS date)
         ORDER BY day
         """, nativeQuery = true)
     java.util.List<Object[]> dailySoldUnitsAggregates(
         @Param("start") Instant start,
         @Param("end") Instant end,
-        @Param("storeId") Integer storeId
+        @Param("storeId") Integer storeId,
+        @Param("companyId") Integer companyId
     );
 
     @Query(value = """

@@ -43,6 +43,11 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
             OR (:paymentSettlement = 'ADVANCE' AND s.receiptType = 'ADVANCE')
             OR (:paymentSettlement = 'CREDIT' AND s.receiptType = 'CREDIT')
         )
+        AND (
+            :companyId IS NULL
+            OR (s.company IS NOT NULL AND s.company.id = :companyId)
+            OR (s.company IS NULL AND s.store IS NOT NULL AND s.store.company.id = :companyId)
+        )
         """,
         countQuery = """
         SELECT COUNT(s) FROM Sale s
@@ -64,6 +69,11 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
             OR (:paymentSettlement = 'CREDIT' AND s.receiptType = 'CREDIT')
         )
         AND (:storeId IS NULL OR (s.store IS NOT NULL AND s.store.id = :storeId))
+        AND (
+            :companyId IS NULL
+            OR (s.company IS NOT NULL AND s.company.id = :companyId)
+            OR (s.company IS NULL AND s.store IS NOT NULL AND s.store.company.id = :companyId)
+        )
         """)
     Page<Sale> searchSales(
         @Param("start") Instant start,
@@ -77,6 +87,7 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         @Param("saleId") UUID saleId,
         @Param("paymentSettlement") String paymentSettlement,
         @Param("storeId") Integer storeId,
+        @Param("companyId") Integer companyId,
         Pageable pageable
     );
 
@@ -90,6 +101,11 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         AND (:cashierName IS NULL OR :cashierName = '' OR LOWER(s.cashier.fullName) LIKE LOWER(CONCAT('%', :cashierName, '%')))
         AND (:fiscal IS NULL OR :fiscal = '' OR LOWER(s.receiptNumber) LIKE LOWER(CONCAT('%', :fiscal, '%')))
         AND (:storeId IS NULL OR (s.store IS NOT NULL AND s.store.id = :storeId))
+        AND (
+            :companyId IS NULL
+            OR (s.company IS NOT NULL AND s.company.id = :companyId)
+            OR (s.company IS NULL AND s.store IS NOT NULL AND s.store.company.id = :companyId)
+        )
         """,
         countQuery = """
         SELECT COUNT(s) FROM Sale s
@@ -98,6 +114,11 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         AND (:cashierName IS NULL OR :cashierName = '' OR LOWER(s.cashier.fullName) LIKE LOWER(CONCAT('%', :cashierName, '%')))
         AND (:fiscal IS NULL OR :fiscal = '' OR LOWER(s.receiptNumber) LIKE LOWER(CONCAT('%', :fiscal, '%')))
         AND (:storeId IS NULL OR (s.store IS NOT NULL AND s.store.id = :storeId))
+        AND (
+            :companyId IS NULL
+            OR (s.company IS NOT NULL AND s.company.id = :companyId)
+            OR (s.company IS NULL AND s.store IS NOT NULL AND s.store.company.id = :companyId)
+        )
         """
     )
     Page<Sale> searchReturns(
@@ -107,6 +128,7 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         @Param("cashierName") String cashierName,
         @Param("fiscal") String fiscal,
         @Param("storeId") Integer storeId,
+        @Param("companyId") Integer companyId,
         Pageable pageable
     );
 

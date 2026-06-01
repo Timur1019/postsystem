@@ -6,6 +6,7 @@ import com.pos.entity.SaleItem;
 import com.pos.repository.SaleRepository;
 import com.pos.service.export.SaleExportService;
 import com.pos.service.support.SalesQuerySupport;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.ExcelSpreadsheetWriter;
 import com.pos.spreadsheet.ExcelTemplate;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class SaleExportServiceImpl implements SaleExportService {
 
     private final SaleRepository saleRepository;
     private final ExcelSpreadsheetWriter excelWriter;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public byte[] exportSoldLinesExcel(
@@ -61,6 +63,7 @@ public class SaleExportServiceImpl implements SaleExportService {
         Page<Sale> sales = saleRepository.searchSales(
             f.start(), f.end(), f.cashierId(), f.receipt(), f.cashierName(), f.q(),
             f.paymentMethod(), f.status(), f.saleId(), f.paymentSettlement(), f.storeId(),
+            tenantAccess.requireEffectiveCompanyId(),
             Pageable.unpaged()
         );
 

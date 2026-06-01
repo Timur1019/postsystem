@@ -8,6 +8,7 @@ import com.pos.mapper.CashTransferMapper;
 import com.pos.repository.CashRegisterRepository;
 import com.pos.repository.ZReportRepository;
 import com.pos.repository.spec.CashTransferSpecifications;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.service.CashTransferService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,6 +36,7 @@ public class CashTransferServiceImpl implements CashTransferService {
     private final ZReportRepository zReportRepository;
     private final CashRegisterRepository cashRegisterRepository;
     private final CashTransferMapper cashTransferMapper;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public PageResponse<CashTransferRowResponse> list(
@@ -46,7 +48,10 @@ public class CashTransferServiceImpl implements CashTransferService {
     ) {
         Instant fromInst = toStartOfDay(closedFrom);
         Instant toInst = toEndOfDay(closedTo);
-        Specification<ZReport> spec = CashTransferSpecifications.filter(storeSearch, registerNumber, fromInst, toInst);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Specification<ZReport> spec = CashTransferSpecifications.filter(
+            companyId, storeSearch, registerNumber, fromInst, toInst
+        );
         Page<ZReport> page = zReportRepository.findAll(spec, pageable);
         return PageResponse.from(page.map(z -> cashTransferMapper.toRowResponse(z, registerLookupFor(page.getContent()))));
     }
@@ -60,7 +65,10 @@ public class CashTransferServiceImpl implements CashTransferService {
     ) {
         Instant fromInst = toStartOfDay(closedFrom);
         Instant toInst = toEndOfDay(closedTo);
-        Specification<ZReport> spec = CashTransferSpecifications.filter(storeSearch, registerNumber, fromInst, toInst);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Specification<ZReport> spec = CashTransferSpecifications.filter(
+            companyId, storeSearch, registerNumber, fromInst, toInst
+        );
         List<ZReport> all = zReportRepository.findAll(spec);
         Map<String, Integer> registerLookup = registerLookupFor(all);
         return all.stream()

@@ -60,6 +60,14 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         """)
     Page<Product> findLowStockPage(Pageable pageable);
 
+    @EntityGraph(attributePaths = {"category"})
+    @Query("""
+        SELECT p FROM Product p
+        WHERE p.company.id = :companyId AND p.isActive = true AND p.stockQuantity < p.lowStockAlert
+        ORDER BY (p.lowStockAlert - p.stockQuantity) DESC, p.name ASC
+        """)
+    Page<Product> findLowStockPageByCompanyId(@Param("companyId") Integer companyId, Pageable pageable);
+
     @Query("""
         SELECT COUNT(p) FROM Product p
         WHERE p.isActive = true AND p.stockQuantity < p.lowStockAlert
@@ -91,9 +99,9 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     @Query("""
         SELECT COALESCE(SUM(p.stockQuantity), 0), COALESCE(SUM(p.stockQuantity * p.costPrice), 0)
-        FROM Product p WHERE p.isActive = true
+        FROM Product p WHERE p.isActive = true AND p.company.id = :companyId
         """)
-    Object[] sumActiveStockUnitsAndCost();
+    Object[] sumActiveStockUnitsAndCost(@Param("companyId") Integer companyId);
 
     @Query(value = """
         SELECT CAST(p.id AS varchar) AS product_id,
@@ -116,6 +124,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         WHERE s.status = 'COMPLETED'
           AND CAST(s.created_at AS date) BETWEEN :fromDate AND :toDate
           AND (:storeId IS NULL OR s.store_id = :storeId)
+          AND p.company_id = :companyId
           AND (:categoryId IS NULL OR p.category_id = :categoryId)
           AND (
             :search = ''
@@ -137,6 +146,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
           WHERE s.status = 'COMPLETED'
             AND CAST(s.created_at AS date) BETWEEN :fromDate AND :toDate
             AND (:storeId IS NULL OR s.store_id = :storeId)
+            AND p.company_id = :companyId
             AND (:categoryId IS NULL OR p.category_id = :categoryId)
             AND (
               :search = ''
@@ -156,6 +166,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         @Param("storeId") Integer storeId,
         @Param("categoryId") Integer categoryId,
         @Param("search") String search,
+        @Param("companyId") Integer companyId,
         Pageable pageable
     );
 
@@ -284,6 +295,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         WHERE s.status = 'COMPLETED'
           AND CAST(s.created_at AS date) BETWEEN :fromDate AND :toDate
           AND (:storeId IS NULL OR s.store_id = :storeId)
+          AND p.company_id = :companyId
         GROUP BY c.id, c.name
         HAVING COALESCE(SUM(si.quantity - si.returned_quantity), 0) > 0
            OR COALESCE(SUM(si.returned_quantity), 0) > 0
@@ -299,6 +311,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
           WHERE s.status = 'COMPLETED'
             AND CAST(s.created_at AS date) BETWEEN :fromDate AND :toDate
             AND (:storeId IS NULL OR s.store_id = :storeId)
+            AND p.company_id = :companyId
           GROUP BY c.id, c.name
           HAVING COALESCE(SUM(si.quantity - si.returned_quantity), 0) > 0
              OR COALESCE(SUM(si.returned_quantity), 0) > 0
@@ -309,6 +322,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         @Param("fromDate") java.time.LocalDate from,
         @Param("toDate") java.time.LocalDate to,
         @Param("storeId") Integer storeId,
+        @Param("companyId") Integer companyId,
         Pageable pageable
     );
 
@@ -330,6 +344,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         INNER JOIN stores st ON st.id = s.store_id
         WHERE s.status = 'COMPLETED'
           AND CAST(s.created_at AS date) BETWEEN :fromDate AND :toDate
+          AND st.company_id = :companyId
         GROUP BY st.id, st.name
         HAVING COALESCE(SUM(si.quantity - si.returned_quantity), 0) > 0
            OR COALESCE(SUM(si.returned_quantity), 0) > 0
@@ -343,6 +358,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
           INNER JOIN stores st ON st.id = s.store_id
           WHERE s.status = 'COMPLETED'
             AND CAST(s.created_at AS date) BETWEEN :fromDate AND :toDate
+            AND st.company_id = :companyId
           GROUP BY st.id, st.name
           HAVING COALESCE(SUM(si.quantity - si.returned_quantity), 0) > 0
              OR COALESCE(SUM(si.returned_quantity), 0) > 0
@@ -352,6 +368,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     Page<Object[]> storeSalesReportPage(
         @Param("fromDate") java.time.LocalDate from,
         @Param("toDate") java.time.LocalDate to,
+        @Param("companyId") Integer companyId,
         Pageable pageable
     );
 
@@ -359,6 +376,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     @Query("""
         SELECT p FROM Product p
         WHERE p.isActive = true
+          AND p.company.id = :companyId
           AND (:categoryId IS NULL OR p.category.id = :categoryId)
           AND (
             :search = ''
@@ -372,6 +390,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         ORDER BY p.name ASC
         """)
     Page<Product> stockBalancesPage(
+        @Param("companyId") Integer companyId,
         @Param("categoryId") Integer categoryId,
         @Param("search") String search,
         @Param("onlyWithStock") boolean onlyWithStock,

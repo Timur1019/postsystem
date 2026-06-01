@@ -83,15 +83,11 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
         Boolean markedProduct,
         Pageable pageable
     ) {
-        boolean hasFilter = StringUtils.hasText(search)
-            || StringUtils.hasText(barcodeContains)
-            || markedProduct != null;
-        Page<Product> page = hasFilter
-            ? productRepository.findAll(
-                ProductSpecifications.warehouseFilter(search, barcodeContains, markedProduct),
-                pageable
-            )
-            : productRepository.findByIsActiveTrue(pageable);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Specification<Product> spec = ProductSpecifications.warehouseFilter(
+            companyId, search, barcodeContains, markedProduct
+        );
+        Page<Product> page = productRepository.findAll(spec, pageable);
         return mapPage(page, null);
     }
 

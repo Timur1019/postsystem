@@ -101,6 +101,7 @@ public final class ProductSpecifications {
      * фильтр по маркировке.
      */
     public static Specification<Product> warehouseFilter(
+        Integer companyId,
         String search,
         String barcodeContains,
         Boolean markedProduct
@@ -108,6 +109,9 @@ public final class ProductSpecifications {
         return (root, query, cb) -> {
             List<Predicate> parts = new ArrayList<>();
             parts.add(cb.isTrue(root.get("isActive")));
+            if (companyId != null) {
+                parts.add(cb.equal(root.get("company").get("id"), companyId));
+            }
 
             String q = search != null ? search.trim() : "";
             if (StringUtils.hasText(q)) {

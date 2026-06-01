@@ -10,6 +10,7 @@ import com.pos.repository.ZReportRepository;
 import com.pos.repository.spec.ZReportSpecifications;
 import com.pos.service.ZReportService;
 import com.pos.service.export.ZReportExportService;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.service.zreport.ZReportFromShiftService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -33,6 +34,7 @@ public class ZReportServiceImpl implements ZReportService {
     private final ZReportMapper zReportMapper;
     private final ZReportExportService zReportExportService;
     private final ZReportFromShiftService zReportFromShiftService;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public PageResponse<ZReportRowResponse> list(
@@ -46,7 +48,10 @@ public class ZReportServiceImpl implements ZReportService {
     ) {
         Instant fromInst = toStartOfDay(closedFrom);
         Instant toInst = toEndOfDay(closedTo);
-        var spec = ZReportSpecifications.filter(employeeSearch, fiscalCardId, terminalSerial, storeId, fromInst, toInst);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        var spec = ZReportSpecifications.filter(
+            companyId, employeeSearch, fiscalCardId, terminalSerial, storeId, fromInst, toInst
+        );
         Page<ZReport> page = zReportRepository.findAll(spec, pageable);
         return PageResponse.from(page.map(zReportMapper::toRowResponse));
     }
@@ -82,8 +87,12 @@ public class ZReportServiceImpl implements ZReportService {
     }
 
     private ZReport require(Long id) {
-        return zReportRepository.findDetailById(id)
+        ZReport report = zReportRepository.findDetailById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Z-report not found: " + id));
+        if (report.getStore() != null) {
+            tenantAccess.assertCanAccessStore(report.getStore());
+        }
+        return report;
     }
 
     private static Instant toStartOfDay(LocalDate d) {

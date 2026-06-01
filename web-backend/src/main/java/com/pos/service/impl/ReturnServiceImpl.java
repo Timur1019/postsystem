@@ -20,6 +20,7 @@ import com.pos.service.ReturnService;
 import com.pos.service.salesledger.SalesLedgerCacheService;
 import com.pos.service.stock.StoreStockService;
 import com.pos.util.ReturnNotesSupport;
+import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +45,7 @@ public class ReturnServiceImpl implements ReturnService {
     private final ReturnMapper returnMapper;
     private final SaleMapper saleMapper;
     private final SalesLedgerCacheService salesLedgerCacheService;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     @Transactional(readOnly = true)
@@ -66,6 +68,7 @@ public class ReturnServiceImpl implements ReturnService {
             blankToNull(cashierName),
             blankToNull(fiscalSearch),
             storeId,
+            tenantAccess.requireEffectiveCompanyId(),
             pageable
         );
         return PageResponse.from(page.map(sale -> returnMapper.toRowResponse(

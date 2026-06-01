@@ -15,6 +15,7 @@ public final class ZReportSpecifications {
     }
 
     public static Specification<ZReport> filter(
+        Integer companyId,
         String employeeSearch,
         String fiscalCardId,
         String terminalSerial,
@@ -24,6 +25,9 @@ public final class ZReportSpecifications {
     ) {
         return (root, query, cb) -> {
             List<Predicate> parts = new ArrayList<>();
+            var store = root.join("store");
+
+            parts.add(TenantSpecifications.storeCompanyEqualsPredicate(store, cb, companyId));
 
             String emp = employeeSearch != null ? employeeSearch.trim() : "";
             if (StringUtils.hasText(emp)) {

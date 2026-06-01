@@ -43,7 +43,10 @@ public class CashRegisterServiceImpl implements CashRegisterService {
         String fiscalCardId,
         Pageable pageable
     ) {
-        var spec = CashRegisterSpecifications.filter(storeSearch, equipmentModel, equipmentSerial, fiscalCardId);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        var spec = CashRegisterSpecifications.filter(
+            companyId, storeSearch, equipmentModel, equipmentSerial, fiscalCardId
+        );
         Pageable sorted = pageable.getSort().isSorted()
             ? pageable
             : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
@@ -54,7 +57,7 @@ public class CashRegisterServiceImpl implements CashRegisterService {
 
     @Override
     public List<String> listDistinctEquipmentSerials() {
-        return cashRegisterRepository.findDistinctEquipmentSerials();
+        return cashRegisterRepository.findDistinctEquipmentSerials(tenantAccess.requireEffectiveCompanyId());
     }
 
     @Override

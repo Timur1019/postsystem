@@ -12,6 +12,7 @@ import com.pos.service.sale.SaleQueryService;
 import com.pos.service.sale.support.SaleEnumParser;
 import com.pos.service.salesledger.SalesLedgerCacheService;
 import com.pos.service.support.SalesQuerySupport;
+import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,7 @@ public class SaleQueryServiceImpl implements SaleQueryService {
     private final SaleMapper saleMapper;
     private final SalesLedgerCacheService salesLedgerCacheService;
     private final SaleAccessPolicy accessPolicy;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public SaleResponse getSale(UUID id) {
@@ -73,29 +75,11 @@ public class SaleQueryServiceImpl implements SaleQueryService {
             return PageResponse.from(Page.empty(pageable));
         }
         var f = filters.get();
-
-        UUID saleUuid = f.saleId();
-        Optional<PageResponse<SaleResponse>> cached = salesLedgerCacheService.trySearch(
-            from,
-            to,
-            f.cashierId(),
-            f.q(),
-            f.receipt(),
-            saleUuid,
-            f.cashierName(),
-            f.paymentMethod() != null ? f.paymentMethod().name() : null,
-            f.status() != null ? f.status().name() : null,
-            paymentSettlement,
-            f.storeId(),
-            pageable
-        );
-        if (cached.isPresent()) {
-            return cached.get();
-        }
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
 
         Page<Sale> page = saleRepository.searchSales(
             f.start(), f.end(), f.cashierId(), f.receipt(), f.cashierName(), f.q(),
-            f.paymentMethod(), f.status(), f.saleId(), f.paymentSettlement(), f.storeId(), pageable
+            f.paymentMethod(), f.status(), f.saleId(), f.paymentSettlement(), f.storeId(), companyId, pageable
         );
         return PageResponse.from(page.map(saleMapper::toSummaryResponse));
     }

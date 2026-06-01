@@ -4,6 +4,7 @@ import com.pos.entity.Sale;
 import com.pos.repository.SaleItemRepository;
 import com.pos.repository.SaleRepository;
 import com.pos.service.export.ReturnExportService;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.ExcelSpreadsheetWriter;
 import com.pos.spreadsheet.ExcelTemplate;
 import com.pos.util.ReturnNotesSupport;
@@ -34,6 +35,7 @@ public class ReturnExportServiceImpl implements ReturnExportService {
     private final SaleRepository saleRepository;
     private final SaleItemRepository saleItemRepository;
     private final ExcelSpreadsheetWriter excelWriter;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public byte[] exportReturnsExcel(
@@ -55,6 +57,7 @@ public class ReturnExportServiceImpl implements ReturnExportService {
             blankToNull(cashierName),
             blankToNull(fiscalSearch),
             storeId,
+            tenantAccess.requireEffectiveCompanyId(),
             Pageable.unpaged()
         );
 
