@@ -94,6 +94,7 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
     @Override
     public ProductResponse getProduct(UUID id, Integer storeId) {
         Product product = findDetailed(id);
+        tenantAccess.assertProductBelongsToTenant(product);
         return forStore(assembler.toResponse(product), product, storeId);
     }
 

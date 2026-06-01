@@ -17,17 +17,20 @@ public interface StockReceiptRepository extends JpaRepository<StockReceipt, UUID
 
     @Query("""
         SELECT r FROM StockReceipt r
+        JOIN r.store st
         LEFT JOIN FETCH r.supplier
         LEFT JOIN FETCH r.store
         LEFT JOIN FETCH r.createdBy
         WHERE r.createdAt >= :start AND r.createdAt < :end
           AND (:storeId IS NULL OR r.store.id = :storeId)
+          AND st.company.id = :companyId
         ORDER BY r.createdAt DESC
         """)
     Page<StockReceipt> findReceiptsBetween(
         @Param("start") Instant start,
         @Param("end") Instant end,
         @Param("storeId") Integer storeId,
+        @Param("companyId") Integer companyId,
         Pageable pageable
     );
 

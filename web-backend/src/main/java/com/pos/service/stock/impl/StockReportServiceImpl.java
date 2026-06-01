@@ -64,13 +64,17 @@ public class StockReportServiceImpl implements StockReportService {
         Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
 
         long receivedUnits = positiveSum(
-            stockMovementRepository.sumQuantityByTypeBetween(StockMovementType.RESTOCK, start, end, storeId)
+            stockMovementRepository.sumQuantityByTypeBetween(
+                StockMovementType.RESTOCK, start, end, storeId, companyId
+            )
         );
         long writeOffUnits = absUnits(
-            stockMovementRepository.sumQuantityByTypeBetween(StockMovementType.WRITE_OFF, start, end, storeId)
+            stockMovementRepository.sumQuantityByTypeBetween(
+                StockMovementType.WRITE_OFF, start, end, storeId, companyId
+            )
         );
-        BigDecimal receivedCost = nz(stockMovementRepository.sumRestockCostBetween(start, end, storeId));
-        BigDecimal writeOffCost = nz(stockMovementRepository.sumWriteOffCostBetween(start, end, storeId));
+        BigDecimal receivedCost = nz(stockMovementRepository.sumRestockCostBetween(start, end, storeId, companyId));
+        BigDecimal writeOffCost = nz(stockMovementRepository.sumWriteOffCostBetween(start, end, storeId, companyId));
 
         long soldUnits = 0;
         for (Object[] row : saleItemRepository.dailySoldUnitsAggregates(start, end, storeId, companyId)) {
@@ -85,7 +89,7 @@ public class StockReportServiceImpl implements StockReportService {
 
         List<StockDashboardDayPoint> daily = mergeDailyBreakdown(
             from, to,
-            stockMovementRepository.dailyStockMovementAggregates(start, end, storeId),
+            stockMovementRepository.dailyStockMovementAggregates(start, end, storeId, companyId),
             saleItemRepository.dailySoldUnitsAggregates(start, end, storeId, companyId)
         );
 
@@ -138,7 +142,8 @@ public class StockReportServiceImpl implements StockReportService {
         Instant start = from.atStartOfDay(ZONE).toInstant();
         Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
         String q = StringUtils.hasText(search) ? search.trim() : "";
-        Page<Object[]> page = productRepository.stockTurnoverPage(start, end, categoryId, q, pageable);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Page<Object[]> page = productRepository.stockTurnoverPage(start, end, categoryId, q, companyId, pageable);
         return PageResponse.from(page.map(this::toTurnoverRow));
     }
 
@@ -157,8 +162,9 @@ public class StockReportServiceImpl implements StockReportService {
             ? movementType.trim().toUpperCase()
             : null;
         String q = StringUtils.hasText(search) ? search.trim() : "";
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
         Page<StockMovement> page = stockMovementRepository.findMovementJournal(
-            start, end, type, storeId, q, pageable
+            start, end, type, storeId, companyId, q, pageable
         );
         Map<UUID, String> receiptNumbers = loadReceiptNumbers(page.getContent());
         return PageResponse.from(page.map(m -> toMovementRow(m, receiptNumbers)));
@@ -173,7 +179,10 @@ public class StockReportServiceImpl implements StockReportService {
     ) {
         Instant start = from.atStartOfDay(ZONE).toInstant();
         Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
-        Page<StockReceipt> page = stockReceiptRepository.findReceiptsBetween(start, end, storeId, pageable);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Page<StockReceipt> page = stockReceiptRepository.findReceiptsBetween(
+            start, end, storeId, companyId, pageable
+        );
         return PageResponse.from(page.map(this::toReceiptSummary));
     }
 
@@ -214,7 +223,8 @@ public class StockReportServiceImpl implements StockReportService {
         int days = Math.max(1, daysNoSale);
         LocalDate cutoff = asOf.minusDays(days);
         String q = StringUtils.hasText(search) ? search.trim() : "";
-        Page<Object[]> page = productRepository.deadStockPage(asOf, cutoff, days, categoryId, q, pageable);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Page<Object[]> page = productRepository.deadStockPage(asOf, cutoff, days, categoryId, q, companyId, pageable);
         return PageResponse.from(page.map(row -> toDeadStockRow(row, asOf)));
     }
 

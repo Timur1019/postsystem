@@ -15,6 +15,7 @@ import com.pos.service.product.lifecycle.ProductLifecycleOrphanSaleLinker;
 import com.pos.service.product.lifecycle.ProductLifecycleReferenceResolver;
 import com.pos.service.product.lifecycle.ProductLifecycleStockBalanceTracker;
 import com.pos.service.product.lifecycle.ProductLifecycleSummaryBuilder;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -39,6 +40,7 @@ public class ProductLifecycleServiceImpl implements ProductLifecycleService {
     private final ProductLifecycleReferenceResolver referenceResolver;
     private final ProductLifecycleOrphanSaleLinker orphanSaleLinker;
     private final ProductLifecycleMapper lifecycleMapper;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public ProductLifecycleResponse lifecycle(
@@ -113,8 +115,10 @@ public class ProductLifecycleServiceImpl implements ProductLifecycleService {
     }
 
     private Product loadProduct(UUID productId) {
-        return productRepository.findById(productId)
+        Product product = productRepository.findById(productId)
             .orElseThrow(() -> PosExceptions.notFound("Product", productId));
+        tenantAccess.assertProductBelongsToTenant(product);
+        return product;
     }
 
     private static Sale resolveLinkedSale(

@@ -17,6 +17,7 @@ import com.pos.repository.SaleItemRepository;
 import com.pos.repository.SaleRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.service.ReturnService;
+import com.pos.service.sale.SaleAccessPolicy;
 import com.pos.service.salesledger.SalesLedgerCacheService;
 import com.pos.service.stock.StoreStockService;
 import com.pos.util.ReturnNotesSupport;
@@ -46,6 +47,7 @@ public class ReturnServiceImpl implements ReturnService {
     private final SaleMapper saleMapper;
     private final SalesLedgerCacheService salesLedgerCacheService;
     private final TenantAccessSupport tenantAccess;
+    private final SaleAccessPolicy saleAccessPolicy;
 
     @Override
     @Transactional(readOnly = true)
@@ -102,6 +104,7 @@ public class ReturnServiceImpl implements ReturnService {
     public void cancelReturn(UUID id) {
         Sale sale = saleRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Return not found"));
+        saleAccessPolicy.assertCanView(sale);
 
         if (sale.getStatus() != Sale.SaleStatus.VOIDED) {
             throw new BadRequestException("Отмена доступна только для аннулированных чеков (VOIDED)");
@@ -141,6 +144,7 @@ public class ReturnServiceImpl implements ReturnService {
         if (sale.getStatus() != Sale.SaleStatus.VOIDED && sale.getStatus() != Sale.SaleStatus.REFUNDED) {
             throw new BadRequestException("Запись не является возвратом");
         }
+        saleAccessPolicy.assertCanView(sale);
         return sale;
     }
 

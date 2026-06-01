@@ -233,6 +233,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id
         WHERE p.is_active = true
+          AND p.company_id = :companyId
           AND (:categoryId IS NULL OR p.category_id = :categoryId)
           AND (
             :search = ''
@@ -252,6 +253,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         countQuery = """
         SELECT COUNT(*) FROM products p
         WHERE p.is_active = true
+          AND p.company_id = :companyId
           AND (:categoryId IS NULL OR p.category_id = :categoryId)
           AND (
             :search = ''
@@ -273,6 +275,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         @Param("end") java.time.Instant end,
         @Param("categoryId") Integer categoryId,
         @Param("search") String search,
+        @Param("companyId") Integer companyId,
         Pageable pageable
     );
 
@@ -428,6 +431,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id
         WHERE p.is_active = true
+          AND p.company_id = :companyId
           AND p.stock_quantity > 0
           AND (:categoryId IS NULL OR p.category_id = :categoryId)
           AND (
@@ -448,6 +452,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         countQuery = """
         SELECT COUNT(*) FROM products p
         WHERE p.is_active = true
+          AND p.company_id = :companyId
           AND p.stock_quantity > 0
           AND (:categoryId IS NULL OR p.category_id = :categoryId)
           AND (
@@ -471,6 +476,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         @Param("daysNoSale") int daysNoSale,
         @Param("categoryId") Integer categoryId,
         @Param("search") String search,
+        @Param("companyId") Integer companyId,
         Pageable pageable
     );
 }

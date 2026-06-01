@@ -20,6 +20,7 @@ import com.pos.repository.StockTransferRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.stock.StockTransferService;
+import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +48,7 @@ public class StockTransferServiceImpl implements StockTransferService {
     private final StockMovementRepository stockMovementRepository;
     private final StoreRepository storeRepository;
     private final CurrentUserProvider currentUserProvider;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public StockTransferResponse create(CreateStockTransferRequest request) {
@@ -129,9 +131,10 @@ public class StockTransferServiceImpl implements StockTransferService {
     @Override
     @Transactional(readOnly = true)
     public StockTransferResponse getById(UUID id) {
-        return stockTransferRepository.findDetailedById(id)
-            .map(this::toResponse)
+        StockTransfer transfer = stockTransferRepository.findDetailedById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Transfer not found"));
+        tenantAccess.assertCanAccessStore(transfer.getFromStore());
+        return toResponse(transfer);
     }
 
     @Override
@@ -145,7 +148,10 @@ public class StockTransferServiceImpl implements StockTransferService {
     ) {
         Instant start = from.atStartOfDay(ZONE).toInstant();
         Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
-        Page<StockTransfer> page = stockTransferRepository.findBetween(start, end, fromStoreId, toStoreId, pageable);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Page<StockTransfer> page = stockTransferRepository.findBetween(
+            companyId, start, end, fromStoreId, toStoreId, pageable
+        );
         return PageResponse.from(page.map(this::toSummary));
     }
 

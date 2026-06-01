@@ -23,11 +23,14 @@ public interface StockInventoryRepository extends JpaRepository<StockInventory, 
     @EntityGraph(attributePaths = {"store", "createdBy"})
     @Query("""
         SELECT i FROM StockInventory i
-        WHERE i.createdAt >= :start AND i.createdAt < :end
-        AND (:storeId IS NULL OR i.store.id = :storeId)
+        JOIN i.store st
+        WHERE st.company.id = :companyId
+          AND i.createdAt >= :start AND i.createdAt < :end
+          AND (:storeId IS NULL OR i.store.id = :storeId)
         ORDER BY i.createdAt DESC
         """)
     Page<StockInventory> findBetween(
+        @Param("companyId") Integer companyId,
         @Param("start") Instant start,
         @Param("end") Instant end,
         @Param("storeId") Integer storeId,

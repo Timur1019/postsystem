@@ -15,6 +15,7 @@ import com.pos.repository.StockMovementRepository;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.stock.StockWriteOffService;
 import com.pos.service.stock.StoreStockService;
+import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +39,7 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
     private final StockMovementRepository stockMovementRepository;
     private final StoreStockService storeStockService;
     private final CurrentUserProvider currentUserProvider;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public WriteOffRowResponse create(CreateWriteOffRequest request) {
@@ -46,6 +48,7 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
         }
         Product product = productRepository.findById(request.productId())
             .orElseThrow(() -> new BadRequestException("Product not found"));
+        tenantAccess.assertProductBelongsToTenant(product);
         if (!product.isActive()) {
             throw new BadRequestException("Product is not active");
         }
@@ -86,7 +89,10 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
     ) {
         Instant start = from.atStartOfDay(ZONE).toInstant();
         Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
-        Page<StockMovement> page = stockMovementRepository.findWriteOffsBetween(start, end, storeId, pageable);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Page<StockMovement> page = stockMovementRepository.findWriteOffsBetween(
+            start, end, storeId, companyId, pageable
+        );
         return PageResponse.from(page.map(m -> toRow(m, m.getProduct())));
     }
 

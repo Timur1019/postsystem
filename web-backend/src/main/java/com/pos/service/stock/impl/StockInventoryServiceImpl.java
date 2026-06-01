@@ -125,9 +125,12 @@ public class StockInventoryServiceImpl implements StockInventoryService {
     @Override
     @Transactional(readOnly = true)
     public StockInventoryResponse getById(UUID id) {
-        return stockInventoryRepository.findDetailedById(id)
-            .map(this::toResponse)
+        StockInventory inventory = stockInventoryRepository.findDetailedById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Inventory not found"));
+        if (inventory.getStore() != null) {
+            tenantAccess.assertCanAccessStore(inventory.getStore());
+        }
+        return toResponse(inventory);
     }
 
     @Override
@@ -140,7 +143,10 @@ public class StockInventoryServiceImpl implements StockInventoryService {
     ) {
         Instant start = from.atStartOfDay(ZONE).toInstant();
         Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
-        Page<StockInventory> page = stockInventoryRepository.findBetween(start, end, storeId, pageable);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Page<StockInventory> page = stockInventoryRepository.findBetween(
+            companyId, start, end, storeId, pageable
+        );
         return PageResponse.from(page.map(this::toSummary));
     }
 

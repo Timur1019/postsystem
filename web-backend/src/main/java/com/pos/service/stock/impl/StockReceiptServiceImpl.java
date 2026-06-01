@@ -151,9 +151,12 @@ public class StockReceiptServiceImpl implements StockReceiptService {
     @Override
     @Transactional(readOnly = true)
     public StockReceiptResponse getById(UUID id) {
-        return stockReceiptRepository.findDetailedById(id)
-            .map(this::toResponse)
+        StockReceipt receipt = stockReceiptRepository.findDetailedById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Receipt not found"));
+        if (receipt.getStore() != null) {
+            tenantAccess.assertCanAccessStore(receipt.getStore());
+        }
+        return toResponse(receipt);
     }
 
     @Override
@@ -166,7 +169,10 @@ public class StockReceiptServiceImpl implements StockReceiptService {
     ) {
         Instant start = from.atStartOfDay(ZONE).toInstant();
         Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
-        Page<StockReceipt> page = stockReceiptRepository.findReceiptsBetween(start, end, storeId, pageable);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Page<StockReceipt> page = stockReceiptRepository.findReceiptsBetween(
+            start, end, storeId, companyId, pageable
+        );
         return PageResponse.from(page.map(this::toSummary));
     }
 
