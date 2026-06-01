@@ -19,7 +19,9 @@ import com.pos.util.LogUtil;
 import com.pos.util.CashierPinUtil;
 import com.pos.util.PersonNameUtil;
 import com.pos.util.UserLoginUtil;
+import jakarta.persistence.PersistenceException;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,7 +37,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
@@ -47,6 +48,7 @@ public class UserServiceImpl implements UserService {
     private String pinSecret;
 
     @Override
+    @Transactional(readOnly = true)
     public List<UserResponse> findAll() {
         return userRepository.findAllWithDetails().stream()
             .filter(this::canView)
@@ -55,6 +57,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserResponse findById(UUID id) {
         User user = requireAccessibleUser(id);
         return userMapper.toResponse(user);
@@ -97,21 +100,19 @@ public class UserServiceImpl implements UserService {
         user.syncFullName();
         applyCashierPinForCreate(user, role.getName(), companyId, req.pin());
 
-        User saved;
         try {
-            saved = userRepository.save(user);
-            userRepository.flush();
+            User saved = userRepository.saveAndFlush(user);
+            LogUtil.info(UserServiceImpl.class, "User created: id={}, username={}", saved.getId(), saved.getUsername());
+            return userMapper.toResponse(loadUserForResponse(saved.getId(), saved));
         } catch (DataIntegrityViolationException ex) {
             throw toUserConflict(ex);
+        } catch (PersistenceException ex) {
+            throw mapPersistenceFailure(ex);
         }
-        LogUtil.info(UserServiceImpl.class, "User created: id={}, username={}", saved.getId(), saved.getUsername());
-        User loaded = userRepository.findByIdWithDetails(saved.getId())
-            .orElseThrow(() -> new IllegalStateException("User not found after save"));
-        return userMapper.toResponse(loaded);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserResponse update(UUID id, UpdateUserRequest req) {
         User user = requireAccessibleUser(id);
 
@@ -188,20 +189,64 @@ public class UserServiceImpl implements UserService {
         }
 
         LogUtil.info(UserServiceImpl.class, "User updated: id={}", id);
-        return userMapper.toResponse(userRepository.save(user));
+        try {
+            User saved = userRepository.saveAndFlush(user);
+            return userMapper.toResponse(loadUserForResponse(saved.getId(), saved));
+        } catch (DataIntegrityViolationException ex) {
+            throw toUserConflict(ex);
+        } catch (PersistenceException ex) {
+            throw mapPersistenceFailure(ex);
+        }
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserResponse toggleActive(UUID id) {
         User user = requireAccessibleUser(id);
         if ("SUPER_ADMIN".equals(user.getRole().getName())) {
             throw new BadRequestException("Cannot deactivate super administrator");
         }
         user.setActive(!user.isActive());
-        User saved = userRepository.save(user);
-        LogUtil.info(UserServiceImpl.class, "User active toggled: id={}, active={}", id, saved.isActive());
-        return userMapper.toResponse(saved);
+        try {
+            User saved = userRepository.saveAndFlush(user);
+            LogUtil.info(UserServiceImpl.class, "User active toggled: id={}, active={}", id, saved.isActive());
+            return userMapper.toResponse(loadUserForResponse(saved.getId(), saved));
+        } catch (DataIntegrityViolationException ex) {
+            throw toUserConflict(ex);
+        } catch (PersistenceException ex) {
+            throw mapPersistenceFailure(ex);
+        }
+    }
+
+    private User loadUserForResponse(UUID id, User fallback) {
+        return userRepository.findByIdWithDetails(id).orElseGet(() -> {
+            Hibernate.initialize(fallback.getRole());
+            if (fallback.getCompany() != null) {
+                Hibernate.initialize(fallback.getCompany());
+            }
+            Hibernate.initialize(fallback.getStores());
+            return fallback;
+        });
+    }
+
+    private RuntimeException mapPersistenceFailure(PersistenceException ex) {
+        String detail = ex.getMostSpecificCause() != null
+            ? ex.getMostSpecificCause().getMessage()
+            : ex.getMessage();
+        String lower = detail != null ? detail.toLowerCase() : "";
+        LogUtil.warn(UserServiceImpl.class, "User persistence failure: {}", detail);
+        if (lower.contains("pin_digest") || lower.contains("module_access_custom")) {
+            return new BadRequestException(
+                "Схема БД устарела: на сервере выполните bash deploy/git-update.sh (миграции users)"
+            );
+        }
+        if (lower.contains("read-only transaction")) {
+            return new BadRequestException("Операция записи недоступна (read-only transaction)");
+        }
+        if (lower.contains("duplicate key") || lower.contains("unique constraint")) {
+            return toUserConflict(new DataIntegrityViolationException(detail != null ? detail : "duplicate", ex));
+        }
+        return new BadRequestException("Не удалось сохранить пользователя. Проверьте логин, email и привязку к магазину.");
     }
 
     private boolean canView(User user) {

@@ -4,7 +4,10 @@ import com.pos.util.LogUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.PersistenceException;
+import org.hibernate.LazyInitializationException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -184,6 +187,28 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler({
+        PersistenceException.class,
+        InvalidDataAccessResourceUsageException.class,
+        LazyInitializationException.class
+    })
+    public ResponseEntity<ApiErrorResponse> handlePersistence(
+        Exception ex,
+        HttpServletRequest req
+    ) {
+        String message = mapPersistenceClientMessage(ex);
+        logClientError(ErrorCode.BAD_REQUEST, message, req, Map.of("detail", rootMessage(ex)), ex);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ApiErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.BAD_REQUEST,
+                message,
+                req.getRequestURI(),
+                null
+            )
+        );
+    }
+
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleEntityNotFound(EntityNotFoundException ex, HttpServletRequest req) {
         String message = "Связанная запись не найдена (магазин, компания или роль)";
@@ -197,6 +222,20 @@ public class GlobalExceptionHandler {
                 null
             )
         );
+    }
+
+    private static String mapPersistenceClientMessage(Exception ex) {
+        String lower = rootMessage(ex).toLowerCase();
+        if (lower.contains("pin_digest") || lower.contains("module_access_custom")) {
+            return "Схема БД устарела: выполните deploy/git-update.sh на сервере";
+        }
+        if (lower.contains("read-only transaction")) {
+            return "Ошибка записи в БД (read-only transaction). Перезапустите backend после обновления.";
+        }
+        if (lower.contains("lazyinitialization")) {
+            return "Ошибка загрузки данных пользователя. Повторите запрос или обновите backend.";
+        }
+        return "Ошибка базы данных при сохранении. Проверьте миграции и логи backend.";
     }
 
     private static String mapDataIntegrityMessage(DataIntegrityViolationException ex) {
