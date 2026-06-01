@@ -1,8 +1,5 @@
-import {
-  ELECTRON_PRINT_CAPTURING_CLASS,
-  isDesktopCashier,
-  withElectronPrintCapture,
-} from './printReceipt';
+import { ELECTRON_PRINT_CAPTURING_CLASS } from './printWithHtmlClass';
+import { isDesktopCashier, withElectronPrintCapture } from './printReceipt';
 import { cancelScheduledLabelPrintUnmount } from './labelPrintMount';
 
 export const ELECTRON_SILENT_LABEL_CLASS = 'electron-silent-label';
