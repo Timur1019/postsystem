@@ -3,6 +3,7 @@ package com.pos.exception;
 import com.pos.util.LogUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -170,7 +171,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest req) {
-        String message = "Запись конфликтует с данными в системе (дубликат или связь)";
+        String message = mapDataIntegrityMessage(ex);
         logClientError(ErrorCode.CONFLICT, message, req, Map.of("db", rootMessage(ex)), ex);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(
             ApiErrorResponse.of(
@@ -181,6 +182,35 @@ public class GlobalExceptionHandler {
                 null
             )
         );
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleEntityNotFound(EntityNotFoundException ex, HttpServletRequest req) {
+        String message = "Связанная запись не найдена (магазин, компания или роль)";
+        logClientError(ErrorCode.BAD_REQUEST, message, req, Map.of("detail", rootMessage(ex)), ex);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ApiErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                ErrorCode.BAD_REQUEST,
+                message,
+                req.getRequestURI(),
+                null
+            )
+        );
+    }
+
+    private static String mapDataIntegrityMessage(DataIntegrityViolationException ex) {
+        String lower = rootMessage(ex).toLowerCase();
+        if (lower.contains("uq_users_tenant_username") || lower.contains("users_username")) {
+            return "Логин уже занят";
+        }
+        if (lower.contains("uq_users_company_email") || lower.contains("users_email")) {
+            return "Email уже зарегистрирован в этой компании";
+        }
+        if (lower.contains("uq_users_company_pin_digest") || lower.contains("pin_digest")) {
+            return "Такой PIN уже используется в компании";
+        }
+        return "Запись конфликтует с данными в системе (дубликат или связь)";
     }
 
     @ExceptionHandler(Exception.class)

@@ -75,9 +75,10 @@ public class TenantAccessSupport {
         }
         Set<Store> stores = new HashSet<>();
         for (Integer storeId : storeIds) {
-            Store store = storeRepository.findById(storeId)
+            Store store = storeRepository.findByIdWithCompany(storeId)
                 .orElseThrow(() -> new BadRequestException("Store not found: " + storeId));
-            if (store.getCompany() == null || !store.getCompany().getId().equals(companyId)) {
+            Integer storeCompanyId = store.getCompany() != null ? store.getCompany().getId() : null;
+            if (storeCompanyId == null || !storeCompanyId.equals(companyId)) {
                 throw new BadRequestException("Store does not belong to the selected company");
             }
             stores.add(store);

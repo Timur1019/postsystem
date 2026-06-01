@@ -8,6 +8,7 @@ import com.pos.entity.Role;
 import com.pos.entity.Store;
 import com.pos.entity.User;
 import com.pos.exception.BadRequestException;
+import com.pos.exception.ConflictException;
 import com.pos.exception.ResourceNotFoundException;
 import com.pos.mapper.UserMapper;
 import com.pos.repository.RoleRepository;
@@ -20,6 +21,7 @@ import com.pos.util.PersonNameUtil;
 import com.pos.util.UserLoginUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,7 +61,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserResponse create(CreateUserRequest req) {
         Role role = roleRepository.findByName(req.role())
             .orElseThrow(() -> new BadRequestException("Invalid role: " + req.role()));
@@ -95,9 +97,17 @@ public class UserServiceImpl implements UserService {
         user.syncFullName();
         applyCashierPinForCreate(user, role.getName(), companyId, req.pin());
 
-        User saved = userRepository.save(user);
+        User saved;
+        try {
+            saved = userRepository.save(user);
+            userRepository.flush();
+        } catch (DataIntegrityViolationException ex) {
+            throw toUserConflict(ex);
+        }
         LogUtil.info(UserServiceImpl.class, "User created: id={}, username={}", saved.getId(), saved.getUsername());
-        return userMapper.toResponse(saved);
+        User loaded = userRepository.findByIdWithDetails(saved.getId())
+            .orElseThrow(() -> new IllegalStateException("User not found after save"));
+        return userMapper.toResponse(loaded);
     }
 
     @Override
@@ -327,6 +337,23 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("PIN already used in this company");
         }
         user.setPinDigest(digest);
+    }
+
+    private static ConflictException toUserConflict(DataIntegrityViolationException ex) {
+        String detail = ex.getMostSpecificCause() != null
+            ? ex.getMostSpecificCause().getMessage()
+            : ex.getMessage();
+        String lower = detail != null ? detail.toLowerCase() : "";
+        if (lower.contains("uq_users_tenant_username") || lower.contains("users_username")) {
+            return new ConflictException("Логин уже занят (такой username есть в другой компании или у платформы)");
+        }
+        if (lower.contains("uq_users_company_email") || lower.contains("users_email")) {
+            return new ConflictException("Email уже зарегистрирован в этой компании");
+        }
+        if (lower.contains("uq_users_company_pin_digest") || lower.contains("pin_digest")) {
+            return new ConflictException("Такой PIN уже используется в компании");
+        }
+        return new ConflictException("Пользователь с такими данными уже существует");
     }
 
     private void applyCashierPinForUpdate(User user, Integer companyId, String pin) {
