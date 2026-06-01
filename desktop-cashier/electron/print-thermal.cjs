@@ -11,7 +11,12 @@ function paperWidthPx(paperMm) {
   return Math.max(280, Math.round((paperMm / 25.4) * 96) + 48);
 }
 
-function invokeWebContentsPrint(webContents, opts, timeoutMs = PRINT_CALLBACK_TIMEOUT_MS) {
+function invokeWebContentsPrint(
+  webContents,
+  opts,
+  timeoutMs = PRINT_CALLBACK_TIMEOUT_MS,
+  { acceptCallbackTimeout = false } = {}
+) {
   return new Promise((resolve, reject) => {
     if (!webContents || webContents.isDestroyed()) {
       reject(new Error('Окно печати недоступно'));
@@ -21,8 +26,16 @@ function invokeWebContentsPrint(webContents, opts, timeoutMs = PRINT_CALLBACK_TI
     const timer = setTimeout(() => {
       if (settled) return;
       settled = true;
-      console.warn('[Aurent print] webContents.print — таймаут callback, очередь принтера');
-      resolve({ callbackTimeout: true, success: true });
+      console.warn('[Aurent print] webContents.print — таймаут callback');
+      if (acceptCallbackTimeout) {
+        resolve({ callbackTimeout: true, success: true });
+        return;
+      }
+      reject(
+        new Error(
+          'Принтер не ответил — задание не попало в очередь. Проверьте имя принтера в меню Aurent.'
+        )
+      );
     }, timeoutMs);
 
     try {
@@ -161,6 +174,40 @@ function buildSizedSilentPrintOpts(deviceName, dims) {
 }
 
 const AUTO_PRINT_TIMEOUT_MS = IS_WIN ? 8000 : 6000;
+const LABEL_PRINT_TIMEOUT_MS = IS_WIN ? 20000 : 12000;
+
+const MEASURE_LABEL_DIMS_JS = `
+(() => {
+  const layer = document.getElementById('shelf-label-print-layer');
+  if (!layer) return null;
+  const contentPx = Math.max(layer.scrollHeight, layer.offsetHeight, layer.getBoundingClientRect().height);
+  if (contentPx < 20) return null;
+  const pxPerMm = 96 / 25.4;
+  const widthMm = 90;
+  const heightMm = Math.max(45, Math.ceil(contentPx / pxPerMm) + 6);
+  return { widthMm, heightMm, contentPx };
+})()
+`;
+
+function buildLabelSilentPrintOpts(deviceName, dims) {
+  const opts = {
+    silent: true,
+    printBackground: true,
+    margins: { marginType: 'none' },
+    copies: 1,
+  };
+  const name = String(deviceName || '').trim();
+  if (name) {
+    opts.deviceName = name;
+  }
+  const widthMm = dims?.widthMm || 90;
+  const heightMm = Math.max(dims?.heightMm || 60, 45);
+  opts.pageSize = {
+    width: Math.round(widthMm * 1000),
+    height: Math.round(heightMm * 1000),
+  };
+  return opts;
+}
 
 /**
  * Тихая автопечать: сначала драйвер 80mm, при сбое — с высотой по контенту.
@@ -178,7 +225,9 @@ async function runSilentReceiptAutoPrint(webContents, options = {}) {
   try {
     const result = await tryPrint(buildStandardSilentPrintOpts(name));
     if (result.callbackTimeout) {
-      console.warn('[Aurent print] auto receipt — задание в очереди Windows');
+      throw new Error(
+        'Принтер не подтвердил печать чека — проверьте очередь и Aurent → «Принтер чека».'
+      );
     }
     return { mode: 'silent', deviceName: name || deviceName || '' };
   } catch (firstErr) {
@@ -196,26 +245,45 @@ async function runSilentReceiptAutoPrint(webContents, options = {}) {
   }
 }
 
-function runSilentLabelPrint(webContents, options = {}) {
+async function runSilentLabelPrint(webContents, options = {}) {
   const deviceName = options.deviceName ? String(options.deviceName) : '';
-  const opts = {
-    silent: true,
-    printBackground: true,
-    margins: { marginType: 'none' },
-  };
-  if (deviceName) {
-    opts.deviceName = deviceName;
+  const printers = options.printers || [];
+  const dims = options.dims || null;
+  const printerLabel = deviceName || 'не выбран';
+
+  if (!String(deviceName).trim()) {
+    throw new Error(
+      'Принтер этикеток не настроен. Aurent → «Принтер штрих-кодов» — выберите устройство из списка Windows.'
+    );
   }
-  const printerLabel = deviceName || 'принтер по умолчанию';
-  return invokeWebContentsPrint(webContents, opts)
-    .then(() => ({ deviceName: deviceName || null }))
-    .catch((err) => {
-      const detail = err?.message || 'Печать не выполнена';
-      throw new Error(
-        `${detail} (принтер: ${printerLabel}). ` +
-          'Aurent → «Принтер этикеток»: выберите устройство из списка Windows.'
+
+  const attempts = winPrintAttempts(deviceName, printers);
+  let lastErr;
+
+  for (const name of attempts) {
+    const opts = buildLabelSilentPrintOpts(name, dims);
+    try {
+      const result = await invokeWebContentsPrint(
+        webContents,
+        opts,
+        LABEL_PRINT_TIMEOUT_MS,
+        { acceptCallbackTimeout: false }
       );
-    });
+      if (result.callbackTimeout) {
+        throw new Error('Принтер не подтвердил печать этикетки');
+      }
+      return { deviceName: name || deviceName };
+    } catch (err) {
+      lastErr = err;
+      console.warn('[Aurent print] label attempt failed:', name || '(default)', err?.message);
+    }
+  }
+
+  const detail = lastErr?.message || 'Печать не выполнена';
+  throw new Error(
+    `${detail} (принтер: ${printerLabel}). ` +
+      'Aurent → «Принтер штрих-кодов»: выберите термопринтер этикеток.'
+  );
 }
 
 module.exports = {
@@ -229,4 +297,6 @@ module.exports = {
   buildStandardSilentPrintOpts,
   winPrintAttempts,
   MEASURE_RECEIPT_DIMS_JS,
+  MEASURE_LABEL_DIMS_JS,
+  buildLabelSilentPrintOpts,
 };

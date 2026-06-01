@@ -110,6 +110,24 @@ html.electron-silent-label.shelflabel-printing-active #shelf-label-print-layer *
   color: #000 !important;
 }
 
+html.electron-silent-label.shelflabel-printing-active .shelflabel-barcode-svg,
+html.electron-silent-label.shelflabel-printing-active .shelflabel-barcode-svg * {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  fill: #000 !important;
+  stroke: #000 !important;
+}
+
+html.electron-silent-label.shelflabel-printing-active.electron-print-capturing #pos-label-print-mount,
+html.electron-silent-label.shelflabel-printing-active.electron-print-capturing #shelf-label-print-layer {
+  left: 0 !important;
+  top: 0 !important;
+  width: 90mm !important;
+  min-height: 45mm !important;
+  opacity: 1 !important;
+}
+
 @media print {
   body.shelflabel-printing-active * {
     visibility: hidden !important;

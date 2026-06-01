@@ -20,6 +20,7 @@ const {
   runSilentReceiptAutoPrint,
   runSilentLabelPrint,
   MEASURE_RECEIPT_DIMS_JS,
+  MEASURE_LABEL_DIMS_JS,
 } = require('./print-thermal.cjs');
 const { setupAutoUpdater, checkForUpdatesNow } = require('./auto-update.cjs');
 
@@ -409,12 +410,19 @@ async function resolvePrinterByKind(kind, { promptIfMissing = true } = {}) {
   }
 
   if (!promptIfMissing) {
+    if (kind === 'label') {
+      const labelLike = printers.find((p) =>
+        /label|zebra|tsc|barcode|этикет|штрих|godex|argox|xprinter.*365|xp-365/i.test(p.name)
+      );
+      if (labelLike?.name) return labelLike.name;
+    } else {
+      const thermal = printers.find((p) =>
+        /pos-80|pos80|xprinter|termo|receipt|thermal|чек/i.test(p.name)
+      );
+      if (thermal?.name) return thermal.name;
+    }
     const def = printers.find((p) => p.isDefault);
     if (def?.name) return def.name;
-    const thermal = printers.find((p) =>
-      /pos-80|pos80|xprinter|termo|receipt|thermal|чек/i.test(p.name)
-    );
-    if (thermal?.name) return thermal.name;
     return saved || '';
   }
 
@@ -492,10 +500,23 @@ ipcMain.handle('print-label-page', async (event) => {
   }
   await waitForLabelImages(wc);
   await waitForPaintFrames(wc);
-  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 350 : 200));
-  const deviceName = await resolveLabelPrinterName({ promptIfMissing: false });
-  await runSilentLabelPrint(wc, { deviceName });
-  return { ok: true };
+  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 250));
+  const dims = await safeExecuteJavaScript(wc, MEASURE_LABEL_DIMS_JS, 'размер этикетки');
+  if (!dims?.heightMm) {
+    throw new Error('Этикетка пустая для печати');
+  }
+  const printers = await listSystemPrinters();
+  const savedLabel = readPrinterSettings().labelPrinterName || '';
+  const deviceName =
+    matchPrinterName(savedLabel, printers) ||
+    (await resolveLabelPrinterName({ promptIfMissing: false }));
+  if (!String(deviceName || '').trim()) {
+    throw new Error(
+      'Принтер этикеток не выбран. Меню Aurent → «Принтер штрих-кодов» — укажите устройство из списка Windows.'
+    );
+  }
+  await runSilentLabelPrint(wc, { deviceName, printers, dims });
+  return { ok: true, deviceName };
 });
 
 const RECEIPT_READY_JS = `

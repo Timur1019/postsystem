@@ -94,7 +94,9 @@ async function invokeDesktopLabelPrint(requireBarcode = true) {
     try {
       assertLabelLayerReady(requireBarcode);
       cancelScheduledLabelPrintUnmount();
-      await withElectronPrintCapture(() => window.desktopCashier.printLabelPage());
+      await withElectronPrintCapture(() => window.desktopCashier.printLabelPage(), {
+        settleMs: 450,
+      });
       return;
     } catch (err) {
       lastErr = normalizeLabelPrintError(err);

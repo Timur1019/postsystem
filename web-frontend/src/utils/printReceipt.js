@@ -102,13 +102,14 @@ async function waitForPaintSettled() {
 }
 
 /** Кадр для silent print — только в renderer (не через Electron executeJavaScript). */
-export async function withElectronPrintCapture(runPrint) {
+export async function withElectronPrintCapture(runPrint, { settleMs = 120 } = {}) {
   document.documentElement.classList.add(ELECTRON_PRINT_CAPTURING_CLASS);
   try {
     await waitForPaintSettled();
-    await new Promise((r) => setTimeout(r, 120));
+    await new Promise((r) => setTimeout(r, settleMs));
     return await runPrint();
   } finally {
+    await new Promise((r) => setTimeout(r, 80));
     document.documentElement.classList.remove(ELECTRON_PRINT_CAPTURING_CLASS);
   }
 }
