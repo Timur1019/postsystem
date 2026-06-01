@@ -23,6 +23,7 @@ import PosTopbarStrip from '../cashier/PosTopbarStrip';
 import CashierDesktopMenu from '../cashier/CashierDesktopMenu';
 import LanguageSwitcher from '../shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
+import { cashierLoginPath } from '../../utils/authLogin';
 import BrandMark from '../shared/BrandMark';
 import { useCashierShift } from '../../hooks/useCashierShift';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -129,7 +130,7 @@ function CashierLayoutShell() {
   const handleLogout = () => {
     clearCashierScreenLocked(user?.id);
     logout();
-    navigate('/login');
+    navigate(cashierLoginPath());
   };
 
   const toggleSidebar = () => {

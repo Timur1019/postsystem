@@ -1,6 +1,7 @@
 // src/services/api.js
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import { isAuthPage, redirectToLogin } from '../utils/authLogin';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
@@ -39,8 +40,8 @@ api.interceptors.response.use(
     if (status === 403 && !original._retry) {
       const { logout } = useAuthStore.getState();
       logout();
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login';
+      if (!isAuthPage(window.location.pathname)) {
+        redirectToLogin();
       }
       return Promise.reject(error);
     }
@@ -50,8 +51,8 @@ api.interceptors.response.use(
       const jwtParts = typeof token === 'string' ? token.split('.').length : 0;
       if (!token || jwtParts !== 3) {
         logout();
-        if (!window.location.pathname.startsWith('/login')) {
-          window.location.href = '/login';
+        if (!isAuthPage(window.location.pathname)) {
+          redirectToLogin();
         }
         return Promise.reject(error);
       }
@@ -64,8 +65,8 @@ api.interceptors.response.use(
         return api(original);
       } catch {
         logout();
-        if (!window.location.pathname.startsWith('/login')) {
-          window.location.href = '/login';
+        if (!isAuthPage(window.location.pathname)) {
+          redirectToLogin();
         }
       }
     }

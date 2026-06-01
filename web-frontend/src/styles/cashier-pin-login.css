@@ -1,0 +1,94 @@
+.cashier-pin-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: #f1f5f9;
+}
+
+.cashier-pin-login__card {
+  width: 100%;
+  max-width: 22rem;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
+}
+
+.cashier-pin-login__dots {
+  text-align: center;
+  font-family: ui-monospace, monospace;
+  font-size: 1.75rem;
+  letter-spacing: 0.45em;
+  padding: 0.75rem 0;
+  color: #0f172a;
+}
+
+.cashier-pin-login__keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.cashier-pin-login__key {
+  min-height: 3.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #0f172a;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cashier-pin-login__key:active:not(:disabled) {
+  transform: scale(0.97);
+  background: #f8fafc;
+}
+
+.cashier-pin-login__key--action {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.cashier-pin-login__submit {
+  margin-top: 1rem;
+  width: 100%;
+  min-height: 3rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: #059669;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  touch-action: manipulation;
+}
+
+.cashier-pin-login__submit:disabled {
+  opacity: 0.5;
+}
+
+.cashier-pin-login__admin-link {
+  display: block;
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  text-decoration: none;
+}
+
+.cashier-pin-login__admin-link:hover {
+  color: #64748b;
+}
+
+@media (min-width: 768px) {
+  .cashier-pin-login__key {
+    min-height: 4rem;
+    font-size: 1.5rem;
+  }
+}

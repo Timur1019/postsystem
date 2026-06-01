@@ -83,7 +83,7 @@ function AuthRoute({ children }) {
 
 function CashierRoute({ children }) {
   const { isAuthenticated, user } = useAuthStore();
-  if (!isAuthenticated()) return <Navigate to="/login" replace />;
+  if (!isAuthenticated()) return <Navigate to="/cashier/login" replace />;
   if (user?.role !== 'CASHIER') return <Navigate to="/dashboard" replace />;
   return children;
 }

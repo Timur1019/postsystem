@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams, Navigate } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff, Loader, Download } from 'lucide-react';
@@ -12,6 +12,7 @@ import { useAuthStore } from '../store/authStore';
 import LanguageSwitcher from '../components/shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../store/tenantDisplayStore';
 import BrandMark from '../components/shared/BrandMark';
+import { isDesktopCashier, cashierLoginPath, CASHIER_LOGIN_PATH } from '../utils/authLogin';
 
 const COMPANY_CODE_STORAGE_KEY = 'pos.companyLoginCode';
 
@@ -50,7 +51,12 @@ export default function LoginPage() {
   const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
 
   const isDesktop = Boolean(window.desktopCashier?.isDesktop);
-  const lockedCompanyCode = isDesktop && Boolean(desktopCompanyCode?.trim());
+  const isAdminLogin = searchParams.get('admin') === '1';
+  const lockedCompanyCode = isDesktop && !isAdminLogin && Boolean(desktopCompanyCode?.trim());
+
+  if (isDesktopCashier() && !isAdminLogin) {
+    return <Navigate to={cashierLoginPath()} replace />;
+  }
 
   useEffect(() => {
     if (!hasHydrated || !token) return;
@@ -240,6 +246,16 @@ export default function LoginPage() {
         <p className="mt-6 text-center text-xs text-slate-500">
           {t('login.footer', { year: new Date().getFullYear() })}
         </p>
+        {!isDesktop && (
+          <p className="mt-3 text-center text-sm">
+            <Link
+              to={CASHIER_LOGIN_PATH}
+              className="font-medium text-slate-500 hover:text-slate-700"
+            >
+              {t('cashierLogin.title', { defaultValue: 'Вход кассира' })}
+            </Link>
+          </p>
+        )}
         {!isDesktop && (
           <p className="mt-3 text-center text-sm">
             <Link
