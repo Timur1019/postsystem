@@ -89,12 +89,12 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
         if (inFlightKeyRef.current === key) {
           console.warn('[Aurent] auto print failed', err);
           const msg = err?.message || t('pos.printFailed');
-          toast.error(
-            isDesktopCashier()
-              ? `${msg}. ${t('pos.printFailedDesktopHint', { defaultValue: 'Aurent → «Принтер чека», затем повторите продажу.' })}`
-              : msg,
-            { id: 'pos-auto-print', duration: 6000 }
-          );
+          const hint = t('pos.printFailedDesktopHint', {
+            defaultValue: 'Aurent → «Принтер чека», затем повторите продажу.',
+          });
+          const showHint =
+            isDesktopCashier() && !/принтер чека/i.test(msg) && !/Aurent\s*→/i.test(msg);
+          toast.error(showHint ? `${msg}. ${hint}` : msg, { id: 'pos-auto-print', duration: 6000 });
         }
       } finally {
         if (inFlightKeyRef.current !== key) return;

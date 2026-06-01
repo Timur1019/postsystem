@@ -101,6 +101,18 @@ async function waitForPaintSettled() {
   await new Promise((r) => setTimeout(r, 350));
 }
 
+/** Кадр для silent print — только в renderer (не через Electron executeJavaScript). */
+async function withElectronPrintCapture(runPrint) {
+  document.documentElement.classList.add(ELECTRON_PRINT_CAPTURING_CLASS);
+  try {
+    await waitForPaintSettled();
+    await new Promise((r) => setTimeout(r, 120));
+    return await runPrint();
+  } finally {
+    document.documentElement.classList.remove(ELECTRON_PRINT_CAPTURING_CLASS);
+  }
+}
+
 function assertAutoPrintShellReady() {
   const shell = document.getElementById('fiscal-print-shell');
   if (!shell) {
@@ -117,10 +129,12 @@ function assertAutoPrintShellReady() {
 function normalizeDesktopPrintError(err) {
   const raw = err?.message || String(err || '');
   if (/Script failed to execute/i.test(raw)) {
-    return new Error('Чек исчез из окна во время печати. Повторите продажу или тест из меню Aurent.');
+    return new Error('Сбой печати в окне кассы. Повторите продажу или тест из меню Aurent.');
   }
   if (/Error invoking remote method/i.test(raw)) {
-    const inner = raw.replace(/^Error invoking remote method[^:]+:\s*/i, '').trim();
+    const inner = raw
+      .replace(/^Error invoking remote method ['"]?[^'"]+['"]?:\s*/i, '')
+      .trim();
     if (inner && !/Script failed to execute/i.test(inner)) {
       return new Error(inner);
     }
@@ -133,7 +147,7 @@ async function invokeDesktopSilentPrint() {
   for (let attempt = 1; attempt <= SILENT_PRINT_MAX_ATTEMPTS; attempt += 1) {
     try {
       assertAutoPrintShellReady();
-      await window.desktopCashier.printReceiptAuto();
+      await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto());
       return;
     } catch (err) {
       lastErr = normalizeDesktopPrintError(err);
