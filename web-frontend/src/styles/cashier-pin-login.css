@@ -203,15 +203,18 @@
   color: #94a3b8;
 }
 
-/* Планшет / касса / десктоп: слева фото, справа PIN (клавиатура шире) */
+/* Планшет / касса / десктоп: слева фото 50%, справа PIN по центру колонки */
 @media (min-width: 768px) {
   .cashier-pin-login__layout {
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    min-height: 100dvh;
   }
 
   .cashier-pin-login__visual {
     display: block;
-    flex: 0 0 42%;
+    grid-column: 1;
+    grid-row: 1;
     min-width: 0;
     min-height: 100dvh;
     position: relative;
@@ -226,7 +229,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center;
+    object-position: 55% center;
   }
 
   .cashier-pin-login__visual-overlay {
@@ -234,21 +237,41 @@
     inset: 0;
     background: linear-gradient(
       to left,
-      rgb(15 23 42 / 0.35) 0%,
-      rgb(15 23 42 / 0.08) 40%,
-      transparent 70%
+      rgb(15 23 42 / 0.3) 0%,
+      rgb(15 23 42 / 0.06) 35%,
+      transparent 55%
     );
     pointer-events: none;
   }
 
   .cashier-pin-login__panel {
-    flex: 1 1 58%;
-    min-width: min(100%, 22rem);
-    padding: 2rem 2.5rem;
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    padding: 2rem clamp(1.5rem, 4vw, 3rem);
   }
 
   .cashier-pin-login__shell {
-    max-width: 22rem;
+    width: 100%;
+    max-width: 26rem;
+    margin-inline: auto;
+  }
+
+  .cashier-pin-login__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .cashier-pin-login__footer {
+    text-align: center;
   }
 
   .cashier-pin-login__key {
@@ -258,16 +281,22 @@
 }
 
 @media (min-width: 1024px) {
-  .cashier-pin-login__visual {
-    flex: 0 0 40%;
+  .cashier-pin-login__layout {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
   }
 
-  .cashier-pin-login__panel {
-    flex: 1 1 60%;
+  .cashier-pin-login__visual-img {
+    object-position: 50% center;
   }
 
   .cashier-pin-login__shell {
-    max-width: 24rem;
+    max-width: 28rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .cashier-pin-login__layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
   }
 }
 

@@ -15,8 +15,10 @@ import {
   normalizeCompanyLoginCode,
 } from '../../utils/authLogin';
 import { useCashierTouchLayout } from '../../hooks/useCashierTouchLayout';
-import pinLoginHero from '../../assets/cashier/pin-login-hero.jpg';
 import '../../styles/cashier-pin-login.css';
+
+const PIN_LOGIN_HERO_URL =
+  'https://www.milanweek.ru/wp-content/uploads/2018/12/Supermercato-.jpg';
 
 const PIN_MIN = 4;
 const PIN_MAX = 6;
@@ -140,7 +142,7 @@ export default function CashierPinLoginPage() {
         <aside className="cashier-pin-login__visual" aria-hidden="true">
           <img
             className="cashier-pin-login__visual-img"
-            src={pinLoginHero}
+            src={PIN_LOGIN_HERO_URL}
             alt=""
             decoding="async"
           />
