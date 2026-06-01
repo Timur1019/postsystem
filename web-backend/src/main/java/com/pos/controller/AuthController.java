@@ -2,7 +2,9 @@ package com.pos.controller;
 
 import com.pos.dto.auth.AuthRequest;
 import com.pos.dto.auth.AuthResponse;
+import com.pos.dto.auth.CashierPinAuthRequest;
 import com.pos.dto.auth.RegisterRequest;
+import com.pos.dto.auth.VerifyPinRequest;
 import com.pos.dto.auth.VerifyPasswordRequest;
 import com.pos.service.AuthService;
 import jakarta.validation.Valid;
@@ -22,6 +24,11 @@ public class AuthController {
         return ResponseEntity.ok(authService.authenticate(request));
     }
 
+    @PostMapping("/cashier-pin/login")
+    public ResponseEntity<AuthResponse> cashierPinLogin(@Valid @RequestBody CashierPinAuthRequest request) {
+        return ResponseEntity.ok(authService.authenticateCashierPin(request));
+    }
+
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
@@ -35,6 +42,12 @@ public class AuthController {
     @PostMapping("/verify-password")
     public ResponseEntity<Void> verifyPassword(@Valid @RequestBody VerifyPasswordRequest request) {
         authService.verifyPassword(request.password());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/verify-pin")
+    public ResponseEntity<Void> verifyPin(@Valid @RequestBody VerifyPinRequest request) {
+        authService.verifyPin(request.pin());
         return ResponseEntity.noContent().build();
     }
 }

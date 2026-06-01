@@ -107,6 +107,12 @@
     "footer": "Aurent · © {{year}}",
     "downloadCashier": "Скачать кассу"
   },
+  "cashierLogin": {
+    "title": "Вход кассира",
+    "subtitle": "Введите PIN-код",
+    "adminLogin": "Вход администратора",
+    "desktopHint": "Рекомендуется вход через программу кассы"
+  },
   "installer": {
     "title": "Скачать кассу DT Group",
     "subtitle": "Установите программу кассы для Windows или Mac. Интерфейс загружается с сервера — обновления без переустановки.",
@@ -1196,6 +1202,9 @@
     "password": "Пароль",
     "passwordEditHint": "Оставьте пустым, если менять пароль не нужно",
     "passwordEditPlaceholder": "Новый пароль (мин. 6 символов)",
+    "pin": "PIN-код кассира",
+    "pinHint": "4–6 цифр. Используется для входа кассира и разблокировки.",
+    "pinRequired": "PIN обязателен (4–6 цифр)",
     "passwordMinLength": "Пароль не менее 6 символов",
     "role": "Роль",
     "roleCashier": "Кассир",
@@ -1619,8 +1628,10 @@
     "lockTitle": "Отошли на время",
     "lockHint": "Пожалуйста, введите пароль для продолжения работы",
     "lockPasswordPh": "Пароль",
+    "lockPinPh": "PIN",
     "lockUnlock": "Разблокировать",
     "lockWrongPassword": "Неверный пароль",
+    "lockWrongPin": "Неверный PIN",
     "themeToggle": "Тема оформления",
     "themeLight": "Светлая тема",
     "themeDark": "Тёмная тема",

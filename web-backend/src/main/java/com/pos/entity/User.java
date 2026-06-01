@@ -36,6 +36,10 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    /** Cashier PIN digest (HMAC-SHA256 hex), for fast lookup without storing PIN. */
+    @Column(name = "pin_digest", length = 64)
+    private String pinDigest;
+
     @Column(name = "full_name", nullable = false)
     private String fullName;
 

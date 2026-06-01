@@ -5,6 +5,7 @@ import { useAuthStore } from './store/authStore';
 import ThemedToaster from './components/shared/ThemedToaster';
 
 import LoginPage         from './pages/LoginPage';
+import CashierPinLoginPage from './pages/cashier/CashierPinLoginPage';
 import DesktopInstallerPage from './pages/DesktopInstallerPage';
 import DashboardPage     from './pages/DashboardPage';
 import ProductsPage      from './pages/ProductsPage';
@@ -123,6 +124,7 @@ export default function App() {
         <AuthBootstrap>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/cashier/login" element={<CashierPinLoginPage />} />
           <Route path="/install" element={<DesktopInstallerPage />} />
 
           <Route path="/receipt/:receiptNumber" element={

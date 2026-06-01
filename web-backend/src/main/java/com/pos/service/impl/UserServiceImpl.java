@@ -15,9 +15,11 @@ import com.pos.repository.UserRepository;
 import com.pos.service.UserService;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
+import com.pos.util.CashierPinUtil;
 import com.pos.util.PersonNameUtil;
 import com.pos.util.UserLoginUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,8 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final TenantAccessSupport tenantAccess;
     private final UserMapper userMapper;
+    @Value("${app.jwt.secret}")
+    private String pinSecret;
 
     @Override
     public List<UserResponse> findAll() {
@@ -87,6 +91,7 @@ public class UserServiceImpl implements UserService {
             .isActive(true)
             .build();
         user.syncFullName();
+        applyCashierPinForCreate(user, role.getName(), companyId, req.pin());
 
         User saved = userRepository.save(user);
         LogUtil.info(UserServiceImpl.class, "User created: id={}, username={}", saved.getId(), saved.getUsername());
@@ -138,6 +143,11 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BadRequestException("Invalid role"));
             assertRoleAllowedForCreate(role.getName());
             user.setRole(role);
+        }
+
+        if (req.pin() != null) {
+            Integer companyId = user.getCompany() != null ? user.getCompany().getId() : null;
+            applyCashierPinForUpdate(user, companyId, req.pin());
         }
 
         if (req.companyId() != null && tenantAccess.isSuperAdmin()) {
@@ -267,5 +277,41 @@ public class UserServiceImpl implements UserService {
         if (taken) {
             throw new BadRequestException("Email already registered in this company");
         }
+    }
+
+    private void applyCashierPinForCreate(User user, String roleName, Integer companyId, String pin) {
+        if (!"CASHIER".equalsIgnoreCase(roleName)) {
+            return;
+        }
+        if (companyId == null) {
+            throw new BadRequestException("Company is required for cashier");
+        }
+        String normalized = CashierPinUtil.normalizePin(pin);
+        if (normalized.length() < 4 || normalized.length() > 6) {
+            throw new BadRequestException("Cashier PIN must be 4-6 digits");
+        }
+        String digest = CashierPinUtil.digestHex(normalized, pinSecret);
+        if (userRepository.existsByCompanyIdAndPinDigest(companyId, digest, null)) {
+            throw new BadRequestException("PIN already used in this company");
+        }
+        user.setPinDigest(digest);
+    }
+
+    private void applyCashierPinForUpdate(User user, Integer companyId, String pin) {
+        if (!"CASHIER".equalsIgnoreCase(user.getRole().getName())) {
+            throw new BadRequestException("PIN can only be set for cashier");
+        }
+        if (companyId == null) {
+            throw new BadRequestException("Company is required for cashier");
+        }
+        String normalized = CashierPinUtil.normalizePin(pin);
+        if (normalized.length() < 4 || normalized.length() > 6) {
+            throw new BadRequestException("Cashier PIN must be 4-6 digits");
+        }
+        String digest = CashierPinUtil.digestHex(normalized, pinSecret);
+        if (userRepository.existsByCompanyIdAndPinDigest(companyId, digest, user.getId())) {
+            throw new BadRequestException("PIN already used in this company");
+        }
+        user.setPinDigest(digest);
     }
 }

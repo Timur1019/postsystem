@@ -28,7 +28,7 @@ let mainWindow;
 let config;
 
 function buildLoginUrl(cfg) {
-  const base = `${String(cfg.cashierUrl || '').replace(/\/$/, '')}/login`;
+  const base = `${String(cfg.cashierUrl || '').replace(/\/$/, '')}/cashier/login`;
   const code = String(cfg.companyLoginCode || '').trim();
   if (!code) return base;
   return `${base}?${new URLSearchParams({ companyLoginCode: code })}`;

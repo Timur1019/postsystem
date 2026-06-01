@@ -7,6 +7,8 @@ import java.util.List;
 
 public record UpdateUserRequest(
     @Size(min = 1, max = 100, message = "Username is required") String username,
+    /** Cashier PIN (4-6 digits). Set to update PIN for CASHIER. */
+    String pin,
     String firstName,
     String lastName,
     String patronymic,

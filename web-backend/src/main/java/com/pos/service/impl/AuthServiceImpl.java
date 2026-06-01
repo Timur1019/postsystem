@@ -2,6 +2,7 @@ package com.pos.service.impl;
 
 import com.pos.dto.auth.AuthRequest;
 import com.pos.dto.auth.AuthResponse;
+import com.pos.dto.auth.CashierPinAuthRequest;
 import com.pos.dto.auth.RegisterRequest;
 import com.pos.entity.Company;
 import com.pos.entity.Role;
@@ -18,11 +19,11 @@ import com.pos.service.AuditService;
 import com.pos.service.AuthService;
 import com.pos.service.ModuleAccessService;
 import com.pos.util.CompanyLoginCodeUtil;
+import com.pos.util.CashierPinUtil;
 import com.pos.util.LogUtil;
 import com.pos.util.UserLoginUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +44,8 @@ public class AuthServiceImpl implements AuthService {
     private final AuthMapper authMapper;
     private final ModuleAccessService moduleAccessService;
     private final CurrentUserProvider currentUserProvider;
+    @Value("${app.jwt.secret}")
+    private String pinSecret;
 
     @Override
     @Transactional
@@ -102,10 +105,54 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional(readOnly = true)
+    public AuthResponse authenticateCashierPin(CashierPinAuthRequest request) {
+        String companyCode = CompanyLoginCodeUtil.normalize(request.companyLoginCode());
+        String pin = CashierPinUtil.normalizePin(request.pin());
+        if (pin.length() < 4 || pin.length() > 6) {
+            throw new BadRequestException("Invalid PIN");
+        }
+
+        Company company = companyRepository.findByLoginCodeIgnoreCase(companyCode)
+            .orElseThrow(() -> new BadRequestException("Invalid company code"));
+
+        if (!company.isActive()) {
+            throw new BadRequestException("Company is inactive");
+        }
+
+        String digest = CashierPinUtil.digestHex(pin, pinSecret);
+        User user = userRepository.findCashierByCompanyIdAndPinDigest(company.getId(), digest)
+            .orElseThrow(() -> new BadRequestException("Invalid PIN"));
+        assertLoginAllowed(user);
+
+        String token = jwtService.generateToken(user);
+        auditService.log(user, "LOGIN_PIN", null, null, null, null);
+        LogUtil.info(AuthServiceImpl.class, "Cashier PIN authenticated: userId={}, companyId={}", user.getId(), company.getId());
+        return buildResponse(user, token);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public void verifyPassword(String password) {
         User user = currentUserProvider.requireCurrentUser();
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BadRequestException("Invalid password");
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void verifyPin(String pin) {
+        User user = currentUserProvider.requireCurrentUser();
+        String normalized = CashierPinUtil.normalizePin(pin);
+        if (normalized.length() < 4 || normalized.length() > 6) {
+            throw new BadRequestException("Invalid PIN");
+        }
+        if (!StringUtils.hasText(user.getPinDigest())) {
+            throw new BadRequestException("PIN is not configured");
+        }
+        String digest = CashierPinUtil.digestHex(normalized, pinSecret);
+        if (!digest.equalsIgnoreCase(user.getPinDigest())) {
+            throw new BadRequestException("Invalid PIN");
         }
     }
 

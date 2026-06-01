@@ -107,6 +107,12 @@
     "footer": "Aurent · © {{year}}",
     "downloadCashier": "Kassani yuklab olish"
   },
+  "cashierLogin": {
+    "title": "Kassir kirishi",
+    "subtitle": "PIN-kodni kiriting",
+    "adminLogin": "Administrator kirishi",
+    "desktopHint": "Kassa dasturi orqali kirish tavsiya etiladi"
+  },
   "installer": {
     "title": "DT Group kassasini yuklab olish",
     "subtitle": "Windows yoki Mac uchun kassa dasturini o‘rnating. Interfeys serverdan yuklanadi — yangilanish qayta o‘rnatishsiz.",
@@ -1196,6 +1202,9 @@
     "password": "Parol",
     "passwordEditHint": "Parolni o'zgartirmasangiz, bo'sh qoldiring",
     "passwordEditPlaceholder": "Yangi parol (kamida 6 belgi)",
+    "pin": "Kassir PIN-kodi",
+    "pinHint": "4–6 raqam. Kassir kirishi va blokdan chiqarish uchun.",
+    "pinRequired": "PIN majburiy (4–6 raqam)",
     "passwordMinLength": "Parol kamida 6 belgidan iborat bo'lishi kerak",
     "role": "Rol",
     "roleCashier": "Kassir",
@@ -1619,8 +1628,10 @@
     "lockTitle": "Bir ozga ketdingiz",
     "lockHint": "Davom etish uchun parolni kiriting",
     "lockPasswordPh": "Parol",
+    "lockPinPh": "PIN",
     "lockUnlock": "Qulfni ochish",
     "lockWrongPassword": "Noto'g'ri parol",
+    "lockWrongPin": "Noto'g'ri PIN",
     "themeToggle": "Tema",
     "themeLight": "Yorug' Tema",
     "themeDark": "Qorong'u Tema",

@@ -35,6 +35,32 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findPlatformUserByUsernameIgnoreCase(@Param("username") String username);
 
     @Query("""
+        SELECT u FROM User u
+        JOIN FETCH u.role
+        LEFT JOIN FETCH u.company
+        LEFT JOIN FETCH u.stores
+        WHERE u.company.id = :companyId
+          AND u.role.name = 'CASHIER'
+          AND u.pinDigest = :pinDigest
+        """)
+    Optional<User> findCashierByCompanyIdAndPinDigest(
+        @Param("companyId") Integer companyId,
+        @Param("pinDigest") String pinDigest
+    );
+
+    @Query("""
+        SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
+        WHERE u.company.id = :companyId
+          AND u.pinDigest = :pinDigest
+          AND (:excludeId IS NULL OR u.id <> :excludeId)
+        """)
+    boolean existsByCompanyIdAndPinDigest(
+        @Param("companyId") Integer companyId,
+        @Param("pinDigest") String pinDigest,
+        @Param("excludeId") UUID excludeId
+    );
+
+    @Query("""
         SELECT DISTINCT u FROM User u
         LEFT JOIN FETCH u.role
         LEFT JOIN FETCH u.company

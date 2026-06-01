@@ -76,8 +76,10 @@ api.interceptors.response.use(
 // ---- Typed API modules ----
 export const authApi = {
   login:   (data) => api.post('/auth/login', data),
+  cashierPinLogin: (data) => api.post('/auth/cashier-pin/login', data),
   register:(data) => api.post('/auth/register', data),
   verifyPassword: (data) => api.post('/auth/verify-password', data),
+  verifyPin: (data) => api.post('/auth/verify-pin', data),
 };
 
 export const tasnifApi = {
