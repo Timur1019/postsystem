@@ -46,12 +46,24 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("""
         SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
         WHERE u.company IS NOT NULL AND LOWER(u.username) = LOWER(:username)
-        AND (:excludeId IS NULL OR u.id <> :excludeId)
         """)
-    boolean existsTenantUsernameIgnoreCase(
+    boolean existsTenantUsernameIgnoreCase(@Param("username") String username);
+
+    @Query("""
+        SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
+        WHERE u.company IS NOT NULL AND LOWER(u.username) = LOWER(:username)
+        AND u.id <> :excludeId
+        """)
+    boolean existsTenantUsernameIgnoreCaseExcept(
         @Param("username") String username,
         @Param("excludeId") UUID excludeId
     );
+
+    default boolean existsTenantUsernameIgnoreCase(String username, UUID excludeId) {
+        return excludeId == null
+            ? existsTenantUsernameIgnoreCase(username)
+            : existsTenantUsernameIgnoreCaseExcept(username, excludeId);
+    }
 
     @Query("""
         SELECT u FROM User u
@@ -71,13 +83,33 @@ public interface UserRepository extends JpaRepository<User, UUID> {
         SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
         WHERE u.company.id = :companyId
           AND u.pinDigest = :pinDigest
-          AND (:excludeId IS NULL OR u.id <> :excludeId)
         """)
     boolean existsByCompanyIdAndPinDigest(
+        @Param("companyId") Integer companyId,
+        @Param("pinDigest") String pinDigest
+    );
+
+    @Query("""
+        SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
+        WHERE u.company.id = :companyId
+          AND u.pinDigest = :pinDigest
+          AND u.id <> :excludeId
+        """)
+    boolean existsByCompanyIdAndPinDigestExcept(
         @Param("companyId") Integer companyId,
         @Param("pinDigest") String pinDigest,
         @Param("excludeId") UUID excludeId
     );
+
+    default boolean existsByCompanyIdAndPinDigest(
+        Integer companyId,
+        String pinDigest,
+        UUID excludeId
+    ) {
+        return excludeId == null
+            ? existsByCompanyIdAndPinDigest(companyId, pinDigest)
+            : existsByCompanyIdAndPinDigestExcept(companyId, pinDigest, excludeId);
+    }
 
     @Query("""
         SELECT DISTINCT u FROM User u
@@ -91,44 +123,106 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("""
         SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
         WHERE u.company.id = :companyId AND LOWER(u.username) = LOWER(:username)
-        AND (:excludeId IS NULL OR u.id <> :excludeId)
         """)
     boolean existsByCompanyIdAndUsernameIgnoreCase(
         @Param("companyId") Integer companyId,
+        @Param("username") String username
+    );
+
+    @Query("""
+        SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
+        WHERE u.company.id = :companyId AND LOWER(u.username) = LOWER(:username)
+        AND u.id <> :excludeId
+        """)
+    boolean existsByCompanyIdAndUsernameIgnoreCaseExcept(
+        @Param("companyId") Integer companyId,
         @Param("username") String username,
         @Param("excludeId") UUID excludeId
+    );
+
+    default boolean existsByCompanyIdAndUsernameIgnoreCase(
+        Integer companyId,
+        String username,
+        UUID excludeId
+    ) {
+        return excludeId == null
+            ? existsByCompanyIdAndUsernameIgnoreCase(companyId, username)
+            : existsByCompanyIdAndUsernameIgnoreCaseExcept(companyId, username, excludeId);
+    }
+
+    @Query("""
+        SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
+        WHERE u.company.id = :companyId AND LOWER(u.email) = LOWER(:email)
+        """)
+    boolean existsByCompanyIdAndEmailIgnoreCase(
+        @Param("companyId") Integer companyId,
+        @Param("email") String email
     );
 
     @Query("""
         SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
         WHERE u.company.id = :companyId AND LOWER(u.email) = LOWER(:email)
-        AND (:excludeId IS NULL OR u.id <> :excludeId)
+        AND u.id <> :excludeId
         """)
-    boolean existsByCompanyIdAndEmailIgnoreCase(
+    boolean existsByCompanyIdAndEmailIgnoreCaseExcept(
         @Param("companyId") Integer companyId,
         @Param("email") String email,
         @Param("excludeId") UUID excludeId
     );
 
+    default boolean existsByCompanyIdAndEmailIgnoreCase(
+        Integer companyId,
+        String email,
+        UUID excludeId
+    ) {
+        return excludeId == null
+            ? existsByCompanyIdAndEmailIgnoreCase(companyId, email)
+            : existsByCompanyIdAndEmailIgnoreCaseExcept(companyId, email, excludeId);
+    }
+
     @Query("""
         SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
         WHERE u.company IS NULL AND LOWER(u.username) = LOWER(:username)
-        AND (:excludeId IS NULL OR u.id <> :excludeId)
         """)
-    boolean existsPlatformUsernameIgnoreCase(
+    boolean existsPlatformUsernameIgnoreCase(@Param("username") String username);
+
+    @Query("""
+        SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
+        WHERE u.company IS NULL AND LOWER(u.username) = LOWER(:username)
+        AND u.id <> :excludeId
+        """)
+    boolean existsPlatformUsernameIgnoreCaseExcept(
         @Param("username") String username,
         @Param("excludeId") UUID excludeId
     );
 
+    default boolean existsPlatformUsernameIgnoreCase(String username, UUID excludeId) {
+        return excludeId == null
+            ? existsPlatformUsernameIgnoreCase(username)
+            : existsPlatformUsernameIgnoreCaseExcept(username, excludeId);
+    }
+
     @Query("""
         SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
         WHERE u.company IS NULL AND LOWER(u.email) = LOWER(:email)
-        AND (:excludeId IS NULL OR u.id <> :excludeId)
         """)
-    boolean existsPlatformEmailIgnoreCase(
+    boolean existsPlatformEmailIgnoreCase(@Param("email") String email);
+
+    @Query("""
+        SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u
+        WHERE u.company IS NULL AND LOWER(u.email) = LOWER(:email)
+        AND u.id <> :excludeId
+        """)
+    boolean existsPlatformEmailIgnoreCaseExcept(
         @Param("email") String email,
         @Param("excludeId") UUID excludeId
     );
+
+    default boolean existsPlatformEmailIgnoreCase(String email, UUID excludeId) {
+        return excludeId == null
+            ? existsPlatformEmailIgnoreCase(email)
+            : existsPlatformEmailIgnoreCaseExcept(email, excludeId);
+    }
 
     @Query("SELECT u FROM User u JOIN u.role r WHERE r.name = :roleName AND u.isActive = true ORDER BY u.fullName")
     List<User> findActiveByRoleName(@Param("roleName") String roleName);
