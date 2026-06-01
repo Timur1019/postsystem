@@ -203,32 +203,21 @@
   color: #94a3b8;
 }
 
-/* Планшет / касса / десктоп: слева PIN, справа фото */
+/* Планшет / касса / десктоп: слева фото, справа PIN (клавиатура шире) */
 @media (min-width: 768px) {
   .cashier-pin-login__layout {
     flex-direction: row;
   }
 
-  .cashier-pin-login__panel {
-    flex: 0 0 50%;
-    max-width: 32rem;
-    min-width: min(100%, 22rem);
-    padding: 2rem 2.5rem;
-    border-right: 1px solid #e2e8f0;
-  }
-
-  .cashier-pin-login__shell {
-    max-width: 20rem;
-  }
-
   .cashier-pin-login__visual {
     display: block;
-    flex: 1 1 50%;
+    flex: 0 0 42%;
     min-width: 0;
     min-height: 100dvh;
     position: relative;
     overflow: hidden;
     background: #0f172a;
+    border-right: 1px solid #e2e8f0;
   }
 
   .cashier-pin-login__visual-img {
@@ -244,12 +233,22 @@
     position: absolute;
     inset: 0;
     background: linear-gradient(
-      90deg,
+      to left,
       rgb(15 23 42 / 0.35) 0%,
       rgb(15 23 42 / 0.08) 40%,
       transparent 70%
     );
     pointer-events: none;
+  }
+
+  .cashier-pin-login__panel {
+    flex: 1 1 58%;
+    min-width: min(100%, 22rem);
+    padding: 2rem 2.5rem;
+  }
+
+  .cashier-pin-login__shell {
+    max-width: 22rem;
   }
 
   .cashier-pin-login__key {
@@ -259,13 +258,16 @@
 }
 
 @media (min-width: 1024px) {
+  .cashier-pin-login__visual {
+    flex: 0 0 40%;
+  }
+
   .cashier-pin-login__panel {
-    flex: 0 0 42%;
-    max-width: 28rem;
+    flex: 1 1 60%;
   }
 
   .cashier-pin-login__shell {
-    max-width: 22rem;
+    max-width: 24rem;
   }
 }
 

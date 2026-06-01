@@ -137,6 +137,16 @@ export default function CashierPinLoginPage() {
   return (
     <div className={`cashier-pin-login${touchLayout ? ' cashier-pin-login--touch' : ''}`}>
       <div className="cashier-pin-login__layout">
+        <aside className="cashier-pin-login__visual" aria-hidden="true">
+          <img
+            className="cashier-pin-login__visual-img"
+            src={pinLoginHero}
+            alt=""
+            decoding="async"
+          />
+          <div className="cashier-pin-login__visual-overlay" />
+        </aside>
+
         <section className="cashier-pin-login__panel" aria-label={t('cashierLogin.subtitle', { defaultValue: 'Введите PIN-код' })}>
           <div className="cashier-pin-login__shell">
             <header className="cashier-pin-login__header">
@@ -222,16 +232,6 @@ export default function CashierPinLoginPage() {
             </footer>
           </div>
         </section>
-
-        <aside className="cashier-pin-login__visual" aria-hidden="true">
-          <img
-            className="cashier-pin-login__visual-img"
-            src={pinLoginHero}
-            alt=""
-            decoding="async"
-          />
-          <div className="cashier-pin-login__visual-overlay" />
-        </aside>
       </div>
     </div>
   );
