@@ -110,95 +110,49 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   1c. Справочник модулей — print-host для Electron (виден только на /handbook)
+   1c. Print-host на body — полный layout off-screen (Electron), не на экране кассы
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Fallback в CashierLayout: на экране кассы полностью скрыт (Electron — off-screen) */
-.pos-auto-print-handbook-print-area,
-#pos-auto-print-handbook-print-area {
+#pos-auto-print-print-host.pos-auto-print-host--body-print,
+#pos-auto-print-print-host.pos-auto-print-host--capturing {
   position: fixed !important;
-  left: -10000px !important;
+  left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
   top: 0 !important;
-  width: 0 !important;
-  height: 0 !important;
-  max-width: 0 !important;
-  max-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  overflow: hidden !important;
+  width: var(--receipt-auto-print-body-width) !important;
+  max-width: var(--receipt-auto-print-body-width) !important;
+  height: auto !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  overflow: visible !important;
   pointer-events: none !important;
   z-index: -1 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  background: transparent !important;
-  clip: rect(0, 0, 0, 0) !important;
-  clip-path: inset(50%) !important;
-}
-
-.cashier-app--pos-screen #pos-auto-print-handbook-print-area.pos-auto-print-handbook-print-area--pos-hidden {
-  display: none !important;
-  visibility: hidden !important;
-}
-
-.cashier-app:not(.cashier-app--pos-screen) .pos-auto-print-handbook-print-area,
-.cashier-app:not(.cashier-app--pos-screen) #pos-auto-print-handbook-print-area {
-  display: none !important;
-}
-
-/* Слот на странице справочника — чек виден здесь */
-.handbook-page__print-slot,
-#pos-auto-print-handbook-print-slot {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px dashed rgb(148 163 184 / 0.45);
-}
-
-#pos-auto-print-handbook-print-slot:empty {
-  display: none !important;
-}
-
-#pos-auto-print-handbook-print-slot #pos-auto-print-print-host,
-#pos-auto-print-handbook-print-slot #pos-auto-print-print-host.pos-auto-print-host--body-print,
-#pos-auto-print-handbook-print-slot #pos-auto-print-print-host.pos-auto-print-host--capturing {
-  position: relative !important;
-  left: auto !important;
-  top: auto !important;
-  width: var(--receipt-auto-print-body-width) !important;
-  max-width: var(--receipt-auto-print-body-width) !important;
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  overflow: visible !important;
-  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
   background: #fff !important;
-  z-index: auto !important;
   transform: none !important;
-  margin: 0 auto !important;
 }
 
-/* Fallback off-screen: только во время capture, иначе display:none на кассе */
-#pos-auto-print-handbook-print-area #pos-auto-print-print-host,
-#pos-auto-print-handbook-print-area #pos-auto-print-print-host.pos-auto-print-host--body-print,
-#pos-auto-print-handbook-print-area #pos-auto-print-print-host.pos-auto-print-host--capturing {
-  position: absolute !important;
-  left: 0 !important;
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host.pos-auto-print-host--body-print,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host.pos-auto-print-host--capturing,
+html.electron-auto-print-job #pos-auto-print-print-host.pos-auto-print-host--body-print,
+html.electron-auto-print-job #pos-auto-print-print-host.pos-auto-print-host--capturing,
+html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--body-print,
+html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--capturing {
+  left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
   top: 0 !important;
   width: var(--receipt-auto-print-body-width) !important;
   max-width: var(--receipt-auto-print-body-width) !important;
   display: block !important;
   opacity: 1 !important;
   visibility: visible !important;
-  overflow: visible !important;
-  pointer-events: none !important;
-  background: #fff !important;
-  z-index: auto !important;
   transform: none !important;
-  margin: 0 !important;
+  z-index: -1 !important;
 }
 
-#pos-auto-print-handbook-print-slot #fiscal-print-shell,
-#pos-auto-print-handbook-print-slot #fiscal-print-shell * {
+#pos-auto-print-print-host.pos-auto-print-host--body-print #fiscal-print-shell,
+#pos-auto-print-print-host.pos-auto-print-host--capturing #fiscal-print-shell,
+#pos-auto-print-print-host.pos-auto-print-host--body-print #fiscal-print-shell * {
   width: 100% !important;
   max-width: 100% !important;
   transform: none !important;
@@ -208,29 +162,16 @@
   color: #000 !important;
 }
 
-#pos-auto-print-handbook-print-area #fiscal-print-shell,
-#pos-auto-print-handbook-print-area #fiscal-print-shell * {
-  width: 100% !important;
-  max-width: 100% !important;
-  transform: none !important;
-  background: #fff !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  color: #000 !important;
-}
-
-html.electron-print-capturing #pos-auto-print-handbook-print-slot #fiscal-print-shell,
-html.electron-print-capturing #pos-auto-print-handbook-print-area #fiscal-print-shell {
+html.electron-print-capturing #pos-auto-print-print-host #fiscal-print-shell {
   transform: none !important;
   box-shadow: none !important;
   border-radius: 0 !important;
 }
 
-/* На экране кассы fallback-area скрыта (класс --pos-hidden), во время print — off-screen */
-.cashier-app--pos-screen #pos-auto-print-handbook-print-area:not(.pos-auto-print-handbook-print-area--pos-hidden) {
-  display: block !important;
-  visibility: visible !important;
-  left: -10000px !important;
+/* Legacy mount / handbook wrappers — удаляются в JS */
+#pos-auto-print-handbook-print-area,
+#pos-auto-print-handbook-print-slot {
+  display: none !important;
 }
 
 /* Legacy mount */

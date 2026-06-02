@@ -154,18 +154,13 @@ export async function waitForBodyPrintImagesReady(
 export function assertFiscalPrintShellReady() {
   const shell = getAutoPrintFiscalShell();
   const root = document.getElementById('root');
-  const { handbookPrintAreaId, handbookPrintSlotId } = RECEIPT_PRINT_DOM;
-  const printLane =
-    document.getElementById(handbookPrintAreaId) ||
-    document.getElementById(handbookPrintSlotId) ||
-    document.getElementById(RECEIPT_PRINT_DOM.bodyPrintHostId);
 
   if (!shell) {
     console.warn('[Aurent] fiscal shell missing');
     throw new Error('Чек не найден для печати');
   }
-  if (root?.contains(shell) && !printLane?.contains(shell)) {
-    console.warn('[Aurent] fiscal shell inside #root but outside print lane');
+  if (root?.contains(shell)) {
+    console.warn('[Aurent] fiscal shell inside #root — need body mount');
     throw new Error('Чек не найден для печати');
   }
   const area =

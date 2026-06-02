@@ -26,7 +26,7 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
   bodyPrintHostId: 'pos-auto-print-print-host',
   /** Слот справочника (legacy id, не используется для отображения чека). */
   handbookPrintSlotId: 'pos-auto-print-handbook-print-slot',
-  /** Off-screen контейнер в CashierLayout — только на время silent print. */
+  /** Off-screen на body только на время silent print; после печати удаляется. */
   handbookPrintAreaId: 'pos-auto-print-handbook-print-area',
   /** @deprecated alias — use handbookPrintAreaId */
   printSupportLaneId: 'pos-auto-print-handbook-print-area',

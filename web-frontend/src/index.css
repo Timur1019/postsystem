@@ -65,57 +65,34 @@
   background: #fff !important;
 }
 
-/* Справочник: fallback off-screen на кассе, чек виден только в слоте справочника */
-.pos-auto-print-handbook-print-area,
-#pos-auto-print-handbook-print-area {
+/* Print-host на body — полный layout off-screen для Electron (не превью в слоте) */
+#pos-auto-print-print-host.pos-auto-print-host--body-print {
   position: fixed !important;
   left: -10000px !important;
   top: 0 !important;
-  width: 0 !important;
-  height: 0 !important;
-  max-width: 0 !important;
-  max-height: 0 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  border: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  clip: rect(0, 0, 0, 0) !important;
-  clip-path: inset(50%) !important;
-}
-
-.cashier-app--pos-screen #pos-auto-print-handbook-print-area.pos-auto-print-handbook-print-area--pos-hidden {
-  display: none !important;
-  visibility: hidden !important;
-}
-
-.cashier-app:not(.cashier-app--pos-screen) #pos-auto-print-handbook-print-area {
-  display: none !important;
-}
-
-#pos-auto-print-handbook-print-area #pos-auto-print-print-host {
-  position: absolute !important;
-  left: 0 !important;
-  top: 0 !important;
   width: var(--print-content-w, 76mm) !important;
   max-width: var(--print-content-w, 76mm) !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
   opacity: 1 !important;
   visibility: visible !important;
   background: #fff !important;
 }
 
-/* #fiscal-print-shell только в справочнике (не глобально — иначе дубль на экране кассы) */
-html.electron-silent-print.print-thermal-modal #pos-auto-print-handbook-print-slot #fiscal-print-shell,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-handbook-print-area #fiscal-print-shell,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-handbook-print-slot #fiscal-print-shell #receipt-print-area,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-handbook-print-area #fiscal-print-shell #receipt-print-area,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-handbook-print-slot #fiscal-print-shell .receipt-print-root,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-handbook-print-area #fiscal-print-shell .receipt-print-root,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-handbook-print-slot #fiscal-print-shell *,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-handbook-print-area #fiscal-print-shell * {
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host.pos-auto-print-host--body-print,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host.pos-auto-print-host--capturing,
+html.electron-auto-print-job #pos-auto-print-print-host.pos-auto-print-host--body-print {
+  left: -10000px !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell #receipt-print-area,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell .receipt-print-root,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell * {
   background: #ffffff !important;
   background-color: #ffffff !important;
   color: #000 !important;
@@ -245,8 +222,7 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing .thermal
 html.electron-silent-print.print-thermal-modal .pos-sale-auto-print {
   display: none !important;
 }
-html.electron-silent-print.print-thermal-modal #pos-auto-print-handbook-print-slot .fiscal-print-dialog,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-handbook-print-area .fiscal-print-dialog,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host .fiscal-print-dialog,
 html.electron-silent-print.print-thermal-modal #pos-auto-print-preview-mount #fiscal-print-shell-live,
 html.electron-silent-print.print-thermal-modal #pos-auto-print-preview-mount #fiscal-print-shell-live * {
   background: #ffffff !important;
