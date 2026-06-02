@@ -92,7 +92,7 @@ function ensureBodyPrintMount() {
   if (!el) {
     el = document.createElement('div');
     el.id = PRINT_MOUNT_ID;
-    el.className = `fiscal-print-scene pos-sale-print-host ${autoPrintHostClass} ${hostBodyPrintClass}`;
+    el.className = `pos-sale-print-host ${autoPrintHostClass} ${hostBodyPrintClass}`;
     el.setAttribute('aria-hidden', 'true');
     document.body.appendChild(el);
   } else {
@@ -100,9 +100,10 @@ function ensureBodyPrintMount() {
       hostEmbeddedClass,
       hostInSlotClass,
       RECEIPT_PRINT_STYLES.hostCenteredClass,
+      'fiscal-print-scene',
       'fiscal-print-scene--offscreen',
     );
-    el.classList.add('fiscal-print-scene', hostBodyPrintClass);
+    el.classList.add(hostBodyPrintClass);
     if (el.parentElement !== document.body) {
       document.body.appendChild(el);
     }
@@ -192,21 +193,16 @@ export async function prepareBodyPrintShellFromPreview() {
   };
 }
 
-/** Убирает body-mount с экрана между assert и capture (display:none). */
-export function hideBodyPrintMountUntilCapture(host = document.getElementById(PRINT_MOUNT_ID)) {
+/** Убирает body-mount за экран (не display:none — ломает measure/assert). */
+export function hideBodyPrintMountFromScreen(host = document.getElementById(PRINT_MOUNT_ID)) {
   if (!host) return;
   host.classList.remove(hostCapturingClass);
-  host.style.display = 'none';
   host.style.position = 'fixed';
   host.style.left = '-10000px';
   host.style.top = '0';
   host.style.pointerEvents = 'none';
   host.style.zIndex = '-1';
-}
-
-function hideBodyPrintMountFromScreen(host = document.getElementById(PRINT_MOUNT_ID)) {
-  if (!host) return;
-  hideBodyPrintMountUntilCapture(host);
+  host.style.display = 'block';
 }
 
 function showBodyPrintMountForCapture(host = document.getElementById(PRINT_MOUNT_ID)) {

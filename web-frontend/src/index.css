@@ -198,16 +198,6 @@ html.electron-silent-print.print-thermal-modal #fiscal-print-shell * {
   visibility: visible !important;
   box-shadow: none !important;
 }
-
-html.electron-silent-print.print-thermal-modal
-  #pos-auto-print-mount:not(.pos-auto-print-host--capturing)
-  #fiscal-print-shell,
-html.electron-silent-print.print-thermal-modal
-  #pos-auto-print-mount:not(.pos-auto-print-host--capturing)
-  #fiscal-print-shell * {
-  opacity: 0 !important;
-  visibility: hidden !important;
-}
 #receipt-print-area,
 #receipt-print-area *,
 .receipt-print-root,

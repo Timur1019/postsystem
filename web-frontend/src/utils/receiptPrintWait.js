@@ -162,8 +162,14 @@ export function assertFiscalPrintShellReady() {
     shell.querySelector(`#${RECEIPT_PRINT_DOM.receiptPrintAreaId}`) ||
     shell.querySelector('.receipt-print-root') ||
     shell;
-  const textLen = (area.innerText || '').trim().length;
-  const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
+  const textLen = (area.innerText || area.textContent || '').trim().length;
+  // scrollHeight надёжен для off-screen mount; getBoundingClientRect часто 0
+  const h = Math.max(
+    area.scrollHeight,
+    shell.scrollHeight,
+    area.offsetHeight,
+    area.getBoundingClientRect().height,
+  );
   const imgs = Array.from(area.querySelectorAll('img'));
   const imgsReady = imgs.length === 0 || imgs.every((img) => img.complete);
   if (!imgsReady) {
@@ -175,7 +181,7 @@ export function assertFiscalPrintShellReady() {
     throw new Error('Чек не готов для печати');
   }
   if (h < RECEIPT_PRINT_THRESHOLDS.fiscalMinHeightPx) {
-    console.warn('[Aurent] body print shell: height too small', h);
+    console.warn('[Aurent] body print shell: height too small', h, 'scrollH', area.scrollHeight);
     throw new Error('Чек не готов для печати');
   }
 }

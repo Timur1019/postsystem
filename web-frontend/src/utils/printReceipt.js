@@ -9,11 +9,7 @@
  * Mount превью / body для print → utils/autoPrintMount.js
  */
 import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_ENGINE } from '../config/receiptPrintConfig';
-import {
-  hideBodyPrintMountUntilCapture,
-  prepareBodyPrintShellFromPreview,
-  prepareMountForSilentCapture,
-} from './autoPrintMount';
+import { prepareBodyPrintShellFromPreview, prepareMountForSilentCapture } from './autoPrintMount';
 import {
   assertFiscalPrintShellReady,
   sleep,
@@ -119,7 +115,6 @@ async function invokeDesktopSilentPrint() {
       await waitForReceiptPaintSettled();
       await waitForBodyPrintImagesReady();
       assertFiscalPrintShellReady();
-      hideBodyPrintMountUntilCapture();
       console.info(`[Aurent] silent print IPC attempt ${attempt}/${silentMaxAttempts}`);
       await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto());
       undoBodyPrint();
