@@ -16,7 +16,8 @@ import '../../styles/shelf-label-print.css';
 const LABEL_PRINT_SETTINGS_KEY = 'aurent_label_print_settings_v1';
 
 const clampNum = (v, min, max) => {
-  const n = Number(v);
+  const raw = String(v ?? '').trim().replace(',', '.');
+  const n = Number(raw);
   if (!Number.isFinite(n)) return min;
   return Math.min(max, Math.max(min, n));
 };
@@ -163,8 +164,8 @@ export default function ShelfLabelPrintModal({
           ? {
               rotate180: Boolean(parsed.rotate180),
               fontScale: clampNum(parsed.fontScale, 0.8, 1.6),
-              padXmm: clampNum(parsed.padXmm, 0, 5),
-              padYmm: clampNum(parsed.padYmm, 0, 20),
+              padXmm: clampNum(parsed.padXmm, 0, 50),
+              padYmm: clampNum(parsed.padYmm, 0, 70),
             }
           : null;
         if (next) {
@@ -406,16 +407,17 @@ export default function ShelfLabelPrintModal({
                   {t('usersBarcodePrint.padX', { defaultValue: 'Отступ слева/справа (мм)' })}
                 </span>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   className="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                   value={labelSettings.padXmm}
                   min={0}
-                  max={5}
-                  step={0.25}
+                  max={50}
+                  step={0.5}
                   onChange={(e) =>
                     setLabelSettings((s) => ({
                       ...s,
-                      padXmm: snapStep(clampNum(e.target.value, 0, 5), 0.25),
+                      padXmm: snapStep(clampNum(e.target.value, 0, 50), 0.5),
                     }))
                   }
                 />
@@ -426,16 +428,17 @@ export default function ShelfLabelPrintModal({
                   {t('usersBarcodePrint.padY', { defaultValue: 'Отступ сверху/снизу (мм)' })}
                 </span>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   className="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                   value={labelSettings.padYmm}
                   min={0}
-                  max={20}
-                  step={0.25}
+                  max={70}
+                  step={0.5}
                   onChange={(e) =>
                     setLabelSettings((s) => ({
                       ...s,
-                      padYmm: snapStep(clampNum(e.target.value, 0, 20), 0.25),
+                      padYmm: snapStep(clampNum(e.target.value, 0, 70), 0.5),
                     }))
                   }
                 />
