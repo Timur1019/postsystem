@@ -44,10 +44,11 @@
 }
 
 #pos-auto-print-preview-mount #fiscal-print-shell-live {
-  width: 100% !important;
+  width: var(--receipt-auto-print-body-width) !important;
   max-width: 100% !important;
-  transform-origin: top center;
-  transform: scale(var(--receipt-auto-print-preview-scale));
+  margin: 0 auto !important;
+  transform-origin: top center !important;
+  transform: scale(var(--receipt-auto-print-preview-scale)) !important;
   color: #000 !important;
   background: #fff !important;
 }
@@ -108,10 +109,8 @@
   color: #000 !important;
 }
 
-/* webContents.print — body-mount off-screen (не left:0 на мониторе) */
-html.electron-print-capturing #pos-auto-print-mount.pos-auto-print-host--capturing,
-html.electron-silent-print.electron-print-capturing
-  #pos-auto-print-mount.pos-auto-print-host--capturing {
+/* webContents.print — print-host на body (не превью в слоте) */
+#pos-auto-print-print-host {
   display: block !important;
   position: fixed !important;
   left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
@@ -126,14 +125,21 @@ html.electron-silent-print.electron-print-capturing
   opacity: 1 !important;
   visibility: visible !important;
   overflow: visible !important;
-  align-items: stretch !important;
-  justify-content: flex-start !important;
-  box-shadow: none !important;
   pointer-events: none !important;
 }
 
-html.electron-print-capturing #pos-auto-print-mount.pos-auto-print-host--capturing .fiscal-print-dialog,
-html.electron-print-capturing #pos-auto-print-mount.pos-auto-print-host--capturing #fiscal-print-shell {
+html.electron-print-capturing #pos-auto-print-print-host,
+html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--capturing,
+html.electron-silent-print.electron-print-capturing #pos-auto-print-print-host,
+html.electron-silent-print.electron-print-capturing
+  #pos-auto-print-print-host.pos-auto-print-host--capturing {
+  left: 0 !important;
+  top: 0 !important;
+  z-index: var(--receipt-auto-print-capture-z) !important;
+}
+
+html.electron-print-capturing #pos-auto-print-print-host .fiscal-print-dialog,
+html.electron-print-capturing #pos-auto-print-print-host #fiscal-print-shell {
   width: 100% !important;
   max-width: 100% !important;
   transform: none !important;
@@ -279,29 +285,30 @@ html.electron-auto-print-job .pos-sale-print-host.pos-auto-print-host--centered 
   background: var(--receipt-auto-print-center-backdrop) !important;
 }
 
-/* Превью в слоте — никогда fullscreen во время auto-print job */
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job
-  #pos-auto-print-preview-mount.pos-auto-print-host--embedded,
+/* Превью в слоте — static, никогда fixed/fullscreen во время auto-print */
+html.electron-silent-print.print-thermal-modal #pos-auto-print-preview-mount.pos-auto-print-host--embedded,
 html.electron-auto-print-job #pos-auto-print-preview-mount.pos-auto-print-host--embedded {
   position: static !important;
   inset: auto !important;
   left: auto !important;
+  right: auto !important;
   top: auto !important;
   display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
   transform: none !important;
   opacity: 1 !important;
   visibility: visible !important;
   z-index: 1 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  max-height: none !important;
-  overflow: visible !important;
-  background: transparent !important;
 }
 
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job.electron-print-capturing
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job
   .pos-sale-print-host.pos-auto-print-host--centered,
-html.electron-auto-print-job.electron-print-capturing .pos-sale-print-host.pos-auto-print-host--centered {
+html.electron-auto-print-job .pos-sale-print-host.pos-auto-print-host--centered {
   position: fixed !important;
   inset: 0 !important;
   left: 0 !important;
@@ -315,8 +322,9 @@ html.electron-auto-print-job.electron-print-capturing .pos-sale-print-host.pos-a
 }
 
 html.electron-silent-print.print-thermal-modal.electron-auto-print-job.electron-print-capturing
-  .pos-sale-print-host.pos-auto-print-host--embedded,
-html.electron-auto-print-job.electron-print-capturing .pos-sale-print-host.pos-auto-print-host--embedded {
+  #pos-auto-print-preview-mount.pos-auto-print-host--embedded,
+html.electron-auto-print-job.electron-print-capturing
+  #pos-auto-print-preview-mount.pos-auto-print-host--embedded {
   position: static !important;
   left: auto !important;
   right: auto !important;
@@ -327,25 +335,12 @@ html.electron-auto-print-job.electron-print-capturing .pos-sale-print-host.pos-a
   z-index: 1 !important;
   width: 100% !important;
   max-width: 100% !important;
-  max-height: none !important;
-  overflow: visible !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
+  overflow: hidden !important;
   background: transparent !important;
 }
 
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job.electron-print-capturing
-  .pos-sale-print-host.pos-auto-print-host--embedded,
-html.electron-auto-print-job.electron-print-capturing .pos-sale-print-host.pos-auto-print-host--embedded {
-  position: static !important;
-  left: auto !important;
-  right: auto !important;
-  top: auto !important;
-  z-index: 1 !important;
-}
-
-/* Embedded в слоте — только превью, не fullscreen */
-html.electron-silent-print.print-thermal-modal .pos-sale-print-host.pos-auto-print-host--centered {
+/* Legacy centered — только .pos-auto-print-host--centered, не превью в слоте */
+html.electron-silent-print.print-thermal-modal .pos-sale-print-host.pos-auto-print-host--centered:not(#pos-auto-print-preview-mount) {
   position: fixed !important;
   inset: 0 !important;
   left: 0 !important;
@@ -355,16 +350,8 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host.pos-auto-pri
   z-index: var(--receipt-auto-print-center-z) !important;
 }
 
-html.electron-silent-print.print-thermal-modal #pos-auto-print-preview-mount.pos-auto-print-host--embedded {
-  position: static !important;
-  inset: auto !important;
-  left: auto !important;
-  z-index: 1 !important;
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
-   5. Electron: body mount для silent print (#pos-auto-print-mount)
-      Важно: без fiscal-print-scene--offscreen (opacity:0 в index.css)
+   5. Electron: print-host (#pos-auto-print-print-host) — только принтер
    ═══════════════════════════════════════════════════════════════════════════ */
 
 html.electron-auto-print-job #pos-auto-print-preview-mount,
@@ -382,10 +369,8 @@ html.electron-auto-print-job #pos-auto-print-preview-mount #fiscal-print-shell-l
   transform: scale(var(--receipt-auto-print-preview-scale)) !important;
 }
 
-/* Body-mount: off-screen, не трогаем превью в слоте */
-/* Body-mount: за экраном; left:0 только при capture */
-html.electron-silent-print.print-thermal-modal #pos-auto-print-mount.pos-auto-print-host--body-print:not(.pos-auto-print-host--capturing),
-html.electron-auto-print-job #pos-auto-print-mount.pos-auto-print-host--body-print:not(.pos-auto-print-host--capturing) {
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host:not(.pos-auto-print-host--capturing),
+html.electron-auto-print-job #pos-auto-print-print-host:not(.pos-auto-print-host--capturing) {
   position: fixed !important;
   left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
   top: 0 !important;
@@ -399,27 +384,7 @@ html.electron-auto-print-job #pos-auto-print-mount.pos-auto-print-host--body-pri
   padding: 0 !important;
   overflow: visible !important;
   transform: none !important;
-}
-
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host,
-html.electron-silent-print.print-thermal-modal .pos-auto-print-host--body-print:not(#pos-auto-print-mount),
-html.electron-auto-print-job #pos-auto-print-print-host,
-html.electron-auto-print-job .pos-auto-print-host--body-print:not(#pos-auto-print-mount) {
-  display: block !important;
-  visibility: visible !important;
-  position: fixed !important;
-  left: var(--receipt-auto-print-offscreen-left) !important;
-  top: 0 !important;
-  opacity: 1 !important;
-  pointer-events: none !important;
-  z-index: 0 !important;
-  width: var(--receipt-auto-print-body-width) !important;
-  max-width: var(--receipt-auto-print-body-width) !important;
-  margin: 0 !important;
-  padding: 0 !important;
   background: #fff !important;
-  overflow: visible !important;
-  transform: none !important;
 }
 
 html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
@@ -432,11 +397,11 @@ html.electron-auto-print-job #pos-auto-print-print-host #fiscal-print-shell {
 }
 
 html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  .fiscal-print-scene:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(.pos-auto-print-host--centered):not(#pos-auto-print-mount),
+  .fiscal-print-scene:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(.pos-auto-print-host--centered):not(#pos-auto-print-print-host),
 html.electron-silent-print.print-thermal-modal.electron-print-capturing
   .thermal-report-print-host:not(.fiscal-print-scene--offscreen),
 html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  .pos-sale-print-host:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(.pos-auto-print-host--centered):not(#pos-auto-print-mount) {
+  .pos-sale-print-host:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(.pos-auto-print-host--centered):not(#pos-auto-print-print-host):not(#pos-auto-print-preview-mount) {
   left: 0 !important;
   transform: none !important;
   opacity: 1 !important;
@@ -444,8 +409,8 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing
 }
 
 /* Legacy off-screen hosts (X/Z и т.д., не автопечать) */
-html.electron-silent-print.print-thermal-modal .fiscal-print-scene:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(#pos-auto-print-mount),
-html.electron-silent-print.print-thermal-modal .pos-sale-print-host:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(#pos-auto-print-mount) {
+html.electron-silent-print.print-thermal-modal .fiscal-print-scene:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(#pos-auto-print-print-host),
+html.electron-silent-print.print-thermal-modal .pos-sale-print-host:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(#pos-auto-print-print-host):not(#pos-auto-print-preview-mount) {
   display: block !important;
   visibility: visible !important;
   position: fixed !important;
@@ -465,9 +430,7 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host:not(.pos-aut
 
 @media print {
   html.print-thermal-modal #pos-auto-print-print-host,
-  html.print-thermal-modal #pos-auto-print-print-host.fiscal-print-scene,
-  html.print-thermal-modal #pos-auto-print-mount,
-  html.print-thermal-modal #pos-auto-print-mount.fiscal-print-scene {
+  html.print-thermal-modal #pos-auto-print-print-host.fiscal-print-scene {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -477,5 +440,9 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host:not(.pos-aut
     max-width: var(--print-content-w, 72mm) !important;
     margin: 0 auto !important;
     background: #fff !important;
+  }
+
+  html.print-thermal-modal #pos-auto-print-preview-mount {
+    display: none !important;
   }
 }

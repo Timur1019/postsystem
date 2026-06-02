@@ -2,12 +2,12 @@
  * DOM автопечати: превью в слоте + печать на body.
  *
  * Превью (экран)  → #pos-auto-print-preview-mount / #fiscal-print-shell-live
- * Печать (Electron) → #pos-auto-print-mount / #fiscal-print-shell (копия + capture)
+ * Печать (Electron) → #pos-auto-print-print-host / #fiscal-print-shell (копия + capture)
  */
 import { RECEIPT_AUTO_PRINT_UI, RECEIPT_PRINT_DOM, RECEIPT_PRINT_STYLES } from '../config/receiptPrintConfig';
 
 const {
-  autoPrintMountId: PRINT_MOUNT_ID,
+  bodyPrintHostId: PRINT_HOST_ID,
   previewMountId: PREVIEW_MOUNT_ID,
   autoPrintSlotId: SLOT_ID,
   previewShellId: PREVIEW_SHELL_ID,
@@ -22,6 +22,9 @@ const {
   hostBodyPrintClass,
   hostCapturingClass,
 } = RECEIPT_PRINT_STYLES;
+
+/** Legacy id — удаляем при teardown */
+const LEGACY_PRINT_MOUNT_ID = RECEIPT_PRINT_DOM.autoPrintMountId;
 
 let pendingUnmountTimer = null;
 
@@ -88,10 +91,12 @@ export function getAutoPrintMountEl() {
 }
 
 function ensureBodyPrintMount() {
-  let el = document.getElementById(PRINT_MOUNT_ID);
+  document.getElementById(LEGACY_PRINT_MOUNT_ID)?.remove();
+
+  let el = document.getElementById(PRINT_HOST_ID);
   if (!el) {
     el = document.createElement('div');
-    el.id = PRINT_MOUNT_ID;
+    el.id = PRINT_HOST_ID;
     el.className = `pos-sale-print-host ${autoPrintHostClass} ${hostBodyPrintClass}`;
     el.setAttribute('aria-hidden', 'true');
     document.body.appendChild(el);
@@ -108,6 +113,7 @@ function ensureBodyPrintMount() {
       document.body.appendChild(el);
     }
   }
+  hideBodyPrintMountFromScreen(el);
   return el;
 }
 
@@ -121,8 +127,9 @@ export function findLivePreviewShell() {
 }
 
 export function getAutoPrintFiscalShell() {
-  const printMount = document.getElementById(PRINT_MOUNT_ID);
-  const shell = printMount?.querySelector(`#${PRINT_SHELL_ID}`);
+  const printHost =
+    document.getElementById(PRINT_HOST_ID) || document.getElementById(LEGACY_PRINT_MOUNT_ID);
+  const shell = printHost?.querySelector(`#${PRINT_SHELL_ID}`);
   if (shell && !document.getElementById('root')?.contains(shell)) {
     return shell;
   }
@@ -193,43 +200,51 @@ export async function prepareBodyPrintShellFromPreview() {
   };
 }
 
-/** Убирает body-mount за экран (не display:none — ломает measure/assert). */
-export function hideBodyPrintMountFromScreen(host = document.getElementById(PRINT_MOUNT_ID)) {
+/** Print-host за экраном (не трогаем превью в слоте). */
+export function hideBodyPrintMountFromScreen(host = document.getElementById(PRINT_HOST_ID)) {
   if (!host) return;
   host.classList.remove(hostCapturingClass);
+  host.style.display = 'block';
   host.style.position = 'fixed';
   host.style.left = '-10000px';
   host.style.top = '0';
   host.style.pointerEvents = 'none';
   host.style.zIndex = '-1';
-  host.style.display = 'block';
 }
 
-function showBodyPrintMountForCapture(host = document.getElementById(PRINT_MOUNT_ID)) {
+function showBodyPrintMountForCapture(host = document.getElementById(PRINT_HOST_ID)) {
   if (!host) return;
   host.style.display = 'block';
+  host.style.position = 'fixed';
+  host.style.left = '0';
+  host.style.top = '0';
+  host.style.right = '';
+  host.style.width = '';
+  host.style.height = '';
+  host.style.overflow = '';
   host.style.opacity = '';
   host.style.visibility = '';
-  host.style.overflow = '';
   host.style.pointerEvents = 'none';
-  hideBodyPrintMountFromScreen(host);
+  host.style.zIndex = '';
 }
 
 export function destroyBodyPrintMount() {
-  const host = document.getElementById(PRINT_MOUNT_ID);
-  if (!host) return;
-  host.classList.remove(hostCapturingClass);
-  try {
-    host.replaceChildren();
-  } catch {
-    /* ignore */
+  for (const id of [PRINT_HOST_ID, LEGACY_PRINT_MOUNT_ID]) {
+    const host = document.getElementById(id);
+    if (!host) continue;
+    host.classList.remove(hostCapturingClass);
+    try {
+      host.replaceChildren();
+    } catch {
+      /* ignore */
+    }
+    host.remove();
   }
-  host.remove();
 }
 
-/** Перед webContents.print — body-mount остаётся off-screen (Electron печатает без left:0). */
+/** Перед webContents.print — print-host в кадр (left:0, только на время IPC). */
 export function prepareMountForSilentCapture() {
-  const mount = document.getElementById(PRINT_MOUNT_ID);
+  const mount = document.getElementById(PRINT_HOST_ID);
   if (!mount) return () => {};
   showBodyPrintMountForCapture(mount);
   mount.classList.add(hostCapturingClass);
@@ -263,19 +278,12 @@ export function scheduleAutoPrintUnmount(
 export function teardownAutoPrintMount() {
   cancelScheduledAutoPrintUnmount();
   document.getElementById(PREVIEW_MOUNT_ID)?.remove();
-  const printEl = document.getElementById(PRINT_MOUNT_ID);
-  if (printEl) {
-    try {
-      printEl.replaceChildren();
-    } catch {
-      /* ignore */
-    }
-    printEl.remove();
-  }
+  destroyBodyPrintMount();
 }
 
 export {
-  PRINT_MOUNT_ID as MOUNT_ID,
+  PRINT_HOST_ID as MOUNT_ID,
+  PRINT_HOST_ID,
   PREVIEW_MOUNT_ID,
   PREVIEW_SHELL_ID,
   PRINT_SHELL_ID,

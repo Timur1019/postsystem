@@ -65,8 +65,8 @@
   background: #fff !important;
 }
 
-/* Body-mount: за экраном (не left:0) */
-#pos-auto-print-mount.pos-auto-print-host--body-print:not(.pos-auto-print-host--capturing) {
+/* Print-host на body — только для принтера, не превью в слоте */
+#pos-auto-print-print-host {
   position: fixed !important;
   left: -10000px !important;
   top: 0 !important;

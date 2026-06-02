@@ -9,7 +9,8 @@ const PRINT_CALLBACK_TIMEOUT_MS = IS_WIN ? 12000 : 8000;
 
 /** Находит чек автопечати на body, не внутри #root. */
 const FIND_FISCAL_PRINT_SHELL_JS = `
-  document.querySelector('#pos-auto-print-mount #fiscal-print-shell')
+  document.querySelector('#pos-auto-print-print-host #fiscal-print-shell')
+    || document.querySelector('#pos-auto-print-mount #fiscal-print-shell')
     || Array.from(document.querySelectorAll('#fiscal-print-shell')).find(
       (el) => !document.getElementById('root')?.contains(el)
     )

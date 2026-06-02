@@ -50,6 +50,7 @@ export function cleanupDesktopPrintState() {
   if (typeof document === 'undefined') return;
   PRINT_HTML_CLASSES.forEach((c) => document.documentElement.classList.remove(c));
   document.getElementById(RECEIPT_PRINT_DOM.printJobPageStyleId)?.remove();
+  document.getElementById(RECEIPT_PRINT_DOM.bodyPrintHostId)?.remove();
   document.getElementById(RECEIPT_PRINT_DOM.autoPrintMountId)?.remove();
 }
 

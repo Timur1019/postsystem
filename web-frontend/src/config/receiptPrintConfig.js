@@ -13,6 +13,7 @@
 
 /** Id элементов и селекторы DOM */
 export const RECEIPT_PRINT_DOM = Object.freeze({
+  /** @deprecated legacy id; use bodyPrintHostId */
   autoPrintMountId: 'pos-auto-print-mount',
   /** Превью в правом слоте (React, только экран). */
   previewMountId: 'pos-auto-print-preview-mount',
@@ -21,6 +22,7 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
   previewShellId: 'fiscal-print-shell-live',
   /** Единственный #fiscal-print-shell на body — только для silent print / Electron. */
   fiscalPrintShellId: 'fiscal-print-shell',
+  /** Print-host на body — только для принтера (не превью). */
   bodyPrintHostId: 'pos-auto-print-print-host',
   receiptPrintAreaId: 'receipt-print-area',
   printJobPageStyleId: 'pos-print-job-page',

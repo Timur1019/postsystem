@@ -521,7 +521,8 @@ ipcMain.handle('print-label-page', async (event) => {
 
 const RECEIPT_READY_JS = `
   (() => {
-    const shell = document.querySelector('#pos-auto-print-mount #fiscal-print-shell')
+    const shell = document.querySelector('#pos-auto-print-print-host #fiscal-print-shell')
+      || document.querySelector('#pos-auto-print-mount #fiscal-print-shell')
       || Array.from(document.querySelectorAll('#fiscal-print-shell')).find(
         (el) => !document.getElementById('root')?.contains(el)
       )
