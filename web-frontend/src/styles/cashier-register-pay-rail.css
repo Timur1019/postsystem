@@ -734,6 +734,16 @@
   border-color: #2a3548;
 }
 
+.pos-pay-panel--register-rail .pos-keypad__key--action {
+  /* Важно: этот селектор должен идти ПОСЛЕ .pos-keypad__key, иначе размер “Без сдачи”
+     перетирается и кнопка становится как цифры. */
+  font-size: 0.8125rem;
+  line-height: 1.15;
+  padding: 6px 8px;
+  white-space: normal;
+  text-wrap: balance;
+}
+
 .pos-pay-panel--register-rail .pos-keypad__quick-btn {
   color: #cbd5e1;
   font-size: 0.9375rem;
