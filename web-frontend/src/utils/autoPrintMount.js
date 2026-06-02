@@ -1,18 +1,27 @@
 /**
- * DOM-контейнер автопечати чека.
+ * DOM автопечати: превью в слоте + печать на body.
  *
- * Превью + печать → #pos-auto-print-mount на body, #fiscal-print-shell (вне #root)
+ * Превью (экран)  → #pos-auto-print-preview-mount / #fiscal-print-shell-live
+ * Печать (Electron) → #pos-auto-print-mount / #fiscal-print-shell (копия + capture)
  */
 import { RECEIPT_AUTO_PRINT_UI, RECEIPT_PRINT_DOM, RECEIPT_PRINT_STYLES } from '../config/receiptPrintConfig';
 
 const {
-  autoPrintMountId: MOUNT_ID,
+  autoPrintMountId: PRINT_MOUNT_ID,
+  previewMountId: PREVIEW_MOUNT_ID,
+  autoPrintSlotId: SLOT_ID,
+  previewShellId: PREVIEW_SHELL_ID,
   fiscalPrintShellId: PRINT_SHELL_ID,
-  bodyPrintHostId: BODY_PRINT_HOST_ID,
   fiscalPrintDialogClass,
+  autoPrintHostClass,
 } = RECEIPT_PRINT_DOM;
 
-const { hostCenteredClass, hostCapturingClass } = RECEIPT_PRINT_STYLES;
+const {
+  hostEmbeddedClass,
+  hostInSlotClass,
+  hostBodyPrintClass,
+  hostCapturingClass,
+} = RECEIPT_PRINT_STYLES;
 
 let pendingUnmountTimer = null;
 
@@ -26,72 +35,175 @@ function clearHostInlineStyles(hostEl) {
   hostEl.style.visibility = '';
 }
 
-/** Превью по центру экрана на body (вне #root) — Electron печатает тот же DOM. */
-export function mountCenterPreview(hostEl) {
+function mountPreviewInSlot(hostEl) {
   hostEl.classList.remove(
+    'fiscal-print-scene',
     'fiscal-print-scene--offscreen',
-    'pos-auto-print-host--embedded',
-    'pos-auto-print-host--in-slot',
+    hostBodyPrintClass,
+    hostCapturingClass,
+    RECEIPT_PRINT_STYLES.hostCenteredClass,
     'pos-auto-print-host--in-pay',
     'pos-auto-print-host--in-actions',
-    'pos-auto-print-host--body-print',
   );
-  hostEl.classList.add(RECEIPT_PRINT_DOM.autoPrintHostClass, hostCenteredClass);
+  hostEl.classList.add(autoPrintHostClass, hostEmbeddedClass, hostInSlotClass);
   clearHostInlineStyles(hostEl);
-  if (hostEl.parentElement !== document.body) {
-    document.body.appendChild(hostEl);
+
+  const slot = document.getElementById(SLOT_ID);
+  if (slot) {
+    slot.appendChild(hostEl);
+    return;
+  }
+  const fallback =
+    document.querySelector('.cashier-register__actions-col--pay .pos-pay-panel__scroll') ||
+    document.querySelector('.cashier-register__actions-col');
+  (fallback || document.body).appendChild(hostEl);
+}
+
+export function ensureAutoPrintMountInSlot() {
+  const el = document.getElementById(PREVIEW_MOUNT_ID);
+  const slot = document.getElementById(SLOT_ID);
+  if (el && slot && !slot.contains(el)) {
+    mountPreviewInSlot(el);
   }
 }
 
-export function ensureAutoPrintMountCentered() {
-  const el = document.getElementById(MOUNT_ID);
-  if (el) mountCenterPreview(el);
-}
-
-export function getAutoPrintMountEl() {
-  let el = document.getElementById(MOUNT_ID);
+/** Превью чека в правой колонке (React). */
+export function getAutoPrintPreviewMountEl() {
+  let el = document.getElementById(PREVIEW_MOUNT_ID);
   if (!el) {
     el = document.createElement('div');
-    el.id = MOUNT_ID;
-    el.className = `fiscal-print-scene pos-sale-print-host ${RECEIPT_PRINT_DOM.autoPrintHostClass}`;
+    el.id = PREVIEW_MOUNT_ID;
+    el.className = `pos-sale-print-host ${autoPrintHostClass}`;
     el.setAttribute('aria-live', 'polite');
-    mountCenterPreview(el);
+    mountPreviewInSlot(el);
   } else {
-    mountCenterPreview(el);
+    mountPreviewInSlot(el);
   }
   return el;
 }
 
-export function getAutoPrintFiscalShell() {
-  const mount = document.getElementById(MOUNT_ID);
-  const inMount = mount?.querySelector(`#${PRINT_SHELL_ID}`);
-  if (inMount && !document.getElementById('root')?.contains(inMount)) {
-    return inMount;
+/** @deprecated alias */
+export function getAutoPrintMountEl() {
+  return getAutoPrintPreviewMountEl();
+}
+
+function ensureBodyPrintMount() {
+  let el = document.getElementById(PRINT_MOUNT_ID);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = PRINT_MOUNT_ID;
+    el.className = `fiscal-print-scene pos-sale-print-host ${autoPrintHostClass} ${hostBodyPrintClass}`;
+    el.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(el);
+  } else {
+    el.classList.remove(
+      hostEmbeddedClass,
+      hostInSlotClass,
+      RECEIPT_PRINT_STYLES.hostCenteredClass,
+      'fiscal-print-scene--offscreen',
+    );
+    el.classList.add('fiscal-print-scene', hostBodyPrintClass);
+    if (el.parentElement !== document.body) {
+      document.body.appendChild(el);
+    }
   }
-  const shell = document.getElementById(PRINT_SHELL_ID);
-  if (shell && !document.getElementById('root')?.contains(shell)) {
-    return shell;
-  }
-  return inMount || null;
+  return el;
 }
 
 export function findLivePreviewShell() {
-  return getAutoPrintFiscalShell();
+  const previewMount = document.getElementById(PREVIEW_MOUNT_ID);
+  return (
+    previewMount?.querySelector(`#${PREVIEW_SHELL_ID}`) ||
+    document.getElementById(PREVIEW_SHELL_ID) ||
+    null
+  );
 }
 
-/** Перед webContents.print: чек в левый верх (не flex-center), белый фон. */
+export function getAutoPrintFiscalShell() {
+  const printMount = document.getElementById(PRINT_MOUNT_ID);
+  const shell = printMount?.querySelector(`#${PRINT_SHELL_ID}`);
+  if (shell && !document.getElementById('root')?.contains(shell)) {
+    return shell;
+  }
+  return null;
+}
+
+async function syncPrintShellImagesFromPreview(liveShell, printShell) {
+  const liveImgs = Array.from(liveShell.querySelectorAll('img'));
+  const printImgs = Array.from(printShell.querySelectorAll('img'));
+  if (liveImgs.length === 0) return;
+
+  await Promise.all(
+    liveImgs.map(async (liveImg, index) => {
+      const printImg = printImgs[index];
+      if (!printImg) return;
+      const src = liveImg.currentSrc || liveImg.src;
+      if (!src) return;
+
+      if (liveImg.complete && liveImg.naturalWidth > 0) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = liveImg.naturalWidth;
+          canvas.height = liveImg.naturalHeight;
+          canvas.getContext('2d')?.drawImage(liveImg, 0, 0);
+          printImg.src = canvas.toDataURL('image/png');
+          return;
+        } catch {
+          /* fallback */
+        }
+      }
+
+      printImg.src = src;
+      if (printImg.complete) return;
+      await new Promise((resolve) => {
+        printImg.onload = resolve;
+        printImg.onerror = resolve;
+      });
+    }),
+  );
+}
+
+/** Копия превью на body перед silent print (Electron). */
+export async function prepareBodyPrintShellFromPreview() {
+  const liveShell = findLivePreviewShell();
+  if (!liveShell) {
+    return () => {};
+  }
+
+  const host = ensureBodyPrintMount();
+  host.replaceChildren();
+
+  const dialog = document.createElement('div');
+  dialog.className = fiscalPrintDialogClass;
+
+  const printShell = document.createElement('div');
+  printShell.id = PRINT_SHELL_ID;
+  printShell.innerHTML = liveShell.innerHTML;
+
+  dialog.appendChild(printShell);
+  host.appendChild(dialog);
+
+  await syncPrintShellImagesFromPreview(liveShell, printShell);
+  void printShell.offsetHeight;
+
+  return () => {
+    try {
+      host.replaceChildren();
+    } catch {
+      /* ignore */
+    }
+  };
+}
+
+/** Перед webContents.print — body-mount слева сверху. */
 export function prepareMountForSilentCapture() {
-  const mount = document.getElementById(MOUNT_ID);
+  const mount = document.getElementById(PRINT_MOUNT_ID);
   if (!mount) return () => {};
   mount.classList.add(hostCapturingClass);
   void mount.offsetHeight;
   return () => {
     mount.classList.remove(hostCapturingClass);
   };
-}
-
-export function removeBodyPrintHost() {
-  document.getElementById(BODY_PRINT_HOST_ID)?.remove();
 }
 
 export function cancelScheduledAutoPrintUnmount() {
@@ -114,15 +226,22 @@ export function scheduleAutoPrintUnmount(
 
 export function teardownAutoPrintMount() {
   cancelScheduledAutoPrintUnmount();
-  removeBodyPrintHost();
-  const el = document.getElementById(MOUNT_ID);
-  if (!el) return;
-  try {
-    el.replaceChildren();
-  } catch {
-    /* ignore */
+  document.getElementById(PREVIEW_MOUNT_ID)?.remove();
+  const printEl = document.getElementById(PRINT_MOUNT_ID);
+  if (printEl) {
+    try {
+      printEl.replaceChildren();
+    } catch {
+      /* ignore */
+    }
+    printEl.remove();
   }
-  el.remove();
 }
 
-export { MOUNT_ID, PRINT_SHELL_ID as PREVIEW_SHELL_ID, PRINT_SHELL_ID, fiscalPrintDialogClass };
+export {
+  PRINT_MOUNT_ID as MOUNT_ID,
+  PREVIEW_MOUNT_ID,
+  PREVIEW_SHELL_ID,
+  PRINT_SHELL_ID,
+  fiscalPrintDialogClass,
+};

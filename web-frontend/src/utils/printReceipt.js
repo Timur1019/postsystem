@@ -9,7 +9,7 @@
  * Mount превью / body для print → utils/autoPrintMount.js
  */
 import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_ENGINE } from '../config/receiptPrintConfig';
-import { ensureAutoPrintMountCentered, prepareMountForSilentCapture } from './autoPrintMount';
+import { prepareBodyPrintShellFromPreview, prepareMountForSilentCapture } from './autoPrintMount';
 import {
   assertFiscalPrintShellReady,
   sleep,
@@ -50,7 +50,7 @@ export function cleanupDesktopPrintState() {
   if (typeof document === 'undefined') return;
   PRINT_HTML_CLASSES.forEach((c) => document.documentElement.classList.remove(c));
   document.getElementById(RECEIPT_PRINT_DOM.printJobPageStyleId)?.remove();
-  document.getElementById(RECEIPT_PRINT_DOM.bodyPrintHostId)?.remove();
+  document.getElementById(RECEIPT_PRINT_DOM.autoPrintMountId)?.remove();
 }
 
 function shouldUseModalPrintShell(explicit) {
@@ -108,10 +108,10 @@ async function invokeDesktopSilentPrint() {
   const { silentMaxAttempts, silentRetryBackoffBaseMs } = RECEIPT_PRINT_ENGINE;
   let lastErr;
 
-  ensureAutoPrintMountCentered();
-
   for (let attempt = 1; attempt <= silentMaxAttempts; attempt += 1) {
+    let undoBodyPrint = () => {};
     try {
+      undoBodyPrint = await prepareBodyPrintShellFromPreview();
       await waitForReceiptPaintSettled();
       await waitForBodyPrintImagesReady();
       assertFiscalPrintShellReady();
@@ -121,6 +121,7 @@ async function invokeDesktopSilentPrint() {
     } catch (err) {
       lastErr = normalizeDesktopPrintError(err);
       console.warn(`[Aurent] silent print attempt ${attempt}/${silentMaxAttempts}`, lastErr.message);
+      undoBodyPrint();
       if (attempt < silentMaxAttempts) {
         await waitForReceiptDomReady({ useModalShell: true }).catch(() => undefined);
         await waitForReceiptPaintSettled();

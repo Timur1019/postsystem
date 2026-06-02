@@ -1,5 +1,5 @@
 /**
- * Автопечать после продажи: превью чека по центру экрана → silent print.
+ * Автопечать после продажи: превью в правом слоте → копия на body → silent print.
  */
 import { useLayoutEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -13,9 +13,9 @@ import {
 } from '../../config/receiptPrintConfig';
 import {
   cancelScheduledAutoPrintUnmount,
-  ensureAutoPrintMountCentered,
+  ensureAutoPrintMountInSlot,
   fiscalPrintDialogClass,
-  getAutoPrintMountEl,
+  getAutoPrintPreviewMountEl,
   scheduleAutoPrintUnmount,
   teardownAutoPrintMount,
 } from '../../utils/autoPrintMount';
@@ -27,14 +27,14 @@ import {
   waitForReceiptQrReady,
 } from '../../utils/receiptPrintWait';
 
-function renderReceiptIntoMount(sale) {
-  const host = getAutoPrintMountEl();
-  ensureAutoPrintMountCentered();
+function renderReceiptIntoPreview(sale) {
+  const host = getAutoPrintPreviewMountEl();
+  ensureAutoPrintMountInSlot();
   host.replaceChildren();
   const dialog = document.createElement('div');
   dialog.className = fiscalPrintDialogClass;
   const shell = document.createElement('div');
-  shell.id = RECEIPT_PRINT_DOM.fiscalPrintShellId;
+  shell.id = RECEIPT_PRINT_DOM.previewShellId;
   dialog.appendChild(shell);
   host.appendChild(dialog);
 
@@ -59,10 +59,10 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     inFlightKeyRef.current = key;
     cancelScheduledAutoPrintUnmount();
 
-    const { root } = renderReceiptIntoMount(sale);
+    const { root } = renderReceiptIntoPreview(sale);
 
     const run = async () => {
-      ensureAutoPrintMountCentered();
+      ensureAutoPrintMountInSlot();
       await waitForDoubleAnimationFrame();
       if (inFlightKeyRef.current !== key) return;
       await waitForReceiptDomReady({ useModalShell: true }).catch(() => undefined);

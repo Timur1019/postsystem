@@ -14,6 +14,8 @@
 /** Id элементов и селекторы DOM */
 export const RECEIPT_PRINT_DOM = Object.freeze({
   autoPrintMountId: 'pos-auto-print-mount',
+  /** Превью в правом слоте (React, только экран). */
+  previewMountId: 'pos-auto-print-preview-mount',
   autoPrintSlotId: 'pos-auto-print-slot',
   /** Превью в слоте (React). Electron не использует — только для экрана. */
   previewShellId: 'fiscal-print-shell-live',
@@ -36,7 +38,7 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
 
 /**
  * Этап 1 — React-комponent PosSaleAutoPrint (сразу после продажи).
- * Отрисовка превью по центру экрана → ожидание QR → silent print.
+ * Превью в слоте справа → копия на body → silent print.
  */
 export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
   /** Макс. ожидание QR; выход раньше, если img.receipt-qr уже загружен */
