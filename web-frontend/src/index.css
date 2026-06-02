@@ -3,6 +3,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './styles/receipt-auto-print.css';
+
 @layer base {
   * { box-sizing: border-box; }
   body {

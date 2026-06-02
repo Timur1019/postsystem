@@ -104,20 +104,25 @@ export function reparentAutoPrintMountForSilentCapture() {
     'pos-auto-print-host--in-slot',
     'pos-auto-print-host--in-pay',
     'pos-auto-print-host--in-actions',
+    /* fiscal-print-scene--offscreen → opacity:0 в index.css, ломает silent print */
+    'fiscal-print-scene--offscreen',
   );
-  el.classList.add('fiscal-print-scene--offscreen');
+  el.classList.add('pos-auto-print-host--body-print');
   el.style.position = '';
   el.style.left = '';
   el.style.right = '';
   el.style.top = '';
   el.style.opacity = '';
+  el.style.visibility = '';
   el.style.zIndex = '';
 
   if (el.parentElement !== document.body) {
     document.body.appendChild(el);
   }
 
-  return () => {};
+  return () => {
+    el.classList.remove('pos-auto-print-host--body-print');
+  };
 }
 
 export { MOUNT_ID, SLOT_ID, fiscalPrintDialogClass };

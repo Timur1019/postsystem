@@ -105,4 +105,5 @@ export const RECEIPT_PRINT_STYLES = Object.freeze({
   slotClass: 'pos-auto-print-slot',
   hostEmbeddedClass: 'pos-auto-print-host--embedded',
   hostInSlotClass: 'pos-auto-print-host--in-slot',
+  hostBodyPrintClass: 'pos-auto-print-host--body-print',
 });

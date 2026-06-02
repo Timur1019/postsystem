@@ -36,7 +36,6 @@ import '../../styles/cashier-terminal-theme.css';
 import '../../styles/cashier-light-theme.css';
 import '../../styles/cashier-pos-layout.css';
 import '../../styles/cashier-register-pay-rail.css';
-import '../../styles/receipt-auto-print.css';
 import '../../styles/cashier-responsive.css';
 import '../../styles/cashier-secondary-pages.css';
 

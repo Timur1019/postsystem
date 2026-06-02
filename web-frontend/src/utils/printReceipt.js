@@ -105,22 +105,21 @@ async function invokeDesktopSilentPrint() {
   let lastErr;
 
   for (let attempt = 1; attempt <= silentMaxAttempts; attempt += 1) {
-    let restoreMount = () => {};
+    let undoReparent = () => {};
     try {
+      undoReparent = reparentAutoPrintMountForSilentCapture();
       assertFiscalPrintShellReady();
-      restoreMount = reparentAutoPrintMountForSilentCapture();
       await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto());
       return;
     } catch (err) {
       lastErr = normalizeDesktopPrintError(err);
       console.warn(`[Aurent] silent print attempt ${attempt}/${silentMaxAttempts}`, lastErr);
+      undoReparent();
       if (attempt < silentMaxAttempts) {
         await waitForReceiptDomReady({ useModalShell: true }).catch(() => undefined);
         await waitForReceiptPaintSettled();
         await sleep(silentRetryBackoffBaseMs * attempt);
       }
-    } finally {
-      restoreMount();
     }
   }
   throw lastErr || new Error('Тихая печать не выполнена');
