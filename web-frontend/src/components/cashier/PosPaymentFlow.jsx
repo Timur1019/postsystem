@@ -110,7 +110,9 @@ export default function PosPaymentFlow({
 
   const goToCash = () => {
     setPayMethod('cash');
-    setTendered('');
+    // UX: по умолчанию "без сдачи" — получено = к оплате.
+    // Кассиру чаще всего не нужно вводить сумму, если сдачи нет.
+    setTendered(toPay > 0 ? amountStr(toPay) : '');
     setStep('cash');
   };
 
