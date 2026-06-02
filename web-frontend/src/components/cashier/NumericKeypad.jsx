@@ -29,6 +29,7 @@ export default function NumericKeypad({
   onChange,
   exactAmount,
   quickActions,
+  hideActionKey = false,
   disabled = false,
 }) {
   const { t } = useTranslation();
@@ -96,7 +97,9 @@ export default function NumericKeypad({
             {digit}
           </button>
         ))}
-        {!hasQuickRow ? (
+        {hideActionKey ? (
+          <div className="pos-keypad__spacer" aria-hidden />
+        ) : !hasQuickRow ? (
           <button
             type="button"
             className="pos-keypad__key pos-keypad__key--action"

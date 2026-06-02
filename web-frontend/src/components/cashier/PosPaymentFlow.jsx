@@ -523,6 +523,8 @@ export default function PosPaymentFlow({
                 <NumericKeypad
                   value={tendered}
                   onChange={setTendered}
+                  // "Без сдачи" не нужен: мы уже автозаполняем получено = к оплате.
+                  hideActionKey
                   exactAmount={toPay}
                   disabled={isPending}
                 />

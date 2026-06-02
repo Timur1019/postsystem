@@ -1449,6 +1449,10 @@
   margin-bottom: 0.5rem;
 }
 
+.pos-keypad__spacer {
+  min-height: 3.375rem;
+}
+
 .pos-keypad__key {
   min-height: 3.375rem;
   border-radius: 0.5rem;
