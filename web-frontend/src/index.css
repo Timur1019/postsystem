@@ -96,6 +96,50 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing .receipt
   visibility: visible !important;
 }
 
+/* Автопечать: вместо модалки показываем чек как превью справа (в зоне оплаты). */
+html.electron-auto-print-job .receipt-printing-overlay {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+html.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host {
+  left: auto !important;
+  right: 16px !important;
+  top: 92px !important;
+  transform: none !important;
+  opacity: 1 !important;
+  z-index: 2147483642 !important;
+  width: 360px !important;
+  max-width: 360px !important;
+  max-height: calc(100vh - 180px) !important;
+  overflow: hidden !important;
+  border-radius: 14px !important;
+  box-shadow:
+    0 20px 44px rgba(15, 23, 42, 0.22),
+    0 0 0 1px rgba(148, 163, 184, 0.22) !important;
+}
+
+html.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host .fiscal-print-dialog {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+html.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host #fiscal-print-shell {
+  max-height: calc(100vh - 210px) !important;
+  overflow: hidden !important;
+}
+
+/* На момент capture для Electron — обязательно в кадре, без “превью” позиционирования. */
+html.electron-auto-print-job.electron-print-capturing .fiscal-print-scene.pos-sale-print-host {
+  right: auto !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: var(--print-content-w, 76mm) !important;
+  max-width: var(--print-content-w, 76mm) !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
 html.electron-silent-print.print-thermal-only .receipt-page,
 html.electron-silent-print.print-thermal-only .receipt-page--silent,
 html.electron-silent-print.print-thermal-only .receipt-page__paper,

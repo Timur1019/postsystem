@@ -6,7 +6,6 @@ import { createRoot } from 'react-dom/client';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
-import ReceiptPrintingOverlay from './ReceiptPrintingOverlay';
 import {
   cancelScheduledAutoPrintUnmount,
   getAutoPrintMountEl,
@@ -54,7 +53,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
   const { t } = useTranslation();
   const onDoneRef = useRef(onDone);
   const inFlightKeyRef = useRef(null);
-  const [showOverlay, setShowOverlay] = useState(true);
+  const [showOverlay, setShowOverlay] = useState(false);
   onDoneRef.current = onDone;
 
   useLayoutEffect(() => {
@@ -67,7 +66,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     }
     inFlightKeyRef.current = key;
     cancelScheduledAutoPrintUnmount();
-    setShowOverlay(true);
+    setShowOverlay(false);
 
     const { root } = renderReceiptIntoMount(sale);
 
@@ -134,5 +133,5 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
 
   if (!sale) return null;
 
-  return <ReceiptPrintingOverlay open={showOverlay} />;
+  return null;
 }
