@@ -19,7 +19,14 @@ export function getAutoPrintMountEl() {
       el.classList.add('pos-auto-print-host--in-pay');
       payScroll.prepend(el);
     } else {
-      document.body.appendChild(el);
+      // Если панель оплаты не открыта — монтируем в правую колонку кассы.
+      const actionsCol = document.querySelector('.cashier-register__actions-col');
+      if (actionsCol) {
+        el.classList.add('pos-auto-print-host--in-actions');
+        actionsCol.prepend(el);
+      } else {
+        document.body.appendChild(el);
+      }
     }
   }
   return el;

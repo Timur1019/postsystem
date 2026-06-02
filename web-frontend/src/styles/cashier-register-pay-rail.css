@@ -118,6 +118,14 @@
   overflow: hidden;
 }
 
+.pos-auto-print-host--in-actions {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  margin: 12px 14px;
+  pointer-events: none;
+}
+
 .pos-pay-panel--register-rail .pos-pay-panel__step {
   flex: 1 1 auto;
   min-height: 0;
