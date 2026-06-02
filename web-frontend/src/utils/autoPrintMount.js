@@ -1,21 +1,32 @@
-/** Стабильный контейнер чека для автопечати (переживает React StrictMode remount). */
-const MOUNT_ID = 'pos-auto-print-mount';
-const SLOT_ID = 'pos-auto-print-slot';
+/**
+ * DOM-контейнер автопечати чека (слот справа + перенос на body для Electron).
+ * Id и задержки — config/receiptPrintConfig.js
+ */
+import { RECEIPT_AUTO_PRINT_UI, RECEIPT_PRINT_DOM } from '../config/receiptPrintConfig';
+
+const { autoPrintMountId: MOUNT_ID, autoPrintSlotId: SLOT_ID, fiscalPrintDialogClass } =
+  RECEIPT_PRINT_DOM;
 
 let pendingUnmountTimer = null;
 
 function mountInto(hostEl, mode) {
-  hostEl.classList.remove('fiscal-print-scene--offscreen', 'pos-auto-print-host--in-pay', 'pos-auto-print-host--in-actions', 'pos-auto-print-host--in-slot');
-  hostEl.classList.add('pos-auto-print-host--embedded', `pos-auto-print-host--${mode}`);
+  hostEl.classList.remove(
+    'fiscal-print-scene--offscreen',
+    'pos-auto-print-host--in-pay',
+    'pos-auto-print-host--in-actions',
+    'pos-auto-print-host--in-slot',
+  );
+  hostEl.classList.add(RECEIPT_PRINT_DOM.autoPrintHostClass, 'pos-auto-print-host--embedded', `pos-auto-print-host--${mode}`);
   hostEl.style.position = '';
   hostEl.style.left = '';
   hostEl.style.right = '';
   hostEl.style.top = '';
   hostEl.style.opacity = '';
   hostEl.style.zIndex = '';
-  const parent = document.getElementById(SLOT_ID)
-    || document.querySelector('.cashier-register__actions-col--pay .pos-pay-panel__scroll')
-    || document.querySelector('.cashier-register__actions-col');
+  const parent =
+    document.getElementById(SLOT_ID) ||
+    document.querySelector('.cashier-register__actions-col--pay .pos-pay-panel__scroll') ||
+    document.querySelector('.cashier-register__actions-col');
   if (!parent) {
     document.body.appendChild(hostEl);
     hostEl.classList.remove('pos-auto-print-host--embedded', `pos-auto-print-host--${mode}`);
@@ -30,7 +41,7 @@ export function getAutoPrintMountEl() {
   if (!el) {
     el = document.createElement('div');
     el.id = MOUNT_ID;
-    el.className = 'fiscal-print-scene pos-sale-print-host pos-auto-print-host';
+    el.className = `fiscal-print-scene pos-sale-print-host ${RECEIPT_PRINT_DOM.autoPrintHostClass}`;
     el.setAttribute('aria-hidden', 'true');
 
     const slot = document.getElementById(SLOT_ID);
@@ -45,7 +56,6 @@ export function getAutoPrintMountEl() {
       document.body.appendChild(el);
     }
   } else {
-    // Перемонтируем, если слот появился (например, после навигации).
     const slot = document.getElementById(SLOT_ID);
     if (slot && !slot.contains(el)) {
       mountInto(el, 'in-slot');
@@ -61,7 +71,10 @@ export function cancelScheduledAutoPrintUnmount() {
   }
 }
 
-export function scheduleAutoPrintUnmount(unmountFn, delayMs = 200) {
+export function scheduleAutoPrintUnmount(
+  unmountFn,
+  delayMs = RECEIPT_AUTO_PRINT_UI.defaultUnmountDelayMs,
+) {
   cancelScheduledAutoPrintUnmount();
   pendingUnmountTimer = setTimeout(() => {
     pendingUnmountTimer = null;
@@ -78,14 +91,10 @@ export function teardownAutoPrintMount() {
   } catch {
     /* ignore */
   }
-  // Убираем контейнер из слота — иначе #pos-auto-print-slot не :empty и белый блок остаётся до F5.
   el.remove();
 }
 
-/**
- * Перед silent print: чек на body (вне #root) для @media print.
- * Превью в слоте исчезает на время печати — зато принтер стабильно получает DOM.
- */
+/** Перед silent print: чек на body (вне #root) для @media print. */
 export function reparentAutoPrintMountForSilentCapture() {
   const el = document.getElementById(MOUNT_ID);
   if (!el) return () => {};
@@ -110,3 +119,5 @@ export function reparentAutoPrintMountForSilentCapture() {
 
   return () => {};
 }
+
+export { MOUNT_ID, SLOT_ID, fiscalPrintDialogClass };

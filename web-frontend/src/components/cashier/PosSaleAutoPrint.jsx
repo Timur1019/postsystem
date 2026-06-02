@@ -1,5 +1,7 @@
 /**
- * Автопечать после продажи: скрытый чек в DOM + модалка «Печатается чек…».
+ * Автопечать после продажи: превью чека в правом слоте → silent print.
+ *
+ * Тайминги UI → config/receiptPrintConfig.js (RECEIPT_AUTO_PRINT_UI)
  */
 import { useLayoutEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -7,40 +9,27 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
 import {
+  RECEIPT_AUTO_PRINT_UI,
+  RECEIPT_PRINT_DOM,
+  RECEIPT_PRINT_TOAST,
+} from '../../config/receiptPrintConfig';
+import {
   cancelScheduledAutoPrintUnmount,
+  fiscalPrintDialogClass,
   getAutoPrintMountEl,
   scheduleAutoPrintUnmount,
   teardownAutoPrintMount,
 } from '../../utils/autoPrintMount';
 import { cleanupDesktopPrintState, isDesktopCashier, printThermalReceiptAuto } from '../../utils/printReceipt';
-
-const QR_WAIT_MS = 2000;
-const STRICT_REMOUNT_UNMOUNT_MS = 280;
-const BEFORE_PRINT_SETTLE_MS = 450;
-
-async function waitForQrInShell(maxMs = QR_WAIT_MS) {
-  const deadline = Date.now() + maxMs;
-  while (Date.now() < deadline) {
-    const img = document.querySelector('#fiscal-print-shell .receipt-qr');
-    if (img && img.complete && img.naturalWidth > 0 && img.src) {
-      return img.src;
-    }
-    if (!document.getElementById('fiscal-print-shell')) {
-      await new Promise((r) => setTimeout(r, 80));
-      continue;
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  return null;
-}
+import { sleep, waitForDoubleAnimationFrame, waitForReceiptQrReady } from '../../utils/receiptPrintWait';
 
 function renderReceiptIntoMount(sale) {
   const host = getAutoPrintMountEl();
   host.replaceChildren();
   const dialog = document.createElement('div');
-  dialog.className = 'fiscal-print-dialog';
+  dialog.className = fiscalPrintDialogClass;
   const shell = document.createElement('div');
-  shell.id = 'fiscal-print-shell';
+  shell.id = RECEIPT_PRINT_DOM.fiscalPrintShellId;
   dialog.appendChild(shell);
   host.appendChild(dialog);
 
@@ -59,7 +48,6 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     const key = sale?.receiptNumber;
     if (!key) return undefined;
 
-    // React StrictMode: второй mount не трогает DOM и не запускает вторую печать.
     if (inFlightKeyRef.current === key) {
       return undefined;
     }
@@ -69,13 +57,11 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     const { root } = renderReceiptIntoMount(sale);
 
     const run = async () => {
-      await waitForQrInShell();
+      await waitForReceiptQrReady();
       if (inFlightKeyRef.current !== key) return;
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      await waitForDoubleAnimationFrame();
       if (inFlightKeyRef.current !== key) return;
-      // Если стартуем печать слишком рано, Electron может не увидеть готовый DOM и уйти в ретраи (3 попытки),
-      // из-за чего визуально “мигает” чек/фон. Даем макету стабилизироваться.
-      await new Promise((r) => setTimeout(r, BEFORE_PRINT_SETTLE_MS));
+      await sleep(RECEIPT_AUTO_PRINT_UI.beforePrintSettleMs);
       if (inFlightKeyRef.current !== key) return;
 
       try {
@@ -83,8 +69,8 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
         const mode = await printThermalReceiptAuto();
         if (inFlightKeyRef.current === key && (mode === 'silent' || mode === 'dialog')) {
           toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
-            id: 'pos-auto-print',
-            duration: 3000,
+            id: RECEIPT_PRINT_TOAST.toastId,
+            duration: RECEIPT_PRINT_TOAST.successDurationMs,
           });
         }
       } catch (err) {
@@ -92,11 +78,14 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
           console.warn('[Aurent] auto print failed', err);
           const msg = err?.message || t('pos.printFailed');
           const hint = t('pos.printFailedDesktopHint', {
-            defaultValue: 'Aurent → «Принтер чека», затем повторите продажу.',
+            defaultValue: 'Aurent → «Принтер чека», затом повторите продажу.',
           });
           const showHint =
             isDesktopCashier() && !/принтер чека/i.test(msg) && !/Aurent\s*→/i.test(msg);
-          toast.error(showHint ? `${msg}. ${hint}` : msg, { id: 'pos-auto-print', duration: 6000 });
+          toast.error(showHint ? `${msg}. ${hint}` : msg, {
+            id: RECEIPT_PRINT_TOAST.toastId,
+            duration: RECEIPT_PRINT_TOAST.errorDurationMs,
+          });
         }
       } finally {
         if (inFlightKeyRef.current !== key) return;
@@ -124,7 +113,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
           /* ignore */
         }
         teardownAutoPrintMount();
-      }, STRICT_REMOUNT_UNMOUNT_MS);
+      }, RECEIPT_AUTO_PRINT_UI.strictModeUnmountDelayMs);
     };
   }, [sale?.receiptNumber, t]);
 

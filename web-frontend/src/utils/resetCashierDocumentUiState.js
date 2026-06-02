@@ -1,4 +1,5 @@
 import { cleanupDesktopPrintState } from './printReceipt';
+import { RECEIPT_PRINT_DOM } from '../config/receiptPrintConfig';
 
 /** Снимаем классы модалок/печати с document после F5 или сбоя во время print job. */
 const HTML_UI_CLASSES = [
@@ -32,7 +33,7 @@ export function resetCashierDocumentUiState() {
 
   // Не трогаем mount во время print job — иначе Electron получит пустой DOM.
   if (!printActive) {
-    document.getElementById('pos-auto-print-mount')?.remove();
+    document.getElementById(RECEIPT_PRINT_DOM.autoPrintMountId)?.remove();
     cleanupDesktopPrintState();
   }
 }

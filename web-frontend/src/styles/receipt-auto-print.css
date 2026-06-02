@@ -1,0 +1,232 @@
+/**
+ * Автопечать чека после продажи (превью справа + Electron silent print).
+ *
+ * JS:  config/receiptPrintConfig.js  (RECEIPT_PRINT_DOM, тайминги)
+ * HTML: PosRegisterFooter → #pos-auto-print-slot
+ *       autoPrintMount.js → #pos-auto-print-mount
+ *
+ * Настраиваемые значения — блок :root ниже.
+ */
+
+:root {
+  /* Слот превью в правой колонке */
+  --receipt-auto-print-slot-radius: 12px;
+  --receipt-auto-print-slot-bg: #fff;
+  --receipt-auto-print-slot-border: rgb(148 163 184 / 0.35);
+  --receipt-auto-print-slot-min-spacer: 8px;
+
+  /* Масштаб чека внутри слота (1 = 100%) */
+  --receipt-auto-print-preview-scale: 0.92;
+
+  /* Off-screen mount на body для Electron (@media print) */
+  --receipt-auto-print-offscreen-left: -10000px;
+  --receipt-auto-print-body-width: var(--print-content-w, 76mm);
+
+  /* Capture: legacy host (X/Z, не embedded) — не показывать на экране */
+  --receipt-auto-print-capture-z: 2147483640;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. Слот превью — правая колонка кассы (PosRegisterFooter)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pos-auto-print-slot-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pos-auto-print-slot {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  border-radius: var(--receipt-auto-print-slot-radius);
+  background: var(--receipt-auto-print-slot-bg);
+  box-shadow: 0 0 0 1px var(--receipt-auto-print-slot-border);
+}
+
+.pos-auto-print-slot:empty {
+  display: none;
+  min-height: 0;
+  max-height: 0;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.pos-auto-print-slot-wrap:has(.pos-auto-print-slot:empty) {
+  flex: 1 1 auto;
+  min-height: var(--receipt-auto-print-slot-min-spacer);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. Host в слоте (embedded / in-slot)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pos-auto-print-host--in-slot,
+.pos-auto-print-host--embedded {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: none;
+  z-index: 1 !important;
+  overflow: visible !important;
+  transform: none !important;
+  background: transparent !important;
+}
+
+.pos-auto-print-host--in-slot #fiscal-print-shell,
+.pos-auto-print-host--embedded #fiscal-print-shell {
+  width: 100% !important;
+  max-width: 100% !important;
+  transform-origin: top center;
+  transform: scale(var(--receipt-auto-print-preview-scale));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. Fallback: host в панели оплаты (если слота нет)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.pos-auto-print-host--in-pay {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  margin-bottom: 12px;
+  pointer-events: none;
+}
+
+.pos-auto-print-host--in-pay .fiscal-print-dialog {
+  width: 100%;
+}
+
+.pos-auto-print-host--in-pay #fiscal-print-shell {
+  overflow: hidden;
+}
+
+.pos-auto-print-host--in-actions {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  margin: 12px 14px;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. Electron: класс html.electron-auto-print-job
+      Превью в UI, без full-screen overlay
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job .receipt-printing-overlay,
+html.electron-auto-print-job .receipt-printing-overlay {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job
+  .pos-sale-print-host.pos-auto-print-host--embedded,
+html.electron-auto-print-job .pos-sale-print-host.pos-auto-print-host--embedded {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  overflow: visible !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job.electron-print-capturing
+  .pos-sale-print-host.pos-auto-print-host--embedded,
+html.electron-auto-print-job.electron-print-capturing .pos-sale-print-host.pos-auto-print-host--embedded {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  z-index: 1 !important;
+}
+
+/* Embedded host: не уводим fixed off-screen (остаётся в слоте на экране) */
+html.electron-silent-print.print-thermal-modal .pos-sale-print-host.pos-auto-print-host--embedded {
+  position: static !important;
+  left: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. Electron: html.electron-print-capturing
+      Body mount (#pos-auto-print-mount) — off-screen, но printable
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  .fiscal-print-scene:not(.pos-auto-print-host--embedded):not(.fiscal-print-scene--offscreen),
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  .thermal-report-print-host:not(.fiscal-print-scene--offscreen),
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  .pos-sale-print-host:not(.pos-auto-print-host--embedded):not(.fiscal-print-scene--offscreen) {
+  left: 0 !important;
+  transform: none !important;
+  opacity: 1 !important;
+  z-index: var(--receipt-auto-print-capture-z) !important;
+}
+
+/* Автопечать: mount на body — не visibility:hidden (иначе пустой чек) */
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  #pos-auto-print-mount.fiscal-print-scene--offscreen,
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  .pos-auto-print-host.fiscal-print-scene--offscreen,
+html.electron-auto-print-job.electron-print-capturing
+  #pos-auto-print-mount.fiscal-print-scene--offscreen,
+html.electron-auto-print-job.electron-print-capturing
+  .pos-auto-print-host.fiscal-print-scene--offscreen {
+  position: fixed !important;
+  left: var(--receipt-auto-print-offscreen-left) !important;
+  top: 0 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  display: block !important;
+  width: var(--receipt-auto-print-body-width) !important;
+  max-width: var(--receipt-auto-print-body-width) !important;
+  background: #fff !important;
+}
+
+/* Non-embedded silent print host (не в слоте) — off-screen на экране */
+html.electron-silent-print.print-thermal-modal .fiscal-print-scene:not(.pos-auto-print-host--embedded),
+html.electron-silent-print.print-thermal-modal .pos-sale-print-host:not(.pos-auto-print-host--embedded) {
+  display: block !important;
+  visibility: visible !important;
+  position: fixed !important;
+  left: var(--receipt-auto-print-offscreen-left) !important;
+  transform: none !important;
+  top: 0 !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+  width: var(--receipt-auto-print-body-width) !important;
+  max-width: var(--receipt-auto-print-body-width) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #fff !important;
+  overflow: hidden !important;
+  z-index: 0 !important;
+}

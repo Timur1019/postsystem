@@ -1,5 +1,6 @@
 import { Banknote, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_STYLES } from '../../config/receiptPrintConfig';
 import PosTotalsBlock from './PosTotalsBlock';
 
 export default function PosRegisterFooter({
@@ -23,8 +24,8 @@ export default function PosRegisterFooter({
         <span>{t('pos.return')}</span>
       </button>
 
-      <div className="pos-order-rail__spacer pos-auto-print-slot-wrap">
-        <div id="pos-auto-print-slot" className="pos-auto-print-slot" aria-hidden />
+      <div className={`pos-order-rail__spacer ${RECEIPT_PRINT_STYLES.slotWrapClass}`}>
+        <div id={RECEIPT_PRINT_DOM.autoPrintSlotId} className={RECEIPT_PRINT_STYLES.slotClass} aria-hidden />
       </div>
 
       <PosTotalsBlock
