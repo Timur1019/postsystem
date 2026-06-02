@@ -21,6 +21,13 @@ const clampNum = (v, min, max) => {
   return Math.min(max, Math.max(min, n));
 };
 
+const snapStep = (n, step) => {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return 0;
+  const s = Number(step) || 1;
+  return Math.round(x / s) * s;
+};
+
 function applyLabelPrintCssVars(settings) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
@@ -156,8 +163,8 @@ export default function ShelfLabelPrintModal({
           ? {
               rotate180: Boolean(parsed.rotate180),
               fontScale: clampNum(parsed.fontScale, 0.8, 1.6),
-              padXmm: clampNum(parsed.padXmm, 0, 20),
-              padYmm: clampNum(parsed.padYmm, 0, 25),
+              padXmm: clampNum(parsed.padXmm, 0, 30),
+              padYmm: clampNum(parsed.padYmm, 0, 40),
             }
           : null;
         if (next) {
@@ -382,7 +389,7 @@ export default function ShelfLabelPrintModal({
                     type="range"
                     min="0.8"
                     max="1.6"
-                    step="0.05"
+                    step="0.02"
                     value={labelSettings.fontScale}
                     onChange={(e) =>
                       setLabelSettings((s) => ({ ...s, fontScale: clampNum(e.target.value, 0.8, 1.6) }))
@@ -403,10 +410,13 @@ export default function ShelfLabelPrintModal({
                   className="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                   value={labelSettings.padXmm}
                   min={0}
-                  max={20}
-                  step={0.5}
+                  max={30}
+                  step={0.25}
                   onChange={(e) =>
-                    setLabelSettings((s) => ({ ...s, padXmm: clampNum(e.target.value, 0, 20) }))
+                    setLabelSettings((s) => ({
+                      ...s,
+                      padXmm: snapStep(clampNum(e.target.value, 0, 30), 0.25),
+                    }))
                   }
                 />
               </div>
@@ -420,10 +430,13 @@ export default function ShelfLabelPrintModal({
                   className="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                   value={labelSettings.padYmm}
                   min={0}
-                  max={25}
-                  step={0.5}
+                  max={40}
+                  step={0.25}
                   onChange={(e) =>
-                    setLabelSettings((s) => ({ ...s, padYmm: clampNum(e.target.value, 0, 25) }))
+                    setLabelSettings((s) => ({
+                      ...s,
+                      padYmm: snapStep(clampNum(e.target.value, 0, 40), 0.25),
+                    }))
                   }
                 />
               </div>
