@@ -116,12 +116,10 @@ html.electron-silent-print.print-thermal-only #receipt-print-area * {
   opacity: 1 !important;
   visibility: visible !important;
 }
-html.electron-silent-print.print-thermal-modal #root,
+/* Важно: не скрываем весь UI кассы — иначе при прозрачном фоне Electron показывает “чёрный экран”.
+   Модалка печати и так поверх, а сам чек мы держим отдельно. */
 html.electron-silent-print.print-thermal-modal .pos-pay-overlay:not(.receipt-printing-overlay),
-html.electron-silent-print.print-thermal-modal [data-sonner-toaster],
-html.electron-silent-print.print-thermal-modal
-  body > *:not(.fiscal-print-scene):not(.receipt-printing-overlay) {
-  display: none !important;
+html.electron-silent-print.print-thermal-modal [data-sonner-toaster] {
   visibility: hidden !important;
 }
 html.electron-silent-print.print-thermal-modal .fiscal-print-scene,
@@ -130,12 +128,10 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host {
   display: block !important;
   visibility: visible !important;
   position: fixed !important;
-  left: 0 !important;
-  /* Иногда `left:-10000px` всё равно “мигает” на некоторых системах.
-     Жёстко уводим слой за экран через transform (но оставляем в кадре для Electron-print). */
-  transform: translateX(-200vw) !important;
+  left: -10000px !important;
+  transform: none !important;
   top: 0 !important;
-  opacity: 0.01 !important;
+  opacity: 1 !important;
   pointer-events: none !important;
   width: var(--print-content-w, 76mm) !important;
   max-width: var(--print-content-w, 76mm) !important;
@@ -152,8 +148,8 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing .pos-sal
   left: 0 !important;
   /* Не показываем чек пользователю вообще — остаётся offscreen,
      но Electron всё равно печатает DOM с @media print. */
-  transform: translateX(-200vw) !important;
-  opacity: 0.01 !important;
+  transform: none !important;
+  opacity: 1 !important;
   z-index: 2147483640 !important;
 }
 html.electron-silent-print.print-thermal-modal .pos-sale-auto-print {
