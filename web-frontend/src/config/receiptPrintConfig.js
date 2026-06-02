@@ -15,12 +15,17 @@
 export const RECEIPT_PRINT_DOM = Object.freeze({
   autoPrintMountId: 'pos-auto-print-mount',
   autoPrintSlotId: 'pos-auto-print-slot',
+  /** Превью в слоте (React). Electron не использует — только для экрана. */
+  previewShellId: 'fiscal-print-shell-live',
+  /** Единственный #fiscal-print-shell на body — только для silent print / Electron. */
   fiscalPrintShellId: 'fiscal-print-shell',
+  bodyPrintHostId: 'pos-auto-print-print-host',
   receiptPrintAreaId: 'receipt-print-area',
   printJobPageStyleId: 'pos-print-job-page',
   testPrintHostId: 'aurent-test-receipt-print-host',
   qrImageSelector: '.receipt-qr',
   printRootSelectors: Object.freeze([
+    '#fiscal-print-shell-live',
     '#fiscal-print-shell',
     '#pos-sale-print-shell',
     '.cashier-sales-receipt-pane__card',

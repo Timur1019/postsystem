@@ -8,6 +8,7 @@ import {
   RECEIPT_PRINT_ENGINE,
   RECEIPT_PRINT_THRESHOLDS,
 } from '../config/receiptPrintConfig';
+import { findLivePreviewShell } from './autoPrintMount';
 
 export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -19,25 +20,27 @@ export function waitForDoubleAnimationFrame() {
   });
 }
 
-function shellSelector() {
-  return `#${RECEIPT_PRINT_DOM.fiscalPrintShellId}`;
+function qrSelectors() {
+  const { previewShellId, fiscalPrintShellId, qrImageSelector } = RECEIPT_PRINT_DOM;
+  return [
+    `#${previewShellId} ${qrImageSelector}`,
+    `#${fiscalPrintShellId} ${qrImageSelector}`,
+  ];
 }
 
-function qrSelector() {
-  return `${shellSelector()} ${RECEIPT_PRINT_DOM.qrImageSelector}`;
-}
-
-/** PosSaleAutoPrint: ждём QR на превью (не блокирует печать, если QR так и не появился). */
+/** PosSaleAutoPrint: ждём QR на превью. */
 export async function waitForReceiptQrReady(
   maxMs = RECEIPT_AUTO_PRINT_UI.qrWaitMaxMs,
 ) {
   const deadline = Date.now() + maxMs;
   while (Date.now() < deadline) {
-    const img = document.querySelector(qrSelector());
-    if (img && img.complete && img.naturalWidth > 0 && img.src) {
-      return img.src;
+    for (const sel of qrSelectors()) {
+      const img = document.querySelector(sel);
+      if (img && img.complete && img.naturalWidth > 0 && img.src) {
+        return img.src;
+      }
     }
-    if (!document.getElementById(RECEIPT_PRINT_DOM.fiscalPrintShellId)) {
+    if (!findLivePreviewShell()) {
       await sleep(RECEIPT_AUTO_PRINT_UI.qrShellMissingPollMs);
       continue;
     }
@@ -46,14 +49,19 @@ export async function waitForReceiptQrReady(
   return null;
 }
 
-export function findReceiptPrintArea({ preferFiscalShell = false } = {}) {
-  const { fiscalPrintShellId, receiptPrintAreaId, printRootSelectors } = RECEIPT_PRINT_DOM;
+export function findReceiptPrintArea({ preferFiscalShell = false, previewOnly = false } = {}) {
+  const { fiscalPrintShellId, previewShellId, receiptPrintAreaId, printRootSelectors } =
+    RECEIPT_PRINT_DOM;
 
-  if (preferFiscalShell) {
-    const shell = document.getElementById(fiscalPrintShellId);
+  if (previewOnly || preferFiscalShell) {
+    const shell = previewOnly
+      ? findLivePreviewShell()
+      : findLivePreviewShell() || document.getElementById(fiscalPrintShellId);
     if (shell) {
       return (
-        shell.querySelector(`#${receiptPrintAreaId}`) || shell.querySelector('.receipt-print-root') || shell
+        shell.querySelector(`#${receiptPrintAreaId}`) ||
+        shell.querySelector('.receipt-print-root') ||
+        shell
       );
     }
   }
@@ -62,12 +70,15 @@ export function findReceiptPrintArea({ preferFiscalShell = false } = {}) {
     const root = document.querySelector(rootSel);
     if (!root) continue;
     const area =
-      root.querySelector(`#${receiptPrintAreaId}`) || root.querySelector('.receipt-print-root');
+      root.querySelector(`#${receiptPrintAreaId}`) ||
+      root.querySelector('.receipt-print-root') ||
+      (root.id === previewShellId || root.id === fiscalPrintShellId ? root : null);
     if (area) return area;
   }
 
   return (
     document.getElementById(receiptPrintAreaId) ||
+    findLivePreviewShell() ||
     document.getElementById(fiscalPrintShellId)
   );
 }
@@ -75,6 +86,7 @@ export function findReceiptPrintArea({ preferFiscalShell = false } = {}) {
 function receiptReadyThresholds(area) {
   const isShiftReport =
     area?.classList.contains('receipt-print-root') &&
+    !area.closest(`#${RECEIPT_PRINT_DOM.receiptPrintAreaId}`) &&
     !document.getElementById(RECEIPT_PRINT_DOM.receiptPrintAreaId);
 
   if (isShiftReport) {
@@ -99,17 +111,19 @@ export function isReceiptPrintAreaReady(area) {
   return textLen >= minText && h >= minH && imgsReady;
 }
 
-/** printReceipt: текст, высота, img.complete */
+/** Ждём готовности превью в слоте (до копии на body). */
 export async function waitForReceiptDomReady({ useModalShell = false } = {}) {
-  const preferFiscalShell =
-    useModalShell || Boolean(document.getElementById(RECEIPT_PRINT_DOM.fiscalPrintShellId));
+  const preferPreview =
+    useModalShell ||
+    Boolean(findLivePreviewShell()) ||
+    Boolean(document.getElementById(RECEIPT_PRINT_DOM.fiscalPrintShellId));
 
   await document.fonts?.ready;
 
   const { domReadyPollIntervalMs, domReadyMaxAttempts } = RECEIPT_PRINT_ENGINE;
   for (let i = 0; i < domReadyMaxAttempts; i += 1) {
     await sleep(domReadyPollIntervalMs);
-    const area = findReceiptPrintArea({ preferFiscalShell });
+    const area = findReceiptPrintArea({ preferFiscalShell: preferPreview, previewOnly: true });
     if (isReceiptPrintAreaReady(area)) {
       return;
     }
@@ -122,17 +136,41 @@ export async function waitForReceiptPaintSettled() {
   await sleep(RECEIPT_PRINT_ENGINE.paintSettleMs);
 }
 
+export async function waitForBodyPrintImagesReady(
+  maxMs = RECEIPT_PRINT_ENGINE.paintSettleMs + 800,
+) {
+  const shell = document.getElementById(RECEIPT_PRINT_DOM.fiscalPrintShellId);
+  if (!shell) return;
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    const imgs = Array.from(shell.querySelectorAll('img'));
+    if (imgs.length === 0 || imgs.every((img) => img.complete && img.naturalWidth > 0)) {
+      return;
+    }
+    await sleep(RECEIPT_PRINT_ENGINE.domReadyPollIntervalMs);
+  }
+}
 export function assertFiscalPrintShellReady() {
   const shell = document.getElementById(RECEIPT_PRINT_DOM.fiscalPrintShellId);
-  if (!shell) {
-    throw new Error('Чек не найден в окне');
+  const root = document.getElementById('root');
+  if (!shell || root?.contains(shell)) {
+    throw new Error('Чек не найден для печати');
   }
   const area =
     shell.querySelector(`#${RECEIPT_PRINT_DOM.receiptPrintAreaId}`) ||
     shell.querySelector('.receipt-print-root') ||
     shell;
   const textLen = (area.innerText || '').trim().length;
+  const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
+  const imgs = Array.from(area.querySelectorAll('img'));
+  const imgsReady = imgs.length === 0 || imgs.every((img) => img.complete && img.naturalWidth > 0);
+  if (!imgsReady) {
+    throw new Error('Чек не готов для печати');
+  }
   if (textLen < RECEIPT_PRINT_THRESHOLDS.fiscalMinTextLength) {
+    throw new Error('Чек не готов для печати');
+  }
+  if (h < RECEIPT_PRINT_THRESHOLDS.fiscalMinHeightPx) {
     throw new Error('Чек не готов для печати');
   }
 }

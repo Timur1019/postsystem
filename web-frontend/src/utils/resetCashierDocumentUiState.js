@@ -34,6 +34,7 @@ export function resetCashierDocumentUiState() {
   // Не трогаем mount во время print job — иначе Electron получит пустой DOM.
   if (!printActive) {
     document.getElementById(RECEIPT_PRINT_DOM.autoPrintMountId)?.remove();
+    document.getElementById(RECEIPT_PRINT_DOM.bodyPrintHostId)?.remove();
     cleanupDesktopPrintState();
   }
 }

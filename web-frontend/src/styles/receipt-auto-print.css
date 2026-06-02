@@ -86,7 +86,9 @@
 }
 
 .pos-auto-print-host--in-slot #fiscal-print-shell,
-.pos-auto-print-host--embedded #fiscal-print-shell {
+.pos-auto-print-host--in-slot #fiscal-print-shell-live,
+.pos-auto-print-host--embedded #fiscal-print-shell,
+.pos-auto-print-host--embedded #fiscal-print-shell-live {
   width: 100% !important;
   max-width: 100% !important;
   transform-origin: top center;
@@ -179,8 +181,10 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host.pos-auto-pri
 
 html.electron-silent-print.print-thermal-modal #pos-auto-print-mount,
 html.electron-silent-print.print-thermal-modal #pos-auto-print-mount.fiscal-print-scene,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host,
 html.electron-silent-print.print-thermal-modal .pos-auto-print-host--body-print,
 html.electron-auto-print-job #pos-auto-print-mount,
+html.electron-auto-print-job #pos-auto-print-print-host,
 html.electron-auto-print-job .pos-auto-print-host--body-print {
   display: block !important;
   visibility: visible !important;
@@ -199,8 +203,8 @@ html.electron-auto-print-job .pos-auto-print-host--body-print {
   transform: none !important;
 }
 
-html.electron-silent-print.print-thermal-modal #pos-auto-print-mount #fiscal-print-shell,
-html.electron-auto-print-job #pos-auto-print-mount #fiscal-print-shell {
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
+html.electron-auto-print-job #pos-auto-print-print-host #fiscal-print-shell {
   transform: none !important;
   opacity: 1 !important;
   visibility: visible !important;
@@ -241,6 +245,8 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host:not(.pos-aut
 }
 
 @media print {
+  html.print-thermal-modal #pos-auto-print-print-host,
+  html.print-thermal-modal #pos-auto-print-print-host.fiscal-print-scene,
   html.print-thermal-modal #pos-auto-print-mount,
   html.print-thermal-modal #pos-auto-print-mount.fiscal-print-scene {
     display: block !important;

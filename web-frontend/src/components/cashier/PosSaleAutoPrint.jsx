@@ -29,7 +29,7 @@ function renderReceiptIntoMount(sale) {
   const dialog = document.createElement('div');
   dialog.className = fiscalPrintDialogClass;
   const shell = document.createElement('div');
-  shell.id = RECEIPT_PRINT_DOM.fiscalPrintShellId;
+  shell.id = RECEIPT_PRINT_DOM.previewShellId;
   dialog.appendChild(shell);
   host.appendChild(dialog);
 

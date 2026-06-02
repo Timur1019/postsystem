@@ -1,11 +1,19 @@
 /**
- * DOM-контейнер автопечати чека (слот справа + перенос на body для Electron).
- * Id и задержки — config/receiptPrintConfig.js
+ * DOM-контейнер автопечати чека.
+ *
+ * Превью (React) → #pos-auto-print-mount / #fiscal-print-shell-live (в слоте)
+ * Печать (Electron) → #pos-auto-print-print-host / #fiscal-print-shell (на body, копия HTML)
  */
-import { RECEIPT_AUTO_PRINT_UI, RECEIPT_PRINT_DOM } from '../config/receiptPrintConfig';
+import { RECEIPT_AUTO_PRINT_UI, RECEIPT_PRINT_DOM, RECEIPT_PRINT_STYLES } from '../config/receiptPrintConfig';
 
-const { autoPrintMountId: MOUNT_ID, autoPrintSlotId: SLOT_ID, fiscalPrintDialogClass } =
-  RECEIPT_PRINT_DOM;
+const {
+  autoPrintMountId: MOUNT_ID,
+  autoPrintSlotId: SLOT_ID,
+  previewShellId: PREVIEW_SHELL_ID,
+  fiscalPrintShellId: PRINT_SHELL_ID,
+  bodyPrintHostId: BODY_PRINT_HOST_ID,
+  fiscalPrintDialogClass,
+} = RECEIPT_PRINT_DOM;
 
 let pendingUnmountTimer = null;
 
@@ -16,7 +24,11 @@ function mountInto(hostEl, mode) {
     'pos-auto-print-host--in-actions',
     'pos-auto-print-host--in-slot',
   );
-  hostEl.classList.add(RECEIPT_PRINT_DOM.autoPrintHostClass, 'pos-auto-print-host--embedded', `pos-auto-print-host--${mode}`);
+  hostEl.classList.add(
+    RECEIPT_PRINT_DOM.autoPrintHostClass,
+    RECEIPT_PRINT_STYLES.hostEmbeddedClass,
+    `pos-auto-print-host--${mode}`,
+  );
   hostEl.style.position = '';
   hostEl.style.left = '';
   hostEl.style.right = '';
@@ -64,6 +76,69 @@ export function getAutoPrintMountEl() {
   return el;
 }
 
+export function findLivePreviewShell() {
+  const bodyHost = document.getElementById(BODY_PRINT_HOST_ID);
+  const mount = document.getElementById(MOUNT_ID);
+
+  const candidates = [
+    document.getElementById(PREVIEW_SHELL_ID),
+    mount?.querySelector(`#${PREVIEW_SHELL_ID}`),
+    mount?.querySelector(`#${PRINT_SHELL_ID}`),
+  ].filter(Boolean);
+
+  for (const el of candidates) {
+    if (bodyHost?.contains(el)) continue;
+    return el;
+  }
+
+  const legacy = document.getElementById(PRINT_SHELL_ID);
+  if (legacy && !bodyHost?.contains(legacy) && mount?.contains(legacy)) {
+    return legacy;
+  }
+  return null;
+}
+
+export function removeBodyPrintHost() {
+  document.getElementById(BODY_PRINT_HOST_ID)?.remove();
+}
+
+/**
+ * Копия HTML превью на body. На body ровно один #fiscal-print-shell — Electron и @media print.
+ * React-превью в слоте не трогаем (id fiscal-print-shell-live).
+ */
+export function mountBodyPrintShellFromPreview() {
+  const liveShell = findLivePreviewShell();
+  if (!liveShell) {
+    return () => {};
+  }
+
+  if (liveShell.id === PRINT_SHELL_ID && document.getElementById(MOUNT_ID)?.contains(liveShell)) {
+    liveShell.id = PREVIEW_SHELL_ID;
+  }
+
+  removeBodyPrintHost();
+
+  const host = document.createElement('div');
+  host.id = BODY_PRINT_HOST_ID;
+  host.className = `fiscal-print-scene pos-sale-print-host ${RECEIPT_PRINT_STYLES.hostBodyPrintClass}`;
+  host.setAttribute('aria-hidden', 'true');
+
+  const dialog = document.createElement('div');
+  dialog.className = fiscalPrintDialogClass;
+
+  const printShell = document.createElement('div');
+  printShell.id = PRINT_SHELL_ID;
+  printShell.innerHTML = liveShell.innerHTML;
+
+  dialog.appendChild(printShell);
+  host.appendChild(dialog);
+  document.body.appendChild(host);
+
+  return () => {
+    removeBodyPrintHost();
+  };
+}
+
 export function cancelScheduledAutoPrintUnmount() {
   if (pendingUnmountTimer != null) {
     clearTimeout(pendingUnmountTimer);
@@ -84,6 +159,7 @@ export function scheduleAutoPrintUnmount(
 
 export function teardownAutoPrintMount() {
   cancelScheduledAutoPrintUnmount();
+  removeBodyPrintHost();
   const el = document.getElementById(MOUNT_ID);
   if (!el) return;
   try {
@@ -94,35 +170,4 @@ export function teardownAutoPrintMount() {
   el.remove();
 }
 
-/** Перед silent print: чек на body (вне #root) для @media print. */
-export function reparentAutoPrintMountForSilentCapture() {
-  const el = document.getElementById(MOUNT_ID);
-  if (!el) return () => {};
-
-  el.classList.remove(
-    'pos-auto-print-host--embedded',
-    'pos-auto-print-host--in-slot',
-    'pos-auto-print-host--in-pay',
-    'pos-auto-print-host--in-actions',
-    /* fiscal-print-scene--offscreen → opacity:0 в index.css, ломает silent print */
-    'fiscal-print-scene--offscreen',
-  );
-  el.classList.add('pos-auto-print-host--body-print');
-  el.style.position = '';
-  el.style.left = '';
-  el.style.right = '';
-  el.style.top = '';
-  el.style.opacity = '';
-  el.style.visibility = '';
-  el.style.zIndex = '';
-
-  if (el.parentElement !== document.body) {
-    document.body.appendChild(el);
-  }
-
-  return () => {
-    el.classList.remove('pos-auto-print-host--body-print');
-  };
-}
-
-export { MOUNT_ID, SLOT_ID, fiscalPrintDialogClass };
+export { MOUNT_ID, SLOT_ID, PREVIEW_SHELL_ID, PRINT_SHELL_ID, fiscalPrintDialogClass };
