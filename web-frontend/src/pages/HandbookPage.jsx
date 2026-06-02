@@ -7,7 +7,7 @@ import {
   HANDBOOK_GROUPS,
   modulesForScope,
 } from '../config/moduleHandbook';
-import { reparentPrintHostToHandbookSlot } from '../utils/autoPrintMount';
+import { destroyBodyPrintMount } from '../utils/autoPrintMount';
 import '../styles/handbook-page.css';
 
 export default function HandbookPage({ scope = 'admin' }) {
@@ -35,15 +35,8 @@ export default function HandbookPage({ scope = 'admin' }) {
   }, [moduleId, visibleModules, navigate, basePath]);
 
   useEffect(() => {
-    reparentPrintHostToHandbookSlot();
-    return () => {
-      const host = document.getElementById('pos-auto-print-print-host');
-      const area = document.getElementById('pos-auto-print-handbook-print-area');
-      if (host && area && !area.contains(host)) {
-        area.appendChild(host);
-      }
-    };
-  }, [activeId]);
+    destroyBodyPrintMount();
+  }, []);
 
   const groups = HANDBOOK_GROUPS[scope] ?? HANDBOOK_GROUPS.admin;
   const details = t(`handbook.modules.${activeId}.details`, { returnObjects: true });
@@ -98,11 +91,6 @@ export default function HandbookPage({ scope = 'admin' }) {
               ))}
             </ul>
           )}
-          <div
-            id="pos-auto-print-handbook-print-slot"
-            className="handbook-page__print-slot"
-            aria-label={t('handbook.printSlot', { defaultValue: 'Последний напечатанный чек' })}
-          />
         </article>
       </div>
     </div>

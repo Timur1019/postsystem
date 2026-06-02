@@ -1,8 +1,9 @@
 /**
- * DOM автопечати: превью в слоте кассы + печать в «Справочник модулей».
+ * DOM автопечати: превью в слоте кассы + временная копия для Electron (off-screen).
  *
  * Превью (экран кассы) → #pos-auto-print-preview-mount / #fiscal-print-shell-live
- * Печать (Electron)    → #pos-auto-print-handbook-print-slot / #pos-auto-print-print-host / #fiscal-print-shell
+ * Печать (Electron)    → #pos-auto-print-handbook-print-area / #pos-auto-print-print-host / #fiscal-print-shell
+ * После печати DOM удаляется — в справочнике ничего не остаётся.
  */
 import { RECEIPT_AUTO_PRINT_UI, RECEIPT_PRINT_DOM, RECEIPT_PRINT_STYLES } from '../config/receiptPrintConfig';
 
@@ -33,6 +34,38 @@ const LEGACY_PRINT_MOUNT_ID = RECEIPT_PRINT_DOM.autoPrintMountId;
 const LEGACY_SUPPORT_LANE_ID = 'pos-auto-print-print-support-lane';
 
 let pendingUnmountTimer = null;
+
+function getPrintOwnerKey() {
+  try {
+    const raw = localStorage.getItem('pos-auth');
+    const user = raw ? JSON.parse(raw)?.state?.user : null;
+    return user?.id != null ? String(user.id) : user?.username ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function stampPrintOwner(hostEl) {
+  const owner = getPrintOwnerKey();
+  if (owner) {
+    hostEl.dataset.printOwner = owner;
+  } else {
+    delete hostEl.dataset.printOwner;
+  }
+}
+
+function destroyPrintMountIfWrongOwner() {
+  const host = document.getElementById(PRINT_HOST_ID);
+  if (!host?.dataset.printOwner) return;
+  const owner = getPrintOwnerKey();
+  if (owner && host.dataset.printOwner !== owner) {
+    destroyBodyPrintMount();
+  }
+}
+
+function clearHandbookPrintSlot() {
+  document.getElementById(HANDBOOK_PRINT_SLOT_ID)?.replaceChildren();
+}
 
 function clearHostInlineStyles(hostEl) {
   hostEl.style.position = '';
@@ -126,37 +159,26 @@ function ensureHandbookPrintArea() {
     area.id = HANDBOOK_PRINT_AREA_ID;
     area.className = `${handbookPrintAreaClass} ${POS_HIDDEN_CLASS}`;
     area.setAttribute('aria-hidden', 'true');
-    const shell = document.querySelector('.cashier-app') || document.body;
-    shell.appendChild(area);
+    document.body.appendChild(area);
+  } else if (area.parentElement !== document.body) {
+    document.body.appendChild(area);
+    hideHandbookPrintOnPosScreen();
   } else {
-    const shell = document.querySelector('.cashier-app') || document.body;
-    if (area.parentElement !== shell) {
-      shell.appendChild(area);
-    }
     hideHandbookPrintOnPosScreen();
   }
   return area;
 }
 
-/** Контейнер печати: слот справочника (если открыт) или fallback в layout кассы. */
+/** Контейнер печати — только off-screen fallback (не слот справочника на экране). */
 export function getHandbookPrintContainer() {
-  const slot = document.getElementById(HANDBOOK_PRINT_SLOT_ID);
-  if (slot) return slot;
+  destroyPrintMountIfWrongOwner();
   return ensureHandbookPrintArea();
-}
-
-/** Переносит print-host в слот справочника, когда страница открыта. */
-export function reparentPrintHostToHandbookSlot() {
-  const host = document.getElementById(PRINT_HOST_ID);
-  const slot = document.getElementById(HANDBOOK_PRINT_SLOT_ID);
-  if (!host || !slot || slot.contains(host)) return;
-  slot.appendChild(host);
-  host.removeAttribute('aria-hidden');
 }
 
 function ensureBodyPrintMount() {
   document.getElementById(LEGACY_PRINT_MOUNT_ID)?.remove();
   document.getElementById(LEGACY_SUPPORT_LANE_ID)?.remove();
+  destroyPrintMountIfWrongOwner();
 
   const container = getHandbookPrintContainer();
 
@@ -166,6 +188,7 @@ function ensureBodyPrintMount() {
     el.id = PRINT_HOST_ID;
     el.className = `pos-sale-print-host ${autoPrintHostClass} ${hostBodyPrintClass}`;
     el.setAttribute('aria-hidden', 'true');
+    stampPrintOwner(el);
     container.appendChild(el);
   } else {
     el.classList.remove(
@@ -177,6 +200,7 @@ function ensureBodyPrintMount() {
     );
     el.classList.add(hostBodyPrintClass);
     clearHostInlineStyles(el);
+    stampPrintOwner(el);
     if (el.parentElement !== container) {
       container.appendChild(el);
     }
@@ -196,21 +220,28 @@ export function findLivePreviewShell() {
   );
 }
 
+function isPrintLaneElement(el) {
+  if (!el) return false;
+  const { handbookPrintAreaId, handbookPrintSlotId, bodyPrintHostId } = RECEIPT_PRINT_DOM;
+  return Boolean(
+    el.closest(`#${handbookPrintAreaId}`)
+      || el.closest(`#${handbookPrintSlotId}`)
+      || el.closest(`#${bodyPrintHostId}`),
+  );
+}
+
 export function getAutoPrintFiscalShell() {
   const printHost =
     document.getElementById(PRINT_HOST_ID) || document.getElementById(LEGACY_PRINT_MOUNT_ID);
   const shell = printHost?.querySelector(`#${PRINT_SHELL_ID}`);
-  if (!shell) return null;
-  const handbookRoot =
-    document.getElementById(HANDBOOK_PRINT_SLOT_ID) ||
-    document.getElementById(HANDBOOK_PRINT_AREA_ID);
-  if (handbookRoot?.contains(shell)) {
+  if (shell && isPrintLaneElement(shell)) {
     return shell;
   }
-  if (!document.getElementById('root')?.contains(shell)) {
-    return shell;
-  }
-  return null;
+  const root = document.getElementById('root');
+  const orphan = Array.from(document.querySelectorAll(`#${PRINT_SHELL_ID}`)).find(
+    (el) => isPrintLaneElement(el) || !root?.contains(el),
+  );
+  return orphan ?? null;
 }
 
 async function syncPrintShellImagesFromPreview(liveShell, printShell) {
@@ -273,21 +304,13 @@ export async function prepareBodyPrintShellFromPreview() {
   void printShell.offsetHeight;
 
   return () => {
-    finalizeHandbookPrintMount();
+    destroyBodyPrintMount();
   };
 }
 
-/** После печати — оставляем чек в справочнике, на экране кассы скрываем. */
+/** @deprecated — сразу удаляет print-host после печати */
 export function finalizeHandbookPrintMount() {
-  const host = document.getElementById(PRINT_HOST_ID);
-  if (!host) return;
-  host.classList.remove(hostCapturingClass);
-  clearHostInlineStyles(host);
-  reparentPrintHostToHandbookSlot();
-  if (document.getElementById(HANDBOOK_PRINT_SLOT_ID)?.contains(host)) {
-    host.removeAttribute('aria-hidden');
-  }
-  hideHandbookPrintOnPosScreen();
+  destroyBodyPrintMount();
 }
 
 /** @deprecated alias */
@@ -319,7 +342,9 @@ export function destroyBodyPrintMount() {
     }
     host.remove();
   }
+  clearHandbookPrintSlot();
   document.getElementById(LEGACY_SUPPORT_LANE_ID)?.remove();
+  hideHandbookPrintOnPosScreen();
 }
 
 /** Перед webContents.print — чек в справочнике (на кассе скрыт CSS). */
@@ -331,7 +356,7 @@ export function prepareMountForSilentCapture() {
   const shell = mount.querySelector(`#${PRINT_SHELL_ID}`);
   if (shell) void shell.offsetHeight;
   return () => {
-    finalizeHandbookPrintMount();
+    destroyBodyPrintMount();
   };
 }
 
@@ -356,7 +381,7 @@ export function scheduleAutoPrintUnmount(
 export function teardownAutoPrintMount() {
   cancelScheduledAutoPrintUnmount();
   document.getElementById(PREVIEW_MOUNT_ID)?.remove();
-  /* print-host остаётся в справочнике для просмотра */
+  destroyBodyPrintMount();
 }
 
 export {

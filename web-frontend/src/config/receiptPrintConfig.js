@@ -24,9 +24,9 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
   fiscalPrintShellId: 'fiscal-print-shell',
   /** Print-host в справочнике модулей — для Electron silent print. */
   bodyPrintHostId: 'pos-auto-print-print-host',
-  /** Слот на странице «Справочник модулей» — чек виден здесь. */
+  /** Слот справочника (legacy id, не используется для отображения чека). */
   handbookPrintSlotId: 'pos-auto-print-handbook-print-slot',
-  /** Fallback-контейнер в CashierLayout, когда справочник не открыт. */
+  /** Off-screen контейнер в CashierLayout — только на время silent print. */
   handbookPrintAreaId: 'pos-auto-print-handbook-print-area',
   /** @deprecated alias — use handbookPrintAreaId */
   printSupportLaneId: 'pos-auto-print-handbook-print-area',

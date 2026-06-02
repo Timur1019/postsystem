@@ -13,7 +13,7 @@ import {
 } from '../../config/receiptPrintConfig';
 import {
   cancelScheduledAutoPrintUnmount,
-  finalizeHandbookPrintMount,
+  destroyBodyPrintMount,
   ensureAutoPrintMountInSlot,
   fiscalPrintDialogClass,
   getAutoPrintPreviewMountEl,
@@ -78,7 +78,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
       try {
         cancelScheduledAutoPrintUnmount();
         const mode = await printThermalReceiptAuto();
-        finalizeHandbookPrintMount();
+        destroyBodyPrintMount();
         if (inFlightKeyRef.current === key && (mode === 'silent' || mode === 'dialog')) {
           toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
             id: RECEIPT_PRINT_TOAST.toastId,
