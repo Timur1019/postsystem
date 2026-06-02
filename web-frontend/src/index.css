@@ -65,18 +65,18 @@
   background: #fff !important;
 }
 
-/* Body-mount для печати — off-screen, переопределяет .fiscal-print-scene */
-#pos-auto-print-mount.pos-auto-print-host--body-print {
+/* Body-mount: за экраном (не left:0), превью в слоте не трогаем */
+#pos-auto-print-mount.pos-auto-print-host--body-print:not(.pos-auto-print-host--capturing) {
   position: fixed !important;
-  left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
+  left: -10000px !important;
   top: 0 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  z-index: 0 !important;
   width: var(--print-content-w, 76mm) !important;
   max-width: var(--print-content-w, 76mm) !important;
   overflow: visible !important;
   pointer-events: none !important;
+  z-index: -1 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
   background: #fff !important;
 }
 

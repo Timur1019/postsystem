@@ -117,6 +117,7 @@ async function invokeDesktopSilentPrint() {
       assertFiscalPrintShellReady();
       console.info(`[Aurent] silent print IPC attempt ${attempt}/${silentMaxAttempts}`);
       await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto());
+      undoBodyPrint();
       return;
     } catch (err) {
       lastErr = normalizeDesktopPrintError(err);

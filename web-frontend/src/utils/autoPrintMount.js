@@ -107,6 +107,7 @@ function ensureBodyPrintMount() {
       document.body.appendChild(el);
     }
   }
+  hideBodyPrintMountFromScreen(el);
   return el;
 }
 
@@ -192,17 +193,50 @@ export async function prepareBodyPrintShellFromPreview() {
     } catch {
       /* ignore */
     }
+    hideBodyPrintMountFromScreen(host);
   };
 }
 
-/** Перед webContents.print — body-mount слева сверху. */
+function hideBodyPrintMountFromScreen(host = document.getElementById(PRINT_MOUNT_ID)) {
+  if (!host) return;
+  host.classList.remove(hostCapturingClass);
+  host.style.position = 'fixed';
+  host.style.left = '-10000px';
+  host.style.top = '0';
+  host.style.right = '';
+  host.style.opacity = '';
+  host.style.visibility = '';
+  host.style.pointerEvents = 'none';
+  host.style.zIndex = '-1';
+  host.style.width = '';
+  host.style.height = '';
+  host.style.overflow = '';
+}
+
+function showBodyPrintMountForCapture(host = document.getElementById(PRINT_MOUNT_ID)) {
+  if (!host) return;
+  host.style.position = '';
+  host.style.left = '';
+  host.style.top = '';
+  host.style.width = '';
+  host.style.height = '';
+  host.style.overflow = '';
+  host.style.opacity = '';
+  host.style.visibility = '';
+  host.style.pointerEvents = '';
+  host.style.zIndex = '';
+}
+
+/** Перед webContents.print — body-mount в кадр (только на время IPC). */
 export function prepareMountForSilentCapture() {
   const mount = document.getElementById(PRINT_MOUNT_ID);
   if (!mount) return () => {};
+  showBodyPrintMountForCapture(mount);
   mount.classList.add(hostCapturingClass);
   void mount.offsetHeight;
   return () => {
     mount.classList.remove(hostCapturingClass);
+    hideBodyPrintMountFromScreen(mount);
   };
 }
 
