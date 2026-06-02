@@ -17,7 +17,9 @@ import {
   ensureAutoPrintMountInSlot,
   fiscalPrintDialogClass,
   getAutoPrintPreviewMountEl,
+  parkPreviewMountOnBody,
   scheduleAutoPrintUnmount,
+  setAutoPrintInFlight,
   teardownAutoPrintMount,
 } from '../../utils/autoPrintMount';
 import { cleanupDesktopPrintState, isDesktopCashier, printThermalReceiptAuto } from '../../utils/printReceipt';
@@ -59,26 +61,32 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     }
     inFlightKeyRef.current = key;
     cancelScheduledAutoPrintUnmount();
+    setAutoPrintInFlight(true);
 
     const { root } = renderReceiptIntoPreview(sale);
 
     const run = async () => {
-      ensureAutoPrintMountInSlot();
-      await waitForDoubleAnimationFrame();
-      if (inFlightKeyRef.current !== key) return;
-      await waitForReceiptDomReady({ useModalShell: true }).catch(() => undefined);
-      if (inFlightKeyRef.current !== key) return;
-      await waitForReceiptQrReady();
-      if (inFlightKeyRef.current !== key) return;
-      await waitForDoubleAnimationFrame();
-      if (inFlightKeyRef.current !== key) return;
-      await sleep(RECEIPT_AUTO_PRINT_UI.beforePrintSettleMs);
-      if (inFlightKeyRef.current !== key) return;
-
       try {
+        ensureAutoPrintMountInSlot();
+        await waitForDoubleAnimationFrame();
+        if (inFlightKeyRef.current !== key) return;
+        parkPreviewMountOnBody();
+        ensureAutoPrintMountInSlot();
+        await waitForReceiptDomReady({ useModalShell: true }).catch(() => undefined);
+        if (inFlightKeyRef.current !== key) return;
+        parkPreviewMountOnBody();
+        await waitForReceiptQrReady();
+        if (inFlightKeyRef.current !== key) return;
+        parkPreviewMountOnBody();
+        await waitForDoubleAnimationFrame();
+        if (inFlightKeyRef.current !== key) return;
+        await sleep(RECEIPT_AUTO_PRINT_UI.beforePrintSettleMs);
+        if (inFlightKeyRef.current !== key) return;
+        parkPreviewMountOnBody();
+
         cancelScheduledAutoPrintUnmount();
         const mode = await printThermalReceiptAuto();
-        destroyBodyPrintMount();
+        destroyBodyPrintMount({ force: true });
         if (inFlightKeyRef.current === key && (mode === 'silent' || mode === 'dialog')) {
           toast.success(t('receipt.printSent', { defaultValue: 'Чек отправлен на печать' }), {
             id: RECEIPT_PRINT_TOAST.toastId,
@@ -100,6 +108,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
           });
         }
       } finally {
+        setAutoPrintInFlight(false);
         if (inFlightKeyRef.current !== key) return;
         await sleep(RECEIPT_AUTO_PRINT_UI.previewHoldAfterPrintMs);
         if (inFlightKeyRef.current !== key) return;
@@ -111,7 +120,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
         } catch {
           /* ignore */
         }
-        teardownAutoPrintMount();
+        teardownAutoPrintMount({ force: true });
         onDoneRef.current?.();
       }
     };

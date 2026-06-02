@@ -7,7 +7,7 @@ import {
   HANDBOOK_GROUPS,
   modulesForScope,
 } from '../config/moduleHandbook';
-import { destroyBodyPrintMount } from '../utils/autoPrintMount';
+import { destroyBodyPrintMount, isAutoPrintInFlight } from '../utils/autoPrintMount';
 import '../styles/handbook-page.css';
 
 export default function HandbookPage({ scope = 'admin' }) {
@@ -35,7 +35,9 @@ export default function HandbookPage({ scope = 'admin' }) {
   }, [moduleId, visibleModules, navigate, basePath]);
 
   useEffect(() => {
-    destroyBodyPrintMount();
+    if (!isAutoPrintInFlight()) {
+      destroyBodyPrintMount();
+    }
   }, []);
 
   const groups = HANDBOOK_GROUPS[scope] ?? HANDBOOK_GROUPS.admin;

@@ -15,7 +15,7 @@ export function resetClientSessionState() {
 }
 
 export function logoutAndResetSession() {
-  destroyBodyPrintMount();
+  destroyBodyPrintMount({ force: true });
   resetClientSessionState();
   useAuthStore.getState().logout();
 }

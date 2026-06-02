@@ -24,6 +24,7 @@ const {
   hostEmbeddedClass,
   hostInSlotClass,
   hostBodyPrintClass,
+  hostPreviewParkClass,
   hostCapturingClass,
 } = RECEIPT_PRINT_STYLES;
 
@@ -33,6 +34,15 @@ const LEGACY_SUPPORT_LANE_ID = 'pos-auto-print-print-support-lane';
 const LEGACY_HANDBOOK_AREA_ID = RECEIPT_PRINT_DOM.handbookPrintAreaId;
 
 let pendingUnmountTimer = null;
+let autoPrintInFlight = false;
+
+export function setAutoPrintInFlight(active) {
+  autoPrintInFlight = Boolean(active);
+}
+
+export function isAutoPrintInFlight() {
+  return autoPrintInFlight;
+}
 
 function getPrintOwnerKey() {
   try {
@@ -83,12 +93,40 @@ function clearHostInlineStyles(hostEl) {
   hostEl.style.overflow = '';
 }
 
-function mountPreviewInSlot(hostEl) {
+function mountPreviewOnBodyPark(hostEl) {
   hostEl.classList.remove(
     'fiscal-print-scene',
     'fiscal-print-scene--offscreen',
     hostBodyPrintClass,
     hostCapturingClass,
+    hostEmbeddedClass,
+    hostInSlotClass,
+    RECEIPT_PRINT_STYLES.hostCenteredClass,
+    'pos-auto-print-host--in-pay',
+    'pos-auto-print-host--in-actions',
+  );
+  hostEl.classList.add(autoPrintHostClass, hostPreviewParkClass);
+  clearHostInlineStyles(hostEl);
+  if (hostEl.parentElement !== document.body) {
+    document.body.appendChild(hostEl);
+  }
+}
+
+function mountPreviewInSlot(hostEl) {
+  const slot = document.getElementById(SLOT_ID);
+  if (!slot?.isConnected) {
+    if (isAutoPrintInFlight()) {
+      mountPreviewOnBodyPark(hostEl);
+      return;
+    }
+  }
+
+  hostEl.classList.remove(
+    'fiscal-print-scene',
+    'fiscal-print-scene--offscreen',
+    hostBodyPrintClass,
+    hostCapturingClass,
+    hostPreviewParkClass,
     RECEIPT_PRINT_STYLES.hostCenteredClass,
     'pos-auto-print-host--in-pay',
     'pos-auto-print-host--in-actions',
@@ -96,8 +134,7 @@ function mountPreviewInSlot(hostEl) {
   hostEl.classList.add(autoPrintHostClass, hostEmbeddedClass, hostInSlotClass);
   clearHostInlineStyles(hostEl);
 
-  const slot = document.getElementById(SLOT_ID);
-  if (slot) {
+  if (slot?.isConnected) {
     slot.appendChild(hostEl);
     return;
   }
@@ -107,12 +144,21 @@ function mountPreviewInSlot(hostEl) {
   (fallback || document.body).appendChild(hostEl);
 }
 
+/** Сохранить превью на body, если слот кассы размонтирован (уход со /pos). */
+export function parkPreviewMountOnBody() {
+  const host = document.getElementById(PREVIEW_MOUNT_ID);
+  if (!host) return;
+  const slot = document.getElementById(SLOT_ID);
+  if (slot?.isConnected && slot.contains(host)) return;
+  mountPreviewOnBodyPark(host);
+}
+
 export function ensureAutoPrintMountInSlot() {
   const el = document.getElementById(PREVIEW_MOUNT_ID);
+  if (!el) return;
   const slot = document.getElementById(SLOT_ID);
-  if (el && slot && !slot.contains(el)) {
-    mountPreviewInSlot(el);
-  }
+  if (slot?.isConnected && slot.contains(el)) return;
+  mountPreviewInSlot(el);
 }
 
 /** Превью чека в правой колонке (React). */
@@ -226,6 +272,7 @@ async function syncPrintShellImagesFromPreview(liveShell, printShell) {
 
 /** Копия превью на body перед silent print (Electron). */
 export async function prepareBodyPrintShellFromPreview() {
+  parkPreviewMountOnBody();
   const liveShell = findLivePreviewShell();
   if (!liveShell) {
     return () => {};
@@ -274,7 +321,8 @@ function preparePrintHostForCapture(host = document.getElementById(PRINT_HOST_ID
   if (shell) void shell.offsetHeight;
 }
 
-export function destroyBodyPrintMount() {
+export function destroyBodyPrintMount({ force = false } = {}) {
+  if (!force && isAutoPrintInFlight()) return;
   for (const id of [PRINT_HOST_ID, LEGACY_PRINT_MOUNT_ID]) {
     const host = document.getElementById(id);
     if (!host) continue;
@@ -317,10 +365,11 @@ export function scheduleAutoPrintUnmount(
   }, delayMs);
 }
 
-export function teardownAutoPrintMount() {
+export function teardownAutoPrintMount({ force = false } = {}) {
   cancelScheduledAutoPrintUnmount();
+  if (!force && isAutoPrintInFlight()) return;
   document.getElementById(PREVIEW_MOUNT_ID)?.remove();
-  destroyBodyPrintMount();
+  destroyBodyPrintMount({ force: true });
 }
 
 export {

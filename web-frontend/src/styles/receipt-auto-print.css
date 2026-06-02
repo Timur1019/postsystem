@@ -162,6 +162,33 @@ html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--ca
   color: #000 !important;
 }
 
+/* Превью на body во время автопечати (уход со /pos) — off-screen, полный layout */
+#pos-auto-print-preview-mount.pos-auto-print-host--preview-park {
+  position: fixed !important;
+  left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
+  top: 0 !important;
+  width: var(--receipt-auto-print-body-width) !important;
+  max-width: var(--receipt-auto-print-body-width) !important;
+  height: auto !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #fff !important;
+  transform: none !important;
+}
+
+#pos-auto-print-preview-mount.pos-auto-print-host--preview-park #fiscal-print-shell-live,
+#pos-auto-print-preview-mount.pos-auto-print-host--preview-park #fiscal-print-shell-live * {
+  width: 100% !important;
+  max-width: 100% !important;
+  transform: none !important;
+}
+
 html.electron-print-capturing #pos-auto-print-print-host #fiscal-print-shell {
   transform: none !important;
   box-shadow: none !important;

@@ -4,8 +4,9 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { usePosAutoPrint } from '../../contexts/PosAutoPrintContext';
 import { isDesktopCashier } from '../../utils/printReceipt';
-import PosSaleAutoPrint from '../../components/cashier/PosSaleAutoPrint';
+import { isAutoPrintInFlight, parkPreviewMountOnBody } from '../../utils/autoPrintMount';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import { clampPayAmount, round2 } from '../../utils/taxAmounts';
 import { resolveProductUnitPrice } from '../../utils/productPrice';
@@ -54,8 +55,7 @@ export default function PosPage() {
   const [payOpen, setPayOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [discountOpen, setDiscountOpen] = useState(false);
-  const [autoPrintSale, setAutoPrintSale] = useState(null);
-  const clearAutoPrintSale = useCallback(() => setAutoPrintSale(null), []);
+  const { setAutoPrintSale } = usePosAutoPrint();
   const [posPane, setPosPane] = useState('register');
   const { setShell } = usePosShell() ?? {};
   const { open: shiftModalOpen, openShift: openShiftModal } = useCashierShiftModal();
@@ -99,6 +99,14 @@ export default function PosPage() {
   useEffect(() => {
     if (payOpen) setPosPane('register');
   }, [payOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (isAutoPrintInFlight()) {
+        parkPreviewMountOnBody();
+      }
+    };
+  }, []);
 
   const { data: categories = [], isPending: categoriesLoading } = useQuery({
     queryKey: ['pos-categories'],
@@ -513,9 +521,6 @@ export default function PosPage() {
         onClear={clearOrderDiscount}
       />
 
-      {autoPrintSale ? (
-        <PosSaleAutoPrint sale={autoPrintSale} onDone={clearAutoPrintSale} />
-      ) : null}
     </div>
   );
 }

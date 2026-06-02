@@ -151,6 +151,21 @@ export async function waitForBodyPrintImagesReady(
   }
 }
 
+export async function waitForFiscalPrintShellReady(
+  maxMs = RECEIPT_PRINT_ENGINE.bodyImageWaitMaxMs,
+) {
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    try {
+      assertFiscalPrintShellReady();
+      return;
+    } catch {
+      await sleep(RECEIPT_PRINT_ENGINE.domReadyPollIntervalMs);
+    }
+  }
+  assertFiscalPrintShellReady();
+}
+
 export function assertFiscalPrintShellReady() {
   const shell = getAutoPrintFiscalShell();
   const root = document.getElementById('root');

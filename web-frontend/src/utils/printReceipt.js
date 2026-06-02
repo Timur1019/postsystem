@@ -15,6 +15,7 @@ import {
   sleep,
   waitForBodyPrintImagesReady,
   waitForDoubleAnimationFrame,
+  waitForFiscalPrintShellReady,
   waitForReceiptDomReady,
   waitForReceiptPaintSettled,
 } from './receiptPrintWait';
@@ -52,7 +53,7 @@ export function cleanupDesktopPrintState() {
   document.getElementById(RECEIPT_PRINT_DOM.printJobPageStyleId)?.remove();
   document.getElementById(RECEIPT_PRINT_DOM.autoPrintMountId)?.remove();
   document.getElementById('pos-auto-print-print-support-lane')?.remove();
-  destroyBodyPrintMount();
+  destroyBodyPrintMount({ force: true });
 }
 
 function shouldUseModalPrintShell(explicit) {
@@ -118,7 +119,7 @@ async function invokeDesktopSilentPrint() {
       undoBodyPrint = await prepareBodyPrintShellFromPreview();
       await waitForReceiptPaintSettled();
       await waitForBodyPrintImagesReady();
-      assertFiscalPrintShellReady();
+      await waitForFiscalPrintShellReady();
       console.info(`[Aurent] silent print IPC attempt ${attempt}/${silentMaxAttempts}`);
       await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto(), {
         afterPrint: undoBodyPrint,
