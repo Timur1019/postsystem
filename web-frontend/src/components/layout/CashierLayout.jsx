@@ -28,6 +28,7 @@ import { cashierLoginPath } from '../../utils/authLogin';
 import BrandMark from '../shared/BrandMark';
 import { useCashierShift } from '../../hooks/useCashierShift';
 import { useCashierTouchLayout } from '../../hooks/useCashierTouchLayout';
+import { resetCashierDocumentUiState } from '../../utils/resetCashierDocumentUiState';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../styles/cashier-modals.css';
 import '../../styles/cashier-bootstrap.css';
@@ -77,9 +78,10 @@ function CashierLayoutShell() {
   }, [cashierTheme]);
 
   useEffect(() => {
+    resetCashierDocumentUiState();
     return () => {
-      document.documentElement.classList.remove('pos-pay-screen-open', 'cashier-theme--light', 'cashier-theme--dark');
-      document.body.classList.remove('pos-pay-screen-open');
+      resetCashierDocumentUiState();
+      document.documentElement.classList.remove('cashier-theme--light', 'cashier-theme--dark');
       document.documentElement.style.colorScheme = '';
     };
   }, []);

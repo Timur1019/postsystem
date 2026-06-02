@@ -79,9 +79,10 @@ export default function PosPage() {
   const getCheckoutOrderDiscountAmount = useCartStore((s) => s.getCheckoutOrderDiscountAmount);
   const getCheckoutOrderDiscountPercent = useCartStore((s) => s.getCheckoutOrderDiscountPercent);
 
-  const { data: shift } = useCashierShift(storeId);
+  const { data: shift, isFetched: shiftFetched } = useCashierShift(storeId);
   const openShiftMutation = useOpenCashierShift(storeId);
   const shiftIsOpen = shift?.status === 'OPEN';
+  const showShiftClosedBanner = Boolean(storeId && shiftFetched && !shiftIsOpen);
 
   useEffect(() => {
     if (storeId) searchInputRef.current?.focus();
@@ -380,7 +381,7 @@ export default function PosPage() {
         <div className="alert alert-secondary mb-0">{t('common.loading')}</div>
       ) : (
         <>
-          {!shiftIsOpen ? (
+          {showShiftClosedBanner ? (
             <div className="pos-shift-closed-banner mb-2 flex-shrink-0" role="status">
               <span className="pos-shift-closed-banner__text">{t('pos.shiftRequired')}</span>
               <div className="pos-shift-closed-banner__actions">

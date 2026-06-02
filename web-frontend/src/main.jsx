@@ -10,6 +10,9 @@ import { usePrintSettingsStore } from './store/printSettingsStore';
 import { useTenantDisplayStore } from './store/tenantDisplayStore';
 import { syncPrintCssVars } from './utils/syncPrintCssVars';
 import { syncReceiptDisplayCssVars } from './utils/syncReceiptDisplayCssVars';
+import { resetCashierDocumentUiState } from './utils/resetCashierDocumentUiState';
+
+resetCashierDocumentUiState();
 
 syncRootTheme();
 syncPrintCssVars(usePrintSettingsStore.getState());
