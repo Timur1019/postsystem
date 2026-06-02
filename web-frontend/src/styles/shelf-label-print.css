@@ -65,7 +65,8 @@
   align-items: flex-start;
 }
 
-.shelflabel-print-page > * {
+/* Поворот делаем на самой карточке, иначе некоторые драйверы “режут” макет на 2 этикетки. */
+.shelflabel-card {
   transform: rotate(var(--label-rotate, 0deg));
   transform-origin: center;
 }
