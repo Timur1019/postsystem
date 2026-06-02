@@ -1,7 +1,14 @@
 .cashier-pin-login {
   box-sizing: border-box;
+  /* Важно: при любых ре-рендерах/ошибках входа полностью перекрываем кассу,
+     чтобы не было “мигания” фона POS под страницей логина. */
+  position: fixed;
+  inset: 0;
+  z-index: 2147483600;
+  width: 100%;
   min-height: 100dvh;
   background: #f8fafc;
+  background-color: #f8fafc;
 }
 
 .cashier-pin-login *,
