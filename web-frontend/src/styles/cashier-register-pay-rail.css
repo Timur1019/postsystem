@@ -478,9 +478,10 @@
 
 .pos-pay-panel--register-rail.is-step-cash .pos-keypad__key--action,
 .pos-pay-panel--register-rail.is-step-mixedCash .pos-keypad__key--action {
-  font-size: 0.8125rem;
-  line-height: 1.15;
+  font-size: 0.75rem;
+  line-height: 1.1;
   padding: 4px 6px;
+  white-space: nowrap;
 }
 
 .pos-pay-panel--register-rail.is-step-cash .pos-keypad__key--icon svg,
