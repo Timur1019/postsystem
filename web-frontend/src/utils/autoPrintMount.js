@@ -72,7 +72,12 @@ export function scheduleAutoPrintUnmount(unmountFn, delayMs = 200) {
 export function teardownAutoPrintMount() {
   cancelScheduledAutoPrintUnmount();
   const el = document.getElementById(MOUNT_ID);
-  if (el) {
+  if (!el) return;
+  try {
     el.replaceChildren();
+  } catch {
+    /* ignore */
   }
+  // Убираем контейнер из слота — иначе #pos-auto-print-slot не :empty и белый блок остаётся до F5.
+  el.remove();
 }
