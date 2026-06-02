@@ -32,6 +32,12 @@ const CHART_TOOLTIP_BG = '#ffffff';
 const CHART_TOOLTIP_BORDER = '#e2e8f0';
 const CHART_TOOLTIP_LABEL = '#64748b';
 
+const ellipsis = (s, max = 18) => {
+  const str = String(s ?? '');
+  if (str.length <= max) return str;
+  return `${str.slice(0, Math.max(0, max - 1))}…`;
+};
+
 function StatCard({ icon: Icon, label, value, sub, color = 'emerald' }) {
   const colors = {
     emerald: 'bg-emerald-500/10 text-emerald-400',
@@ -258,7 +264,11 @@ export default function DashboardPage() {
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
           <h2 className="mb-4 font-semibold text-slate-900 dark:text-white">{t('dashboard.topProducts')}</h2>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={topProducts ?? []} layout="vertical">
+            <BarChart
+              data={topProducts ?? []}
+              layout="vertical"
+              margin={{ top: 6, right: 10, bottom: 6, left: 8 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} horizontal={false} />
               <XAxis type="number" tick={{ fill: '#64748b', fontSize: 11 }} tickLine={false} />
               <YAxis
@@ -266,7 +276,8 @@ export default function DashboardPage() {
                 dataKey="productName"
                 tick={{ fill: '#94a3b8', fontSize: 11 }}
                 tickLine={false}
-                width={80}
+                width={150}
+                tickFormatter={(v) => ellipsis(v, 22)}
               />
               <Tooltip
                 contentStyle={{
