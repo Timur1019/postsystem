@@ -454,6 +454,55 @@
   min-height: 8px;
 }
 
+/* Превью чека при автопечати — внутри правой колонки, со скроллом */
+.pos-auto-print-slot-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pos-auto-print-slot {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgb(148 163 184 / 0.35);
+}
+
+.pos-auto-print-slot:empty {
+  display: none;
+}
+
+.pos-auto-print-host--in-slot,
+.pos-auto-print-host--embedded {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: none;
+  z-index: 1 !important;
+  overflow: visible !important;
+  transform: none !important;
+  background: transparent !important;
+}
+
+.pos-auto-print-host--in-slot #fiscal-print-shell,
+.pos-auto-print-host--embedded #fiscal-print-shell {
+  width: 100% !important;
+  max-width: 100% !important;
+  transform-origin: top center;
+  transform: scale(0.92);
+}
+
 .pos-order-rail__return {
   display: flex;
   align-items: center;

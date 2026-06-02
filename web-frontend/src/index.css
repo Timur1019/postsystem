@@ -103,72 +103,34 @@ html.electron-auto-print-job .receipt-printing-overlay {
   visibility: hidden !important;
 }
 
-/* Более специфично, чем правила print-thermal-modal (иначе превью уезжает). */
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host.pos-auto-print-host--in-pay,
-html.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host.pos-auto-print-host--in-pay {
-  /* Внутри панели оплаты — не делаем fixed-попап, используем layout панели */
+/* Автопечать: чек внутри UI (слот / панель), не fixed-попап */
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job .pos-sale-print-host.pos-auto-print-host--embedded,
+html.electron-auto-print-job .pos-sale-print-host.pos-auto-print-host--embedded {
   position: static !important;
   left: auto !important;
   right: auto !important;
   top: auto !important;
   transform: none !important;
   opacity: 1 !important;
-  z-index: 30 !important;
+  visibility: visible !important;
+  z-index: 1 !important;
   width: 100% !important;
   max-width: 100% !important;
   max-height: none !important;
-  overflow: hidden !important;
-  border-radius: 14px !important;
-  box-shadow:
-    0 14px 28px rgba(15, 23, 42, 0.22),
-    0 0 0 1px rgba(148, 163, 184, 0.22) !important;
+  overflow: visible !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
-/* Fallback: если панель оплаты не найдена и mount ушёл в body — тогда как попап справа */
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host:not(.pos-auto-print-host--in-pay),
-html.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host:not(.pos-auto-print-host--in-pay) {
-  left: auto !important;
-  right: 20px !important;
-  top: 88px !important;
-  transform: none !important;
-  opacity: 1 !important;
-  z-index: 2147483642 !important;
-  width: 360px !important;
-  max-width: 360px !important;
-  max-height: calc(100vh - 180px) !important;
-  overflow: hidden !important;
-  border-radius: 14px !important;
-  box-shadow:
-    0 20px 44px rgba(15, 23, 42, 0.22),
-    0 0 0 1px rgba(148, 163, 184, 0.22) !important;
-}
-
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host .fiscal-print-dialog,
-html.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host .fiscal-print-dialog {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host #fiscal-print-shell,
-html.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host #fiscal-print-shell {
-  max-height: calc(100vh - 210px) !important;
-  overflow: hidden !important;
-}
-
-/* На момент capture для Electron — оставляем превью на месте (не прыгает влево),
-   при этом DOM остаётся в кадре, чтобы не печатало “пустую”. */
 html.electron-silent-print.print-thermal-modal.electron-auto-print-job.electron-print-capturing
-  .fiscal-print-scene.pos-sale-print-host.pos-auto-print-host--in-pay,
-html.electron-auto-print-job.electron-print-capturing .fiscal-print-scene.pos-sale-print-host.pos-auto-print-host--in-pay {
+  .pos-sale-print-host.pos-auto-print-host--embedded,
+html.electron-auto-print-job.electron-print-capturing .pos-sale-print-host.pos-auto-print-host--embedded {
   position: static !important;
-}
-
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job.electron-print-capturing
-  .fiscal-print-scene.pos-sale-print-host:not(.pos-auto-print-host--in-pay),
-html.electron-auto-print-job.electron-print-capturing .fiscal-print-scene.pos-sale-print-host:not(.pos-auto-print-host--in-pay) {
   left: auto !important;
-  right: 20px !important;
-  top: 88px !important;
+  right: auto !important;
+  top: auto !important;
+  z-index: 1 !important;
 }
 
 html.electron-silent-print.print-thermal-only .receipt-page,
@@ -197,9 +159,9 @@ html.electron-silent-print.print-thermal-modal .pos-pay-overlay:not(.receipt-pri
 html.electron-silent-print.print-thermal-modal [data-sonner-toaster] {
   visibility: hidden !important;
 }
-html.electron-silent-print.print-thermal-modal .fiscal-print-scene,
+html.electron-silent-print.print-thermal-modal .fiscal-print-scene:not(.pos-auto-print-host--embedded),
 html.electron-silent-print.print-thermal-modal .thermal-report-print-host,
-html.electron-silent-print.print-thermal-modal .pos-sale-print-host {
+html.electron-silent-print.print-thermal-modal .pos-sale-print-host:not(.pos-auto-print-host--embedded) {
   display: block !important;
   visibility: visible !important;
   position: fixed !important;
@@ -217,9 +179,9 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host {
   z-index: 0 !important;
 }
 
-html.electron-silent-print.print-thermal-modal.electron-print-capturing .fiscal-print-scene,
+html.electron-silent-print.print-thermal-modal.electron-print-capturing .fiscal-print-scene:not(.pos-auto-print-host--embedded),
 html.electron-silent-print.print-thermal-modal.electron-print-capturing .thermal-report-print-host,
-html.electron-silent-print.print-thermal-modal.electron-print-capturing .pos-sale-print-host {
+html.electron-silent-print.print-thermal-modal.electron-print-capturing .pos-sale-print-host:not(.pos-auto-print-host--embedded) {
   left: 0 !important;
   /* Не показываем чек пользователю вообще — остаётся offscreen,
      но Electron всё равно печатает DOM с @media print. */

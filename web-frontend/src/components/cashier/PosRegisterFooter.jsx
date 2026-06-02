@@ -23,7 +23,9 @@ export default function PosRegisterFooter({
         <span>{t('pos.return')}</span>
       </button>
 
-      <div className="pos-order-rail__spacer" aria-hidden />
+      <div className="pos-order-rail__spacer pos-auto-print-slot-wrap">
+        <div id="pos-auto-print-slot" className="pos-auto-print-slot" aria-hidden />
+      </div>
 
       <PosTotalsBlock
         className="pos-totals-block--order-rail"

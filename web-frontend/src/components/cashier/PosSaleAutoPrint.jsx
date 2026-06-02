@@ -1,7 +1,7 @@
 /**
  * Автопечать после продажи: скрытый чек в DOM + модалка «Печатается чек…».
  */
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
@@ -53,7 +53,6 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
   const { t } = useTranslation();
   const onDoneRef = useRef(onDone);
   const inFlightKeyRef = useRef(null);
-  const [showOverlay, setShowOverlay] = useState(false);
   onDoneRef.current = onDone;
 
   useLayoutEffect(() => {
@@ -66,7 +65,6 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     }
     inFlightKeyRef.current = key;
     cancelScheduledAutoPrintUnmount();
-    setShowOverlay(false);
 
     const { root } = renderReceiptIntoMount(sale);
 
@@ -103,7 +101,6 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
       } finally {
         if (inFlightKeyRef.current !== key) return;
         inFlightKeyRef.current = null;
-        setShowOverlay(false);
         cleanupDesktopPrintState();
         cancelScheduledAutoPrintUnmount();
         try {
