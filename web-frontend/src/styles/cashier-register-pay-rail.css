@@ -98,6 +98,24 @@
   min-height: 0;
   overflow-y: auto;
   padding: 12px 14px;
+  position: relative;
+}
+
+/* Автопечать: превью чека внутри правой панели оплаты */
+.pos-auto-print-host--in-pay {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  margin-bottom: 12px;
+  pointer-events: none;
+}
+
+.pos-auto-print-host--in-pay .fiscal-print-dialog {
+  width: 100%;
+}
+
+.pos-auto-print-host--in-pay #fiscal-print-shell {
+  overflow: hidden;
 }
 
 .pos-pay-panel--register-rail .pos-pay-panel__step {

@@ -8,9 +8,19 @@ export function getAutoPrintMountEl() {
   if (!el) {
     el = document.createElement('div');
     el.id = MOUNT_ID;
-    el.className = 'fiscal-print-scene fiscal-print-scene--offscreen pos-sale-print-host';
+    el.className = 'fiscal-print-scene fiscal-print-scene--offscreen pos-sale-print-host pos-auto-print-host';
     el.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(el);
+    // Если открыта касса — лучше монтировать внутрь правой панели оплаты,
+    // чтобы превью чека было “внутри блока”, а не поверх всего UI.
+    const payScroll =
+      document.querySelector('.cashier-register__actions-col--pay .pos-pay-panel__scroll') ||
+      document.querySelector('.cashier-register__actions-col--pay .pos-pay-panel__body');
+    if (payScroll) {
+      el.classList.add('pos-auto-print-host--in-pay');
+      payScroll.prepend(el);
+    } else {
+      document.body.appendChild(el);
+    }
   }
   return el;
 }

@@ -104,8 +104,29 @@ html.electron-auto-print-job .receipt-printing-overlay {
 }
 
 /* Более специфично, чем правила print-thermal-modal (иначе превью уезжает). */
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host,
-html.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host {
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host.pos-auto-print-host--in-pay,
+html.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host.pos-auto-print-host--in-pay {
+  /* Внутри панели оплаты — не делаем fixed-попап, используем layout панели */
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  transform: none !important;
+  opacity: 1 !important;
+  z-index: 30 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  border-radius: 14px !important;
+  box-shadow:
+    0 14px 28px rgba(15, 23, 42, 0.22),
+    0 0 0 1px rgba(148, 163, 184, 0.22) !important;
+}
+
+/* Fallback: если панель оплаты не найдена и mount ушёл в body — тогда как попап справа */
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host:not(.pos-auto-print-host--in-pay),
+html.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host:not(.pos-auto-print-host--in-pay) {
   left: auto !important;
   right: 20px !important;
   top: 88px !important;
@@ -137,8 +158,14 @@ html.electron-auto-print-job .fiscal-print-scene.pos-sale-print-host #fiscal-pri
 /* На момент capture для Electron — оставляем превью на месте (не прыгает влево),
    при этом DOM остаётся в кадре, чтобы не печатало “пустую”. */
 html.electron-silent-print.print-thermal-modal.electron-auto-print-job.electron-print-capturing
-  .fiscal-print-scene.pos-sale-print-host,
-html.electron-auto-print-job.electron-print-capturing .fiscal-print-scene.pos-sale-print-host {
+  .fiscal-print-scene.pos-sale-print-host.pos-auto-print-host--in-pay,
+html.electron-auto-print-job.electron-print-capturing .fiscal-print-scene.pos-sale-print-host.pos-auto-print-host--in-pay {
+  position: static !important;
+}
+
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job.electron-print-capturing
+  .fiscal-print-scene.pos-sale-print-host:not(.pos-auto-print-host--in-pay),
+html.electron-auto-print-job.electron-print-capturing .fiscal-print-scene.pos-sale-print-host:not(.pos-auto-print-host--in-pay) {
   left: auto !important;
   right: 20px !important;
   top: 88px !important;
