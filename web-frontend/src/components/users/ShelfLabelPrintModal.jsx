@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { X } from 'lucide-react';
+import { Printer, Settings2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import JsBarcode from 'jsbarcode';
@@ -101,7 +101,22 @@ export default function ShelfLabelPrintModal({
   const [showBarcode, setShowBarcode] = React.useState(true);
   const [showPrice, setShowPrice] = React.useState(true);
   const [copies, setCopies] = React.useState(1);
+  const [labelPrinterName, setLabelPrinterName] = useState('');
   const printRootRef = useRef(null);
+
+  const canPickLabelPrinter =
+    typeof window !== 'undefined' && typeof window.desktopCashier?.openLabelPrinterPicker === 'function';
+
+  const reloadLabelPrinter = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    if (typeof window.desktopCashier?.getPrinterSettings !== 'function') return;
+    try {
+      const settings = await window.desktopCashier.getPrinterSettings();
+      setLabelPrinterName(String(settings?.labelPrinterName || '').trim());
+    } catch {
+      setLabelPrinterName('');
+    }
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -110,6 +125,7 @@ export default function ShelfLabelPrintModal({
       setShowBarcode(true);
       setShowPrice(true);
       setCopies(1);
+      void reloadLabelPrinter();
     }
     return () => {
       if (!open) {
@@ -179,6 +195,19 @@ export default function ShelfLabelPrintModal({
     }
   }, [barcode, printNodes, showBarcode, t]);
 
+  const openLabelPrinterPicker = useCallback(async () => {
+    if (!canPickLabelPrinter) return;
+    try {
+      await window.desktopCashier.openLabelPrinterPicker();
+      await reloadLabelPrinter();
+      if (labelPrinterName) {
+        toast.success(t('common.saved', { defaultValue: 'Сохранено' }));
+      }
+    } catch (e) {
+      toast.error(e?.message || t('common.failed', { defaultValue: 'Не удалось' }));
+    }
+  }, [canPickLabelPrinter, labelPrinterName, reloadLabelPrinter, t]);
+
   useEffect(() => {
     void i18n.language;
   }, [i18n.language]);
@@ -222,9 +251,23 @@ export default function ShelfLabelPrintModal({
         className="relative flex max-h-[95vh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl dark:bg-slate-900 sm:rounded-2xl"
       >
         <header className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
-          <h2 id="shelf-label-title" className="text-lg font-semibold text-slate-900 dark:text-white">
-            {t('usersBarcodePrint.modalTitle')}
-          </h2>
+          <div className="min-w-0">
+            <h2 id="shelf-label-title" className="text-lg font-semibold text-slate-900 dark:text-white">
+              {t('usersBarcodePrint.modalTitle')}
+            </h2>
+            {canPickLabelPrinter && (
+              <button
+                type="button"
+                onClick={openLabelPrinterPicker}
+                className="mt-1 inline-flex items-center gap-2 text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                title={labelPrinterName ? labelPrinterName : undefined}
+              >
+                <Settings2 size={14} aria-hidden />
+                {t('desktop.labelPrinter', { defaultValue: 'Принтер штрих-кодов' })}
+                {labelPrinterName ? `: ${labelPrinterName}` : ''}
+              </button>
+            )}
+          </div>
           <button type="button" className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={onClose}>
             <X size={22} aria-hidden />
           </button>
@@ -285,6 +328,7 @@ export default function ShelfLabelPrintModal({
             onClick={doPrint}
             className="w-full rounded-xl bg-emerald-700 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
           >
+            <Printer size={18} className="mr-2 inline-block align-[-3px]" aria-hidden />
             {t('usersBarcodePrint.print')}
           </button>
         </footer>

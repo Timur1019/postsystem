@@ -117,17 +117,37 @@ async function invokeDesktopLabelPrint(requireBarcode = true) {
 export async function printShelfLabelSilent({ requireBarcode = true } = {}) {
   if (!isDesktopLabelPrintAvailable()) {
     document.body.classList.add(SHELF_LABEL_PRINT_ACTIVE_CLASS);
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const done = () => {
         cleanupLabelPrintState();
         window.removeEventListener('afterprint', done);
         resolve('dialog');
       };
       window.addEventListener('afterprint', done);
+      const fallback = setTimeout(() => {
+        // Mobile/Safari иногда не вызывает afterprint. Не зависаем — считаем, что диалог уже был.
+        cleanupLabelPrintState();
+        window.removeEventListener('afterprint', done);
+        resolve('dialog');
+      }, 2200);
+      const doneWrapped = () => {
+        clearTimeout(fallback);
+        done();
+      };
+      window.removeEventListener('afterprint', done);
+      window.addEventListener('afterprint', doneWrapped);
       // В браузерах `window.print()` часто блокируется, если вызвать после `await` (теряется user gesture).
       // Поэтому: не ждём async-ready, а даём 1-2 кадра на отрисовку и сразу открываем диалог печати.
       void waitForLabelDomReady({ requireBarcode }).catch(() => undefined);
-      requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
+      try {
+        // Пробуем вызвать максимально “жёстко”, без лишних await/Promise.
+        requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
+      } catch (e) {
+        clearTimeout(fallback);
+        cleanupLabelPrintState();
+        window.removeEventListener('afterprint', doneWrapped);
+        reject(e);
+      }
     });
   }
 
