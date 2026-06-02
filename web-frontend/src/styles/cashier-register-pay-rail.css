@@ -435,10 +435,20 @@
 
 .pos-pay-panel--register-rail.is-step-cash .pos-pay-cash__received-box {
   padding: 8px 12px;
+  min-height: 58px;
 }
 
 .pos-pay-panel--register-rail.is-step-cash .pos-pay-cash__received-value {
   font-size: clamp(1.25rem, 3.2vw, 1.75rem);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-cash__change-row {
+  min-height: 44px;
 }
 
 .pos-pay-panel--register-rail.is-step-cash .pos-pay-cash__change-row--ready strong {
@@ -606,6 +616,16 @@
   .pos-pay-panel--register-rail.is-step-cash .pos-pay-panel__back-check {
     min-height: 40px;
     font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .pos-pay-panel--register-rail.is-step-cash .pos-pay-cash__received-value {
+    font-size: clamp(1.1rem, 4.5vw, 1.45rem);
+  }
+
+  .pos-pay-panel--register-rail.is-step-cash .pos-keypad__key {
+    font-size: 1.3rem;
   }
 }
 
