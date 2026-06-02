@@ -12,6 +12,7 @@ const LABEL_PRINT_HTML_CLASSES = [
 ];
 
 const SILENT_LABEL_MAX_ATTEMPTS = 3;
+const LABEL_JOB_PAGE_STYLE_ID = 'pos-label-job-page';
 
 export function isDesktopLabelPrintAvailable() {
   return (
@@ -23,6 +24,21 @@ export function cleanupLabelPrintState() {
   if (typeof document === 'undefined') return;
   LABEL_PRINT_HTML_CLASSES.forEach((c) => document.documentElement.classList.remove(c));
   document.body.classList.remove(SHELF_LABEL_PRINT_ACTIVE_CLASS);
+  document.getElementById(LABEL_JOB_PAGE_STYLE_ID)?.remove();
+}
+
+function injectLabelPageRuleFromCssVars() {
+  const root = document.documentElement;
+  const w = Number(root.style.getPropertyValue('--label-paper-w-mm')) || 58;
+  const h = Number(root.style.getPropertyValue('--label-paper-h-mm')) || 40;
+  const m = Number(root.style.getPropertyValue('--label-page-margin-mm')) || 0;
+  let el = document.getElementById(LABEL_JOB_PAGE_STYLE_ID);
+  if (!el) {
+    el = document.createElement('style');
+    el.id = LABEL_JOB_PAGE_STYLE_ID;
+    document.head.appendChild(el);
+  }
+  el.textContent = `@page { size: ${w}mm ${h}mm; margin: ${m}mm; }`;
 }
 
 function prepareLabelPrint() {
@@ -118,6 +134,7 @@ export async function printShelfLabelSilent({ requireBarcode = true } = {}) {
   if (!isDesktopLabelPrintAvailable()) {
     document.body.classList.add(SHELF_LABEL_PRINT_ACTIVE_CLASS);
     return new Promise((resolve, reject) => {
+      injectLabelPageRuleFromCssVars();
       const done = () => {
         cleanupLabelPrintState();
         window.removeEventListener('afterprint', done);

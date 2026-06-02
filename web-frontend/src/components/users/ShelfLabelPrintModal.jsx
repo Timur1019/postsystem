@@ -36,6 +36,9 @@ function applyLabelPrintCssVars(settings) {
   root.style.setProperty('--label-pad-x', `${settings.padXmm ?? 6}mm`);
   root.style.setProperty('--label-pad-y', `${settings.padYmm ?? 10}mm`);
   root.style.setProperty('--label-rotate', settings.rotate180 ? '180deg' : '0deg');
+  root.style.setProperty('--label-paper-w-mm', String(settings.paperWmm ?? 58));
+  root.style.setProperty('--label-paper-h-mm', String(settings.paperHmm ?? 40));
+  root.style.setProperty('--label-page-margin-mm', String(settings.pageMarginMm ?? 0));
 }
 
 function BarcodeBlock({ value }) {
@@ -132,6 +135,9 @@ export default function ShelfLabelPrintModal({
     fontScale: 1,
     padXmm: 6,
     padYmm: 10,
+    paperWmm: 58,
+    paperHmm: 40,
+    pageMarginMm: 0,
   });
   const printRootRef = useRef(null);
 
@@ -166,6 +172,9 @@ export default function ShelfLabelPrintModal({
               fontScale: clampNum(parsed.fontScale, 0.8, 1.6),
               padXmm: clampNum(parsed.padXmm, 0, 50),
               padYmm: clampNum(parsed.padYmm, 0, 70),
+              paperWmm: clampNum(parsed.paperWmm, 30, 120),
+              paperHmm: clampNum(parsed.paperHmm, 20, 150),
+              pageMarginMm: clampNum(parsed.pageMarginMm, 0, 10),
             }
           : null;
         if (next) {
@@ -442,6 +451,62 @@ export default function ShelfLabelPrintModal({
                     }))
                   }
                 />
+              </div>
+
+              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-start">
+                  <span className="text-sm text-slate-700 dark:text-slate-200">
+                    {t('usersBarcodePrint.paperW', { defaultValue: 'Ширина бумаги (мм)' })}
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    value={labelSettings.paperWmm}
+                    onChange={(e) =>
+                      setLabelSettings((s) => ({
+                        ...s,
+                        paperWmm: snapStep(clampNum(e.target.value, 30, 120), 1),
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-start">
+                  <span className="text-sm text-slate-700 dark:text-slate-200">
+                    {t('usersBarcodePrint.paperH', { defaultValue: 'Высота бумаги (мм)' })}
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    value={labelSettings.paperHmm}
+                    onChange={(e) =>
+                      setLabelSettings((s) => ({
+                        ...s,
+                        paperHmm: snapStep(clampNum(e.target.value, 20, 150), 1),
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-start">
+                  <span className="text-sm text-slate-700 dark:text-slate-200">
+                    {t('usersBarcodePrint.pageMargin', { defaultValue: 'Поля @page (мм)' })}
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                    value={labelSettings.pageMarginMm}
+                    onChange={(e) =>
+                      setLabelSettings((s) => ({
+                        ...s,
+                        pageMarginMm: snapStep(clampNum(e.target.value, 0, 10), 0.5),
+                      }))
+                    }
+                  />
+                </div>
               </div>
             </div>
           </div>

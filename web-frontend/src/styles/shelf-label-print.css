@@ -48,7 +48,7 @@
   .shelflabel-print-layer {
     position: fixed;
     inset: auto auto auto -10000px;
-    width: 90mm;
+    width: calc(var(--label-paper-w-mm, 58) * 1mm);
     opacity: 0;
     pointer-events: none;
     z-index: 0;
