@@ -137,19 +137,20 @@ export async function waitForReceiptPaintSettled() {
 }
 
 export async function waitForBodyPrintImagesReady(
-  maxMs = RECEIPT_PRINT_ENGINE.paintSettleMs + 800,
+  maxMs = RECEIPT_PRINT_ENGINE.bodyImageWaitMaxMs,
 ) {
   const shell = document.getElementById(RECEIPT_PRINT_DOM.fiscalPrintShellId);
   if (!shell) return;
   const deadline = Date.now() + maxMs;
   while (Date.now() < deadline) {
     const imgs = Array.from(shell.querySelectorAll('img'));
-    if (imgs.length === 0 || imgs.every((img) => img.complete && img.naturalWidth > 0)) {
+    if (imgs.length === 0 || imgs.every((img) => img.complete)) {
       return;
     }
     await sleep(RECEIPT_PRINT_ENGINE.domReadyPollIntervalMs);
   }
 }
+
 export function assertFiscalPrintShellReady() {
   const shell = document.getElementById(RECEIPT_PRINT_DOM.fiscalPrintShellId);
   const root = document.getElementById('root');
@@ -163,14 +164,17 @@ export function assertFiscalPrintShellReady() {
   const textLen = (area.innerText || '').trim().length;
   const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
   const imgs = Array.from(area.querySelectorAll('img'));
-  const imgsReady = imgs.length === 0 || imgs.every((img) => img.complete && img.naturalWidth > 0);
+  const imgsReady = imgs.length === 0 || imgs.every((img) => img.complete);
   if (!imgsReady) {
+    console.warn('[Aurent] body print shell: images not ready');
     throw new Error('Чек не готов для печати');
   }
   if (textLen < RECEIPT_PRINT_THRESHOLDS.fiscalMinTextLength) {
+    console.warn('[Aurent] body print shell: text too short', textLen);
     throw new Error('Чек не готов для печати');
   }
   if (h < RECEIPT_PRINT_THRESHOLDS.fiscalMinHeightPx) {
+    console.warn('[Aurent] body print shell: height too small', h);
     throw new Error('Чек не готов для печати');
   }
 }

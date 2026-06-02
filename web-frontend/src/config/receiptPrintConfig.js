@@ -72,6 +72,8 @@ export const RECEIPT_PRINT_ENGINE = Object.freeze({
   /** withElectronPrintCapture: пауза после класса electron-print-capturing */
   captureSettleMs: 120,
   captureReleaseDelayMs: 80,
+  /** Ожидание img в body-копии после innerHTML */
+  bodyImageWaitMaxMs: 2500,
 });
 
 /** Когда считаем, что чек «готов» (текст, высота, картинки) */

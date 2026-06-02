@@ -9,7 +9,7 @@
  * Mount превью / body для print → utils/autoPrintMount.js
  */
 import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_ENGINE } from '../config/receiptPrintConfig';
-import { mountBodyPrintShellFromPreview } from './autoPrintMount';
+import { prepareBodyPrintShellFromPreview } from './autoPrintMount';
 import {
   assertFiscalPrintShellReady,
   sleep,
@@ -109,15 +109,16 @@ async function invokeDesktopSilentPrint() {
   for (let attempt = 1; attempt <= silentMaxAttempts; attempt += 1) {
     let undoBodyPrint = () => {};
     try {
-      undoBodyPrint = mountBodyPrintShellFromPreview();
+      undoBodyPrint = await prepareBodyPrintShellFromPreview();
       await waitForReceiptPaintSettled();
       await waitForBodyPrintImagesReady();
       assertFiscalPrintShellReady();
+      console.info(`[Aurent] silent print IPC attempt ${attempt}/${silentMaxAttempts}`);
       await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto());
       return;
     } catch (err) {
       lastErr = normalizeDesktopPrintError(err);
-      console.warn(`[Aurent] silent print attempt ${attempt}/${silentMaxAttempts}`, lastErr);
+      console.warn(`[Aurent] silent print attempt ${attempt}/${silentMaxAttempts}`, lastErr.message);
       undoBodyPrint();
       if (attempt < silentMaxAttempts) {
         await waitForReceiptDomReady({ useModalShell: true }).catch(() => undefined);
@@ -166,7 +167,6 @@ export async function printThermalReceiptAuto() {
     return 'silent';
   } finally {
     cleanup();
-    cleanupDesktopPrintState();
   }
 }
 

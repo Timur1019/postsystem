@@ -111,11 +111,57 @@ export function removeBodyPrintHost() {
   document.getElementById(BODY_PRINT_HOST_ID)?.remove();
 }
 
+/** Копирует img из превью (data URL QR) — после innerHTML новые img часто «пустые». */
+async function syncPrintShellImagesFromPreview(liveShell, printShell) {
+  const liveImgs = Array.from(liveShell.querySelectorAll('img'));
+  const printImgs = Array.from(printShell.querySelectorAll('img'));
+  if (liveImgs.length === 0) return;
+
+  await Promise.all(
+    liveImgs.map(async (liveImg, index) => {
+      const printImg = printImgs[index];
+      if (!printImg) return;
+
+      const src = liveImg.currentSrc || liveImg.src;
+      if (!src) return;
+
+      if (liveImg.complete && liveImg.naturalWidth > 0) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = liveImg.naturalWidth;
+          canvas.height = liveImg.naturalHeight;
+          canvas.getContext('2d')?.drawImage(liveImg, 0, 0);
+          printImg.src = canvas.toDataURL('image/png');
+          return;
+        } catch {
+          /* fallback — assign src */
+        }
+      }
+
+      printImg.src = src;
+      if (printImg.complete && printImg.naturalWidth > 0) return;
+      await new Promise((resolve) => {
+        printImg.onload = resolve;
+        printImg.onerror = resolve;
+      });
+    }),
+  );
+}
+
+function forcePrintShellLayout(shell) {
+  if (!shell) return;
+  void shell.offsetHeight;
+  void shell.scrollHeight;
+  shell.querySelectorAll('img').forEach((img) => {
+    void img.offsetHeight;
+  });
+}
+
 /**
  * Копия HTML превью на body. На body ровно один #fiscal-print-shell — Electron и @media print.
  * React-превью в слоте не трогаем (id fiscal-print-shell-live).
  */
-export function mountBodyPrintShellFromPreview() {
+export async function prepareBodyPrintShellFromPreview() {
   const liveShell = findLivePreviewShell();
   if (!liveShell) {
     return () => {};
@@ -142,6 +188,9 @@ export function mountBodyPrintShellFromPreview() {
   dialog.appendChild(printShell);
   host.appendChild(dialog);
   document.body.appendChild(host);
+
+  await syncPrintShellImagesFromPreview(liveShell, printShell);
+  forcePrintShellLayout(printShell);
 
   return () => {
     removeBodyPrintHost();
