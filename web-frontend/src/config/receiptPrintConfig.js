@@ -46,9 +46,11 @@ export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
   qrShellMissingPollMs: 80,
   /**
    * Пауза после layout/QR перед вызовом printThermalReceiptAuto.
-   * Меньше → быстрее, но выше риск ретраев Electron (3 попытки, мигание).
+   * Меньше → быстрее, но выше риск ретраев Electron.
    */
   beforePrintSettleMs: 450,
+  /** Держим превью в слоте после печати (мс), чтобы кассир успел увидеть чек */
+  previewHoldAfterPrintMs: 2200,
   /** React StrictMode: отложенный unmount при двойном mount */
   strictModeUnmountDelayMs: 280,
   defaultUnmountDelayMs: 200,
@@ -64,7 +66,7 @@ export const RECEIPT_PRINT_ENGINE = Object.freeze({
   paintSettleMs: 350,
   /** Доп. пауза после paintSettle перед invokeDesktopSilentPrint */
   preSilentInvokeDelayMs: 400,
-  silentMaxAttempts: 3,
+  silentMaxAttempts: 2,
   /** Пауза между ретраями: baseMs * номер попытки */
   silentRetryBackoffBaseMs: 350,
   /** withElectronPrintCapture: пауза после класса electron-print-capturing */

@@ -48,6 +48,15 @@ function mountInto(hostEl, mode) {
   parent.appendChild(hostEl);
 }
 
+/** После закрытия оплаты слот снова в DOM — переносим mount в правую колонку. */
+export function ensureAutoPrintMountInSlot() {
+  const el = document.getElementById(MOUNT_ID);
+  const slot = document.getElementById(SLOT_ID);
+  if (el && slot && !slot.contains(el)) {
+    mountInto(el, 'in-slot');
+  }
+}
+
 export function getAutoPrintMountEl() {
   let el = document.getElementById(MOUNT_ID);
   if (!el) {

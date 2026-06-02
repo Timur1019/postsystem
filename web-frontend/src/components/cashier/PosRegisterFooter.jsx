@@ -25,7 +25,12 @@ export default function PosRegisterFooter({
       </button>
 
       <div className={`pos-order-rail__spacer ${RECEIPT_PRINT_STYLES.slotWrapClass}`}>
-        <div id={RECEIPT_PRINT_DOM.autoPrintSlotId} className={RECEIPT_PRINT_STYLES.slotClass} aria-hidden />
+        <div
+          id={RECEIPT_PRINT_DOM.autoPrintSlotId}
+          className={RECEIPT_PRINT_STYLES.slotClass}
+          aria-live="polite"
+          aria-label={t('receipt.preview', { defaultValue: 'Превью чека' })}
+        />
       </div>
 
       <PosTotalsBlock

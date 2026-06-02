@@ -3,8 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import './styles/receipt-auto-print.css';
-
 @layer base {
   * { box-sizing: border-box; }
   body {
@@ -43,6 +41,28 @@
 .fiscal-print-scene--offscreen {
   /* остаётся в DOM для печати; на экране не показываем */
   opacity: 0;
+}
+
+/* Превью автопечати в правой колонке — переопределяет .fiscal-print-scene (off-screen) */
+#pos-auto-print-mount.pos-auto-print-host--embedded,
+#pos-auto-print-mount.pos-auto-print-host--in-slot {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  pointer-events: none;
+  background: transparent !important;
+}
+
+#pos-auto-print-mount #fiscal-print-shell-live,
+#pos-auto-print-mount #fiscal-print-shell-live .receipt-print-root {
+  color: #000 !important;
+  background: #fff !important;
 }
 
 .receipt-page {

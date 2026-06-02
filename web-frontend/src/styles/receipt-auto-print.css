@@ -47,6 +47,12 @@
   box-shadow: 0 0 0 1px var(--receipt-auto-print-slot-border);
 }
 
+.pos-auto-print-slot:not(:empty) {
+  display: block !important;
+  min-height: 140px;
+  padding: 4px;
+}
+
 .pos-auto-print-slot:empty {
   display: none;
   min-height: 0;
@@ -179,11 +185,9 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host.pos-auto-pri
       Важно: без fiscal-print-scene--offscreen (opacity:0 в index.css)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html.electron-silent-print.print-thermal-modal #pos-auto-print-mount,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-mount.fiscal-print-scene,
+/* Только body-копия для Electron — превью (#pos-auto-print-mount) остаётся в слоте */
 html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host,
 html.electron-silent-print.print-thermal-modal .pos-auto-print-host--body-print,
-html.electron-auto-print-job #pos-auto-print-mount,
 html.electron-auto-print-job #pos-auto-print-print-host,
 html.electron-auto-print-job .pos-auto-print-host--body-print {
   display: block !important;

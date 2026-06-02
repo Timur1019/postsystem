@@ -15,16 +15,23 @@ import {
 } from '../../config/receiptPrintConfig';
 import {
   cancelScheduledAutoPrintUnmount,
+  ensureAutoPrintMountInSlot,
   fiscalPrintDialogClass,
   getAutoPrintMountEl,
   scheduleAutoPrintUnmount,
   teardownAutoPrintMount,
 } from '../../utils/autoPrintMount';
 import { cleanupDesktopPrintState, isDesktopCashier, printThermalReceiptAuto } from '../../utils/printReceipt';
-import { sleep, waitForDoubleAnimationFrame, waitForReceiptQrReady } from '../../utils/receiptPrintWait';
+import {
+  sleep,
+  waitForDoubleAnimationFrame,
+  waitForReceiptDomReady,
+  waitForReceiptQrReady,
+} from '../../utils/receiptPrintWait';
 
 function renderReceiptIntoMount(sale) {
   const host = getAutoPrintMountEl();
+  ensureAutoPrintMountInSlot();
   host.replaceChildren();
   const dialog = document.createElement('div');
   dialog.className = fiscalPrintDialogClass;
@@ -57,6 +64,11 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     const { root } = renderReceiptIntoMount(sale);
 
     const run = async () => {
+      ensureAutoPrintMountInSlot();
+      await waitForDoubleAnimationFrame();
+      if (inFlightKeyRef.current !== key) return;
+      await waitForReceiptDomReady({ useModalShell: true }).catch(() => undefined);
+      if (inFlightKeyRef.current !== key) return;
       await waitForReceiptQrReady();
       if (inFlightKeyRef.current !== key) return;
       await waitForDoubleAnimationFrame();
@@ -88,6 +100,8 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
           });
         }
       } finally {
+        if (inFlightKeyRef.current !== key) return;
+        await sleep(RECEIPT_AUTO_PRINT_UI.previewHoldAfterPrintMs);
         if (inFlightKeyRef.current !== key) return;
         inFlightKeyRef.current = null;
         cleanupDesktopPrintState();
