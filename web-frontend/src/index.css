@@ -74,7 +74,8 @@ html.electron-silent-print body {
    (Оверлей даёт затемнение сам, а во время capture оверлей скрыт — чтобы не было чёрной вспышки.) */
 html.electron-silent-print.print-thermal-modal,
 html.electron-silent-print.print-thermal-modal body {
-  background: #ffffff !important;
+  /* Важно: не белый (даёт “вспышку” на экране), а фон приложения. */
+  background: #f1f5f9 !important; /* slate-100 */
 }
 
 /* Автопечать: на экране только модалка, чек off-screen (в DOM для Electron) */
