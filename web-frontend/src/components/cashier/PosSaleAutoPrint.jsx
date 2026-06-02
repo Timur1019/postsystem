@@ -17,6 +17,7 @@ import { cleanupDesktopPrintState, isDesktopCashier, printThermalReceiptAuto } f
 
 const QR_WAIT_MS = 2000;
 const STRICT_REMOUNT_UNMOUNT_MS = 280;
+const BEFORE_PRINT_SETTLE_MS = 450;
 
 async function waitForQrInShell(maxMs = QR_WAIT_MS) {
   const deadline = Date.now() + maxMs;
@@ -74,6 +75,10 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
       await waitForQrInShell();
       if (inFlightKeyRef.current !== key) return;
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      if (inFlightKeyRef.current !== key) return;
+      // Если стартуем печать слишком рано, Electron может не увидеть готовый DOM и уйти в ретраи (3 попытки),
+      // из-за чего визуально “мигает” чек/фон. Даем макету стабилизироваться.
+      await new Promise((r) => setTimeout(r, BEFORE_PRINT_SETTLE_MS));
       if (inFlightKeyRef.current !== key) return;
 
       try {

@@ -31,6 +31,7 @@
 
 .fiscal-print-scene--offscreen {
   /* остаётся в DOM для печати; на экране не показываем */
+  opacity: 0;
 }
 
 .receipt-page {
@@ -58,6 +59,13 @@ html.electron-silent-print body {
   margin: 0 !important;
   padding: 0 !important;
   background: #0f172a !important;
+}
+
+/* Автопечать (print-thermal-modal): не делаем “глухой чёрный” фон за модалкой.
+   (Оверлей даёт затемнение сам, а во время capture оверлей скрыт — чтобы не было чёрной вспышки.) */
+html.electron-silent-print.print-thermal-modal,
+html.electron-silent-print.print-thermal-modal body {
+  background: #ffffff !important;
 }
 
 /* Автопечать: на экране только модалка, чек off-screen (в DOM для Electron) */
