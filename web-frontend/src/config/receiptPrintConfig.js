@@ -22,8 +22,14 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
   previewShellId: 'fiscal-print-shell-live',
   /** Единственный #fiscal-print-shell на body — только для silent print / Electron. */
   fiscalPrintShellId: 'fiscal-print-shell',
-  /** Print-host на body — только для принтера (не превью). */
+  /** Print-host в справочнике модулей — для Electron silent print. */
   bodyPrintHostId: 'pos-auto-print-print-host',
+  /** Слот на странице «Справочник модулей» — чек виден здесь. */
+  handbookPrintSlotId: 'pos-auto-print-handbook-print-slot',
+  /** Fallback-контейнер в CashierLayout, когда справочник не открыт. */
+  handbookPrintAreaId: 'pos-auto-print-handbook-print-area',
+  /** @deprecated alias — use handbookPrintAreaId */
+  printSupportLaneId: 'pos-auto-print-handbook-print-area',
   receiptPrintAreaId: 'receipt-print-area',
   printJobPageStyleId: 'pos-print-job-page',
   testPrintHostId: 'aurent-test-receipt-print-host',
@@ -121,4 +127,9 @@ export const RECEIPT_PRINT_STYLES = Object.freeze({
   hostBodyPrintClass: 'pos-auto-print-host--body-print',
   hostCenteredClass: 'pos-auto-print-host--centered',
   hostCapturingClass: 'pos-auto-print-host--capturing',
+  handbookPrintAreaClass: 'pos-auto-print-handbook-print-area',
+  handbookPrintAreaPosHiddenClass: 'pos-auto-print-handbook-print-area--pos-hidden',
+  handbookPrintSlotClass: 'handbook-page__print-slot',
+  /** @deprecated alias */
+  printSupportLaneClass: 'pos-auto-print-handbook-print-area',
 });

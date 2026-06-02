@@ -9,7 +9,7 @@
  * Mount превью / body для print → utils/autoPrintMount.js
  */
 import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_ENGINE } from '../config/receiptPrintConfig';
-import { prepareBodyPrintShellFromPreview, prepareMountForSilentCapture } from './autoPrintMount';
+import { finalizeHandbookPrintMount, prepareBodyPrintShellFromPreview, prepareMountForSilentCapture } from './autoPrintMount';
 import {
   assertFiscalPrintShellReady,
   sleep,
@@ -50,8 +50,9 @@ export function cleanupDesktopPrintState() {
   if (typeof document === 'undefined') return;
   PRINT_HTML_CLASSES.forEach((c) => document.documentElement.classList.remove(c));
   document.getElementById(RECEIPT_PRINT_DOM.printJobPageStyleId)?.remove();
-  document.getElementById(RECEIPT_PRINT_DOM.bodyPrintHostId)?.remove();
   document.getElementById(RECEIPT_PRINT_DOM.autoPrintMountId)?.remove();
+  document.getElementById('pos-auto-print-print-support-lane')?.remove();
+  finalizeHandbookPrintMount();
 }
 
 function shouldUseModalPrintShell(explicit) {

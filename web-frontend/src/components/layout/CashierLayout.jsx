@@ -405,6 +405,11 @@ function CashierLayoutShell() {
         shift={shift}
       />
       <CashierLockOverlay />
+      <div
+        id="pos-auto-print-handbook-print-area"
+        className="pos-auto-print-handbook-print-area pos-auto-print-handbook-print-area--pos-hidden"
+        aria-hidden="true"
+      />
     </div>
   );
 }

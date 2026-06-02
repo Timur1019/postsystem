@@ -109,8 +109,132 @@
   color: #000 !important;
 }
 
-/* webContents.print — print-host на body (не превью в слоте) */
-#pos-auto-print-print-host {
+/* ═══════════════════════════════════════════════════════════════════════════
+   1c. Справочник модулей — print-host для Electron (виден только на /handbook)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Fallback в CashierLayout: на экране кассы полностью скрыт (Electron — off-screen) */
+.pos-auto-print-handbook-print-area,
+#pos-auto-print-handbook-print-area {
+  position: fixed !important;
+  left: -10000px !important;
+  top: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  background: transparent !important;
+  clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(50%) !important;
+}
+
+.cashier-app--pos-screen #pos-auto-print-handbook-print-area.pos-auto-print-handbook-print-area--pos-hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.cashier-app:not(.cashier-app--pos-screen) .pos-auto-print-handbook-print-area,
+.cashier-app:not(.cashier-app--pos-screen) #pos-auto-print-handbook-print-area {
+  display: none !important;
+}
+
+/* Слот на странице справочника — чек виден здесь */
+.handbook-page__print-slot,
+#pos-auto-print-handbook-print-slot {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px dashed rgb(148 163 184 / 0.45);
+}
+
+#pos-auto-print-handbook-print-slot:empty {
+  display: none !important;
+}
+
+#pos-auto-print-handbook-print-slot #pos-auto-print-print-host,
+#pos-auto-print-handbook-print-slot #pos-auto-print-print-host.pos-auto-print-host--body-print,
+#pos-auto-print-handbook-print-slot #pos-auto-print-print-host.pos-auto-print-host--capturing {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  width: var(--receipt-auto-print-body-width) !important;
+  max-width: var(--receipt-auto-print-body-width) !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+  background: #fff !important;
+  z-index: auto !important;
+  transform: none !important;
+  margin: 0 auto !important;
+}
+
+/* Fallback off-screen: только во время capture, иначе display:none на кассе */
+#pos-auto-print-handbook-print-area #pos-auto-print-print-host,
+#pos-auto-print-handbook-print-area #pos-auto-print-print-host.pos-auto-print-host--body-print,
+#pos-auto-print-handbook-print-area #pos-auto-print-print-host.pos-auto-print-host--capturing {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: var(--receipt-auto-print-body-width) !important;
+  max-width: var(--receipt-auto-print-body-width) !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+  background: #fff !important;
+  z-index: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+
+#pos-auto-print-handbook-print-slot #fiscal-print-shell,
+#pos-auto-print-handbook-print-slot #fiscal-print-shell * {
+  width: 100% !important;
+  max-width: 100% !important;
+  transform: none !important;
+  background: #fff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  color: #000 !important;
+}
+
+#pos-auto-print-handbook-print-area #fiscal-print-shell,
+#pos-auto-print-handbook-print-area #fiscal-print-shell * {
+  width: 100% !important;
+  max-width: 100% !important;
+  transform: none !important;
+  background: #fff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  color: #000 !important;
+}
+
+html.electron-print-capturing #pos-auto-print-handbook-print-slot #fiscal-print-shell,
+html.electron-print-capturing #pos-auto-print-handbook-print-area #fiscal-print-shell {
+  transform: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* На экране кассы fallback-area скрыта (класс --pos-hidden), во время print — off-screen */
+.cashier-app--pos-screen #pos-auto-print-handbook-print-area:not(.pos-auto-print-handbook-print-area--pos-hidden) {
+  display: block !important;
+  visibility: visible !important;
+  left: -10000px !important;
+}
+
+/* Legacy mount */
+#pos-auto-print-mount {
   display: block !important;
   position: fixed !important;
   left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
@@ -128,27 +252,7 @@
   pointer-events: none !important;
 }
 
-html.electron-print-capturing #pos-auto-print-print-host,
-html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--capturing,
-html.electron-silent-print.electron-print-capturing #pos-auto-print-print-host,
-html.electron-silent-print.electron-print-capturing
-  #pos-auto-print-print-host.pos-auto-print-host--capturing {
-  left: 0 !important;
-  top: 0 !important;
-  z-index: var(--receipt-auto-print-capture-z) !important;
-}
-
-html.electron-print-capturing #pos-auto-print-print-host .fiscal-print-dialog,
-html.electron-print-capturing #pos-auto-print-print-host #fiscal-print-shell {
-  width: 100% !important;
-  max-width: 100% !important;
-  transform: none !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  background: #fff !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
+/* print-host в справочнике — правила выше */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    2. Legacy: слот в правой колонке (пустой spacer)
@@ -369,39 +473,12 @@ html.electron-auto-print-job #pos-auto-print-preview-mount #fiscal-print-shell-l
   transform: scale(var(--receipt-auto-print-preview-scale)) !important;
 }
 
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host:not(.pos-auto-print-host--capturing),
-html.electron-auto-print-job #pos-auto-print-print-host:not(.pos-auto-print-host--capturing) {
-  position: fixed !important;
-  left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
-  top: 0 !important;
-  width: var(--receipt-auto-print-body-width) !important;
-  max-width: var(--receipt-auto-print-body-width) !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: visible !important;
-  transform: none !important;
-  background: #fff !important;
-}
-
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
-html.electron-auto-print-job #pos-auto-print-print-host #fiscal-print-shell {
-  transform: none !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  width: var(--receipt-auto-print-body-width) !important;
-  max-width: var(--receipt-auto-print-body-width) !important;
-}
-
 html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  .fiscal-print-scene:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(.pos-auto-print-host--centered):not(#pos-auto-print-print-host),
+  .fiscal-print-scene:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(.pos-auto-print-host--centered):not(#pos-auto-print-handbook-print-area):not(#pos-auto-print-handbook-print-slot),
 html.electron-silent-print.print-thermal-modal.electron-print-capturing
   .thermal-report-print-host:not(.fiscal-print-scene--offscreen),
 html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  .pos-sale-print-host:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(.pos-auto-print-host--centered):not(#pos-auto-print-print-host):not(#pos-auto-print-preview-mount) {
+  .pos-sale-print-host:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(.pos-auto-print-host--centered):not(#pos-auto-print-handbook-print-area):not(#pos-auto-print-handbook-print-slot):not(#pos-auto-print-print-host):not(#pos-auto-print-preview-mount) {
   left: 0 !important;
   transform: none !important;
   opacity: 1 !important;
@@ -429,6 +506,8 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host:not(.pos-aut
 }
 
 @media print {
+  html.print-thermal-modal #pos-auto-print-handbook-print-area,
+  html.print-thermal-modal #pos-auto-print-handbook-print-slot,
   html.print-thermal-modal #pos-auto-print-print-host,
   html.print-thermal-modal #pos-auto-print-print-host.fiscal-print-scene {
     display: block !important;
