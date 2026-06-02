@@ -73,14 +73,16 @@ async function prepareDesktopForPrint() {
 /** Кадр для silent print — класс electron-print-capturing на <html>. */
 export async function withElectronPrintCapture(
   runPrint,
-  { settleMs = RECEIPT_PRINT_ENGINE.captureSettleMs } = {},
+  { settleMs = RECEIPT_PRINT_ENGINE.captureSettleMs, afterPrint } = {},
 ) {
   document.documentElement.classList.add(ELECTRON_PRINT_CAPTURING_CLASS);
   const undoCaptureLayout = prepareMountForSilentCapture();
   try {
     await waitForReceiptPaintSettled();
     await sleep(settleMs);
-    return await runPrint();
+    const result = await runPrint();
+    afterPrint?.();
+    return result;
   } finally {
     undoCaptureLayout();
     await sleep(RECEIPT_PRINT_ENGINE.captureReleaseDelayMs);
@@ -116,8 +118,9 @@ async function invokeDesktopSilentPrint() {
       await waitForBodyPrintImagesReady();
       assertFiscalPrintShellReady();
       console.info(`[Aurent] silent print IPC attempt ${attempt}/${silentMaxAttempts}`);
-      await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto());
-      undoBodyPrint();
+      await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto(), {
+        afterPrint: undoBodyPrint,
+      });
       return;
     } catch (err) {
       lastErr = normalizeDesktopPrintError(err);

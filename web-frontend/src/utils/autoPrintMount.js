@@ -208,17 +208,11 @@ export function hideBodyPrintMountFromScreen(host = document.getElementById(PRIN
 function showBodyPrintMountForCapture(host = document.getElementById(PRINT_MOUNT_ID)) {
   if (!host) return;
   host.style.display = 'block';
-  host.style.position = '';
-  host.style.left = '';
-  host.style.top = '';
-  host.style.right = '';
-  host.style.width = '';
-  host.style.height = '';
-  host.style.overflow = '';
   host.style.opacity = '';
   host.style.visibility = '';
-  host.style.pointerEvents = '';
-  host.style.zIndex = '';
+  host.style.overflow = '';
+  host.style.pointerEvents = 'none';
+  hideBodyPrintMountFromScreen(host);
 }
 
 export function destroyBodyPrintMount() {
@@ -233,13 +227,15 @@ export function destroyBodyPrintMount() {
   host.remove();
 }
 
-/** Перед webContents.print — body-mount в кадр (только на время IPC). */
+/** Перед webContents.print — body-mount остаётся off-screen (Electron печатает без left:0). */
 export function prepareMountForSilentCapture() {
   const mount = document.getElementById(PRINT_MOUNT_ID);
   if (!mount) return () => {};
   showBodyPrintMountForCapture(mount);
   mount.classList.add(hostCapturingClass);
   void mount.offsetHeight;
+  const shell = mount.querySelector(`#${PRINT_SHELL_ID}`);
+  if (shell) void shell.offsetHeight;
   return () => {
     mount.classList.remove(hostCapturingClass);
     hideBodyPrintMountFromScreen(mount);
