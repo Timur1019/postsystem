@@ -107,7 +107,6 @@ function ensureBodyPrintMount() {
       document.body.appendChild(el);
     }
   }
-  hideBodyPrintMountFromScreen(el);
   return el;
 }
 
@@ -172,6 +171,7 @@ export async function prepareBodyPrintShellFromPreview() {
   }
 
   const host = ensureBodyPrintMount();
+  host.style.display = 'block';
   host.replaceChildren();
 
   const dialog = document.createElement('div');
@@ -188,36 +188,34 @@ export async function prepareBodyPrintShellFromPreview() {
   void printShell.offsetHeight;
 
   return () => {
-    try {
-      host.replaceChildren();
-    } catch {
-      /* ignore */
-    }
-    hideBodyPrintMountFromScreen(host);
+    destroyBodyPrintMount();
   };
+}
+
+/** Убирает body-mount с экрана между assert и capture (display:none). */
+export function hideBodyPrintMountUntilCapture(host = document.getElementById(PRINT_MOUNT_ID)) {
+  if (!host) return;
+  host.classList.remove(hostCapturingClass);
+  host.style.display = 'none';
+  host.style.position = 'fixed';
+  host.style.left = '-10000px';
+  host.style.top = '0';
+  host.style.pointerEvents = 'none';
+  host.style.zIndex = '-1';
 }
 
 function hideBodyPrintMountFromScreen(host = document.getElementById(PRINT_MOUNT_ID)) {
   if (!host) return;
-  host.classList.remove(hostCapturingClass);
-  host.style.position = 'fixed';
-  host.style.left = '-10000px';
-  host.style.top = '0';
-  host.style.right = '';
-  host.style.opacity = '';
-  host.style.visibility = '';
-  host.style.pointerEvents = 'none';
-  host.style.zIndex = '-1';
-  host.style.width = '';
-  host.style.height = '';
-  host.style.overflow = '';
+  hideBodyPrintMountUntilCapture(host);
 }
 
 function showBodyPrintMountForCapture(host = document.getElementById(PRINT_MOUNT_ID)) {
   if (!host) return;
+  host.style.display = 'block';
   host.style.position = '';
   host.style.left = '';
   host.style.top = '';
+  host.style.right = '';
   host.style.width = '';
   host.style.height = '';
   host.style.overflow = '';
@@ -225,6 +223,18 @@ function showBodyPrintMountForCapture(host = document.getElementById(PRINT_MOUNT
   host.style.visibility = '';
   host.style.pointerEvents = '';
   host.style.zIndex = '';
+}
+
+export function destroyBodyPrintMount() {
+  const host = document.getElementById(PRINT_MOUNT_ID);
+  if (!host) return;
+  host.classList.remove(hostCapturingClass);
+  try {
+    host.replaceChildren();
+  } catch {
+    /* ignore */
+  }
+  host.remove();
 }
 
 /** Перед webContents.print — body-mount в кадр (только на время IPC). */

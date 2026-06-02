@@ -65,7 +65,7 @@
   background: #fff !important;
 }
 
-/* Body-mount: за экраном (не left:0), превью в слоте не трогаем */
+/* Body-mount: за экраном (не left:0) */
 #pos-auto-print-mount.pos-auto-print-host--body-print:not(.pos-auto-print-host--capturing) {
   position: fixed !important;
   left: -10000px !important;
@@ -197,6 +197,16 @@ html.electron-silent-print.print-thermal-modal #fiscal-print-shell * {
   opacity: 1 !important;
   visibility: visible !important;
   box-shadow: none !important;
+}
+
+html.electron-silent-print.print-thermal-modal
+  #pos-auto-print-mount:not(.pos-auto-print-host--capturing)
+  #fiscal-print-shell,
+html.electron-silent-print.print-thermal-modal
+  #pos-auto-print-mount:not(.pos-auto-print-host--capturing)
+  #fiscal-print-shell * {
+  opacity: 0 !important;
+  visibility: hidden !important;
 }
 #receipt-print-area,
 #receipt-print-area *,

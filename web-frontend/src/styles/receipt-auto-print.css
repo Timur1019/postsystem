@@ -259,10 +259,7 @@ html.electron-auto-print-job .receipt-printing-overlay {
 
 html.electron-silent-print.print-thermal-modal.electron-auto-print-job
   .pos-sale-print-host.pos-auto-print-host--centered,
-html.electron-auto-print-job .pos-sale-print-host.pos-auto-print-host--centered,
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job
-  .pos-sale-print-host.pos-auto-print-host--embedded,
-html.electron-auto-print-job .pos-sale-print-host.pos-auto-print-host--embedded {
+html.electron-auto-print-job .pos-sale-print-host.pos-auto-print-host--centered {
   position: fixed !important;
   inset: 0 !important;
   left: 0 !important;
@@ -279,6 +276,26 @@ html.electron-auto-print-job .pos-sale-print-host.pos-auto-print-host--embedded 
   max-height: none !important;
   overflow: auto !important;
   background: var(--receipt-auto-print-center-backdrop) !important;
+}
+
+/* Превью в слоте — никогда fullscreen во время auto-print job */
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job
+  #pos-auto-print-preview-mount.pos-auto-print-host--embedded,
+html.electron-auto-print-job #pos-auto-print-preview-mount.pos-auto-print-host--embedded {
+  position: static !important;
+  inset: auto !important;
+  left: auto !important;
+  top: auto !important;
+  display: block !important;
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background: transparent !important;
 }
 
 html.electron-silent-print.print-thermal-modal.electron-auto-print-job.electron-print-capturing
@@ -365,10 +382,9 @@ html.electron-auto-print-job #pos-auto-print-preview-mount #fiscal-print-shell-l
 }
 
 /* Body-mount: off-screen, не трогаем превью в слоте */
-/* Body-mount: за экраном; left:0 только при .pos-auto-print-host--capturing */
+/* Body-mount: за экраном; left:0 только при capture */
 html.electron-silent-print.print-thermal-modal #pos-auto-print-mount.pos-auto-print-host--body-print:not(.pos-auto-print-host--capturing),
 html.electron-auto-print-job #pos-auto-print-mount.pos-auto-print-host--body-print:not(.pos-auto-print-host--capturing) {
-  display: block !important;
   position: fixed !important;
   left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
   top: 0 !important;
@@ -380,7 +396,6 @@ html.electron-auto-print-job #pos-auto-print-mount.pos-auto-print-host--body-pri
   z-index: -1 !important;
   margin: 0 !important;
   padding: 0 !important;
-  background: #fff !important;
   overflow: visible !important;
   transform: none !important;
 }
