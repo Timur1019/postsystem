@@ -6,6 +6,7 @@ record AiAssistantToolCall(
         String tool,
         LocalDate from,
         LocalDate to,
+        String query,
         int limit
 ) {
 }

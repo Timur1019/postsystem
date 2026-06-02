@@ -196,9 +196,10 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
     }
 
     @Override
-    public int backfillMissingForClosedShifts() {
-        List<CashierShift> shifts = cashierShiftRepository.findClosedWithoutZReport(
-            CashierShift.ShiftStatus.CLOSED
+    public int backfillMissingForClosedShifts(Integer companyId) {
+        List<CashierShift> shifts = cashierShiftRepository.findClosedWithoutZReportByCompany(
+            CashierShift.ShiftStatus.CLOSED,
+            companyId
         );
         int created = 0;
         for (CashierShift shift : shifts) {

@@ -6,6 +6,7 @@ import { Plus, CheckCircle2, Circle } from 'lucide-react';
 import TableRowActionsMenu from '../components/shared/TableRowActionsMenu';
 import { useTranslation } from 'react-i18next';
 import { userApi } from '../services/api';
+import { useTenantScope } from '../hooks/useTenantScope';
 import UserFormModal from '../components/users/UserFormModal';
 import TablePagination from '../components/shared/TablePagination';
 const roleBadge = {
@@ -18,6 +19,7 @@ export default function UsersPage({ mode = 'tenant' }) {
   const isPlatform = mode === 'platform';
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const { tenantKey, tenantReady } = useTenantScope();
   const [formMode, setFormMode] = useState(null);
   const [menuId, setMenuId] = useState(null);
   const [page, setPage] = useState(0);
@@ -26,8 +28,9 @@ export default function UsersPage({ mode = 'tenant' }) {
   const modalOpen = formMode !== null;
 
   const { data: users = [], isLoading } = useQuery({
-    queryKey: ['users', mode],
+    queryKey: isPlatform ? ['users', 'platform'] : tenantKey('users'),
     queryFn: () => userApi.getAll().then((r) => r.data),
+    enabled: isPlatform || tenantReady,
   });
 
   const { mutate: toggleUser } = useMutation({

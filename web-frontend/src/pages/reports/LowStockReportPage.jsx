@@ -3,18 +3,21 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { stockReportApi } from '../../services/api';
+import { useTenantScope } from '../../hooks/useTenantScope';
 import TablePagination from '../../components/shared/TablePagination';
 import { fmtMoney } from '../../utils/formatMoney';
 
 export default function LowStockReportPage() {
   const { t } = useTranslation();
+  const { tenantKey, tenantReady } = useTenantScope();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
 
   const { data, isPending, isError, error } = useQuery({
-    queryKey: ['low-stock', page, pageSize],
+    queryKey: tenantKey('reports-low-stock', page, pageSize),
     queryFn: () => stockReportApi.lowStock({ page, size: pageSize }).then((r) => r.data),
     placeholderData: keepPreviousData,
+    enabled: tenantReady,
   });
 
   const rows = data?.content ?? [];

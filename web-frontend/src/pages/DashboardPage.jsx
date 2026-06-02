@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { reportApi, productApi } from '../services/api';
+import { useTenantScope } from '../hooks/useTenantScope';
 import { format, subDays, startOfMonth, parseISO, isValid } from 'date-fns';
 import {
   AreaChart,
@@ -74,6 +75,7 @@ function formatPeriodLabel(from, to, dateLocale, t) {
 export default function DashboardPage() {
   const { t } = useTranslation();
   const dateLocale = useDateFnsLocale();
+  const { tenantKey, tenantReady } = useTenantScope();
   const today = todayStr();
 
   const presets = useMemo(
@@ -92,20 +94,21 @@ export default function DashboardPage() {
   const isSingleDay = from === to;
 
   const { data: periodReport, isLoading: periodLoading } = useQuery({
-    queryKey: ['dashboard-period', from, to],
+    queryKey: tenantKey('dashboard-period', from, to),
     queryFn: () => reportApi.sales(from, to).then((r) => r.data),
-    enabled: Boolean(from && to && from <= to),
+    enabled: tenantReady && Boolean(from && to && from <= to),
   });
 
   const { data: lowStock } = useQuery({
-    queryKey: ['low-stock'],
+    queryKey: tenantKey('dashboard-low-stock'),
     queryFn: () => productApi.getLowStock().then((r) => r.data),
+    enabled: tenantReady,
   });
 
   const { data: topProducts } = useQuery({
-    queryKey: ['dashboard-top-products', from, to],
+    queryKey: tenantKey('dashboard-top-products', from, to),
     queryFn: () => reportApi.topProducts(5, from, to).then((r) => r.data),
-    enabled: Boolean(from && to && from <= to),
+    enabled: tenantReady && Boolean(from && to && from <= to),
   });
 
   const applyPreset = (preset) => {

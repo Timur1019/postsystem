@@ -4,6 +4,7 @@ import com.pos.dto.product.ProductImportPreviewRow;
 import com.pos.entity.Product;
 import com.pos.repository.ProductRepository;
 import com.pos.service.imports.ProductImportParseOptions;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.service.imports.ProductImportSource;
 import com.pos.service.imports.ProductImportSupport;
 import com.pos.spreadsheet.parser.UzInvoiceDocumentIdExtractor;
@@ -28,6 +29,7 @@ public class UzInvoiceImportSourceHandler implements ProductImportSourceHandler 
     private final UzInvoiceSpreadsheetParser uzInvoiceSpreadsheetParser;
     private final UzInvoiceJsonParser uzInvoiceJsonParser;
     private final ProductRepository productRepository;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public ProductImportSource source() {
@@ -49,8 +51,9 @@ public class UzInvoiceImportSourceHandler implements ProductImportSourceHandler 
         if (!StringUtils.hasText(fileInvoiceId)) {
             return false;
         }
-        return productRepository.existsByUzInvoiceDocumentIdAndIsActiveTrue(fileInvoiceId)
-            || productRepository.existsBySkuStartingWithAndIsActiveTrue(fileInvoiceId + "-L-");
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        return productRepository.existsByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(companyId, fileInvoiceId)
+            || productRepository.existsByCompany_IdAndSkuStartingWithAndIsActiveTrue(companyId, fileInvoiceId + "-L-");
     }
 
     @Override
@@ -106,13 +109,20 @@ public class UzInvoiceImportSourceHandler implements ProductImportSourceHandler 
         if (uzInvoiceDocumentId == null) {
             return Optional.empty();
         }
-        Optional<Product> byDoc = productRepository.findFirstByUzInvoiceDocumentIdAndIsActiveTrue(uzInvoiceDocumentId);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Optional<Product> byDoc = productRepository.findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(
+            companyId,
+            uzInvoiceDocumentId
+        );
         if (byDoc.isPresent()) {
             return byDoc;
         }
         String skuPrefix = uzInvoiceDocumentId + "-L-";
-        if (productRepository.existsBySkuStartingWithAndIsActiveTrue(skuPrefix)) {
-            return productRepository.findFirstBySkuStartingWithAndIsActiveTrueOrderBySkuAsc(skuPrefix);
+        if (productRepository.existsByCompany_IdAndSkuStartingWithAndIsActiveTrue(companyId, skuPrefix)) {
+            return productRepository.findFirstByCompany_IdAndSkuStartingWithAndIsActiveTrueOrderBySkuAsc(
+                companyId,
+                skuPrefix
+            );
         }
         return Optional.empty();
     }

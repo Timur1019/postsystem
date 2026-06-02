@@ -19,5 +19,5 @@ public interface ZReportFromShiftService {
     /**
      * Создаёт Z-отчёты для уже закрытых смен, у которых их ещё нет.
      */
-    int backfillMissingForClosedShifts();
+    int backfillMissingForClosedShifts(Integer companyId);
 }

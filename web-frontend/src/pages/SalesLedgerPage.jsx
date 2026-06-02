@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import { saleApi, storeApi } from '../services/api';
+import { useTenantScope } from '../hooks/useTenantScope';
 import SalesLedgerFiltersDrawer from '../components/reports/SalesLedgerFiltersDrawer';
 import SaleFiscalPrintModal from '../components/reports/SaleFiscalPrintModal';
 import SalePartialReturnModal from '../components/sales/SalePartialReturnModal';
@@ -65,6 +66,7 @@ function ShiftCell({ row, t, fmtAt }) {
 export default function SalesLedgerPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const { tenantKey, tenantReady } = useTenantScope();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(14);
@@ -79,8 +81,9 @@ export default function SalesLedgerPage() {
   const selectAllRef = useRef(null);
 
   const { data: stores = [] } = useQuery({
-    queryKey: ['stores'],
+    queryKey: tenantKey('stores'),
     queryFn: () => storeApi.getAll().then((r) => r.data),
+    enabled: tenantReady,
   });
 
   const queryParams = useMemo(() => {
@@ -116,8 +119,9 @@ export default function SalesLedgerPage() {
   }, [search, applied]);
 
   const { data, isPending, isError, error } = useQuery({
-    queryKey: ['sales-ledger', queryParams],
+    queryKey: tenantKey('sales-ledger', queryParams),
     queryFn: () => saleApi.getAll(queryParams).then((r) => r.data),
+    enabled: tenantReady,
   });
 
   const rows = data?.content ?? [];

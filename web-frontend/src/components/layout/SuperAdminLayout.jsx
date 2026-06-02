@@ -4,6 +4,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Building2, Store, Users, LogOut, Shield, Menu, KeyRound, Activity } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
+import { logoutAndResetSession } from '../../utils/authSession';
 import LanguageSwitcher from '../shared/LanguageSwitcher';
 
 const NAV = [
@@ -16,7 +17,7 @@ const NAV = [
 
 export default function SuperAdminLayout() {
   const { t } = useTranslation();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -26,7 +27,7 @@ export default function SuperAdminLayout() {
   }, [location.pathname]);
 
   const handleLogout = () => {
-    logout();
+    logoutAndResetSession();
     navigate('/login');
   };
 

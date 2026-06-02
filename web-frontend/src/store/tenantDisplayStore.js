@@ -248,6 +248,18 @@ export const useTenantDisplayStore = create((set, get) => ({
     syncReceiptDisplayCssVars(committed);
   },
 
+  resetSession: () => {
+    const empty = emptyDisplayState();
+    set({
+      committed: empty,
+      draft: empty,
+      isDirty: false,
+      isLoading: false,
+      isSaving: false,
+    });
+    syncReceiptDisplayCssVars(empty);
+  },
+
   hydrateFromPayload: (payload) => {
     const display = payloadToDisplay(payload);
     set({

@@ -450,7 +450,7 @@ public class AnalyticsToolFacade {
         BigDecimal delta = curRevenue.subtract(prevRevenue);
         BigDecimal returnsAmount = returns.get("returnsAmount") instanceof BigDecimal b ? b : BigDecimal.ZERO;
         long returnsCount = returns.get("returnsCount") instanceof Number n ? n.longValue() : 0L;
-        long lowStockCount = productRepository.countLowStock();
+        long lowStockCount = productRepository.countLowStockByCompanyId(companyIdFinal);
 
         // Normalize top products to a map structure (items may be TopProductRow DTOs)
         List<Map<String, Object>> topItems = new ArrayList<>();

@@ -189,7 +189,11 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         FROM Sale s
         WHERE s.createdAt >= :start AND s.createdAt < :end AND s.status = :status
         AND (:storeId IS NULL OR s.store.id = :storeId)
-        AND (:companyId IS NULL OR s.company.id = :companyId)
+        AND (
+            :companyId IS NULL
+            OR (s.company IS NOT NULL AND s.company.id = :companyId)
+            OR (s.company IS NULL AND s.store IS NOT NULL AND s.store.company.id = :companyId)
+        )
         """)
     BigDecimal sumTotalBetween(
         @Param("start") Instant start,
@@ -203,7 +207,11 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         SELECT COUNT(s) FROM Sale s
         WHERE s.createdAt >= :start AND s.createdAt < :end AND s.status = :status
         AND (:storeId IS NULL OR s.store.id = :storeId)
-        AND (:companyId IS NULL OR s.company.id = :companyId)
+        AND (
+            :companyId IS NULL
+            OR (s.company IS NOT NULL AND s.company.id = :companyId)
+            OR (s.company IS NULL AND s.store IS NOT NULL AND s.store.company.id = :companyId)
+        )
         """)
     long countSalesBetween(
         @Param("start") Instant start,
@@ -264,7 +272,16 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         FROM sales s
         WHERE s.created_at >= :start AND s.created_at < :end
           AND s.status = 'COMPLETED'
-          AND s.company_id = :companyId
+          AND (
+            s.company_id = :companyId
+            OR (
+              s.company_id IS NULL
+              AND EXISTS (
+                SELECT 1 FROM stores st
+                WHERE st.id = s.store_id AND st.company_id = :companyId
+              )
+            )
+          )
         GROUP BY CAST(s.created_at AS date)
         ORDER BY day
         """, nativeQuery = true)

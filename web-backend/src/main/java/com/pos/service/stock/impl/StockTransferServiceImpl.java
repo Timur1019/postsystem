@@ -63,6 +63,13 @@ public class StockTransferServiceImpl implements StockTransferService {
             .orElseThrow(() -> new BadRequestException("From store not found"));
         Store toStore = storeRepository.findById(request.toStoreId())
             .orElseThrow(() -> new BadRequestException("To store not found"));
+        tenantAccess.assertCanAccessStore(fromStore);
+        tenantAccess.assertCanAccessStore(toStore);
+        if (fromStore.getCompany() == null
+            || toStore.getCompany() == null
+            || !fromStore.getCompany().getId().equals(toStore.getCompany().getId())) {
+            throw new BadRequestException("Transfer is allowed only between stores of the same company");
+        }
 
         String number = nextTransferNumber();
         StockTransfer transfer = stockTransferRepository.save(StockTransfer.builder()

@@ -12,6 +12,7 @@ import {
 } from '../../utils/cashierTheme';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
+import { logoutAndResetSession } from '../../utils/authSession';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { CashierShiftModalProvider, useCashierShiftModal } from '../../contexts/CashierShiftModalContext';
 import { CashierLockProvider, useCashierLock } from '../../contexts/CashierLockContext';
@@ -92,7 +93,7 @@ function CashierLayoutShell() {
   };
 
   const { t } = useTranslation();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const { storeId, storeName, storeLoading, storeError } = useCashierStore();
   const { open, openShift, closeShift } = useCashierShiftModal();
   const { lock } = useCashierLock();
@@ -131,7 +132,7 @@ function CashierLayoutShell() {
 
   const handleLogout = () => {
     clearCashierScreenLocked(user?.id);
-    logout();
+    logoutAndResetSession();
     navigate(cashierLoginPath());
   };
 

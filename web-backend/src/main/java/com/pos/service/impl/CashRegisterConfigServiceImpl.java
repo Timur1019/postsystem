@@ -21,6 +21,7 @@ import com.pos.repository.CategoryRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.repository.spec.CashRegisterConfigSpecifications;
 import com.pos.service.CashRegisterConfigService;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -50,18 +51,22 @@ public class CashRegisterConfigServiceImpl implements CashRegisterConfigService 
     private final CategoryMapper categoryMapper;
     private final CashRegisterMapper cashRegisterMapper;
     private final CashRegisterConfigMapper cashRegisterConfigMapper;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public CashRegisterConfigFormOptionsResponse getFormOptions() {
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
         var stores = storeMapper.toResponseList(
-            storeRepository.findByActiveTrueAndCompanyIsNotNullOrderByNameAsc()
+            storeRepository.findByCompanyIdOrderByNameAsc(companyId)
         );
 
         var registers = cashRegisterMapper.toRowResponseList(
-            cashRegisterRepository.findByStatusIgnoreCaseAndStore_CompanyIsNotNullOrderByStore_NameAscRegisterNumberAsc("ACTIVE")
+            cashRegisterRepository.findActiveByCompanyId("ACTIVE", companyId)
         );
 
-        var categories = categoryMapper.toResponseList(categoryRepository.findAllWithActiveProducts());
+        var categories = categoryMapper.toResponseList(
+            categoryRepository.findAllWithActiveProductsByCompanyId(companyId)
+        );
 
         return new CashRegisterConfigFormOptionsResponse(stores, registers, categories);
     }
@@ -73,7 +78,10 @@ public class CashRegisterConfigServiceImpl implements CashRegisterConfigService 
         String equipmentSerial,
         Pageable pageable
     ) {
-        Specification<CashRegisterConfig> spec = CashRegisterConfigSpecifications.filter(search, storeId, equipmentSerial);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Specification<CashRegisterConfig> spec = CashRegisterConfigSpecifications.filter(
+            companyId, search, storeId, equipmentSerial
+        );
         Pageable sorted = PageRequest.of(
             pageable.getPageNumber(),
             pageable.getPageSize(),
@@ -107,8 +115,7 @@ public class CashRegisterConfigServiceImpl implements CashRegisterConfigService 
     @Override
     @Transactional
     public CashRegisterConfigRowResponse update(Long id, CreateCashRegisterConfigRequest request) {
-        CashRegisterConfig cfg = configRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Configuration not found"));
+        CashRegisterConfig cfg = requireAccessibleConfig(id);
         if (cfg.isLockedDefault()) {
             throw new BadRequestException("Default configuration cannot be modified");
         }
@@ -127,8 +134,7 @@ public class CashRegisterConfigServiceImpl implements CashRegisterConfigService 
     @Override
     @Transactional
     public void delete(Long id) {
-        CashRegisterConfig cfg = configRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Configuration not found"));
+        CashRegisterConfig cfg = requireAccessibleConfig(id);
         if (cfg.isLockedDefault()) {
             throw new BadRequestException("Default configuration cannot be deleted");
         }
@@ -146,10 +152,12 @@ public class CashRegisterConfigServiceImpl implements CashRegisterConfigService 
     }
 
     private void applyLinks(CashRegisterConfig cfg, CreateCashRegisterConfigRequest req) {
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
         cfg.getStores().clear();
         for (Integer sid : req.storeIds()) {
             Store s = storeRepository.findById(sid)
                 .orElseThrow(() -> new ResourceNotFoundException("Store not found: " + sid));
+            tenantAccess.assertCanAccessStore(s);
             if (!s.isActive() || s.getCompany() == null) {
                 throw new BadRequestException("Store is not available for configuration: " + sid);
             }
@@ -162,9 +170,10 @@ public class CashRegisterConfigServiceImpl implements CashRegisterConfigService 
             if (!"ACTIVE".equalsIgnoreCase(r.getStatus()) || r.getStore().getCompany() == null) {
                 throw new BadRequestException("Cash register is not active: " + rid);
             }
+            tenantAccess.assertCanAccessStore(r.getStore());
             cfg.getRegisters().add(r);
         }
-        Set<Integer> allowedCategoryIds = categoryRepository.findAllWithActiveProducts().stream()
+        Set<Integer> allowedCategoryIds = categoryRepository.findAllWithActiveProductsByCompanyId(companyId).stream()
             .map(Category::getId)
             .collect(Collectors.toSet());
         cfg.getCategories().clear();
@@ -174,7 +183,22 @@ public class CashRegisterConfigServiceImpl implements CashRegisterConfigService 
             }
             Category c = categoryRepository.findById(cid)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + cid));
+            if (c.getCompany() == null || !c.getCompany().getId().equals(companyId)) {
+                throw new BadRequestException("Category does not belong to your company: " + cid);
+            }
             cfg.getCategories().add(c);
         }
+    }
+
+    private CashRegisterConfig requireAccessibleConfig(Long id) {
+        CashRegisterConfig cfg = configRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Configuration not found"));
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        boolean belongsToTenant = cfg.getStores().stream()
+            .anyMatch(s -> s.getCompany() != null && s.getCompany().getId().equals(companyId));
+        if (!belongsToTenant) {
+            throw new BadRequestException("Access denied to this configuration");
+        }
+        return cfg;
     }
 }

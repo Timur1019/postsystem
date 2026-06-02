@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { Plus, Tags, MoreVertical } from 'lucide-react';
 import { categoryApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { useTenantScope } from '../hooks/useTenantScope';
 import CategoryModal from '../components/categories/CategoryModal';
 import TablePagination from '../components/shared/TablePagination';
 
@@ -16,6 +17,7 @@ export default function CategoriesPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const { user } = useAuthStore();
+  const { tenantKey, tenantReady } = useTenantScope();
   const manage = canManage(user?.role);
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -26,8 +28,9 @@ export default function CategoriesPage() {
   const [pageSize, setPageSize] = useState(14);
 
   const { data: categories = [], isLoading } = useQuery({
-    queryKey: ['categories'],
+    queryKey: tenantKey('categories'),
     queryFn: () => categoryApi.getAll().then((r) => r.data),
+    enabled: tenantReady,
   });
 
   useEffect(() => {

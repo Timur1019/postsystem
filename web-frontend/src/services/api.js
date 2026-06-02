@@ -1,6 +1,7 @@
 // src/services/api.js
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import { logoutAndResetSession } from '../utils/authSession';
 import { isAuthPage, redirectToLogin } from '../utils/authLogin';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
@@ -38,8 +39,7 @@ api.interceptors.response.use(
     const original = error.config;
     const status = error.response?.status;
     if (status === 403 && !original._retry) {
-      const { logout } = useAuthStore.getState();
-      logout();
+      logoutAndResetSession();
       if (!isAuthPage(window.location.pathname)) {
         redirectToLogin();
       }
@@ -47,10 +47,10 @@ api.interceptors.response.use(
     }
     if (status === 401 && !original._retry) {
       original._retry = true;
-      const { token, logout, setToken } = useAuthStore.getState();
+      const { token, setToken } = useAuthStore.getState();
       const jwtParts = typeof token === 'string' ? token.split('.').length : 0;
       if (!token || jwtParts !== 3) {
-        logout();
+        logoutAndResetSession();
         if (!isAuthPage(window.location.pathname)) {
           redirectToLogin();
         }
@@ -64,7 +64,7 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${res.data.token}`;
         return api(original);
       } catch {
-        logout();
+        logoutAndResetSession();
         if (!isAuthPage(window.location.pathname)) {
           redirectToLogin();
         }

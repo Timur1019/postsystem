@@ -83,7 +83,9 @@ public class ZReportServiceImpl implements ZReportService {
     @Override
     @Transactional
     public int backfillFromClosedShifts() {
-        return zReportFromShiftService.backfillMissingForClosedShifts();
+        return zReportFromShiftService.backfillMissingForClosedShifts(
+            tenantAccess.requireEffectiveCompanyId()
+        );
     }
 
     private ZReport require(Long id) {

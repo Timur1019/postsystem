@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { X, Loader } from 'lucide-react';
 import { companyApi, storeApi, userApi } from '../../services/api';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
+import { useTenantScope } from '../../hooks/useTenantScope';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
   focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white`;
@@ -32,6 +33,7 @@ function asStoreList(data) {
 export default function UserFormModal({ open, onClose, isPlatform, mode, editingUser }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const { tenantKey, tenantReady } = useTenantScope();
   const isEdit = mode === 'edit';
   const user = isEdit ? editingUser : null;
 
@@ -70,15 +72,16 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
   });
 
   const { data: storesRaw } = useQuery({
-    queryKey: ['stores', 'user-form'],
+    queryKey: isPlatform ? ['stores', 'platform-user-form', companyId || 'none'] : tenantKey('stores'),
     queryFn: () => storeApi.getAll().then((r) => r.data),
-    enabled: open,
+    enabled: open && (isPlatform ? Boolean(companyId) : tenantReady),
   });
 
   const stores = asStoreList(storesRaw);
 
   const filteredStores = useMemo(() => {
-    if (!isPlatform || !companyId) return stores;
+    if (!isPlatform) return stores;
+    if (!companyId) return [];
     return stores.filter((s) => String(s.companyId) === String(companyId));
   }, [stores, companyId, isPlatform]);
 

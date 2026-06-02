@@ -5,16 +5,20 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 class AiAssistantToolRouter {
+
+    private static final Pattern SKU_LIKE = Pattern.compile("(?i)(?:sku|артикул|товар)\\s*[:#]?\\s*([a-z0-9][a-z0-9\\-_.]{2,})");
 
     AiAssistantToolCall selectTool(String message, List<AiAssistantChatMessage> history) {
         String q = AiAssistantMessageNormalizer.forRouting(message);
         if (isVagueFollowUp(q) && history != null && !history.isEmpty()) {
             q = q + " " + AiAssistantConversationHistory.contextHint(history).toLowerCase(Locale.ROOT);
         }
-        return selectToolFallback(q);
+        return selectToolFallback(q, message);
     }
 
     private boolean isVagueFollowUp(String q) {
@@ -49,45 +53,71 @@ class AiAssistantToolRouter {
                 || q.startsWith("привет ") || q.startsWith("hello ");
     }
 
-    private AiAssistantToolCall selectToolFallback(String q) {
+    private AiAssistantToolCall selectToolFallback(String q, String raw) {
         q = stripRoutingFiller(q);
         if (isZReportQuery(q)) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.Z_REPORTS, null, null, 15);
+            return new AiAssistantToolCall(AiAssistantToolCatalog.Z_REPORTS, null, null, null, 15);
+        }
+        if (q.contains("низк") || q.contains("мало остат") || q.contains("low stock") || q.contains("кам қолдиқ")) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.LOW_STOCK, null, null, null, 15);
+        }
+        if (q.contains("оборач") || q.contains("turnover")) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.STOCK_TURNOVER, null, null, null, 15);
+        }
+        if (q.contains("мертв") || q.contains("dead stock") || q.contains("не прода") || q.contains("давно не прода")) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.DEAD_STOCK, null, null, null, 15);
+        }
+        if (q.contains("жизненн") || q.contains("lifecycle") || q.contains("история товара") || q.contains("harakatlar tarixi")) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.PRODUCT_LIFECYCLE, null, null, extractQuery(raw), 30);
+        }
+        if (q.contains("продаж по товар") || q.contains("sales by products") || q.contains("product sales")) {
+            return new AiAssistantToolCall(AiAssistantToolCatalog.PRODUCT_SALES, null, null, extractQuery(raw), 15);
         }
         if (q.contains("инвентар") || q.contains("inventory count") || q.contains("inventory")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.INVENTORY, null, null, 10);
+            return new AiAssistantToolCall(AiAssistantToolCatalog.INVENTORY, null, null, null, 10);
         }
         if (q.contains("возврат") || q.contains("return")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.RETURNS_SUMMARY, null, null, 10);
+            return new AiAssistantToolCall(AiAssistantToolCatalog.RETURNS_SUMMARY, null, null, null, 10);
         }
         if (q.contains("топ") || q.contains("top") || q.contains("лидер")
                 || (q.contains("товар") && !q.contains("остат") && !q.contains("склад"))) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.TOP_PRODUCTS, null, null, 10);
+            return new AiAssistantToolCall(AiAssistantToolCatalog.TOP_PRODUCTS, null, null, null, 10);
         }
         if (q.contains("сегодня") || q.contains("today") || q.contains("за день")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.TODAY_REVENUE, null, null, 10);
+            return new AiAssistantToolCall(AiAssistantToolCatalog.TODAY_REVENUE, null, null, null, 10);
         }
         if (q.contains("продаж") || q.contains("выруч") || q.contains("чек") || q.contains("sales") || q.contains("revenue")
                 || q.contains("динамик")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.SALES_PERIOD, null, null, 10);
+            return new AiAssistantToolCall(AiAssistantToolCatalog.SALES_PERIOD, null, null, null, 10);
         }
         if (q.contains("отчёт") || q.contains("отчет") || q.contains("отчот")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.SALES_PERIOD, null, null, 10);
+            return new AiAssistantToolCall(AiAssistantToolCatalog.SALES_PERIOD, null, null, null, 10);
         }
         if (q.contains("graph") || q.contains("chart") || q.contains("график")
                 || q.contains("по магазин") || q.contains("магазин") || q.contains("store") || q.contains("филиал")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.STORE_INSIGHT, null, null, 10);
+            return new AiAssistantToolCall(AiAssistantToolCatalog.STORE_INSIGHT, null, null, null, 10);
         }
         if (q.contains("перемещ") || q.contains("распредел")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.REDISTRIBUTION, null, null, 10);
+            return new AiAssistantToolCall(AiAssistantToolCatalog.REDISTRIBUTION, null, null, null, 10);
         }
         if (q.contains("склад") || q.contains("остат") || q.contains("stock")) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.INVENTORY, null, null, 10);
+            return new AiAssistantToolCall(AiAssistantToolCatalog.INVENTORY, null, null, null, 10);
         }
         if (isConversationalOverview(q)) {
-            return new AiAssistantToolCall(AiAssistantToolCatalog.SMALLTALK, null, null, 10);
+            return new AiAssistantToolCall(AiAssistantToolCatalog.SMALLTALK, null, null, null, 10);
         }
-        return new AiAssistantToolCall(AiAssistantToolCatalog.SMALLTALK, null, null, 10);
+        return new AiAssistantToolCall(AiAssistantToolCatalog.SMALLTALK, null, null, null, 10);
+    }
+
+    private String extractQuery(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        Matcher m = SKU_LIKE.matcher(raw);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
     }
 
     private boolean isConversationalOverview(String q) {

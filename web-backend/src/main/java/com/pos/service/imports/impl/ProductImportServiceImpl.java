@@ -19,6 +19,7 @@ import com.pos.service.imports.ProductImportSource;
 import com.pos.service.imports.ProductImportSupport;
 import com.pos.service.imports.source.ProductImportSourceHandler;
 import com.pos.service.imports.source.ProductImportSourceHandlers;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.parser.HtmlExcelTableParser;
 import com.pos.spreadsheet.parser.UzInvoiceJsonParser;
 import com.pos.util.ProductImportParseUtil;
@@ -48,6 +49,7 @@ public class ProductImportServiceImpl implements ProductImportService {
     private final CategoryRepository categoryRepository;
     private final StoreRepository storeRepository;
     private final ProductImportSourceHandlers sourceHandlers;
+    private final TenantAccessSupport tenantAccess;
 
     @Lazy
     @Autowired
@@ -57,12 +59,14 @@ public class ProductImportServiceImpl implements ProductImportService {
         ProductRepository productRepository,
         CategoryRepository categoryRepository,
         StoreRepository storeRepository,
-        ProductImportSourceHandlers sourceHandlers
+        ProductImportSourceHandlers sourceHandlers,
+        TenantAccessSupport tenantAccess
     ) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.storeRepository = storeRepository;
         this.sourceHandlers = sourceHandlers;
+        this.tenantAccess = tenantAccess;
     }
 
     @Override
@@ -126,7 +130,9 @@ public class ProductImportServiceImpl implements ProductImportService {
         int skipped = 0;
         Set<String> seenRowKeys = new HashSet<>();
 
-        List<Store> activeStores = storeRepository.findAll().stream().filter(Store::isActive).toList();
+        List<Store> activeStores = storeRepository.findByCompanyIdOrderByNameAsc(
+            tenantAccess.requireEffectiveCompanyId()
+        ).stream().filter(Store::isActive).toList();
 
         for (ProductImportPreviewRow row : preview.rows()) {
             if (ProductImportPreviewRow.STATUS_INVALID.equals(row.status())) {
@@ -190,8 +196,11 @@ public class ProductImportServiceImpl implements ProductImportService {
         if (categoryId == null) {
             return null;
         }
-        if (!categoryRepository.existsById(categoryId)) {
-            throw new BadRequestException(context + ": категория не найдена");
+        var category = categoryRepository.findById(categoryId)
+            .orElseThrow(() -> new BadRequestException(context + ": категория не найдена"));
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        if (category.getCompany() == null || !category.getCompany().getId().equals(companyId)) {
+            throw new BadRequestException(context + ": категория не принадлежит вашей компании");
         }
         return categoryId;
     }
@@ -202,6 +211,7 @@ public class ProductImportServiceImpl implements ProductImportService {
         }
         Store store = storeRepository.findById(storeId)
             .orElseThrow(() -> new BadRequestException(context + ": магазин не найден"));
+        tenantAccess.assertCanAccessStore(store);
         if (!store.isActive()) {
             throw new BadRequestException(context + ": магазин неактивен");
         }

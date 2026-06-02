@@ -66,7 +66,7 @@ public class StoreServiceImpl implements StoreService {
         if (!actor.getStores().isEmpty()) {
             return actor.getStores().stream().map(storeMapper::toResponse).toList();
         }
-        return storeRepository.findAll(Sort.by("name").ascending()).stream().map(storeMapper::toResponse).toList();
+        return List.of();
     }
 
     @Override

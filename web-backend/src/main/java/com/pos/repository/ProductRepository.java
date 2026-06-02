@@ -27,6 +27,32 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     Optional<Product> findByCompanyIdAndSku(Integer companyId, String sku);
 
+    boolean existsByCompany_IdAndSkuAndIsActiveTrue(Integer companyId, String sku);
+
+    Optional<Product> findByCompany_IdAndSkuAndIsActiveTrue(Integer companyId, String sku);
+
+    boolean existsByCompany_IdAndIkpuAndIsActiveTrue(Integer companyId, String ikpu);
+
+    Optional<Product> findByCompany_IdAndIkpuAndIsActiveTrue(Integer companyId, String ikpu);
+
+    boolean existsByCompany_IdAndNameIgnoreCaseAndIsActiveTrue(Integer companyId, String name);
+
+    Optional<Product> findByCompany_IdAndNameIgnoreCaseAndIsActiveTrue(Integer companyId, String name);
+
+    boolean existsByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(Integer companyId, String uzInvoiceDocumentId);
+
+    Optional<Product> findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(
+        Integer companyId,
+        String uzInvoiceDocumentId
+    );
+
+    boolean existsByCompany_IdAndSkuStartingWithAndIsActiveTrue(Integer companyId, String skuPrefix);
+
+    Optional<Product> findFirstByCompany_IdAndSkuStartingWithAndIsActiveTrueOrderBySkuAsc(
+        Integer companyId,
+        String skuPrefix
+    );
+
     boolean existsBySkuAndIsActiveTrue(String sku);
 
     Optional<Product> findBySkuAndIsActiveTrue(String sku);
@@ -67,12 +93,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         ORDER BY (p.lowStockAlert - p.stockQuantity) DESC, p.name ASC
         """)
     Page<Product> findLowStockPageByCompanyId(@Param("companyId") Integer companyId, Pageable pageable);
-
-    @Query("""
-        SELECT COUNT(p) FROM Product p
-        WHERE p.isActive = true AND p.stockQuantity < p.lowStockAlert
-        """)
-    long countLowStock();
 
     @Query("""
         SELECT COUNT(p) FROM Product p

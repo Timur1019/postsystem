@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { reportApi } from '../services/api';
+import { useTenantScope } from '../hooks/useTenantScope';
 import { format, subDays, startOfMonth } from 'date-fns';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -18,6 +19,7 @@ const CHART_LEGEND_LABEL = '#64748b';
 
 export default function ReportsPage() {
   const { t } = useTranslation();
+  const { tenantKey, tenantReady } = useTenantScope();
   const gridStroke = CHART_GRID;
   const tooltipBg = CHART_TOOLTIP_BG;
   const tooltipBorder = CHART_TOOLTIP_BORDER;
@@ -32,19 +34,21 @@ export default function ReportsPage() {
   const [to,   setTo]   = useState(format(new Date(), 'yyyy-MM-dd'));
 
   const { data: report, isLoading } = useQuery({
-    queryKey: ['sales-report', from, to],
+    queryKey: tenantKey('sales-report', from, to),
     queryFn: () => reportApi.sales(from, to).then(r => r.data),
-    enabled: !!from && !!to,
+    enabled: tenantReady && !!from && !!to,
   });
 
   const { data: topProducts } = useQuery({
-    queryKey: ['top-products', from, to],
+    queryKey: tenantKey('top-products', from, to),
     queryFn: () => reportApi.topProducts(8, from, to).then(r => r.data),
+    enabled: tenantReady && !!from && !!to,
   });
 
   const { data: cashierPerf } = useQuery({
-    queryKey: ['cashier-perf', from, to],
+    queryKey: tenantKey('cashier-perf', from, to),
     queryFn: () => reportApi.cashierPerf(from, to).then(r => r.data),
+    enabled: tenantReady && !!from && !!to,
   });
 
   const applyPreset = (preset) => {

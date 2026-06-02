@@ -50,7 +50,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public List<UserResponse> findAll() {
-        return userRepository.findAllWithDetails().stream()
+        if (tenantAccess.isSuperAdmin()) {
+            return userRepository.findAllWithDetails().stream()
+                .filter(this::canView)
+                .map(userMapper::toResponse)
+                .collect(Collectors.toList());
+        }
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        return userRepository.findByCompanyIdWithDetails(companyId).stream()
             .filter(this::canView)
             .map(userMapper::toResponse)
             .collect(Collectors.toList());

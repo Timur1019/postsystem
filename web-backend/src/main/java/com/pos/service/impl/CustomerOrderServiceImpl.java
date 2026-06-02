@@ -20,6 +20,7 @@ import com.pos.repository.StoreRepository;
 import com.pos.repository.UserRepository;
 import com.pos.repository.spec.CustomerOrderSpecifications;
 import com.pos.service.CustomerOrderService;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -52,6 +53,7 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
     private final CustomerOrderMapper customerOrderMapper;
+    private final TenantAccessSupport tenantAccess;
     private final String uploadDir;
 
     public CustomerOrderServiceImpl(
@@ -60,6 +62,7 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
         StoreRepository storeRepository,
         UserRepository userRepository,
         CustomerOrderMapper customerOrderMapper,
+        TenantAccessSupport tenantAccess,
         @Value("${app.orders.upload-dir:uploads/orders}") String uploadDir
     ) {
         this.orderRepository = orderRepository;
@@ -67,6 +70,7 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
         this.storeRepository = storeRepository;
         this.userRepository = userRepository;
         this.customerOrderMapper = customerOrderMapper;
+        this.tenantAccess = tenantAccess;
         this.uploadDir = uploadDir;
     }
 
@@ -91,7 +95,9 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
             : null;
 
         OrderStatus st = parseStatus(status);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
         var spec = CustomerOrderSpecifications.filter(
+            companyId,
             search,
             externalNumber,
             clientName,
@@ -119,7 +125,10 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
     @Override
     @Transactional(readOnly = true)
     public List<CourierOptionResponse> listCourierCandidates() {
-        return customerOrderMapper.toCourierOptionList(userRepository.findActiveByRoleName("COURIER"));
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        return customerOrderMapper.toCourierOptionList(
+            userRepository.findActiveByRoleNameAndCompanyId("COURIER", companyId)
+        );
     }
 
     @Override
@@ -127,6 +136,7 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
     public CustomerOrderCreatedResponse createOrder(CreateCustomerOrderRequest req, UUID creatorId) {
         Store store = storeRepository.findById(req.storeId())
             .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
+        tenantAccess.assertCanAccessStore(store);
         if (!store.isActive()) {
             throw new BadRequestException("Store is inactive");
         }
@@ -140,6 +150,11 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Courier not found"));
             if (!"COURIER".equalsIgnoreCase(courier.getRole().getName())) {
                 throw new BadRequestException("Selected user is not a courier");
+            }
+            if (courier.getCompany() == null
+                || store.getCompany() == null
+                || !courier.getCompany().getId().equals(store.getCompany().getId())) {
+                throw new BadRequestException("Courier does not belong to this company");
             }
         }
 
@@ -176,6 +191,7 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
 
         Store store = storeRepository.findById(storeId)
             .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
+        tenantAccess.assertCanAccessStore(store);
         if (!store.isActive()) {
             throw new BadRequestException("Store is inactive");
         }
@@ -264,8 +280,11 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
         if (slot < 1 || slot > 5) {
             throw new BadRequestException("Photo slot must be 1..5");
         }
-        orderRepository.findById(orderId)
+        CustomerOrder order = orderRepository.findById(orderId)
             .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        if (order.getStore() != null) {
+            tenantAccess.assertCanAccessStore(order.getStore());
+        }
 
         CustomerOrderPhoto ph = photoRepository.findByCustomerOrder_IdAndSlot(orderId, slot)
             .orElseThrow(() -> new ResourceNotFoundException("Photo not found"));

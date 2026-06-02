@@ -33,6 +33,17 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     List<Category> findAllWithActiveProducts();
 
     @Query("""
+        SELECT DISTINCT c FROM Category c
+        WHERE c.company.id = :companyId
+        AND EXISTS (
+            SELECT 1 FROM Product p
+            WHERE p.category = c AND p.isActive = true
+        )
+        ORDER BY c.name ASC
+        """)
+    List<Category> findAllWithActiveProductsByCompanyId(@Param("companyId") Integer companyId);
+
+    @Query("""
         SELECT COUNT(c) FROM Category c
         WHERE c.company.id = :companyId
         """)

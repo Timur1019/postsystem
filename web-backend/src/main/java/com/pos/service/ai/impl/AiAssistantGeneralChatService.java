@@ -2,6 +2,7 @@ package com.pos.service.ai.impl;
 
 import com.pos.config.AiAssistantProperties;
 import com.pos.dto.ai.AiAssistantChatMessage;
+import com.pos.service.ai.AiAssistantCompanyRepository;
 import com.pos.exception.BadRequestException;
 import com.pos.service.ai.DeepSeekClient;
 import com.pos.util.LogUtil;
@@ -19,7 +20,7 @@ public class AiAssistantGeneralChatService {
 
     private final DeepSeekClient deepSeekClient;
     private final AiAssistantProperties properties;
-    private final AiAssistantAnalyticsCache analyticsCache;
+    private final AiAssistantCompanyRepository companyRepository;
 
     public String answer(String question, String language, Integer companyId, List<AiAssistantChatMessage> history) {
         if (!properties.isLlmReady()) {
@@ -37,19 +38,16 @@ public class AiAssistantGeneralChatService {
         }
 
         LocalDate to = LocalDate.now();
-        LocalDate from = to.minusDays(90);
-        Map<String, Object> executive = analyticsCache.executiveOverview(from, to, companyId);
-
-        if (properties.isFastMode() && !AiAssistantLlmPolicy.useLlmForGeneralChat(question)) {
-            return AiAssistantExecutiveReply.format(executive, language);
-        }
+        // Для общего чата грузим только "срез" аналитики, чтобы не отдавать/считать всё подряд.
+        LocalDate from = to.minusDays(30);
+        Map<String, Object> executive = companyRepository.executiveOverview(from, to, companyId);
 
         Map<String, Object> context = Map.of("executiveOverview", executive);
         String dataBrief = AiAssistantContextBrief.build(context, language);
 
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content", AiAssistantPrompts.generalChatSystem()));
-        messages.add(Map.of("role", "user", "content", "DATA (system analytics, last ~90 days):\n" + dataBrief));
+        messages.add(Map.of("role", "user", "content", "DATA (system analytics, last ~30 days):\n" + dataBrief));
         AiAssistantConversationHistory.appendToLlmMessages(messages, history);
         messages.add(Map.of("role", "user", "content", question));
 

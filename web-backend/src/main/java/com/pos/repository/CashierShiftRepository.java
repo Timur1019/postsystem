@@ -23,4 +23,15 @@ public interface CashierShiftRepository extends JpaRepository<CashierShift, UUID
     @EntityGraph(attributePaths = {"store", "store.company", "cashier"})
     @Query("SELECT s FROM CashierShift s WHERE s.status = :status AND s.zReport IS NULL")
     List<CashierShift> findClosedWithoutZReport(@Param("status") CashierShift.ShiftStatus status);
+
+    @EntityGraph(attributePaths = {"store", "store.company", "cashier"})
+    @Query("""
+        SELECT s FROM CashierShift s
+        JOIN s.store st
+        WHERE s.status = :status AND s.zReport IS NULL AND st.company.id = :companyId
+        """)
+    List<CashierShift> findClosedWithoutZReportByCompany(
+        @Param("status") CashierShift.ShiftStatus status,
+        @Param("companyId") Integer companyId
+    );
 }

@@ -117,8 +117,6 @@ async function invokeDesktopLabelPrint(requireBarcode = true) {
 export async function printShelfLabelSilent({ requireBarcode = true } = {}) {
   if (!isDesktopLabelPrintAvailable()) {
     document.body.classList.add(SHELF_LABEL_PRINT_ACTIVE_CLASS);
-    await waitForLabelDomReady({ requireBarcode }).catch(() => undefined);
-    await waitForPaintSettled();
     return new Promise((resolve) => {
       const done = () => {
         cleanupLabelPrintState();
@@ -126,7 +124,10 @@ export async function printShelfLabelSilent({ requireBarcode = true } = {}) {
         resolve('dialog');
       };
       window.addEventListener('afterprint', done);
-      window.print();
+      // В браузерах `window.print()` часто блокируется, если вызвать после `await` (теряется user gesture).
+      // Поэтому: не ждём async-ready, а даём 1-2 кадра на отрисовку и сразу открываем диалог печати.
+      void waitForLabelDomReady({ requireBarcode }).catch(() => undefined);
+      requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
     });
   }
 

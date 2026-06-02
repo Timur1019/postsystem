@@ -17,6 +17,7 @@ import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.AbstractProductCatalogSupport;
 import com.pos.service.support.TenantAccessSupport;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -112,7 +113,8 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
 
     @Override
     public List<ProductResponse> getLowStockProducts() {
-        return productRepository.findLowStockProducts().stream()
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        return productRepository.findLowStockProductsByCompanyId(companyId, PageRequest.of(0, 500)).stream()
             .map(assembler::toResponse)
             .collect(Collectors.toList());
     }

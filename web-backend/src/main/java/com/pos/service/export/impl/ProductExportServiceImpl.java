@@ -3,7 +3,10 @@ package com.pos.service.export.impl;
 import com.pos.dto.product.ProductExportPreviewRow;
 import com.pos.dto.product.ProductExportRequest;
 import com.pos.entity.Product;
+import com.pos.entity.Store;
+import com.pos.exception.BadRequestException;
 import com.pos.repository.ProductRepository;
+import com.pos.repository.StoreRepository;
 import com.pos.repository.spec.ProductSpecifications;
 import com.pos.service.export.ProductExportService;
 import com.pos.service.support.TenantAccessSupport;
@@ -31,6 +34,7 @@ import java.util.UUID;
 public class ProductExportServiceImpl implements ProductExportService {
 
     private final ProductRepository productRepository;
+    private final StoreRepository storeRepository;
     private final ExcelSpreadsheetWriter excelWriter;
     private final TenantAccessSupport tenantAccess;
 
@@ -97,11 +101,17 @@ public class ProductExportServiceImpl implements ProductExportService {
     }
 
     private List<Product> loadProducts(String storeIdsParam) {
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
         Specification<Product> spec = ProductSpecifications.catalogFilter(
-            tenantAccess.effectiveCompanyIdOrNull(),
+            companyId,
             null, null, "ACTIVE", null, null, null, null, null
         );
         List<Integer> storeIds = ProductImportParseUtil.parseStoreIdList(storeIdsParam);
+        for (Integer storeId : storeIds) {
+            Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new BadRequestException("Store not found: " + storeId));
+            tenantAccess.assertCanAccessStore(store);
+        }
         if (!storeIds.isEmpty()) {
             spec = spec.and(ProductSpecifications.storePriceInOneOf(storeIds));
         }

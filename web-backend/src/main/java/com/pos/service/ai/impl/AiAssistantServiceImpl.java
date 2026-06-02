@@ -7,7 +7,7 @@ import com.pos.entity.User;
 import com.pos.exception.BadRequestException;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.ai.AiAssistantService;
-import com.pos.service.ai.AnalyticsToolFacade;
+import com.pos.service.ai.AiAssistantCompanyRepository;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,6 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class AiAssistantServiceImpl implements AiAssistantService {
 
-    private final AnalyticsToolFacade toolFacade;
     private final CurrentUserProvider currentUserProvider;
     private final TenantAccessSupport tenantAccess;
     private final AiAssistantProperties properties;
@@ -31,7 +30,7 @@ public class AiAssistantServiceImpl implements AiAssistantService {
     private final AiAssistantGeneralChatService generalChatService;
     private final AiAssistantToolRouter toolRouter;
     private final AiAssistantInsightComposer insightComposer;
-    private final AiAssistantAnalyticsCache analyticsCache;
+    private final AiAssistantCompanyRepository companyRepository;
 
     @Override
     public AiAssistantResponse ask(String message, List<AiAssistantChatMessage> history) {
@@ -77,20 +76,10 @@ public class AiAssistantServiceImpl implements AiAssistantService {
     }
 
     private Map<String, Object> runTool(AiAssistantToolCall call, Integer companyId) {
-        return switch (call.tool()) {
-            case AiAssistantToolCatalog.TODAY_REVENUE -> toolFacade.todayRevenue(companyId);
-            case AiAssistantToolCatalog.SALES_PERIOD -> toolFacade.salesPeriodOverview(call.from(), call.to(), companyId);
-            case AiAssistantToolCatalog.INVENTORY -> toolFacade.inventoryOverview(call.from(), call.to(), companyId);
-            case AiAssistantToolCatalog.Z_REPORTS -> analyticsCache.zReportsOverview(
-                    call.from() != null ? call.from() : java.time.LocalDate.now().minusDays(90),
-                    call.to(),
-                    companyId);
-            case AiAssistantToolCatalog.TOP_PRODUCTS -> toolFacade.topProductsPeriod(call.from(), call.to(), call.limit());
-            case AiAssistantToolCatalog.RETURNS_SUMMARY -> toolFacade.returnsSummaryPeriod(call.from(), call.to(), companyId);
-            case AiAssistantToolCatalog.REDISTRIBUTION -> toolFacade.stockRedistributionSuggestion(call.from(), call.to(), companyId);
-            case AiAssistantToolCatalog.STORE_INSIGHT -> toolFacade.storeSalesAndStockInsight(call.from(), call.to(), companyId);
-            case AiAssistantToolCatalog.BUSINESS_HEALTH -> toolFacade.businessHealthCheck(call.from(), call.to(), companyId);
-            default -> throw new BadRequestException("Неизвестный инструмент ассистента");
-        };
+        try {
+            return companyRepository.runTool(call.tool(), call.from(), call.to(), call.query(), companyId, call.limit());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Неизвестный инструмент ассистента");
+        }
     }
 }

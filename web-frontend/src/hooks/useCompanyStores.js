@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { storeApi } from '../services/api';
+import { useTenantScope } from './useTenantScope';
 
 /**
  * Company stores for stock operations.
@@ -8,10 +9,13 @@ import { storeApi } from '../services/api';
  * - several: user must pick storeId
  */
 export function useCompanyStores() {
+  const { companyId, tenantKey, tenantReady } = useTenantScope();
+
   const { data: stores = [], isPending, isError } = useQuery({
-    queryKey: ['stores'],
+    queryKey: tenantKey('stores'),
     queryFn: () => storeApi.getAll().then((r) => r.data),
     staleTime: 60_000,
+    enabled: tenantReady,
   });
 
   const onlyStore = useMemo(() => (stores.length === 1 ? stores[0] : null), [stores]);
@@ -23,5 +27,5 @@ export function useCompanyStores() {
     return null;
   };
 
-  return { stores, onlyStore, needsStorePick, resolveStoreId, isPending, isError };
+  return { stores, onlyStore, needsStorePick, resolveStoreId, isPending, isError, companyId };
 }

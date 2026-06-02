@@ -2,6 +2,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
+import { logoutAndResetSession } from '../../utils/authSession';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 import { useModuleAccess } from '../../hooks/useModuleAccess';
 import AppSidebar from './AppSidebar';
@@ -30,7 +31,7 @@ export default function AppShellLayout() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const { hasModule } = useModuleAccess();
   const displayAppName = useTenantDisplayStore((s) => s.displayAppName);
   const [sidebarOpen, setSidebarOpen] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches);
@@ -89,7 +90,7 @@ export default function AppShellLayout() {
   }, [location.pathname]);
 
   const handleLogout = () => {
-    logout();
+    logoutAndResetSession();
     navigate('/login');
   };
   const navLabelsVisible = isDesktop ? sidebarNavExpanded : true;

@@ -9,6 +9,7 @@ import { Eye, EyeOff, Loader, Download, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { resetClientSessionState } from '../utils/authSession';
 import LanguageSwitcher from '../components/shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../store/tenantDisplayStore';
 import BrandMark from '../components/shared/BrandMark';
@@ -65,6 +66,7 @@ export default function LoginPage() {
         toast.error(t('login.failed'));
         return;
       }
+      resetClientSessionState();
       setAuth(accessToken, profile);
       toast.success(t('login.welcome', { name: profile.fullName }));
       const target =

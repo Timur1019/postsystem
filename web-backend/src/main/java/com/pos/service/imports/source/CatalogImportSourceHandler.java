@@ -4,6 +4,7 @@ import com.pos.dto.product.ProductImportPreviewRow;
 import com.pos.entity.Product;
 import com.pos.repository.ProductRepository;
 import com.pos.service.imports.ProductImportParseOptions;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.service.imports.ProductImportSource;
 import com.pos.service.imports.ProductImportSupport;
 import com.pos.spreadsheet.ExcelSpreadsheetReader;
@@ -27,6 +28,7 @@ public class CatalogImportSourceHandler implements ProductImportSourceHandler {
     private final ExcelSpreadsheetReader excelSpreadsheetReader;
     private final CatalogJsonParser catalogJsonParser;
     private final ProductRepository productRepository;
+    private final TenantAccessSupport tenantAccess;
 
     @Override
     public ProductImportSource source() {
@@ -79,14 +81,15 @@ public class CatalogImportSourceHandler implements ProductImportSourceHandler {
     }
 
     private Optional<Product> findDuplicate(String sku, String name, String ikpu) {
-        if (productRepository.existsBySkuAndIsActiveTrue(sku)) {
-            return productRepository.findBySkuAndIsActiveTrue(sku);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        if (productRepository.existsByCompany_IdAndSkuAndIsActiveTrue(companyId, sku)) {
+            return productRepository.findByCompany_IdAndSkuAndIsActiveTrue(companyId, sku);
         }
-        if (StringUtils.hasText(ikpu) && productRepository.existsByIkpuAndIsActiveTrue(ikpu)) {
-            return productRepository.findByIkpuAndIsActiveTrue(ikpu);
+        if (StringUtils.hasText(ikpu) && productRepository.existsByCompany_IdAndIkpuAndIsActiveTrue(companyId, ikpu)) {
+            return productRepository.findByCompany_IdAndIkpuAndIsActiveTrue(companyId, ikpu);
         }
-        if (productRepository.existsByNameIgnoreCaseAndIsActiveTrue(name)) {
-            return productRepository.findByNameIgnoreCaseAndIsActiveTrue(name);
+        if (productRepository.existsByCompany_IdAndNameIgnoreCaseAndIsActiveTrue(companyId, name)) {
+            return productRepository.findByCompany_IdAndNameIgnoreCaseAndIsActiveTrue(companyId, name);
         }
         return Optional.empty();
     }

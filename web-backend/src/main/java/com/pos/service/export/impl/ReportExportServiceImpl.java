@@ -15,7 +15,11 @@ import com.pos.service.ReportService;
 import com.pos.service.export.ReportExportService;
 import com.pos.service.stock.StockInventoryService;
 import com.pos.service.stock.StockReportService;
+import com.pos.entity.Store;
+import com.pos.exception.BadRequestException;
+import com.pos.repository.StoreRepository;
 import com.pos.service.stock.StockTransferService;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.ExcelSpreadsheetWriter;
 import com.pos.spreadsheet.ExcelTemplate;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +49,8 @@ public class ReportExportServiceImpl implements ReportExportService {
     private final ReportService reportService;
     private final StockInventoryService stockInventoryService;
     private final StockTransferService stockTransferService;
+    private final StoreRepository storeRepository;
+    private final TenantAccessSupport tenantAccess;
     private final ExcelSpreadsheetWriter excelWriter;
 
     @Override
@@ -55,6 +61,7 @@ public class ReportExportServiceImpl implements ReportExportService {
         Integer categoryId,
         String search
     ) {
+        assertStoreAccess(storeId);
         String q = trimSearch(search);
         List<ProductSalesRowResponse> rows = stockReportService
             .productSales(from, to, storeId, categoryId, q, Pageable.unpaged())
@@ -79,6 +86,7 @@ public class ReportExportServiceImpl implements ReportExportService {
 
     @Override
     public byte[] exportSalesByCategories(LocalDate from, LocalDate to, Integer storeId) {
+        assertStoreAccess(storeId);
         List<CategorySalesRowResponse> rows = stockReportService
             .categorySales(from, to, storeId, Pageable.unpaged())
             .content();
@@ -119,6 +127,7 @@ public class ReportExportServiceImpl implements ReportExportService {
 
     @Override
     public byte[] exportPeriodCompare(LocalDate from, LocalDate to, Integer storeId) {
+        assertStoreAccess(storeId);
         PeriodCompareResponse cmp = reportService.getPeriodCompare(from, to, storeId);
         List<Map<String, Object>> data = new ArrayList<>();
 
@@ -233,6 +242,7 @@ public class ReportExportServiceImpl implements ReportExportService {
         Integer storeId,
         String search
     ) {
+        assertStoreAccess(storeId);
         String q = trimSearch(search);
         List<StockMovementRowResponse> rows = stockReportService
             .movementJournal(from, to, "ADJUSTMENT", storeId, q, Pageable.unpaged())
@@ -242,6 +252,7 @@ public class ReportExportServiceImpl implements ReportExportService {
 
     @Override
     public byte[] exportInventories(LocalDate from, LocalDate to, Integer storeId) {
+        assertStoreAccess(storeId);
         List<StockInventoryResponse> rows = stockInventoryService
             .list(from, to, storeId, Pageable.unpaged())
             .content();
@@ -267,6 +278,8 @@ public class ReportExportServiceImpl implements ReportExportService {
         Integer fromStoreId,
         Integer toStoreId
     ) {
+        assertStoreAccess(fromStoreId);
+        assertStoreAccess(toStoreId);
         List<StockTransferResponse> rows = stockTransferService
             .list(from, to, fromStoreId, toStoreId, Pageable.unpaged())
             .content();
@@ -312,5 +325,14 @@ public class ReportExportServiceImpl implements ReportExportService {
 
     private static String blank(String s) {
         return s != null ? s : "";
+    }
+
+    private void assertStoreAccess(Integer storeId) {
+        if (storeId == null) {
+            return;
+        }
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new BadRequestException("Store not found"));
+        tenantAccess.assertCanAccessStore(store);
     }
 }

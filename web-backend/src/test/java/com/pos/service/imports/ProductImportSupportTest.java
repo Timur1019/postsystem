@@ -5,6 +5,7 @@ import com.pos.entity.Product;
 import com.pos.repository.ProductRepository;
 import com.pos.service.imports.source.CatalogImportSourceHandler;
 import com.pos.service.imports.source.UzInvoiceImportSourceHandler;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.ExcelSpreadsheetReader;
 import com.pos.spreadsheet.parser.CatalogJsonParser;
 import com.pos.spreadsheet.parser.UzInvoiceDocumentIdExtractor;
@@ -22,7 +23,9 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +38,9 @@ class ProductImportSupportTest {
     @Mock CatalogJsonParser catalogJsonParser;
     @Mock UzInvoiceSpreadsheetParser uzInvoiceSpreadsheetParser;
     @Mock UzInvoiceJsonParser uzInvoiceJsonParser;
+    @Mock TenantAccessSupport tenantAccess;
+
+    private static final int COMPANY_ID = 1;
 
     private CatalogImportSourceHandler catalog;
     private UzInvoiceImportSourceHandler uzInvoice;
@@ -43,15 +49,20 @@ class ProductImportSupportTest {
 
     @BeforeEach
     void setUp() {
-        catalog = new CatalogImportSourceHandler(excelSpreadsheetReader, catalogJsonParser, productRepository);
-        uzInvoice = new UzInvoiceImportSourceHandler(uzInvoiceSpreadsheetParser, uzInvoiceJsonParser, productRepository);
+        lenient().when(tenantAccess.requireEffectiveCompanyId()).thenReturn(COMPANY_ID);
+        catalog = new CatalogImportSourceHandler(
+            excelSpreadsheetReader, catalogJsonParser, productRepository, tenantAccess
+        );
+        uzInvoice = new UzInvoiceImportSourceHandler(
+            uzInvoiceSpreadsheetParser, uzInvoiceJsonParser, productRepository, tenantAccess
+        );
     }
 
     @Test
     void uzInvoice_firstImport_allRowsNew_evenWithSameIkpu() {
-        when(productRepository.findFirstByUzInvoiceDocumentIdAndIsActiveTrue("IS-00008429"))
+        when(productRepository.findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(COMPANY_ID, "IS-00008429"))
             .thenReturn(Optional.empty());
-        when(productRepository.existsBySkuStartingWithAndIsActiveTrue("IS-00008429-L-"))
+        when(productRepository.existsByCompany_IdAndSkuStartingWithAndIsActiveTrue(COMPANY_ID, "IS-00008429-L-"))
             .thenReturn(false);
 
         Map<String, String> row1 = invoiceRow("Товар 1", "08470001002000000", "10000");
@@ -76,7 +87,7 @@ class ProductImportSupportTest {
             .isActive(true)
             .build();
 
-        when(productRepository.findFirstByUzInvoiceDocumentIdAndIsActiveTrue("IS-00008429"))
+        when(productRepository.findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(COMPANY_ID, "IS-00008429"))
             .thenReturn(Optional.of(existing));
 
         ProductImportPreviewRow preview = uzInvoice.toPreviewRow(5, row, DEFAULT_OPTS);
@@ -120,12 +131,13 @@ class ProductImportSupportTest {
             .isActive(true)
             .build();
 
-        when(productRepository.findFirstByUzInvoiceDocumentIdAndIsActiveTrue("IS-00008429"))
+        when(productRepository.findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(COMPANY_ID, "IS-00008429"))
             .thenReturn(Optional.empty());
-        when(productRepository.existsBySkuStartingWithAndIsActiveTrue("IS-00008429-L-"))
+        when(productRepository.existsByCompany_IdAndSkuStartingWithAndIsActiveTrue(COMPANY_ID, "IS-00008429-L-"))
             .thenReturn(true);
-        when(productRepository.findFirstBySkuStartingWithAndIsActiveTrueOrderBySkuAsc("IS-00008429-L-"))
-            .thenReturn(Optional.of(existing));
+        when(productRepository.findFirstByCompany_IdAndSkuStartingWithAndIsActiveTrueOrderBySkuAsc(
+            COMPANY_ID, "IS-00008429-L-"
+        )).thenReturn(Optional.of(existing));
 
         ProductImportPreviewRow preview = uzInvoice.toPreviewRow(2, row, DEFAULT_OPTS);
 
@@ -145,7 +157,10 @@ class ProductImportSupportTest {
 
         assertEquals(ProductImportPreviewRow.STATUS_NEW, preview.status());
         assertNull(preview.uzInvoiceDocumentId());
-        verify(productRepository, never()).findFirstByUzInvoiceDocumentIdAndIsActiveTrue(anyString());
+        verify(productRepository, never()).findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(
+            anyInt(),
+            anyString()
+        );
     }
 
     @Test

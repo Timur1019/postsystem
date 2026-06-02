@@ -76,14 +76,10 @@ public class ZReportExportServiceImpl implements ZReportExportService {
     public byte[] exportSalesForZReportExcel(Long zReportId) {
         ZReport z = zReportRepository.findById(zReportId)
             .orElseThrow(() -> new ResourceNotFoundException("Z-report not found"));
-        List<Sale> sales = saleRepository.findCompletedForZReport(zReportId, Sale.SaleStatus.COMPLETED);
-        if (sales.isEmpty()) {
-            sales = saleRepository.findCompletedForExportBetween(
-                z.getOpenedAt(),
-                z.getClosedAt(),
-                Sale.SaleStatus.COMPLETED
-            );
+        if (z.getStore() != null) {
+            tenantAccess.assertCanAccessStore(z.getStore());
         }
+        List<Sale> sales = saleRepository.findCompletedForZReport(zReportId, Sale.SaleStatus.COMPLETED);
 
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Sale sale : sales) {

@@ -6,6 +6,7 @@ import com.pos.entity.StoreStock;
 import com.pos.exception.BadRequestException;
 import com.pos.repository.StoreRepository;
 import com.pos.repository.StoreStockRepository;
+import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ public class StoreStockService {
 
     private final StoreStockRepository storeStockRepository;
     private final StoreRepository storeRepository;
+    private final TenantAccessSupport tenantAccess;
 
     public int getQuantity(UUID productId, Integer storeId) {
         if (productId == null || storeId == null) {
@@ -61,8 +63,15 @@ public class StoreStockService {
      */
     public Store resolveStoreForProduct(Product product, Integer storeId) {
         if (storeId != null) {
-            return storeRepository.findById(storeId)
+            Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new BadRequestException("Store not found"));
+            tenantAccess.assertCanAccessStore(store);
+            if (product.getCompany() != null
+                && store.getCompany() != null
+                && !product.getCompany().getId().equals(store.getCompany().getId())) {
+                throw new BadRequestException("Store does not belong to product company");
+            }
+            return store;
         }
         if (product.getCompany() == null) {
             throw new BadRequestException("Product has no company");
@@ -134,8 +143,13 @@ public class StoreStockService {
             throw new BadRequestException("Company is required");
         }
         if (storeId != null) {
-            return storeRepository.findById(storeId)
+            Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new BadRequestException("Store not found"));
+            tenantAccess.assertCanAccessStore(store);
+            if (store.getCompany() == null || !store.getCompany().getId().equals(companyId)) {
+                throw new BadRequestException("Store does not belong to your company");
+            }
+            return store;
         }
         List<Store> stores = storeRepository.findByCompanyIdOrderByNameAsc(companyId);
         if (stores.isEmpty()) {

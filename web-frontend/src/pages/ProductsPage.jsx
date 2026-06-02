@@ -8,6 +8,7 @@ import { Search, MoreVertical, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { productApi, categoryApi, storeApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { useTenantScope } from '../hooks/useTenantScope';
 import ProductCatalogModal from '../components/products/ProductCatalogModal';
 import StockAdjustModal from '../components/products/StockAdjustModal';
 import ProductsToolbar from '../components/products/ProductsToolbar';
@@ -39,6 +40,7 @@ export default function ProductsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuthStore();
+  const { tenantKey, tenantReady } = useTenantScope();
   const manage = canManage(user?.role);
 
   const [search, setSearch] = useState('');
@@ -83,19 +85,22 @@ export default function ProductsPage() {
   }, [search, page, pageSize, appliedFilters]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['products', queryParams],
+    queryKey: tenantKey('products', queryParams),
     queryFn: () => productApi.getAll(queryParams).then((r) => r.data),
     placeholderData: keepPreviousData,
+    enabled: tenantReady,
   });
 
   const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
+    queryKey: tenantKey('categories'),
     queryFn: () => categoryApi.getAll().then((r) => r.data),
+    enabled: tenantReady,
   });
 
   const { data: stores = [] } = useQuery({
-    queryKey: ['stores'],
+    queryKey: tenantKey('stores'),
     queryFn: () => storeApi.getAll().then((r) => r.data),
+    enabled: tenantReady,
   });
 
   const pageIds = useMemo(() => (data?.content ?? []).map((p) => p.id), [data?.content]);

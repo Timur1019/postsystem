@@ -20,7 +20,11 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         JOIN si.sale s
         WHERE s.createdAt >= :start AND s.createdAt < :end AND s.status = :status
         AND (:storeId IS NULL OR s.store.id = :storeId)
-        AND (:companyId IS NULL OR s.company.id = :companyId)
+        AND (
+            :companyId IS NULL
+            OR (s.company IS NOT NULL AND s.company.id = :companyId)
+            OR (s.company IS NULL AND s.store IS NOT NULL AND s.store.company.id = :companyId)
+        )
         """)
     long sumQuantitySoldBetween(
         @Param("start") Instant start,
@@ -36,7 +40,11 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         JOIN si.sale s
         WHERE s.createdAt >= :start AND s.createdAt < :end AND s.status = :status
         AND (:storeId IS NULL OR s.store.id = :storeId)
-        AND (:companyId IS NULL OR s.company.id = :companyId)
+        AND (
+            :companyId IS NULL
+            OR (s.company IS NOT NULL AND s.company.id = :companyId)
+            OR (s.company IS NULL AND s.store IS NOT NULL AND s.store.company.id = :companyId)
+        )
         """)
     long sumNetQuantitySoldBetween(
         @Param("start") Instant start,
@@ -52,7 +60,16 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         INNER JOIN sales s ON s.id = si.sale_id
         WHERE CAST(s.created_at AS date) BETWEEN :fromDate AND :toDate
         AND s.status = 'COMPLETED'
-        AND s.company_id = :companyId
+        AND (
+          s.company_id = :companyId
+          OR (
+            s.company_id IS NULL
+            AND EXISTS (
+              SELECT 1 FROM stores st
+              WHERE st.id = s.store_id AND st.company_id = :companyId
+            )
+          )
+        )
         GROUP BY si.product_name
         ORDER BY SUM(si.quantity) DESC
         LIMIT :limit
@@ -124,7 +141,16 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, UUID> {
         WHERE s.created_at >= :start AND s.created_at < :end
           AND s.status = 'COMPLETED'
           AND (:storeId IS NULL OR s.store_id = :storeId)
-          AND (:companyId IS NULL OR s.company_id = :companyId)
+          AND (
+            s.company_id = :companyId
+            OR (
+              s.company_id IS NULL
+              AND EXISTS (
+                SELECT 1 FROM stores st
+                WHERE st.id = s.store_id AND st.company_id = :companyId
+              )
+            )
+          )
         """, nativeQuery = true)
     java.math.BigDecimal sumCostEstimateBetween(
         @Param("start") Instant start,

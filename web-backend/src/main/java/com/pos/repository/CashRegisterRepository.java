@@ -26,6 +26,19 @@ public interface CashRegisterRepository extends JpaRepository<CashRegister, Long
     @EntityGraph(attributePaths = {"store"})
     List<CashRegister> findByStatusIgnoreCaseAndStore_CompanyIsNotNullOrderByStore_NameAscRegisterNumberAsc(String status);
 
+    @EntityGraph(attributePaths = {"store", "store.company"})
+    @Query("""
+        SELECT c FROM CashRegister c
+        JOIN c.store s
+        WHERE LOWER(c.status) = LOWER(:status)
+          AND s.company.id = :companyId
+        ORDER BY s.name ASC, c.registerNumber ASC
+        """)
+    List<CashRegister> findActiveByCompanyId(
+        @Param("status") String status,
+        @Param("companyId") Integer companyId
+    );
+
     @Query("""
         SELECT DISTINCT c.equipmentSerial FROM CashRegister c
         JOIN c.store s

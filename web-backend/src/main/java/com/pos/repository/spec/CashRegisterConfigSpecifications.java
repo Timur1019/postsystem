@@ -17,12 +17,22 @@ public final class CashRegisterConfigSpecifications {
     private CashRegisterConfigSpecifications() {
     }
 
-    public static Specification<CashRegisterConfig> filter(String nameSearch, Integer storeId, String equipmentSerial) {
+    public static Specification<CashRegisterConfig> filter(
+        Integer companyId,
+        String nameSearch,
+        Integer storeId,
+        String equipmentSerial
+    ) {
         return (root, query, cb) -> {
             if (Long.class != query.getResultType() && Integer.class != query.getResultType()) {
                 query.distinct(true);
             }
             List<Predicate> parts = new ArrayList<>();
+
+            if (companyId != null) {
+                Join<CashRegisterConfig, Store> companyStore = root.join("stores", JoinType.INNER);
+                parts.add(cb.equal(companyStore.get("company").get("id"), companyId));
+            }
 
             if (StringUtils.hasText(nameSearch)) {
                 String q = "%" + nameSearch.trim().toLowerCase() + "%";
