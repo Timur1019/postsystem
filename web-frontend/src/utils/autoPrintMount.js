@@ -12,7 +12,7 @@ const {
   fiscalPrintDialogClass,
 } = RECEIPT_PRINT_DOM;
 
-const { hostCenteredClass } = RECEIPT_PRINT_STYLES;
+const { hostCenteredClass, hostCapturingClass } = RECEIPT_PRINT_STYLES;
 
 let pendingUnmountTimer = null;
 
@@ -62,20 +62,32 @@ export function getAutoPrintMountEl() {
   return el;
 }
 
-export function findLivePreviewShell() {
-  const bodyHost = document.getElementById(BODY_PRINT_HOST_ID);
+export function getAutoPrintFiscalShell() {
   const mount = document.getElementById(MOUNT_ID);
-
-  const candidates = [
-    mount?.querySelector(`#${PRINT_SHELL_ID}`),
-    document.getElementById(PRINT_SHELL_ID),
-  ].filter(Boolean);
-
-  for (const el of candidates) {
-    if (bodyHost?.contains(el)) continue;
-    if (mount?.contains(el) || el.closest(`#${MOUNT_ID}`)) return el;
+  const inMount = mount?.querySelector(`#${PRINT_SHELL_ID}`);
+  if (inMount && !document.getElementById('root')?.contains(inMount)) {
+    return inMount;
   }
-  return null;
+  const shell = document.getElementById(PRINT_SHELL_ID);
+  if (shell && !document.getElementById('root')?.contains(shell)) {
+    return shell;
+  }
+  return inMount || null;
+}
+
+export function findLivePreviewShell() {
+  return getAutoPrintFiscalShell();
+}
+
+/** Перед webContents.print: чек в левый верх (не flex-center), белый фон. */
+export function prepareMountForSilentCapture() {
+  const mount = document.getElementById(MOUNT_ID);
+  if (!mount) return () => {};
+  mount.classList.add(hostCapturingClass);
+  void mount.offsetHeight;
+  return () => {
+    mount.classList.remove(hostCapturingClass);
+  };
 }
 
 export function removeBodyPrintHost() {

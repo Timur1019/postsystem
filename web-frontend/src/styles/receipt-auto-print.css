@@ -75,6 +75,41 @@
   color: #000 !important;
 }
 
+/* На момент webContents.print — чек слева сверху, белый лист (не flex-center) */
+html.electron-print-capturing #pos-auto-print-mount.pos-auto-print-host--capturing,
+html.electron-silent-print.electron-print-capturing
+  #pos-auto-print-mount.pos-auto-print-host--capturing {
+  display: block !important;
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: var(--receipt-auto-print-body-width) !important;
+  max-width: var(--receipt-auto-print-body-width) !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #fff !important;
+  z-index: var(--receipt-auto-print-capture-z) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  overflow: visible !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  box-shadow: none !important;
+}
+
+html.electron-print-capturing #pos-auto-print-mount.pos-auto-print-host--capturing .fiscal-print-dialog,
+html.electron-print-capturing #pos-auto-print-mount.pos-auto-print-host--capturing #fiscal-print-shell {
+  width: 100% !important;
+  max-width: 100% !important;
+  transform: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    2. Legacy: слот в правой колонке (пустой spacer)
    ═══════════════════════════════════════════════════════════════════════════ */

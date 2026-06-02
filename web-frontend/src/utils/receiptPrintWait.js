@@ -8,7 +8,7 @@ import {
   RECEIPT_PRINT_ENGINE,
   RECEIPT_PRINT_THRESHOLDS,
 } from '../config/receiptPrintConfig';
-import { findLivePreviewShell } from './autoPrintMount';
+import { findLivePreviewShell, getAutoPrintFiscalShell } from './autoPrintMount';
 
 export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -139,7 +139,7 @@ export async function waitForReceiptPaintSettled() {
 export async function waitForBodyPrintImagesReady(
   maxMs = RECEIPT_PRINT_ENGINE.bodyImageWaitMaxMs,
 ) {
-  const shell = document.getElementById(RECEIPT_PRINT_DOM.fiscalPrintShellId);
+  const shell = getAutoPrintFiscalShell();
   if (!shell) return;
   const deadline = Date.now() + maxMs;
   while (Date.now() < deadline) {
@@ -152,9 +152,10 @@ export async function waitForBodyPrintImagesReady(
 }
 
 export function assertFiscalPrintShellReady() {
-  const shell = document.getElementById(RECEIPT_PRINT_DOM.fiscalPrintShellId);
+  const shell = getAutoPrintFiscalShell();
   const root = document.getElementById('root');
   if (!shell || root?.contains(shell)) {
+    console.warn('[Aurent] fiscal shell missing or inside #root');
     throw new Error('Чек не найден для печати');
   }
   const area =

@@ -7,6 +7,15 @@ const IS_WIN = process.platform === 'win32';
 
 const PRINT_CALLBACK_TIMEOUT_MS = IS_WIN ? 12000 : 8000;
 
+/** Находит чек автопечати на body, не внутри #root. */
+const FIND_FISCAL_PRINT_SHELL_JS = `
+  document.querySelector('#pos-auto-print-mount #fiscal-print-shell')
+    || Array.from(document.querySelectorAll('#fiscal-print-shell')).find(
+      (el) => !document.getElementById('root')?.contains(el)
+    )
+    || document.getElementById('fiscal-print-shell')
+`;
+
 function paperWidthPx(paperMm) {
   return Math.max(280, Math.round((paperMm / 25.4) * 96) + 48);
 }
@@ -64,7 +73,7 @@ function invokeWebContentsPrint(
 function waitForImages(webContents) {
   return webContents.executeJavaScript(`
     (() => {
-      const shell = document.getElementById('fiscal-print-shell');
+      const shell = ${FIND_FISCAL_PRINT_SHELL_JS.trim()};
       const imgs = shell
         ? Array.from(shell.querySelectorAll('img'))
         : Array.from(document.images);
@@ -147,7 +156,7 @@ function winPrintAttempts(requestedName, printers, platformIsWin = IS_WIN) {
 
 const MEASURE_RECEIPT_DIMS_JS = `
 (() => {
-  const shell = document.getElementById('fiscal-print-shell');
+  const shell = ${FIND_FISCAL_PRINT_SHELL_JS.trim()};
   if (!shell) return null;
   const area = shell.querySelector('#receipt-print-area') || shell.querySelector('.receipt-print-root') || shell;
   const textLen = (area.innerText || '').trim().length;

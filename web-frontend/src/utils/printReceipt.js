@@ -9,7 +9,7 @@
  * Mount превью / body для print → utils/autoPrintMount.js
  */
 import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_ENGINE } from '../config/receiptPrintConfig';
-import { ensureAutoPrintMountCentered } from './autoPrintMount';
+import { ensureAutoPrintMountCentered, prepareMountForSilentCapture } from './autoPrintMount';
 import {
   assertFiscalPrintShellReady,
   sleep,
@@ -76,11 +76,13 @@ export async function withElectronPrintCapture(
   { settleMs = RECEIPT_PRINT_ENGINE.captureSettleMs } = {},
 ) {
   document.documentElement.classList.add(ELECTRON_PRINT_CAPTURING_CLASS);
+  const undoCaptureLayout = prepareMountForSilentCapture();
   try {
     await waitForReceiptPaintSettled();
     await sleep(settleMs);
     return await runPrint();
   } finally {
+    undoCaptureLayout();
     await sleep(RECEIPT_PRINT_ENGINE.captureReleaseDelayMs);
     document.documentElement.classList.remove(ELECTRON_PRINT_CAPTURING_CLASS);
   }
