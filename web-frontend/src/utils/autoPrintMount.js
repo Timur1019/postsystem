@@ -81,3 +81,42 @@ export function teardownAutoPrintMount() {
   // Убираем контейнер из слота — иначе #pos-auto-print-slot не :empty и белый блок остаётся до F5.
   el.remove();
 }
+
+/**
+ * Перед silent print: чек должен быть прямым потомком body.
+ * Иначе @media print (print-thermal-modal #root { display:none }) скрывает чек в слоте — принтер получает пустую страницу.
+ */
+export function reparentAutoPrintMountForSilentCapture() {
+  const el = document.getElementById(MOUNT_ID);
+  if (!el) return () => {};
+
+  const slot = document.getElementById(SLOT_ID);
+  const restoreToSlot = Boolean(slot?.contains(el));
+
+  el.classList.remove(
+    'pos-auto-print-host--embedded',
+    'pos-auto-print-host--in-slot',
+    'pos-auto-print-host--in-pay',
+    'pos-auto-print-host--in-actions',
+  );
+  el.classList.add('fiscal-print-scene--offscreen');
+  el.style.position = '';
+  el.style.left = '';
+  el.style.right = '';
+  el.style.top = '';
+  el.style.opacity = '';
+  el.style.zIndex = '';
+
+  if (el.parentElement !== document.body) {
+    document.body.appendChild(el);
+  }
+
+  return () => {
+    if (!restoreToSlot || !document.getElementById(SLOT_ID)) return;
+    try {
+      mountInto(el, 'in-slot');
+    } catch {
+      /* ignore */
+    }
+  };
+}

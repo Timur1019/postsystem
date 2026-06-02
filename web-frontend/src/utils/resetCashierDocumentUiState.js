@@ -15,6 +15,12 @@ const HTML_UI_CLASSES = [
 export function resetCashierDocumentUiState() {
   if (typeof document === 'undefined') return;
 
+  const printActive = HTML_UI_CLASSES.some(
+    (cls) =>
+      document.documentElement.classList.contains(cls) ||
+      document.body?.classList.contains(cls),
+  );
+
   HTML_UI_CLASSES.forEach((cls) => {
     document.documentElement.classList.remove(cls);
     document.body?.classList.remove(cls);
@@ -24,6 +30,9 @@ export function resetCashierDocumentUiState() {
     document.body.style.overflow = '';
   }
 
-  document.getElementById('pos-auto-print-mount')?.remove();
-  cleanupDesktopPrintState();
+  // Не трогаем mount во время print job — иначе Electron получит пустой DOM.
+  if (!printActive) {
+    document.getElementById('pos-auto-print-mount')?.remove();
+    cleanupDesktopPrintState();
+  }
 }

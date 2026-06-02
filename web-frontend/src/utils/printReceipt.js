@@ -1,3 +1,4 @@
+import { reparentAutoPrintMountForSilentCapture } from './autoPrintMount';
 import {
   prepareThermalPrint,
   PRINT_THERMAL_CLASS,
@@ -149,8 +150,10 @@ function normalizeDesktopPrintError(err) {
 async function invokeDesktopSilentPrint() {
   let lastErr;
   for (let attempt = 1; attempt <= SILENT_PRINT_MAX_ATTEMPTS; attempt += 1) {
+    let restoreMount = () => {};
     try {
       assertAutoPrintShellReady();
+      restoreMount = reparentAutoPrintMountForSilentCapture();
       await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto());
       return;
     } catch (err) {
@@ -161,6 +164,8 @@ async function invokeDesktopSilentPrint() {
         await waitForPaintSettled();
         await new Promise((r) => setTimeout(r, 350 * attempt));
       }
+    } finally {
+      restoreMount();
     }
   }
   throw lastErr || new Error('Тихая печать не выполнена');
