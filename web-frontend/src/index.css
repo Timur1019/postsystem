@@ -43,23 +43,35 @@
   opacity: 0;
 }
 
-/* Превью автопечати в правой колонке — переопределяет .fiscal-print-scene (off-screen) */
+/* Превью автопечати — по центру экрана на body (вне #root) */
+#pos-auto-print-mount.pos-auto-print-host--centered,
 #pos-auto-print-mount.pos-auto-print-host--embedded,
 #pos-auto-print-mount.pos-auto-print-host--in-slot {
-  position: static !important;
-  left: auto !important;
-  top: auto !important;
+  position: fixed !important;
+  inset: 0 !important;
+  left: 0 !important;
+  top: 0 !important;
   opacity: 1 !important;
   visibility: visible !important;
-  z-index: 1 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow: visible !important;
+  z-index: 2147483000 !important;
+  width: auto !important;
+  max-width: none !important;
+  overflow: auto !important;
   pointer-events: none;
   background: transparent !important;
 }
 
+#pos-auto-print-mount.pos-auto-print-host--centered {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px 16px !important;
+  background: rgb(15 23 42 / 0.52) !important;
+}
+
+#pos-auto-print-mount #fiscal-print-shell,
 #pos-auto-print-mount #fiscal-print-shell-live,
+#pos-auto-print-mount #fiscal-print-shell .receipt-print-root,
 #pos-auto-print-mount #fiscal-print-shell-live .receipt-print-root {
   color: #000 !important;
   background: #fff !important;

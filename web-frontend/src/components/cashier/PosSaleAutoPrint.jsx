@@ -1,7 +1,5 @@
 /**
- * Автопечать после продажи: превью чека в правом слоте → silent print.
- *
- * Тайминги UI → config/receiptPrintConfig.js (RECEIPT_AUTO_PRINT_UI)
+ * Автопечать после продажи: превью чека по центру экрана → silent print.
  */
 import { useLayoutEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -15,7 +13,7 @@ import {
 } from '../../config/receiptPrintConfig';
 import {
   cancelScheduledAutoPrintUnmount,
-  ensureAutoPrintMountInSlot,
+  ensureAutoPrintMountCentered,
   fiscalPrintDialogClass,
   getAutoPrintMountEl,
   scheduleAutoPrintUnmount,
@@ -31,12 +29,12 @@ import {
 
 function renderReceiptIntoMount(sale) {
   const host = getAutoPrintMountEl();
-  ensureAutoPrintMountInSlot();
+  ensureAutoPrintMountCentered();
   host.replaceChildren();
   const dialog = document.createElement('div');
   dialog.className = fiscalPrintDialogClass;
   const shell = document.createElement('div');
-  shell.id = RECEIPT_PRINT_DOM.previewShellId;
+  shell.id = RECEIPT_PRINT_DOM.fiscalPrintShellId;
   dialog.appendChild(shell);
   host.appendChild(dialog);
 
@@ -64,7 +62,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
     const { root } = renderReceiptIntoMount(sale);
 
     const run = async () => {
-      ensureAutoPrintMountInSlot();
+      ensureAutoPrintMountCentered();
       await waitForDoubleAnimationFrame();
       if (inFlightKeyRef.current !== key) return;
       await waitForReceiptDomReady({ useModalShell: true }).catch(() => undefined);
@@ -90,7 +88,7 @@ export default function PosSaleAutoPrint({ sale, onDone }) {
           console.warn('[Aurent] auto print failed', err);
           const msg = err?.message || t('pos.printFailed');
           const hint = t('pos.printFailedDesktopHint', {
-            defaultValue: 'Aurent → «Принтер чека», затом повторите продажу.',
+            defaultValue: 'Aurent → «Принтер чека», затем повторите продажу.',
           });
           const showHint =
             isDesktopCashier() && !/принтер чека/i.test(msg) && !/Aurent\s*→/i.test(msg);

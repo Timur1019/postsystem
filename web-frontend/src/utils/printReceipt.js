@@ -9,7 +9,7 @@
  * Mount превью / body для print → utils/autoPrintMount.js
  */
 import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_ENGINE } from '../config/receiptPrintConfig';
-import { prepareBodyPrintShellFromPreview } from './autoPrintMount';
+import { ensureAutoPrintMountCentered } from './autoPrintMount';
 import {
   assertFiscalPrintShellReady,
   sleep,
@@ -106,10 +106,10 @@ async function invokeDesktopSilentPrint() {
   const { silentMaxAttempts, silentRetryBackoffBaseMs } = RECEIPT_PRINT_ENGINE;
   let lastErr;
 
+  ensureAutoPrintMountCentered();
+
   for (let attempt = 1; attempt <= silentMaxAttempts; attempt += 1) {
-    let undoBodyPrint = () => {};
     try {
-      undoBodyPrint = await prepareBodyPrintShellFromPreview();
       await waitForReceiptPaintSettled();
       await waitForBodyPrintImagesReady();
       assertFiscalPrintShellReady();
@@ -119,7 +119,6 @@ async function invokeDesktopSilentPrint() {
     } catch (err) {
       lastErr = normalizeDesktopPrintError(err);
       console.warn(`[Aurent] silent print attempt ${attempt}/${silentMaxAttempts}`, lastErr.message);
-      undoBodyPrint();
       if (attempt < silentMaxAttempts) {
         await waitForReceiptDomReady({ useModalShell: true }).catch(() => undefined);
         await waitForReceiptPaintSettled();

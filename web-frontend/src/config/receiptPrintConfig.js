@@ -36,7 +36,7 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
 
 /**
  * Этап 1 — React-комponent PosSaleAutoPrint (сразу после продажи).
- * Отрисовка превью в правом слоте → ожидание QR → старт printThermalReceiptAuto.
+ * Отрисовка превью по центру экрана → ожидание QR → silent print.
  */
 export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
   /** Макс. ожидание QR; выход раньше, если img.receipt-qr уже загружен */
@@ -49,7 +49,7 @@ export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
    * Меньше → быстрее, но выше риск ретраев Electron.
    */
   beforePrintSettleMs: 450,
-  /** Держим превью в слоте после печати (мс), чтобы кассир успел увидеть чек */
+  /** Держим превью на экране после печати (мс) */
   previewHoldAfterPrintMs: 2200,
   /** React StrictMode: отложенный unmount при двойном mount */
   strictModeUnmountDelayMs: 280,
@@ -115,4 +115,5 @@ export const RECEIPT_PRINT_STYLES = Object.freeze({
   hostEmbeddedClass: 'pos-auto-print-host--embedded',
   hostInSlotClass: 'pos-auto-print-host--in-slot',
   hostBodyPrintClass: 'pos-auto-print-host--body-print',
+  hostCenteredClass: 'pos-auto-print-host--centered',
 });
