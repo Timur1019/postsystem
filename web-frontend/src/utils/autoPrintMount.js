@@ -83,38 +83,40 @@ export function teardownAutoPrintMount() {
 }
 
 /**
- * Перед silent print: чек должен быть прямым потомком body.
- * Иначе @media print (print-thermal-modal #root { display:none }) скрывает чек в слоте — принтер получает пустую страницу.
+ * Перед silent print: копия чека на body для @media print (#root скрыт).
+ * Превью в правом слоте не трогаем — на экране чек остаётся только справа.
  */
-export function reparentAutoPrintMountForSilentCapture() {
-  const el = document.getElementById(MOUNT_ID);
-  if (!el) return () => {};
+export function attachAutoPrintShellOnBodyForSilentCapture() {
+  const source = document.getElementById(MOUNT_ID);
+  const shell = source?.querySelector('#fiscal-print-shell');
+  if (!shell) return () => {};
 
-  const slot = document.getElementById(SLOT_ID);
-  const restoreToSlot = Boolean(slot?.contains(el));
-
-  el.classList.remove(
-    'pos-auto-print-host--embedded',
-    'pos-auto-print-host--in-slot',
-    'pos-auto-print-host--in-pay',
-    'pos-auto-print-host--in-actions',
-  );
-  el.classList.add('fiscal-print-scene--offscreen');
-  el.style.position = '';
-  el.style.left = '';
-  el.style.right = '';
-  el.style.top = '';
-  el.style.opacity = '';
-  el.style.zIndex = '';
-
-  if (el.parentElement !== document.body) {
-    document.body.appendChild(el);
+  let printHost = document.getElementById('pos-auto-print-print-host');
+  if (!printHost) {
+    printHost = document.createElement('div');
+    printHost.id = 'pos-auto-print-print-host';
+    printHost.className = 'fiscal-print-scene pos-sale-print-host fiscal-print-scene--offscreen';
+    printHost.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(printHost);
   }
 
+  printHost.replaceChildren();
+  const dialog = document.createElement('div');
+  dialog.className = 'fiscal-print-dialog';
+  const shellClone = shell.cloneNode(true);
+  shellClone.removeAttribute('id');
+  shellClone.setAttribute('data-print-shell', 'true');
+  dialog.appendChild(shellClone);
+  printHost.appendChild(dialog);
+
+  // Electron и assertAutoPrintShellReady ищут #fiscal-print-shell — временно на body.
+  shell.id = 'fiscal-print-shell-live';
+  shellClone.id = 'fiscal-print-shell';
+
   return () => {
-    if (!restoreToSlot || !document.getElementById(SLOT_ID)) return;
     try {
-      mountInto(el, 'in-slot');
+      shell.id = 'fiscal-print-shell';
+      printHost?.remove();
     } catch {
       /* ignore */
     }

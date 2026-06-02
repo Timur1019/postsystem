@@ -179,15 +179,28 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host:not(.pos-aut
   z-index: 0 !important;
 }
 
-html.electron-silent-print.print-thermal-modal.electron-print-capturing .fiscal-print-scene:not(.pos-auto-print-host--embedded),
-html.electron-silent-print.print-thermal-modal.electron-print-capturing .thermal-report-print-host,
-html.electron-silent-print.print-thermal-modal.electron-print-capturing .pos-sale-print-host:not(.pos-auto-print-host--embedded) {
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  .fiscal-print-scene:not(.pos-auto-print-host--embedded):not(.fiscal-print-scene--offscreen),
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  .thermal-report-print-host:not(.fiscal-print-scene--offscreen),
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  .pos-sale-print-host:not(.pos-auto-print-host--embedded):not(.fiscal-print-scene--offscreen) {
   left: 0 !important;
-  /* Не показываем чек пользователю вообще — остаётся offscreen,
-     но Electron всё равно печатает DOM с @media print. */
   transform: none !important;
   opacity: 1 !important;
   z-index: 2147483640 !important;
+}
+
+/* Автопечать: клон на body для Electron — на экране не показываем (только @media print). */
+html.electron-silent-print.print-thermal-modal.electron-print-capturing .fiscal-print-scene--offscreen,
+html.electron-auto-print-job.electron-print-capturing .fiscal-print-scene--offscreen {
+  position: fixed !important;
+  left: -10000px !important;
+  top: 0 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
 }
 html.electron-silent-print.print-thermal-modal .pos-sale-auto-print {
   display: none !important;

@@ -1,4 +1,4 @@
-import { reparentAutoPrintMountForSilentCapture } from './autoPrintMount';
+import { attachAutoPrintShellOnBodyForSilentCapture } from './autoPrintMount';
 import {
   prepareThermalPrint,
   PRINT_THERMAL_CLASS,
@@ -34,6 +34,11 @@ export function cleanupDesktopPrintState() {
   if (typeof document === 'undefined') return;
   PRINT_HTML_CLASSES.forEach((c) => document.documentElement.classList.remove(c));
   document.getElementById('pos-print-job-page')?.remove();
+  document.getElementById('pos-auto-print-print-host')?.remove();
+  const liveShell = document.querySelector('#fiscal-print-shell-live');
+  if (liveShell) {
+    liveShell.id = 'fiscal-print-shell';
+  }
 }
 
 function receiptPrintElement({ preferFiscalShell = false } = {}) {
@@ -153,7 +158,7 @@ async function invokeDesktopSilentPrint() {
     let restoreMount = () => {};
     try {
       assertAutoPrintShellReady();
-      restoreMount = reparentAutoPrintMountForSilentCapture();
+      restoreMount = attachAutoPrintShellOnBodyForSilentCapture();
       await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto());
       return;
     } catch (err) {
