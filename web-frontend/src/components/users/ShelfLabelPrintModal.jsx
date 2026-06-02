@@ -195,6 +195,12 @@ export default function ShelfLabelPrintModal({
 
   const currency = t('fiscalReceipt.currency');
 
+  const setCopiesClamped = useCallback((next) => {
+    const n = Number(next);
+    const clamped = Math.min(999, Math.max(1, Number.isFinite(n) ? Math.trunc(n) : 1));
+    setCopies(clamped);
+  }, []);
+
   const printNodes = useMemo(() => {
     const n = Math.min(999, Math.max(1, Number(copies) || 1));
     return Array.from({ length: n }, (_, i) => (
@@ -301,7 +307,7 @@ export default function ShelfLabelPrintModal({
         role="dialog"
         aria-modal
         aria-labelledby="shelf-label-title"
-        className="relative flex max-h-[95vh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl dark:bg-slate-900 sm:rounded-2xl"
+        className="relative flex max-h-[95vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl dark:bg-slate-900 sm:rounded-2xl"
       >
         <header className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
           <div className="min-w-0">
@@ -424,7 +430,7 @@ export default function ShelfLabelPrintModal({
             </div>
           </div>
 
-          <div className="mb-6 flex items-center justify-center gap-3">
+          <div className="mb-6 mt-2 flex items-center justify-center gap-4">
             <span className="text-sm text-slate-600 dark:text-slate-400">{t('usersBarcodePrint.copies')}</span>
             <button
               type="button"
@@ -433,7 +439,15 @@ export default function ShelfLabelPrintModal({
             >
               −
             </button>
-            <span className="min-w-[2.5rem] text-center font-mono text-base">{copies}</span>
+            <input
+              type="number"
+              min={1}
+              max={999}
+              step={1}
+              value={copies}
+              onChange={(e) => setCopiesClamped(e.target.value)}
+              className="h-10 w-20 rounded-lg border border-slate-300 bg-white px-2 text-center font-mono text-base text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            />
             <button
               type="button"
               className="h-10 w-10 rounded-lg border border-slate-300 bg-white text-lg dark:border-slate-600 dark:bg-slate-800"
