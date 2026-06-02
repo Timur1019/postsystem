@@ -68,7 +68,8 @@ html.electron-silent-print.print-thermal-modal .receipt-printing-overlay {
 }
 
 html.electron-silent-print.print-thermal-modal .receipt-printing-overlay .pos-pay-overlay__backdrop {
-  background: #0f172a !important;
+  /* Автопечать: делаем фон легче (не глухой чёрный), но без blur (чтобы не было артефактов). */
+  background: rgba(15, 23, 42, 0.28) !important;
   backdrop-filter: none !important;
 }
 
