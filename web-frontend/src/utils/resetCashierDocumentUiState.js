@@ -33,7 +33,6 @@ export function resetCashierDocumentUiState() {
   // Не трогаем mount во время print job — иначе Electron получит пустой DOM.
   if (!printActive) {
     document.getElementById('pos-auto-print-mount')?.remove();
-    document.getElementById('pos-auto-print-print-host')?.remove();
     cleanupDesktopPrintState();
   }
 }

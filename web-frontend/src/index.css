@@ -191,16 +191,26 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing
   z-index: 2147483640 !important;
 }
 
-/* Автопечать: клон на body для Electron — на экране не показываем (только @media print). */
-html.electron-silent-print.print-thermal-modal.electron-print-capturing .fiscal-print-scene--offscreen,
-html.electron-auto-print-job.electron-print-capturing .fiscal-print-scene--offscreen {
+/* Автопечать на body: off-screen, но printable (не visibility:hidden — иначе пустой чек). */
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  #pos-auto-print-mount.fiscal-print-scene--offscreen,
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  .pos-auto-print-host.fiscal-print-scene--offscreen,
+html.electron-auto-print-job.electron-print-capturing
+  #pos-auto-print-mount.fiscal-print-scene--offscreen,
+html.electron-auto-print-job.electron-print-capturing
+  .pos-auto-print-host.fiscal-print-scene--offscreen {
   position: fixed !important;
   left: -10000px !important;
   top: 0 !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
+  opacity: 1 !important;
+  visibility: visible !important;
   pointer-events: none !important;
-  z-index: -1 !important;
+  z-index: 0 !important;
+  display: block !important;
+  width: var(--print-content-w, 76mm) !important;
+  max-width: var(--print-content-w, 76mm) !important;
+  background: #fff !important;
 }
 html.electron-silent-print.print-thermal-modal .pos-sale-auto-print {
   display: none !important;
