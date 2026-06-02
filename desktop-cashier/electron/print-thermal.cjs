@@ -180,12 +180,20 @@ const MEASURE_LABEL_DIMS_JS = `
 (() => {
   const layer = document.getElementById('shelf-label-print-layer');
   if (!layer) return null;
-  const contentPx = Math.max(layer.scrollHeight, layer.offsetHeight, layer.getBoundingClientRect().height);
-  if (contentPx < 20) return null;
-  const pxPerMm = 96 / 25.4;
-  const widthMm = 90;
-  const heightMm = Math.max(45, Math.ceil(contentPx / pxPerMm) + 6);
-  return { widthMm, heightMm, contentPx };
+  const pages = layer.querySelectorAll('.shelflabel-print-page');
+  const pageCount = pages.length || 0;
+  if (pageCount < 1) return null;
+  const parseMm = (raw, fallback) => {
+    const n = parseFloat(String(raw || '').trim());
+    return Number.isFinite(n) && n > 0 ? n : fallback;
+  };
+  const root = document.documentElement;
+  const widthMm = parseMm(root.style.getPropertyValue('--label-paper-w-mm'), 58);
+  const pageHmm = parseMm(root.style.getPropertyValue('--label-paper-h-mm'), 40);
+  const gapMm = parseMm(root.style.getPropertyValue('--label-gap-mm'), 0);
+  const heightMm = pageHmm * pageCount + gapMm * Math.max(0, pageCount - 1);
+  if (heightMm < 15) return null;
+  return { widthMm, pageHmm, heightMm, pageCount, gapMm };
 })()
 `;
 
@@ -200,11 +208,17 @@ function buildLabelSilentPrintOpts(deviceName, dims) {
   if (name) {
     opts.deviceName = name;
   }
-  const widthMm = dims?.widthMm || 90;
-  const heightMm = Math.max(dims?.heightMm || 60, 45);
+  const widthMm = dims?.widthMm || 58;
+  const pageHmm = dims?.pageHmm || dims?.heightMm || 40;
+  const pageCount = Math.max(1, Number(dims?.pageCount) || 1);
+  const gapMm = Number(dims?.gapMm) || 0;
+  const heightMm =
+    dims?.heightMm && dims.heightMm > 0
+      ? dims.heightMm
+      : pageHmm * pageCount + gapMm * Math.max(0, pageCount - 1);
   opts.pageSize = {
     width: Math.round(widthMm * 1000),
-    height: Math.round(heightMm * 1000),
+    height: Math.round(Math.max(heightMm, pageHmm) * 1000),
   };
   return opts;
 }

@@ -10,9 +10,10 @@
 }
 
 .shelflabel-name {
-  font-size: calc(0.8125rem * var(--label-font-scale, 1));
-  font-weight: 600;
-  line-height: 1.3;
+  /* Чуть меньше, но читабельнее на маленьких этикетках. */
+  font-size: calc(0.72rem * var(--label-font-scale, 1));
+  font-weight: 750;
+  line-height: 1.18;
   text-align: center;
   color: #0f172a;
 }
@@ -28,13 +29,13 @@
 
 .shelflabel-price--footer {
   text-align: right;
-  font-size: calc(1rem * var(--label-font-scale, 1));
+  font-size: calc(0.92rem * var(--label-font-scale, 1));
   margin-top: auto;
 }
 
 .shelflabel-price--large {
-  font-size: calc(1.75rem * var(--label-font-scale, 1));
-  line-height: 1.2;
+  font-size: calc(1.35rem * var(--label-font-scale, 1));
+  line-height: 1.08;
 }
 
 .shelflabel-barcode-svg {
@@ -58,8 +59,21 @@
 
 .shelflabel-print-page {
   box-sizing: border-box;
-  padding: var(--label-pad-y, 10mm) var(--label-pad-x, 6mm);
-  min-height: 45mm;
+  width: calc(var(--label-paper-w-mm, 58) * 1mm);
+  height: calc(var(--label-paper-h-mm, 40) * 1mm);
+  min-height: calc(var(--label-paper-h-mm, 40) * 1mm);
+  max-height: calc(var(--label-paper-h-mm, 40) * 1mm);
+  /* Safety: не даём отступам “съесть” всю этикетку на маленьких размерах (например 30×20). */
+  --label-safe-pad-x: min(
+    var(--label-pad-x, 6mm),
+    calc((var(--label-paper-w-mm, 58) * 1mm - 8mm) / 2)
+  );
+  --label-safe-pad-y: min(
+    var(--label-pad-y, 10mm),
+    calc((var(--label-paper-h-mm, 40) * 1mm - 8mm) / 2)
+  );
+  padding: var(--label-safe-pad-y) var(--label-safe-pad-x);
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -93,8 +107,8 @@ html.electron-silent-label.shelflabel-printing-active #shelf-label-print-layer {
   position: fixed !important;
   left: -10000px !important;
   top: 0 !important;
-  width: 90mm !important;
-  max-width: 90mm !important;
+  width: calc(var(--label-paper-w-mm, 58) * 1mm) !important;
+  max-width: calc(var(--label-paper-w-mm, 58) * 1mm) !important;
   margin: 0 !important;
   padding: 0 !important;
   opacity: 1 !important;
@@ -129,8 +143,8 @@ html.electron-silent-label.shelflabel-printing-active.electron-print-capturing #
 html.electron-silent-label.shelflabel-printing-active.electron-print-capturing #shelf-label-print-layer {
   left: 0 !important;
   top: 0 !important;
-  width: 90mm !important;
-  min-height: 45mm !important;
+  width: calc(var(--label-paper-w-mm, 58) * 1mm) !important;
+  min-height: calc(var(--label-paper-h-mm, 40) * 1mm) !important;
   opacity: 1 !important;
 }
 
@@ -159,11 +173,13 @@ html.electron-silent-label.shelflabel-printing-active.electron-print-capturing #
   }
 
   .shelflabel-print-page {
-    page-break-after: always;
+    page-break-after: avoid;
+    break-after: avoid;
   }
 
-  .shelflabel-print-page:last-child {
-    page-break-after: auto;
+  .shelflabel-print-page + .shelflabel-print-page {
+    page-break-before: always;
+    break-before: page;
   }
 
   .shelflabel-name {

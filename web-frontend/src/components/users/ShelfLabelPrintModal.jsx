@@ -15,6 +15,19 @@ import '../../styles/shelf-label-print.css';
 
 const LABEL_PRINT_SETTINGS_KEY = 'aurent_label_print_settings_v1';
 
+/** Типовые размеры рулонных этикеток (мм). */
+const LABEL_SIZE_PRESETS = [
+  { id: 'shelf58x40', label: 'Полка 58×40', paperWmm: 58, paperHmm: 40 },
+  { id: 'shelf58x30', label: 'Полка 58×30', paperWmm: 58, paperHmm: 30 },
+  { id: 'ean40x30', label: 'Штрихкод 40×30', paperWmm: 40, paperHmm: 30 },
+  { id: 'ean50x30', label: 'Штрихкод 50×30', paperWmm: 50, paperHmm: 30 },
+  { id: 'eanNominal', label: 'EAN номинал 37×26', paperWmm: 37.29, paperHmm: 25.93 },
+  { id: 'small30x20', label: 'Мелкая 30×20', paperWmm: 30, paperHmm: 20 },
+  { id: 'small43x25', label: 'Мелкая 43×25', paperWmm: 43, paperHmm: 25 },
+  { id: 'mp75x120', label: 'Короб 75×120', paperWmm: 75, paperHmm: 120 },
+  { id: 'mp100x150', label: 'Короб 100×150', paperWmm: 100, paperHmm: 150 },
+];
+
 const clampNum = (v, min, max) => {
   const raw = String(v ?? '').trim().replace(',', '.');
   const n = Number(raw);
@@ -28,6 +41,13 @@ const snapStep = (n, step) => {
   const s = Number(step) || 1;
   return Math.round(x / s) * s;
 };
+
+function getSafePadMaxMm(paperMm, minContentMm, absMaxMm) {
+  const p = Number(paperMm);
+  if (!Number.isFinite(p) || p <= 0) return 0;
+  const raw = Math.max(0, (p - minContentMm) / 2);
+  return snapStep(Math.min(absMaxMm, raw), 0.5);
+}
 
 function applyLabelPrintCssVars(settings) {
   if (typeof document === 'undefined') return;
@@ -51,13 +71,23 @@ function BarcodeBlock({ value }) {
       while (el.firstChild) {
         el.removeChild(el.firstChild);
       }
+      const root = document.documentElement;
+      const wMm = parseFloat(root.style.getPropertyValue('--label-paper-w-mm')) || 58;
+      const hMm = parseFloat(root.style.getPropertyValue('--label-paper-h-mm')) || 40;
+      const scale = parseFloat(root.style.getPropertyValue('--label-font-scale')) || 1;
+      const isSmall = wMm <= 35 || hMm <= 25;
+      const fontSize = isSmall ? 8 : 11;
+      const height = isSmall ? 28 : 48;
+      const margin = isSmall ? 2 : 4;
+      const barWidth = isSmall ? 1.35 : 2;
       JsBarcode(el, value.replace(/\s/g, ''), {
         format: 'CODE128',
         displayValue: true,
-        fontSize: 11,
-        height: 48,
-        margin: 4,
-        width: 2,
+        fontSize: Math.max(7, Math.round(fontSize * scale)),
+        fontOptions: 'bold',
+        height: Math.max(18, Math.round(height * scale)),
+        margin: Math.max(1, Math.round(margin * scale)),
+        width: barWidth,
       });
     } catch {
       /* ignore bad barcode */
@@ -141,8 +171,27 @@ export default function ShelfLabelPrintModal({
   });
   const printRootRef = useRef(null);
 
+  const maxPadXmm = useMemo(
+    () => getSafePadMaxMm(labelSettings.paperWmm, 14, 50),
+    [labelSettings.paperWmm]
+  );
+  const maxPadYmm = useMemo(
+    () => getSafePadMaxMm(labelSettings.paperHmm, 14, 70),
+    [labelSettings.paperHmm]
+  );
+
   const canPickLabelPrinter =
     typeof window !== 'undefined' && typeof window.desktopCashier?.openLabelPrinterPicker === 'function';
+
+  // Если меняют размер бумаги пресетом/вручную — поджимаем отступы, чтобы не получить пустую этикетку.
+  useEffect(() => {
+    setLabelSettings((s) => {
+      const nextPadX = snapStep(clampNum(s.padXmm, 0, maxPadXmm), 0.5);
+      const nextPadY = snapStep(clampNum(s.padYmm, 0, maxPadYmm), 0.5);
+      if (nextPadX === s.padXmm && nextPadY === s.padYmm) return s;
+      return { ...s, padXmm: nextPadX, padYmm: nextPadY };
+    });
+  }, [maxPadXmm, maxPadYmm]);
 
   const reloadLabelPrinter = useCallback(async () => {
     if (typeof window === 'undefined') return;
@@ -218,23 +267,43 @@ export default function ShelfLabelPrintModal({
     setCopies(clamped);
   }, []);
 
+  const labelSheetProps = useMemo(
+    () => ({
+      variant,
+      productName,
+      barcode,
+      price,
+      showName,
+      showBarcode,
+      showPrice,
+      currency,
+    }),
+    [variant, productName, barcode, price, showName, showBarcode, showPrice, currency]
+  );
+
+  const buildPrintPage = useCallback(
+    (key) => (
+      <div key={key} className="shelflabel-print-page">
+        <LabelSheet {...labelSheetProps} />
+      </div>
+    ),
+    [labelSheetProps]
+  );
+
   const printNodes = useMemo(() => {
     const n = Math.min(999, Math.max(1, Number(copies) || 1));
-    return Array.from({ length: n }, (_, i) => (
-      <div key={i} className="shelflabel-print-page">
-        <LabelSheet
-          variant={variant}
-          productName={productName}
-          barcode={barcode}
-          price={price}
-          showName={showName}
-          showBarcode={showBarcode}
-          showPrice={showPrice}
-          currency={currency}
-        />
-      </div>
-    ));
-  }, [variant, productName, barcode, price, showName, showBarcode, showPrice, currency, copies]);
+    return Array.from({ length: n }, (_, i) => buildPrintPage(i));
+  }, [buildPrintPage, copies]);
+
+  const unmountPrintLayer = useCallback(() => {
+    try {
+      printRootRef.current?.unmount();
+    } catch {
+      /* ignore */
+    }
+    printRootRef.current = null;
+    teardownLabelPrintMount();
+  }, []);
 
   const doPrint = useCallback(async () => {
     if (showBarcode && !barcode?.trim()) {
@@ -242,18 +311,27 @@ export default function ShelfLabelPrintModal({
       return;
     }
 
-    try {
-      printRootRef.current?.unmount();
-    } catch {
-      /* ignore */
-    }
-    printRootRef.current = mountLabelPrintLayer(printNodes);
+    const copyCount = Math.min(999, Math.max(1, Number(copies) || 1));
+    const useSequentialDesktop = isDesktopLabelPrintAvailable() && copyCount > 1;
 
     try {
-      const mode = await printShelfLabelSilent({ requireBarcode: showBarcode });
-      if (mode === 'silent' || mode === 'dialog') {
-        toast.success(t('usersBarcodePrint.printSent'));
+      unmountPrintLayer();
+
+      if (useSequentialDesktop) {
+        for (let i = 0; i < copyCount; i += 1) {
+          printRootRef.current = mountLabelPrintLayer([buildPrintPage(`seq-${i}`)]);
+          await printShelfLabelSilent({ requireBarcode: showBarcode });
+          unmountPrintLayer();
+          if (i < copyCount - 1) {
+            await new Promise((r) => setTimeout(r, 280));
+          }
+        }
+      } else {
+        printRootRef.current = mountLabelPrintLayer(printNodes);
+        await printShelfLabelSilent({ requireBarcode: showBarcode });
       }
+
+      toast.success(t('usersBarcodePrint.printSent'));
     } catch (e) {
       const msg = e?.message ?? t('usersBarcodePrint.printFailed');
       const hint = t('desktop.labelPrinter', { defaultValue: 'Принтер штрих-кодов' });
@@ -261,15 +339,17 @@ export default function ShelfLabelPrintModal({
         isDesktopLabelPrintAvailable() && !/принтер/i.test(msg) && !/Aurent/i.test(msg);
       toast.error(showHint ? `${msg}. Aurent → «${hint}».` : msg);
     } finally {
-      try {
-        printRootRef.current?.unmount();
-      } catch {
-        /* ignore */
-      }
-      printRootRef.current = null;
-      teardownLabelPrintMount();
+      unmountPrintLayer();
     }
-  }, [barcode, printNodes, showBarcode, t]);
+  }, [barcode, buildPrintPage, copies, printNodes, showBarcode, t, unmountPrintLayer]);
+
+  const applySizePreset = useCallback((preset) => {
+    setLabelSettings((s) => ({
+      ...s,
+      paperWmm: preset.paperWmm,
+      paperHmm: preset.paperHmm,
+    }));
+  }, []);
 
   const openLabelPrinterPicker = useCallback(async () => {
     if (!canPickLabelPrinter) return;
@@ -421,12 +501,12 @@ export default function ShelfLabelPrintModal({
                   className="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                   value={labelSettings.padXmm}
                   min={0}
-                  max={50}
+                  max={maxPadXmm}
                   step={0.5}
                   onChange={(e) =>
                     setLabelSettings((s) => ({
                       ...s,
-                      padXmm: snapStep(clampNum(e.target.value, 0, 50), 0.5),
+                      padXmm: snapStep(clampNum(e.target.value, 0, maxPadXmm), 0.5),
                     }))
                   }
                 />
@@ -442,12 +522,12 @@ export default function ShelfLabelPrintModal({
                   className="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                   value={labelSettings.padYmm}
                   min={0}
-                  max={70}
+                  max={maxPadYmm}
                   step={0.5}
                   onChange={(e) =>
                     setLabelSettings((s) => ({
                       ...s,
-                      padYmm: snapStep(clampNum(e.target.value, 0, 70), 0.5),
+                      padYmm: snapStep(clampNum(e.target.value, 0, maxPadYmm), 0.5),
                     }))
                   }
                 />
@@ -506,6 +586,33 @@ export default function ShelfLabelPrintModal({
                       }))
                     }
                   />
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+                  {t('usersBarcodePrint.sizePresets', { defaultValue: 'Типовые размеры' })}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {LABEL_SIZE_PRESETS.map((preset) => {
+                    const active =
+                      Number(labelSettings.paperWmm) === preset.paperWmm &&
+                      Number(labelSettings.paperHmm) === preset.paperHmm;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => applySizePreset(preset)}
+                        className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                          active
+                            ? 'border-emerald-600 bg-emerald-50 text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-200'
+                            : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
