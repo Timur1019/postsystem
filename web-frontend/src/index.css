@@ -16,6 +16,15 @@
   ::-webkit-scrollbar-thumb:hover { @apply bg-slate-500; }
 }
 
+@media print {
+  /* Никогда не печатаем модалки/оверлеи */
+  .receipt-printing-overlay,
+  .pos-pay-overlay {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
+
 /* Скрытый контейнер термочека (в DOM для печати, не показываем на экране) */
 .fiscal-print-scene {
   position: fixed;
@@ -76,14 +85,13 @@ html.electron-silent-print.print-thermal-modal .receipt-printing-overlay {
 }
 
 html.electron-silent-print.print-thermal-modal .receipt-printing-overlay .pos-pay-overlay__backdrop {
-  /* Автопечать: делаем фон легче (не глухой чёрный), но без blur (чтобы не было артефактов). */
-  background: rgba(15, 23, 42, 0.28) !important;
+  background: transparent !important;
   backdrop-filter: none !important;
 }
 
 html.electron-silent-print.print-thermal-modal.electron-print-capturing .receipt-printing-overlay {
-  display: none !important;
-  visibility: hidden !important;
+  display: flex !important;
+  visibility: visible !important;
 }
 
 html.electron-silent-print.print-thermal-only .receipt-page,
@@ -140,8 +148,10 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing .fiscal-
 html.electron-silent-print.print-thermal-modal.electron-print-capturing .thermal-report-print-host,
 html.electron-silent-print.print-thermal-modal.electron-print-capturing .pos-sale-print-host {
   left: 0 !important;
-  transform: none !important;
-  opacity: 1 !important;
+  /* Не показываем чек пользователю вообще — остаётся offscreen,
+     но Electron всё равно печатает DOM с @media print. */
+  transform: translateX(-200vw) !important;
+  opacity: 0.01 !important;
   z-index: 2147483640 !important;
 }
 html.electron-silent-print.print-thermal-modal .pos-sale-auto-print {

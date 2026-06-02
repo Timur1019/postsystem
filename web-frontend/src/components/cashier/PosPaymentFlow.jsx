@@ -525,6 +525,7 @@ export default function PosPaymentFlow({
                   onChange={setTendered}
                   // "Без сдачи" не нужен: мы уже автозаполняем получено = к оплате.
                   hideActionKey
+                  hideBottomClear
                   exactAmount={toPay}
                   disabled={isPending}
                 />

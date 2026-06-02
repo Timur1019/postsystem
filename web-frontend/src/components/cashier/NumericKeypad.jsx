@@ -30,6 +30,8 @@ export default function NumericKeypad({
   exactAmount,
   quickActions,
   hideActionKey = false,
+  actionKeyMode = 'exact',
+  hideBottomClear = false,
   disabled = false,
 }) {
   const { t } = useTranslation();
@@ -98,8 +100,15 @@ export default function NumericKeypad({
           </button>
         ))}
         {hideActionKey ? (
-          <div className="pos-keypad__spacer" aria-hidden />
-        ) : !hasQuickRow ? (
+          <button
+            type="button"
+            className="pos-keypad__key pos-keypad__key--action"
+            disabled={disabled}
+            onClick={clear}
+          >
+            {t('pos.keypadClear')}
+          </button>
+        ) : !hasQuickRow || actionKeyMode === 'exact' ? (
           <button
             type="button"
             className="pos-keypad__key pos-keypad__key--action"
@@ -136,7 +145,7 @@ export default function NumericKeypad({
           <Delete size={22} strokeWidth={2} />
         </button>
       </div>
-      {!hasQuickRow && (
+      {!hasQuickRow && !hideBottomClear && (
         <button type="button" className="pos-keypad__clear" disabled={disabled} onClick={clear}>
           <Eraser size={16} strokeWidth={2} />
           {t('pos.keypadClear')}
