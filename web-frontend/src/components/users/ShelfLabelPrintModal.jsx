@@ -13,6 +13,23 @@ import {
 
 import '../../styles/shelf-label-print.css';
 
+const LABEL_PRINT_SETTINGS_KEY = 'aurent_label_print_settings_v1';
+
+const clampNum = (v, min, max) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, n));
+};
+
+function applyLabelPrintCssVars(settings) {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  root.style.setProperty('--label-font-scale', String(settings.fontScale ?? 1));
+  root.style.setProperty('--label-pad-x', `${settings.padXmm ?? 6}mm`);
+  root.style.setProperty('--label-pad-y', `${settings.padYmm ?? 10}mm`);
+  root.style.setProperty('--label-rotate', settings.rotate180 ? '180deg' : '0deg');
+}
+
 function BarcodeBlock({ value }) {
   const svgRef = useRef(null);
 
@@ -102,6 +119,12 @@ export default function ShelfLabelPrintModal({
   const [showPrice, setShowPrice] = React.useState(true);
   const [copies, setCopies] = React.useState(1);
   const [labelPrinterName, setLabelPrinterName] = useState('');
+  const [labelSettings, setLabelSettings] = useState({
+    rotate180: false,
+    fontScale: 1,
+    padXmm: 6,
+    padYmm: 10,
+  });
   const printRootRef = useRef(null);
 
   const canPickLabelPrinter =
@@ -126,6 +149,26 @@ export default function ShelfLabelPrintModal({
       setShowPrice(true);
       setCopies(1);
       void reloadLabelPrinter();
+      try {
+        const raw = localStorage.getItem(LABEL_PRINT_SETTINGS_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        const next = parsed
+          ? {
+              rotate180: Boolean(parsed.rotate180),
+              fontScale: clampNum(parsed.fontScale, 0.8, 1.6),
+              padXmm: clampNum(parsed.padXmm, 0, 20),
+              padYmm: clampNum(parsed.padYmm, 0, 25),
+            }
+          : null;
+        if (next) {
+          setLabelSettings(next);
+          applyLabelPrintCssVars(next);
+        } else {
+          applyLabelPrintCssVars(labelSettings);
+        }
+      } catch {
+        applyLabelPrintCssVars(labelSettings);
+      }
     }
     return () => {
       if (!open) {
@@ -139,6 +182,16 @@ export default function ShelfLabelPrintModal({
       }
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    applyLabelPrintCssVars(labelSettings);
+    try {
+      localStorage.setItem(LABEL_PRINT_SETTINGS_KEY, JSON.stringify(labelSettings));
+    } catch {
+      /* ignore */
+    }
+  }, [labelSettings, open]);
 
   const currency = t('fiscalReceipt.currency');
 
@@ -300,6 +353,75 @@ export default function ShelfLabelPrintModal({
               showPrice={showPrice}
               currency={currency}
             />
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {t('usersBarcodePrint.printSettings', { defaultValue: 'Настройки печати' })}
+            </p>
+
+            <div className="mt-3 space-y-3">
+              {toggleRow(
+                t('usersBarcodePrint.rotate180', { defaultValue: 'Повернуть на 180°' }),
+                labelSettings.rotate180,
+                (v) => setLabelSettings((s) => ({ ...s, rotate180: v }))
+              )}
+
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-slate-700 dark:text-slate-200">
+                  {t('usersBarcodePrint.textScale', { defaultValue: 'Размер текста' })}
+                </span>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0.8"
+                    max="1.6"
+                    step="0.05"
+                    value={labelSettings.fontScale}
+                    onChange={(e) =>
+                      setLabelSettings((s) => ({ ...s, fontScale: clampNum(e.target.value, 0.8, 1.6) }))
+                    }
+                  />
+                  <span className="w-12 text-right font-mono text-sm text-slate-600 dark:text-slate-300">
+                    {Number(labelSettings.fontScale).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-slate-700 dark:text-slate-200">
+                  {t('usersBarcodePrint.padX', { defaultValue: 'Отступ слева/справа (мм)' })}
+                </span>
+                <input
+                  type="number"
+                  className="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  value={labelSettings.padXmm}
+                  min={0}
+                  max={20}
+                  step={0.5}
+                  onChange={(e) =>
+                    setLabelSettings((s) => ({ ...s, padXmm: clampNum(e.target.value, 0, 20) }))
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-slate-700 dark:text-slate-200">
+                  {t('usersBarcodePrint.padY', { defaultValue: 'Отступ сверху/снизу (мм)' })}
+                </span>
+                <input
+                  type="number"
+                  className="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                  value={labelSettings.padYmm}
+                  min={0}
+                  max={25}
+                  step={0.5}
+                  onChange={(e) =>
+                    setLabelSettings((s) => ({ ...s, padYmm: clampNum(e.target.value, 0, 25) }))
+                  }
+                />
+              </div>
+            </div>
           </div>
 
           <div className="mb-6 flex items-center justify-center gap-3">
