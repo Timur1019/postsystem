@@ -1,6 +1,8 @@
 /* Модалка «Печатается чек…» — без превью чека на экране */
 .receipt-printing-overlay {
   z-index: 2147483647;
+  background: transparent !important;
+  backdrop-filter: none !important;
 }
 
 .receipt-printing-overlay .pos-pay-overlay__backdrop {
