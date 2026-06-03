@@ -8,7 +8,7 @@ import {
   ensureStablePrintHost,
   fiscalPrintDialogClass,
   getAutoPrintPreviewMountEl,
-  mountPreviewInSlotPublic,
+  mountPreviewScreenCentered,
   syncShellImagesBetween,
 } from '../../utils/autoPrintMount';
 
@@ -87,16 +87,13 @@ export async function syncPrintShellFromPreview() {
   return printShell;
 }
 
-/** Превью в слоте — клон уже готового print-shell (после QR/layout). */
-export async function syncPreviewFromPrintShell() {
+/** Превью по центру экрана — клон print-shell (после QR). */
+export async function showScreenPreviewFromPrintShell() {
   const liveShell = getPrintShellElement();
   if (!liveShell) return null;
 
-  const slot = document.getElementById(RECEIPT_PRINT_DOM.autoPrintSlotId);
-  if (!slot?.isConnected) return null;
-
   const host = getAutoPrintPreviewMountEl();
-  mountPreviewInSlotPublic(host);
+  mountPreviewScreenCentered(host);
   const previewShell = ensureShellInHost(host, PREVIEW_SHELL_ID);
   previewShell.innerHTML = liveShell.innerHTML;
 
@@ -109,6 +106,9 @@ export async function syncPreviewFromPrintShell() {
   void previewShell.offsetHeight;
   return previewShell;
 }
+
+/** @deprecated alias */
+export const syncPreviewFromPrintShell = showScreenPreviewFromPrintShell;
 
 export function getPrintShellElement() {
   return (

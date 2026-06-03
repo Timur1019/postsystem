@@ -25,6 +25,7 @@ const {
   hostInSlotClass,
   hostBodyPrintClass,
   hostPreviewParkClass,
+  hostScreenPreviewClass,
   hostCapturingClass,
 } = RECEIPT_PRINT_STYLES;
 
@@ -112,8 +113,30 @@ function mountPreviewOnBodyPark(hostEl) {
   }
 }
 
+/** Превью на экране: по центру, вне #root (не в правой колонке). */
+export function mountPreviewScreenCentered(hostEl) {
+  hostEl.classList.remove(
+    'fiscal-print-scene',
+    'fiscal-print-scene--offscreen',
+    hostBodyPrintClass,
+    hostCapturingClass,
+    hostEmbeddedClass,
+    hostInSlotClass,
+    hostPreviewParkClass,
+    RECEIPT_PRINT_STYLES.hostCenteredClass,
+    'pos-auto-print-host--in-pay',
+    'pos-auto-print-host--in-actions',
+  );
+  hostEl.classList.add(autoPrintHostClass, hostScreenPreviewClass);
+  clearHostInlineStyles(hostEl);
+  if (hostEl.parentElement !== document.body) {
+    document.body.appendChild(hostEl);
+  }
+}
+
+/** @deprecated — слот справа убран; используйте mountPreviewScreenCentered */
 export function mountPreviewInSlotPublic(hostEl) {
-  mountPreviewInSlot(hostEl);
+  mountPreviewScreenCentered(hostEl);
 }
 
 /** Стабильный print-host на body (вне #root) — единственный источник для Electron. */
@@ -125,7 +148,7 @@ function mountPreviewInSlot(hostEl) {
   const slot = document.getElementById(SLOT_ID);
   if (!slot?.isConnected) {
     if (isAutoPrintInFlight()) {
-      mountPreviewOnBodyPark(hostEl);
+      mountPreviewScreenCentered(hostEl);
       return;
     }
   }
@@ -165,12 +188,13 @@ export function parkPreviewMountOnBody() {
 export function ensureAutoPrintMountInSlot() {
   const el = document.getElementById(PREVIEW_MOUNT_ID);
   if (!el) return;
-  const slot = document.getElementById(SLOT_ID);
-  if (slot?.isConnected && slot.contains(el)) return;
-  mountPreviewInSlot(el);
+  if (el.classList.contains(hostScreenPreviewClass) && el.parentElement === document.body) {
+    return;
+  }
+  mountPreviewScreenCentered(el);
 }
 
-/** Превью чека в правой колонке (React). */
+/** Контейнер превью на body (центр экрана). */
 export function getAutoPrintPreviewMountEl() {
   let el = document.getElementById(PREVIEW_MOUNT_ID);
   if (!el) {
@@ -178,9 +202,9 @@ export function getAutoPrintPreviewMountEl() {
     el.id = PREVIEW_MOUNT_ID;
     el.className = `pos-sale-print-host ${autoPrintHostClass}`;
     el.setAttribute('aria-live', 'polite');
-    mountPreviewInSlot(el);
+    mountPreviewScreenCentered(el);
   } else {
-    mountPreviewInSlot(el);
+    mountPreviewScreenCentered(el);
   }
   return el;
 }
