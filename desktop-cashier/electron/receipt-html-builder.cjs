@@ -147,6 +147,7 @@ function buildThermalReceiptDocument(bodyHtml) {
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
+  <meta name="color-scheme" content="light" />
   <title>Aurent — чек</title>
   <style>${RECEIPT_PRINT_CSS}</style>
 </head>

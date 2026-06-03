@@ -188,15 +188,21 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing
   text-rendering: geometricPrecision !important;
 }
 
-#pos-auto-print-print-host-capture #fiscal-print-shell-capture *,
-#pos-auto-print-print-host-capture #fiscal-print-shell * {
+#pos-auto-print-print-host-capture #fiscal-print-shell-capture *:not(img):not(svg):not(canvas),
+#pos-auto-print-print-host-capture #fiscal-print-shell *:not(img):not(svg):not(canvas) {
   background-color: #fff !important;
   color: #000 !important;
   -webkit-text-fill-color: #000 !important;
   opacity: 1 !important;
   filter: none !important;
-  -webkit-print-color-adjust: exact !important;
-  print-color-adjust: exact !important;
+}
+
+#pos-auto-print-print-host-capture #fiscal-print-shell-capture img,
+#pos-auto-print-print-host-capture #fiscal-print-shell img,
+#pos-auto-print-print-host-capture .receipt-qr {
+  opacity: 1 !important;
+  filter: none !important;
+  image-rendering: crisp-edges;
 }
 
 @media print {

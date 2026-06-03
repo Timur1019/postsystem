@@ -1,10 +1,14 @@
 /** Полные стили чека для скрытого окна печати (без Tailwind). */
 const RECEIPT_PRINT_CSS = `
 @page { size: 80mm auto; margin: 0; }
+html {
+  color-scheme: light;
+}
 html, body {
   margin: 0;
   padding: 0;
-  background: #fff;
+  background: #fff !important;
+  background-color: #fff !important;
   color: #000;
   width: 80mm;
   max-width: 80mm;

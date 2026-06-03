@@ -135,6 +135,10 @@ const FORCE_RECEIPT_LIGHT_PRINT_JS = `
     || host?.querySelector('#fiscal-print-shell');
   if (!host || !shell) return false;
 
+  document.documentElement.style.setProperty('background-color', '#ffffff', 'important');
+  document.body.style.setProperty('background-color', '#ffffff', 'important');
+  document.body.style.setProperty('color', '#000000', 'important');
+
   host.style.setProperty('left', '-10000px', 'important');
   host.style.setProperty('top', '0', 'important');
   host.style.setProperty('opacity', '1', 'important');
@@ -144,6 +148,13 @@ const FORCE_RECEIPT_LIGHT_PRINT_JS = `
   const nodes = [host, shell, ...shell.querySelectorAll('*')];
   for (const el of nodes) {
     if (!(el instanceof HTMLElement)) continue;
+    const tag = el.tagName;
+    if (tag === 'IMG' || tag === 'SVG' || tag === 'CANVAS') {
+      el.style.setProperty('opacity', '1', 'important');
+      el.style.setProperty('visibility', 'visible', 'important');
+      el.style.setProperty('filter', 'none', 'important');
+      continue;
+    }
     el.style.setProperty('background-color', '#ffffff', 'important');
     el.style.setProperty('color', '#000000', 'important');
     el.style.setProperty('-webkit-text-fill-color', '#000000', 'important');
@@ -159,7 +170,7 @@ const FORCE_RECEIPT_LIGHT_PRINT_JS = `
 function buildStandardSilentPrintOpts(deviceName) {
   const opts = {
     silent: true,
-    printBackground: true,
+    printBackground: false,
     margins: { marginType: 'none' },
     copies: 1,
   };

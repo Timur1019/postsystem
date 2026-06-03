@@ -73,6 +73,7 @@ async function printReceiptInCleanWindow(payload, deps) {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
+      preferredColorScheme: 'light',
     },
   });
 
