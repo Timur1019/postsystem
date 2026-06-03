@@ -11,6 +11,7 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const required = process.argv.includes('--required') || process.env.REQUIRE_NATIVE_PRINTER === '1';
 const skip = process.env.SKIP_NATIVE_PRINTER === '1';
+const isDarwin = process.platform === 'darwin';
 
 function log(msg) {
   console.log(`[desktop-cashier] ${msg}`);
@@ -18,6 +19,12 @@ function log(msg) {
 
 if (skip) {
   log('SKIP_NATIVE_PRINTER=1 — пропуск сборки драйвера принтера');
+  process.exit(0);
+}
+
+/** ESC/POS на кассах — только Windows; Mac .dmg без native-модуля. */
+if (isDarwin && !required) {
+  log('macOS — пропуск @thiagoelg/node-printer (печать чека только в Windows .exe)');
   process.exit(0);
 }
 

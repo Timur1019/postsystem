@@ -92,11 +92,17 @@ export DESKTOP_UPDATE_URL="$UPDATE_URL"
 
 echo "==> electron-builder (${TARGET})..."
 cd "$ROOT/desktop-cashier"
-npm ci --silent 2>/dev/null || npm install
 
-if [[ "$TARGET" == "win" ]]; then
+if [[ "$TARGET" == "mac" ]]; then
+  echo "==> npm ci (без native-принтера — ESC/POS только Windows)..."
+  SKIP_NATIVE_PRINTER=1 npm ci --omit=optional --silent 2>/dev/null || SKIP_NATIVE_PRINTER=1 npm install --omit=optional
+elif [[ "$TARGET" == "win" ]]; then
+  echo "==> npm ci + native printer (Electron)..."
+  npm ci --silent 2>/dev/null || npm install
   echo "==> Native printer driver (Electron)..."
   npm run rebuild:native
+else
+  npm ci --silent 2>/dev/null || npm install
 fi
 
 case "$TARGET" in

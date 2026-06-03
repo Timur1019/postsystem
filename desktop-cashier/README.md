@@ -82,9 +82,9 @@ POS_EMBEDDED=1 npm run dev
 
 **Кассиру** после установки `.exe` / `.dmg` ничего в терминале делать не нужно: только **Aurent → «Принтер чека»** и тестовая печать из меню.
 
-Драйвер `@thiagoelg/node-printer` собирается **автоматически при сборке установщика на Windows** (`dist:win`, GitHub Actions `build-windows`, `scripts\build-cashier-windows.bat`). В готовый установщик попадает уже собранный модуль.
+Драйвер `@thiagoelg/node-printer` собирается **только при сборке Windows** (`dist:win`, GitHub Actions `build-windows`, `scripts\build-cashier-windows.bat`) и попадает в `.exe`.
 
-Разработчикам на Mac (без Windows) локальная ESC/POS-печать на железо может не работать — это нормально; проверка логики: `npm run test:escpos`.
+Сборка **macOS .dmg** в CI идёт **без** этого модуля (`npm ci --omit=optional`) — на Mac-кассах ESC/POS не используется. Проверка логики чека: `npm run test:escpos`.
 
 ## Настройка на кассе
 

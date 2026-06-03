@@ -76,9 +76,11 @@
     "electron-updater": "^6.8.3",
     "express": "^4.21.2",
     "http-proxy-middleware": "^3.0.3",
-    "@thiagoelg/node-printer": "^0.6.2",
     "iconv-lite": "^0.6.3",
     "node-thermal-printer": "^4.6.0"
+  },
+  "optionalDependencies": {
+    "@thiagoelg/node-printer": "^0.6.2"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.1",
