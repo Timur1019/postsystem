@@ -162,6 +162,10 @@ export function prepareMountForSilentCapture() {
   const host = document.getElementById(PRINT_HOST_ID);
   if (!host) return () => {};
   host.classList.add(hostCapturingClass);
+  const prevLeft = host.style.left;
+  host.style.left = '-10000px';
+  host.style.opacity = '1';
+  host.style.visibility = 'visible';
   host.style.background = '#ffffff';
   host.style.color = '#000000';
   const shell = host.querySelector(`#${PRINT_SHELL_ID}`);
@@ -173,6 +177,9 @@ export function prepareMountForSilentCapture() {
   void host.offsetHeight;
   return () => {
     host.classList.remove(hostCapturingClass);
+    host.style.left = prevLeft;
+    host.style.opacity = '';
+    host.style.visibility = '';
     host.style.background = '';
     host.style.color = '';
     if (shell) {

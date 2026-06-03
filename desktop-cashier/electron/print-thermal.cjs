@@ -124,22 +124,21 @@ function waitForPaintFrames(webContents) {
   `);
 }
 
-/** Перед silent print: принудительно светлый чек (тёмная тема кассы иначе даёт чёрный лист). */
+/** Светлый чек off-screen — без left:0 (иначе белый экран на весь Aurent). */
 const FORCE_RECEIPT_LIGHT_PRINT_JS = `
 (() => {
   const host = document.getElementById('pos-auto-print-print-host');
   const shell = host?.querySelector('#fiscal-print-shell');
   if (!host || !shell) return false;
-  document.documentElement.style.setProperty('background', '#ffffff', 'important');
-  document.body.style.setProperty('background', '#ffffff', 'important');
+  const offLeft = '-10000px';
   host.style.setProperty('position', 'fixed', 'important');
-  host.style.setProperty('left', '0', 'important');
+  host.style.setProperty('left', offLeft, 'important');
   host.style.setProperty('top', '0', 'important');
   host.style.setProperty('opacity', '1', 'important');
   host.style.setProperty('visibility', 'visible', 'important');
   host.style.setProperty('background', '#ffffff', 'important');
   host.style.setProperty('color', '#000000', 'important');
-  host.style.setProperty('z-index', '2147483647', 'important');
+  host.style.setProperty('z-index', '-1', 'important');
   const nodes = [host, shell, ...shell.querySelectorAll('*')];
   for (const el of nodes) {
     if (!(el instanceof HTMLElement)) continue;

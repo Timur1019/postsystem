@@ -133,7 +133,7 @@ async function invokeDesktopSilentPrint({ preferPrintHost = false } = {}) {
       }
       console.info(`[Aurent] silent print IPC attempt ${attempt}/${silentMaxAttempts}`);
       await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto(), {
-        settleMs: preferPrintHost ? 280 : RECEIPT_PRINT_ENGINE.captureSettleMs,
+        settleMs: preferPrintHost ? 80 : RECEIPT_PRINT_ENGINE.captureSettleMs,
       });
       return;
     } catch (err) {

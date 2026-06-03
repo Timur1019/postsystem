@@ -78,13 +78,13 @@ html.electron-silent-print body {
   background: #0f172a !important;
 }
 
-/* Автопечать: белый фон страницы — прозрачный давал чёрный лист на термопринтере */
+/* Автопечать: фон страницы прозрачный — чек только в превью и в off-screen print-host */
 html.electron-silent-print.print-thermal-modal,
 html.electron-silent-print.print-thermal-modal body,
 html.dark.electron-silent-print.print-thermal-modal,
 html.dark.electron-silent-print.print-thermal-modal body {
-  background: #ffffff !important;
-  background-color: #ffffff !important;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 html.electron-silent-print.print-thermal-modal .receipt-printing-overlay {

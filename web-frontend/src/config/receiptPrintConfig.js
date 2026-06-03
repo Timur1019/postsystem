@@ -37,8 +37,8 @@ export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
   qrWaitMaxMs: 4000,
   qrPollIntervalMs: 100,
   qrShellMissingPollMs: 80,
-  beforePrintSettleMs: 550,
-  previewHoldAfterPrintMs: 2200,
+  beforePrintSettleMs: 180,
+  previewHoldAfterPrintMs: 1200,
   strictModeUnmountDelayMs: 280,
 });
 
@@ -46,8 +46,8 @@ export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
 export const RECEIPT_PRINT_ENGINE = Object.freeze({
   domReadyPollIntervalMs: 100,
   domReadyMaxAttempts: 60,
-  paintSettleMs: 350,
-  preSilentInvokeDelayMs: 400,
+  paintSettleMs: 120,
+  preSilentInvokeDelayMs: 150,
   silentMaxAttempts: 2,
   silentRetryBackoffBaseMs: 350,
   captureSettleMs: 120,
