@@ -14,7 +14,7 @@
   --receipt-auto-print-slot-border: rgb(148 163 184 / 0.35);
   --receipt-auto-print-slot-min-spacer: 8px;
 
-  --receipt-auto-print-preview-scale: 0.92;
+  --receipt-auto-print-preview-scale: 1;
   --receipt-auto-print-offscreen-left: -10000px;
   --receipt-auto-print-body-width: var(--print-content-w, 76mm);
   --receipt-auto-print-capture-z: 2147483640;
@@ -44,13 +44,14 @@
 }
 
 #pos-auto-print-preview-mount #fiscal-print-shell-live {
-  width: var(--receipt-auto-print-body-width) !important;
+  width: 100% !important;
   max-width: 100% !important;
   margin: 0 auto !important;
-  transform-origin: top center !important;
-  transform: scale(var(--receipt-auto-print-preview-scale)) !important;
+  transform: none !important;
   color: #000 !important;
   background: #fff !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
 }
 
 #pos-auto-print-preview-mount #fiscal-print-shell-live * {
@@ -370,7 +371,7 @@ html.electron-auto-print-job #pos-auto-print-preview-mount.pos-auto-print-host--
   max-width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   background: transparent !important;
   transform: none !important;
   opacity: 1 !important;
@@ -438,7 +439,9 @@ html.electron-silent-print.print-thermal-modal #pos-auto-print-preview-mount {
 }
 
 html.electron-auto-print-job #pos-auto-print-preview-mount #fiscal-print-shell-live {
-  transform: scale(var(--receipt-auto-print-preview-scale)) !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 html.electron-silent-print.print-thermal-modal.electron-print-capturing

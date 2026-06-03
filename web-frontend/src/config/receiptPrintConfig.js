@@ -49,7 +49,7 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
  */
 export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
   /** Макс. ожидание QR; выход раньше, если img.receipt-qr уже загружен */
-  qrWaitMaxMs: 2000,
+  qrWaitMaxMs: 4000,
   qrPollIntervalMs: 100,
   /** Если #fiscal-print-shell ещё не в DOM (StrictMode remount) */
   qrShellMissingPollMs: 80,
@@ -57,7 +57,7 @@ export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
    * Пауза после layout/QR перед вызовом printThermalReceiptAuto.
    * Меньше → быстрее, но выше риск ретраев Electron.
    */
-  beforePrintSettleMs: 450,
+  beforePrintSettleMs: 550,
   /** Держим превью на экране после печати (мс) */
   previewHoldAfterPrintMs: 2200,
   /** React StrictMode: отложенный unmount при двойном mount */

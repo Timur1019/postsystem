@@ -46,7 +46,7 @@ export async function waitForPrintShellDomReady() {
   for (let i = 0; i < domReadyMaxAttempts; i += 1) {
     await sleep(domReadyPollIntervalMs);
     const area = findPrintShellPrintArea();
-    if (isReceiptPrintAreaReady(area)) {
+    if (isReceiptPrintAreaReady(area, { requireImages: true })) {
       return;
     }
   }
@@ -56,6 +56,7 @@ export async function waitForPrintShellDomReady() {
 /** QR в print-shell (не зависит от превью в слоте). */
 export async function waitForPrintShellQrReady(
   maxMs = RECEIPT_AUTO_PRINT_UI.qrWaitMaxMs,
+  { required = false } = {},
 ) {
   const { fiscalPrintShellId, qrImageSelector } = RECEIPT_PRINT_DOM;
   const sel = `#${RECEIPT_PRINT_DOM.bodyPrintHostId} #${fiscalPrintShellId} ${qrImageSelector}`;
@@ -70,6 +71,9 @@ export async function waitForPrintShellQrReady(
       continue;
     }
     await sleep(RECEIPT_AUTO_PRINT_UI.qrPollIntervalMs);
+  }
+  if (required) {
+    throw new Error('Чек не готов для печати');
   }
   return null;
 }
@@ -147,13 +151,16 @@ function receiptReadyThresholds(area) {
   };
 }
 
-export function isReceiptPrintAreaReady(area) {
+export function isReceiptPrintAreaReady(area, { requireImages = false } = {}) {
   if (!area) return false;
   const textLen = (area.innerText || '').trim().length;
   const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
   const imgs = Array.from(area.querySelectorAll('img'));
-  const imgsReady = imgs.length === 0 || imgs.every((img) => img.complete);
+  const imgsReady = imgs.length === 0 || imgs.every((img) => img.complete && img.naturalWidth > 0);
   const { minText, minH } = receiptReadyThresholds(area);
+  if (requireImages && imgs.length > 0 && !imgsReady) {
+    return false;
+  }
   return textLen >= minText && h >= minH && imgsReady;
 }
 

@@ -244,9 +244,10 @@ export function getAutoPrintFiscalShell() {
   );
 }
 
-async function syncPrintShellImagesFromPreview(liveShell, printShell) {
-  const liveImgs = Array.from(liveShell.querySelectorAll('img'));
-  const printImgs = Array.from(printShell.querySelectorAll('img'));
+/** Копирует src/canvas с картинок source → target (превью ↔ print). */
+export async function syncShellImagesBetween(sourceShell, targetShell) {
+  const liveImgs = Array.from(sourceShell.querySelectorAll('img'));
+  const printImgs = Array.from(targetShell.querySelectorAll('img'));
   if (liveImgs.length === 0) return;
 
   await Promise.all(
@@ -300,7 +301,7 @@ export async function prepareBodyPrintShellFromPreview() {
   dialog.appendChild(printShell);
   host.appendChild(dialog);
 
-  await syncPrintShellImagesFromPreview(liveShell, printShell);
+  await syncShellImagesBetween(liveShell, printShell);
   void printShell.offsetHeight;
   void host.offsetHeight;
 
