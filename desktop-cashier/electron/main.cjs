@@ -21,6 +21,18 @@ const {
 } = require('./print-thermal.cjs');
 const { setupAutoUpdater, checkForUpdatesNow } = require('./auto-update.cjs');
 
+/** ESC/POS: при ошибке require окно кассы всё равно должно открыться (Windows .exe). */
+function loadEscposModule() {
+  try {
+    return require('./cashier-receipt-escpos/index.cjs');
+  } catch (err) {
+    console.error('[Aurent] ESC/POS module load failed:', err?.message || err);
+    return null;
+  }
+}
+
+const escposModule = loadEscposModule();
+
 const ALLOWED_PATH_PREFIXES = ['/login', '/cashier', '/receipt', '/users/barcode-print'];
 
 let mainWindow;
@@ -211,8 +223,17 @@ function registerDesktopIpc() {
     return checkForUpdatesNow(config?.cashierUrl);
   });
 
-  const { registerEscposIpcHandlers } = require('./cashier-receipt-escpos/index.cjs');
-  registerEscposIpcHandlers(ipcMain, { resolveReceiptPrinterName });
+  if (escposModule?.registerEscposIpcHandlers) {
+    escposModule.registerEscposIpcHandlers(ipcMain, { resolveReceiptPrinterName });
+  } else {
+    ipcMain.handle('desktop:print-receipt-escpos', async () => {
+      const err = new Error(
+        'Печать чека недоступна в этой сборке. Скачайте Aurent Cashier 1.0.43+ с /install.',
+      );
+      err.code = 'DRIVER_MISSING';
+      throw err;
+    });
+  }
 }
 
 function normalizeHost(host) {
