@@ -22,11 +22,10 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
   previewShellId: 'fiscal-print-shell-live',
   /** Единственный #fiscal-print-shell на body — только для silent print / Electron. */
   fiscalPrintShellId: 'fiscal-print-shell',
-  /** Print-host в справочнике модулей — для Electron silent print. */
+  /** Print-host на document.body — Electron silent print (AutoPrintManager). */
   bodyPrintHostId: 'pos-auto-print-print-host',
-  /** Слот справочника (legacy id, не используется для отображения чека). */
+  /** @deprecated legacy ids — удаляются в teardown */
   handbookPrintSlotId: 'pos-auto-print-handbook-print-slot',
-  /** Off-screen на body только на время silent print; после печати удаляется. */
   handbookPrintAreaId: 'pos-auto-print-handbook-print-area',
   /** @deprecated alias — use handbookPrintAreaId */
   printSupportLaneId: 'pos-auto-print-handbook-print-area',

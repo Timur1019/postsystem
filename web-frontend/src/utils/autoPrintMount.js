@@ -4,8 +4,8 @@
  * Превью (экран)  → #pos-auto-print-preview-mount / #fiscal-print-shell-live
  * Печать (Electron) → #pos-auto-print-print-host / #fiscal-print-shell на document.body (off-screen)
  *
- * «Справочник» — логически отдельная полоса печати: кассир на /pos её не видит,
- * layout полный (как раньше слева), принтер измеряет scrollHeight. После печати DOM удаляется.
+ * Print-host на body — стабильный слой (AutoPrintManager / ReceiptRenderer).
+ * Превью в слоте кассы — только UI; после job DOM удаляется.
  */
 import { RECEIPT_AUTO_PRINT_UI, RECEIPT_PRINT_DOM, RECEIPT_PRINT_STYLES } from '../config/receiptPrintConfig';
 

@@ -69,7 +69,6 @@ async function processPrintJob(receiptNumber) {
     const mode = await electronPrinter.printReceipt();
 
     receiptStore.updateStatus(receiptNumber, 'done');
-    destroyBodyPrintMount({ force: true });
 
     if (mode === 'silent' || mode === 'dialog') {
       toast.success(
@@ -100,12 +99,12 @@ async function processPrintJob(receiptNumber) {
       },
     );
   } finally {
-    setAutoPrintInFlight(false);
     await sleep(RECEIPT_AUTO_PRINT_UI.previewHoldAfterPrintMs);
     receiptRenderer.teardownRenderer();
     receiptStore.clearPreview();
     cleanupDesktopPrintState();
     receiptStore.removeReceipt(receiptNumber);
+    setAutoPrintInFlight(false);
   }
 }
 
@@ -113,6 +112,7 @@ printQueue.setPrintJobHandler(processPrintJob);
 
 export function resetAutoPrintSession() {
   printQueue.clearQueue();
+  setAutoPrintInFlight(false);
   receiptRenderer.teardownRenderer();
   receiptStore.clearPreview();
   destroyBodyPrintMount({ force: true });

@@ -9,7 +9,12 @@
  * Mount превью / body для print → utils/autoPrintMount.js
  */
 import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_ENGINE } from '../config/receiptPrintConfig';
-import { destroyBodyPrintMount, prepareBodyPrintShellFromPreview, prepareMountForSilentCapture } from './autoPrintMount';
+import {
+  destroyBodyPrintMount,
+  getAutoPrintFiscalShell,
+  prepareBodyPrintShellFromPreview,
+  prepareMountForSilentCapture,
+} from './autoPrintMount';
 import {
   assertFiscalPrintShellReady,
   sleep,
