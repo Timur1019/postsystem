@@ -314,6 +314,14 @@ async function waitForServices() {
         port: config.embeddedPort,
         backendOrigin: config.backendOrigin,
       });
+      if (!url) {
+        return {
+          ok: false,
+          message:
+            'В установке нет встроенного интерфейса (web-dist).\n' +
+            'Переустановите кассу с сайта /install или укажите сервер в «Настройка сервера».',
+        };
+      }
       config.cashierUrl = url.replace(/\/$/, '');
     } catch (err) {
       return {
@@ -537,6 +545,8 @@ function createWindow() {
     height: 900,
     minWidth: 1024,
     minHeight: 768,
+    show: false,
+    center: true,
     title: 'Aurent — Касса',
     // Windows: строка меню в окне (Вид → Настройка сервера); Mac — в системной строке
     autoHideMenuBar: process.platform === 'darwin',
@@ -546,6 +556,12 @@ function createWindow() {
       nodeIntegration: false,
       preload: path.join(__dirname, 'preload.cjs'),
     },
+  });
+
+  mainWindow.once('ready-to-show', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.show();
+    mainWindow.focus();
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {

@@ -237,6 +237,8 @@ function showSetupWindow(existing) {
       width: 440,
       height: 540,
       resizable: false,
+      center: true,
+      show: false,
       title: 'Aurent — настройка сервера',
       autoHideMenuBar: true,
       webPreferences: {
@@ -254,6 +256,11 @@ function showSetupWindow(existing) {
       } catch (err) {
         reject(err);
       }
+    });
+
+    win.once('ready-to-show', () => {
+      win.show();
+      win.focus();
     });
 
     win.on('closed', () => {
