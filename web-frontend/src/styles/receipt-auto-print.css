@@ -1,15 +1,17 @@
 /**
- * #pos-auto-print-print-host — чек по центру, виден пока формируется и печатается.
+ * #pos-auto-print-print-host — маленький чек в углу (не на весь экран).
  * #pos-auto-print-print-host-capture — только для принтера (невидим).
  */
 
 :root {
-  --receipt-auto-print-radius: 12px;
-  --receipt-auto-print-shadow: 0 10px 28px rgb(0 0 0 / 0.28);
+  --receipt-auto-print-radius: 10px;
+  --receipt-auto-print-shadow: 0 8px 20px rgb(0 0 0 / 0.22);
   --receipt-auto-print-z: 2147483000;
-  --receipt-auto-print-screen-width: 228px;
-  --receipt-auto-print-screen-max-h: min(68vh, 380px);
-  --receipt-auto-print-screen-font: 8.5px;
+  --receipt-auto-print-screen-width: 196px;
+  --receipt-auto-print-screen-max-h: 280px;
+  --receipt-auto-print-screen-font: 8px;
+  --receipt-auto-print-screen-bottom: 96px;
+  --receipt-auto-print-screen-right: 14px;
   --receipt-auto-print-offscreen-left: -10000px;
   --receipt-auto-print-body-width: var(--print-content-w, 76mm);
 }
@@ -18,34 +20,37 @@
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen {
   position: fixed;
-  inset: 0;
+  right: var(--receipt-auto-print-screen-right);
+  bottom: var(--receipt-auto-print-screen-bottom);
+  left: auto;
+  top: auto;
   z-index: var(--receipt-auto-print-z);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: calc(100vw - 24px);
+  margin: 0;
+  padding: 0;
   pointer-events: none;
-  overflow: hidden;
+  overflow: visible;
   background: transparent !important;
   opacity: 1;
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .fiscal-print-dialog {
   width: var(--receipt-auto-print-screen-width);
-  max-width: min(var(--receipt-auto-print-screen-width), calc(100vw - 24px));
+  max-width: min(var(--receipt-auto-print-screen-width), calc(100vw - 32px));
   max-height: var(--receipt-auto-print-screen-max-h);
   height: auto;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow: auto;
+  overflow-x: hidden;
   background: #fff;
   border-radius: var(--receipt-auto-print-radius);
   box-shadow: var(--receipt-auto-print-shadow);
-  border: 1px solid rgb(148 163 184 / 0.2);
-  flex: 0 0 auto;
-  align-self: center;
+  border: 1px solid rgb(148 163 184 / 0.25);
   isolation: isolate;
-  contain: layout paint;
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell {
@@ -94,8 +99,8 @@
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root .receipt-qr {
-  max-width: 80px !important;
-  width: 80px !important;
+  max-width: 68px !important;
+  width: 68px !important;
   height: auto !important;
 }
 

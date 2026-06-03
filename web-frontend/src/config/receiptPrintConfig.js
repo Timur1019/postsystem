@@ -1,7 +1,7 @@
 /**
  * Конфиг печати фискального чека (касса + Electron).
  *
- * Экран: #pos-auto-print-print-host — чек по центру, виден до конца печати.
+ * Экран: #pos-auto-print-print-host — маленький чек в углу, виден до конца печати.
  * Принтер: #pos-auto-print-print-host-capture — невидимый клон off-screen.
  */
 
@@ -70,7 +70,7 @@ export const RECEIPT_PRINT_TOAST = Object.freeze({
 
 export const RECEIPT_PRINT_STYLES = Object.freeze({
   hostBodyPrintClass: 'pos-auto-print-host--body-print',
-  /** Чек по центру на экране (компактный) */
+  /** Маленький чек в углу экрана */
   hostOnScreenClass: 'pos-auto-print-host--on-screen',
   /** Off-screen клон для принтера */
   hostPrintingClass: 'pos-auto-print-host--printing',
