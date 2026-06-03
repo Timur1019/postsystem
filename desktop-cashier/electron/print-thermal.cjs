@@ -124,22 +124,15 @@ function waitForPaintFrames(webContents) {
   `);
 }
 
-/** Светлый чек off-screen — без left:0 (иначе белый экран на весь Aurent). */
+/** Перед печатью: полный 80mm, белый чек, прозрачный фон вокруг. */
 const FORCE_RECEIPT_LIGHT_PRINT_JS = `
 (() => {
   const host = document.getElementById('pos-auto-print-print-host');
   const shell = host?.querySelector('#fiscal-print-shell');
   if (!host || !shell) return false;
-  const offLeft = '-10000px';
-  host.style.setProperty('position', 'fixed', 'important');
-  host.style.setProperty('left', offLeft, 'important');
-  host.style.setProperty('top', '0', 'important');
-  host.style.setProperty('opacity', '1', 'important');
-  host.style.setProperty('visibility', 'visible', 'important');
-  host.style.setProperty('background', '#ffffff', 'important');
-  host.style.setProperty('color', '#000000', 'important');
-  host.style.setProperty('z-index', '-1', 'important');
-  const nodes = [host, shell, ...shell.querySelectorAll('*')];
+  host.classList.add('pos-auto-print-host--printing');
+  host.style.setProperty('background', 'transparent', 'important');
+  const nodes = [shell, ...shell.querySelectorAll('*')];
   for (const el of nodes) {
     if (!(el instanceof HTMLElement)) continue;
     el.style.setProperty('background-color', '#ffffff', 'important');
@@ -148,7 +141,6 @@ const FORCE_RECEIPT_LIGHT_PRINT_JS = `
     el.style.setProperty('opacity', '1', 'important');
     el.style.setProperty('visibility', 'visible', 'important');
     el.style.setProperty('filter', 'none', 'important');
-    el.style.setProperty('mix-blend-mode', 'normal', 'important');
   }
   return true;
 })()
@@ -190,24 +182,12 @@ const MEASURE_RECEIPT_DIMS_JS = `
   const shell = ${FIND_FISCAL_PRINT_SHELL_JS.trim()};
   if (!shell) return null;
   const area = shell.querySelector('#receipt-print-area') || shell.querySelector('.receipt-print-root') || shell;
-  const previewShell = document.querySelector('#pos-auto-print-preview-mount #fiscal-print-shell-live');
-  const previewArea = previewShell
-    ? (previewShell.querySelector('#receipt-print-area-live')
-      || previewShell.querySelector('#receipt-print-area')
-      || previewShell.querySelector('.receipt-print-root')
-      || previewShell)
-    : null;
-  const textLen = Math.max(
-    (area.innerText || '').trim().length,
-    (previewArea?.innerText || '').trim().length,
-  );
+  const textLen = (area.innerText || '').trim().length;
   const contentPx = Math.max(
     area.scrollHeight,
     area.offsetHeight,
     area.getBoundingClientRect().height,
-    previewArea?.scrollHeight ?? 0,
-    previewArea?.offsetHeight ?? 0,
-    previewArea?.getBoundingClientRect?.().height ?? 0,
+    shell.scrollHeight,
   );
   if (textLen < 80 || contentPx < 120) return null;
   const paperRaw = getComputedStyle(document.documentElement).getPropertyValue('--print-paper-w-mm').trim();

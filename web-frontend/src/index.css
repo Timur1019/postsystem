@@ -162,14 +162,10 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing
   overflow: visible !important;
 }
 
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host .fiscal-print-dialog,
 html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
 html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell *,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-preview-mount #fiscal-print-shell-live,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-preview-mount #fiscal-print-shell-live *,
-html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host,
-html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host * {
+html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
+html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell * {
   background: #fff !important;
   background-color: #fff !important;
   color: #000 !important;

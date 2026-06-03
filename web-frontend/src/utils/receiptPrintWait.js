@@ -8,7 +8,7 @@ import {
   RECEIPT_PRINT_ENGINE,
   RECEIPT_PRINT_THRESHOLDS,
 } from '../config/receiptPrintConfig';
-import { findPreviewShell, getAutoPrintFiscalShell } from './autoPrintMount';
+import { getAutoPrintFiscalShell } from './autoPrintMount';
 
 export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -31,18 +31,6 @@ function findPrintShellPrintArea() {
   );
 }
 
-function findPreviewShellPrintArea() {
-  const { previewMountId, previewShellId, receiptPrintAreaId } = RECEIPT_PRINT_DOM;
-  const shell = document.querySelector(`#${previewMountId} #${previewShellId}`);
-  if (!shell) return null;
-  return (
-    shell.querySelector(`#${receiptPrintAreaId}-live`) ||
-    shell.querySelector(`#${receiptPrintAreaId}`) ||
-    shell.querySelector('.receipt-print-root') ||
-    shell
-  );
-}
-
 /** Очередь автопечати: готовность print-host (QR отдельно). */
 export async function waitForPrintShellDomReady() {
   await document.fonts?.ready;
@@ -57,10 +45,6 @@ export async function waitForPrintShellDomReady() {
   throw new Error('Чек не готов для печати');
 }
 
-/**
- * После sync превью → print-host: не проверяем scrollHeight off-screen (часто 0).
- * Достаточно текста + картинок; высоту берём с видимого превью.
- */
 export function assertPrintShellReadyForIpc() {
   const shell = getAutoPrintFiscalShell();
   const root = document.getElementById('root');
@@ -69,31 +53,16 @@ export function assertPrintShellReadyForIpc() {
   }
 
   const printArea = findPrintShellPrintArea();
-  const previewArea = findPreviewShellPrintArea();
-  const textLen = Math.max(
-    (printArea?.innerText || '').trim().length,
-    (previewArea?.innerText || '').trim().length,
-  );
+  const textLen = (printArea?.innerText || '').trim().length;
   if (textLen < RECEIPT_PRINT_THRESHOLDS.fiscalMinTextLength) {
     throw new Error('Чек не готов для печати');
   }
 
-  const hPrint = Math.max(
-    printArea?.scrollHeight ?? 0,
-    shell.scrollHeight ?? 0,
-    printArea?.offsetHeight ?? 0,
-  );
-  const hPreview = Math.max(
-    previewArea?.scrollHeight ?? 0,
-    previewArea?.offsetHeight ?? 0,
-    previewArea?.getBoundingClientRect?.().height ?? 0,
-  );
-  const h = Math.max(hPrint, hPreview);
-  if (h < RECEIPT_PRINT_THRESHOLDS.fiscalMinHeightPx) {
-    console.warn('[Aurent] print shell height low, using preview text ok', hPrint, hPreview);
-    if (textLen < RECEIPT_PRINT_THRESHOLDS.fiscalMinTextLength) {
-      throw new Error('Чек не готов для печати');
-    }
+  const h = Math.max(printArea?.scrollHeight ?? 0, shell.scrollHeight ?? 0, printArea?.offsetHeight ?? 0);
+  if (h < RECEIPT_PRINT_THRESHOLDS.fiscalMinHeightPx && textLen >= RECEIPT_PRINT_THRESHOLDS.fiscalMinTextLength) {
+    /* компактный scale на экране — scrollHeight маленький, текст достаточен */
+  } else if (h < RECEIPT_PRINT_THRESHOLDS.fiscalMinHeightPx) {
+    throw new Error('Чек не готов для печати');
   }
 
   const imgs = Array.from((printArea || shell).querySelectorAll('img'));
@@ -110,12 +79,8 @@ export async function waitForPrintShellQrReady(
   maxMs = RECEIPT_AUTO_PRINT_UI.qrWaitMaxMs,
   { required = false } = {},
 ) {
-  const { fiscalPrintShellId, previewShellId, previewMountId, qrImageSelector } =
-    RECEIPT_PRINT_DOM;
-  const selectors = [
-    `#${RECEIPT_PRINT_DOM.bodyPrintHostId} #${fiscalPrintShellId} ${qrImageSelector}`,
-    `#${previewMountId} #${previewShellId} ${qrImageSelector}`,
-  ];
+  const { fiscalPrintShellId, qrImageSelector, bodyPrintHostId } = RECEIPT_PRINT_DOM;
+  const selectors = [`#${bodyPrintHostId} #${fiscalPrintShellId} ${qrImageSelector}`];
   const deadline = Date.now() + maxMs;
   while (Date.now() < deadline) {
     for (const sel of selectors) {
@@ -136,14 +101,11 @@ export async function waitForPrintShellQrReady(
   return null;
 }
 
-export function findReceiptPrintArea({ preferFiscalShell = false, previewOnly = false } = {}) {
-  const { fiscalPrintShellId, previewShellId, receiptPrintAreaId, printRootSelectors } =
-    RECEIPT_PRINT_DOM;
+export function findReceiptPrintArea({ preferFiscalShell = false } = {}) {
+  const { fiscalPrintShellId, receiptPrintAreaId, printRootSelectors } = RECEIPT_PRINT_DOM;
 
-  if (previewOnly || preferFiscalShell) {
-    const shell = previewOnly
-      ? findPreviewShell()
-      : findPreviewShell() || document.getElementById(fiscalPrintShellId);
+  if (preferFiscalShell) {
+    const shell = getAutoPrintFiscalShell() || document.getElementById(fiscalPrintShellId);
     if (shell) {
       return (
         shell.querySelector(`#${receiptPrintAreaId}`) ||
@@ -159,15 +121,11 @@ export function findReceiptPrintArea({ preferFiscalShell = false, previewOnly = 
     const area =
       root.querySelector(`#${receiptPrintAreaId}`) ||
       root.querySelector('.receipt-print-root') ||
-      (root.id === previewShellId || root.id === fiscalPrintShellId ? root : null);
+      (root.id === fiscalPrintShellId ? root : null);
     if (area) return area;
   }
 
-  return (
-    document.getElementById(receiptPrintAreaId) ||
-    findPreviewShell() ||
-    document.getElementById(fiscalPrintShellId)
-  );
+  return document.getElementById(receiptPrintAreaId) || getAutoPrintFiscalShell();
 }
 
 function receiptReadyThresholds(area) {
@@ -205,7 +163,7 @@ export function isReceiptPrintAreaReady(area, { requireImages = false } = {}) {
 export async function waitForReceiptDomReady({ useModalShell = false } = {}) {
   const preferPreview =
     useModalShell ||
-    Boolean(findPreviewShell()) ||
+    Boolean(getAutoPrintFiscalShell()) ||
     Boolean(document.getElementById(RECEIPT_PRINT_DOM.fiscalPrintShellId));
 
   await document.fonts?.ready;
@@ -213,7 +171,7 @@ export async function waitForReceiptDomReady({ useModalShell = false } = {}) {
   const { domReadyPollIntervalMs, domReadyMaxAttempts } = RECEIPT_PRINT_ENGINE;
   for (let i = 0; i < domReadyMaxAttempts; i += 1) {
     await sleep(domReadyPollIntervalMs);
-    const area = findReceiptPrintArea({ preferFiscalShell: preferPreview, previewOnly: true });
+    const area = findReceiptPrintArea({ preferFiscalShell: preferPreview });
     if (isReceiptPrintAreaReady(area)) {
       return;
     }

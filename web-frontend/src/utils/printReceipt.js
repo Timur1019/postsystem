@@ -4,7 +4,6 @@
  * Автопечать: AutoPrintManager → printThermalReceiptAuto({ preferPrintHost: true })
  */
 import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_ENGINE } from '../config/receiptPrintConfig';
-import { syncPrintHostFromPreview } from '../services/autoPrint/ReceiptRenderer';
 import {
   prepareMountForSilentCapture,
   removeStaleDom,
@@ -106,14 +105,6 @@ function normalizeDesktopPrintError(err) {
   return err instanceof Error ? err : new Error(raw || 'Тихая печать не выполнена');
 }
 
-async function syncPrintHostIfPreviewExists() {
-  try {
-    await syncPrintHostFromPreview();
-  } catch (err) {
-    console.warn('[Aurent] syncPrintHostFromPreview failed', err);
-  }
-}
-
 async function invokeDesktopSilentPrint({ preferPrintHost = false } = {}) {
   const { silentMaxAttempts, silentRetryBackoffBaseMs } = RECEIPT_PRINT_ENGINE;
   let lastErr;
@@ -121,9 +112,6 @@ async function invokeDesktopSilentPrint({ preferPrintHost = false } = {}) {
   for (let attempt = 1; attempt <= silentMaxAttempts; attempt += 1) {
     try {
       removeStaleDom();
-      if (preferPrintHost) {
-        await syncPrintHostIfPreviewExists();
-      }
       await waitForReceiptPaintSettled();
       await waitForBodyPrintImagesReady();
       if (preferPrintHost) {

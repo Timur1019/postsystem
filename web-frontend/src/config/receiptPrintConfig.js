@@ -1,23 +1,20 @@
 /**
  * Конфиг печати фискального чека (касса + Electron).
  *
- * Поток: PosPage → AutoPrintManager → print-host (body) + screen preview → silent print.
+ * Один DOM: #pos-auto-print-print-host — на экране компактно, в принтер полный размер.
  */
 
-/** Id DOM и селекторы */
 export const RECEIPT_PRINT_DOM = Object.freeze({
-  previewMountId: 'pos-auto-print-preview-mount',
-  previewShellId: 'fiscal-print-shell-live',
-  fiscalPrintShellId: 'fiscal-print-shell',
   bodyPrintHostId: 'pos-auto-print-print-host',
+  fiscalPrintShellId: 'fiscal-print-shell',
   receiptPrintAreaId: 'receipt-print-area',
   printJobPageStyleId: 'pos-print-job-page',
   testPrintHostId: 'aurent-test-receipt-print-host',
   qrImageSelector: '.receipt-qr',
   fiscalPrintDialogClass: 'fiscal-print-dialog',
   autoPrintHostClass: 'pos-auto-print-host',
-  /** Удаляются при teardown (старые версии UI) */
   staleDomIds: Object.freeze([
+    'pos-auto-print-preview-mount',
     'pos-auto-print-mount',
     'pos-auto-print-slot',
     'pos-auto-print-print-support-lane',
@@ -25,14 +22,12 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
     'pos-auto-print-handbook-print-slot',
   ]),
   printRootSelectors: Object.freeze([
-    '#fiscal-print-shell-live',
     '#fiscal-print-shell',
     '#receipt-print-area',
     '.receipt-print-root',
   ]),
 });
 
-/** AutoPrintManager — после продажи */
 export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
   qrWaitMaxMs: 4000,
   qrPollIntervalMs: 100,
@@ -42,7 +37,6 @@ export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
   strictModeUnmountDelayMs: 280,
 });
 
-/** printReceipt.js — silent print / ретраи */
 export const RECEIPT_PRINT_ENGINE = Object.freeze({
   domReadyPollIntervalMs: 100,
   domReadyMaxAttempts: 60,
@@ -50,8 +44,8 @@ export const RECEIPT_PRINT_ENGINE = Object.freeze({
   preSilentInvokeDelayMs: 150,
   silentMaxAttempts: 2,
   silentRetryBackoffBaseMs: 350,
-  captureSettleMs: 120,
-  captureReleaseDelayMs: 80,
+  captureSettleMs: 80,
+  captureReleaseDelayMs: 60,
   bodyImageWaitMaxMs: 2500,
 });
 
@@ -68,9 +62,11 @@ export const RECEIPT_PRINT_TOAST = Object.freeze({
   errorDurationMs: 6000,
 });
 
-/** Классы host — styles/receipt-auto-print.css */
 export const RECEIPT_PRINT_STYLES = Object.freeze({
   hostBodyPrintClass: 'pos-auto-print-host--body-print',
-  hostScreenPreviewClass: 'pos-auto-print-host--screen-preview',
+  /** Компактный чек по центру (экран) */
+  hostOnScreenClass: 'pos-auto-print-host--on-screen',
+  /** На время IPC — полная ширина 80mm, без уезда за экран */
+  hostPrintingClass: 'pos-auto-print-host--printing',
   hostCapturingClass: 'pos-auto-print-host--capturing',
 });

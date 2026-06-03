@@ -37,7 +37,6 @@ export function resetCashierDocumentUiState() {
     for (const id of RECEIPT_PRINT_DOM.staleDomIds) {
       document.getElementById(id)?.remove();
     }
-    document.getElementById(RECEIPT_PRINT_DOM.previewMountId)?.remove();
     cleanupDesktopPrintState();
   }
 }

@@ -62,7 +62,6 @@ async function processPrintJob(receiptNumber) {
     await waitForDoubleAnimationFrame();
     await waitForPrintShellDomReady();
     await waitForPrintShellQrReady(RECEIPT_AUTO_PRINT_UI.qrWaitMaxMs, { required: true });
-    await receiptRenderer.showScreenPreviewFromPrintShell();
     await waitForDoubleAnimationFrame();
     await sleep(RECEIPT_AUTO_PRINT_UI.beforePrintSettleMs);
 

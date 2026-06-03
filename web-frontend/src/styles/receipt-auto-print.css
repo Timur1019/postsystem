@@ -1,22 +1,22 @@
 /**
- * Автопечать: компактное превью по центру + print-host off-screen (без белого экрана).
+ * Один чек: #pos-auto-print-print-host — компактно по центру, фон прозрачный.
+ * На печать: .pos-auto-print-host--printing — полная ширина 80mm.
  */
 
 :root {
-  --receipt-auto-print-backdrop: rgb(15 23 42 / 0.45);
+  --receipt-auto-print-backdrop: rgb(15 23 42 / 0.42);
   --receipt-auto-print-radius: 12px;
   --receipt-auto-print-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
   --receipt-auto-print-z: 2147483000;
   --receipt-auto-print-screen-scale: 0.52;
   --receipt-auto-print-screen-width: 248px;
   --receipt-auto-print-screen-font-size: 9.5px;
-  --receipt-auto-print-offscreen-left: -10000px;
   --receipt-auto-print-body-width: var(--print-content-w, 76mm);
 }
 
-/* ── Превью (только экран, без скролла / без «модалки» на весь экран) ───── */
+/* ── На экране: компактный чек по центру, без белого листа ───────────────── */
 
-#pos-auto-print-preview-mount.pos-auto-print-host--screen-preview {
+#pos-auto-print-print-host.pos-auto-print-host--on-screen {
   position: fixed;
   inset: 0;
   z-index: var(--receipt-auto-print-z);
@@ -26,10 +26,12 @@
   padding: 16px;
   pointer-events: none;
   overflow: hidden;
-  background: var(--receipt-auto-print-backdrop);
+  background: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
-#pos-auto-print-preview-mount.pos-auto-print-host--screen-preview .fiscal-print-dialog {
+#pos-auto-print-print-host.pos-auto-print-host--on-screen .fiscal-print-dialog {
   width: var(--receipt-auto-print-screen-width);
   max-width: min(var(--receipt-auto-print-screen-width), calc(100vw - 24px));
   margin: 0;
@@ -41,7 +43,7 @@
   border: 1px solid rgb(148 163 184 / 0.25);
 }
 
-#pos-auto-print-preview-mount.pos-auto-print-host--screen-preview #fiscal-print-shell-live {
+#pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
@@ -55,53 +57,54 @@
   overflow: hidden;
 }
 
-#pos-auto-print-preview-mount.pos-auto-print-host--screen-preview #fiscal-print-shell-live * {
+#pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell * {
   color: #000 !important;
   background-color: transparent !important;
 }
 
-/* ── Print-host: всегда off-screen, на экране не показываем ─────────────── */
+/* ── Перед печатью: полный 80mm, по центру, фон страницы прозрачный ─────── */
 
-#pos-auto-print-print-host.pos-auto-print-host--body-print,
-#pos-auto-print-print-host.pos-auto-print-host--capturing {
-  position: fixed !important;
-  left: var(--receipt-auto-print-offscreen-left) !important;
-  top: 0 !important;
+#pos-auto-print-print-host.pos-auto-print-host--printing {
+  background: transparent !important;
+}
+
+#pos-auto-print-print-host.pos-auto-print-host--printing .fiscal-print-dialog {
   width: var(--receipt-auto-print-body-width) !important;
   max-width: var(--receipt-auto-print-body-width) !important;
-  display: block !important;
   overflow: visible !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  background: #fff !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+#pos-auto-print-print-host.pos-auto-print-host--printing #fiscal-print-shell {
   transform: none !important;
+  font-size: var(--print-font-px, 13px) !important;
+  line-height: var(--print-line-height, 1.5) !important;
+  padding: var(--print-pad-y, 2mm) var(--print-pad-x, 3mm) !important;
 }
 
 #pos-auto-print-print-host,
-#pos-auto-print-print-host .fiscal-print-dialog,
 #pos-auto-print-print-host #fiscal-print-shell,
 #pos-auto-print-print-host #fiscal-print-shell * {
-  background-color: #fff !important;
-  color: #000 !important;
-  -webkit-text-fill-color: #000 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  filter: none !important;
-  mix-blend-mode: normal !important;
   -webkit-print-color-adjust: exact !important;
   print-color-adjust: exact !important;
 }
 
-/* Во время job print-host не мелькает на экране */
 html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host,
 html.electron-auto-print-job #pos-auto-print-print-host {
-  left: var(--receipt-auto-print-offscreen-left) !important;
   opacity: 1 !important;
   visibility: visible !important;
+  background: transparent !important;
+}
+
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell *,
+html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
+html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell * {
+  background-color: #fff !important;
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
 }
 
 html.electron-silent-print.print-thermal-modal.electron-auto-print-job .receipt-printing-overlay,
@@ -109,27 +112,8 @@ html.electron-auto-print-job .receipt-printing-overlay {
   display: none !important;
 }
 
-html.electron-silent-print.print-thermal-modal
-  #pos-auto-print-preview-mount.pos-auto-print-host--screen-preview,
-html.electron-auto-print-job
-  #pos-auto-print-preview-mount.pos-auto-print-host--screen-preview {
-  display: flex;
-  opacity: 1;
-  visibility: visible;
-}
-
-/* capture: UI кассы остаётся, без белого листа на весь экран */
 html.electron-print-capturing #pos-auto-print-print-host {
-  left: var(--receipt-auto-print-offscreen-left) !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-html.dark.electron-print-capturing #pos-auto-print-print-host,
-html.dark.electron-print-capturing #pos-auto-print-print-host * {
-  background-color: #fff !important;
-  color: #000 !important;
-  -webkit-text-fill-color: #000 !important;
+  background: transparent !important;
 }
 
 @media print {
@@ -138,14 +122,9 @@ html.dark.electron-print-capturing #pos-auto-print-print-host * {
     visibility: visible !important;
     opacity: 1 !important;
     position: static !important;
-    left: auto !important;
     width: var(--print-content-w, 72mm) !important;
     max-width: var(--print-content-w, 72mm) !important;
     margin: 0 auto !important;
     background: #fff !important;
-  }
-
-  html.print-thermal-modal #pos-auto-print-preview-mount {
-    display: none !important;
   }
 }
