@@ -38,6 +38,10 @@
   z-index: -1;
 }
 
+#pos-auto-print-print-host.fiscal-print-scene.pos-auto-print-host--on-screen {
+  background: transparent !important;
+}
+
 #pos-auto-print-print-host.fiscal-print-scene:not(.pos-auto-print-host--on-screen) {
   opacity: 1 !important;
   visibility: visible !important;

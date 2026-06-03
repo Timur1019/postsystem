@@ -1,34 +1,34 @@
 /**
- * #pos-auto-print-print-host — маленький чек в углу (не на весь экран).
- * #pos-auto-print-print-host-capture — только для принтера (невидим).
+ * #pos-auto-print-print-host — маленький чек в углу (касса видна).
+ * #pos-auto-print-print-host-capture — для принтера (невидим).
  */
 
 :root {
   --receipt-auto-print-radius: 10px;
-  --receipt-auto-print-shadow: 0 8px 20px rgb(0 0 0 / 0.22);
+  --receipt-auto-print-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
   --receipt-auto-print-z: 2147483000;
-  --receipt-auto-print-screen-width: 196px;
-  --receipt-auto-print-screen-max-h: 280px;
-  --receipt-auto-print-screen-font: 8px;
-  --receipt-auto-print-screen-bottom: 96px;
-  --receipt-auto-print-screen-right: 14px;
+  --receipt-auto-print-chip-width: 200px;
+  --receipt-auto-print-chip-max-h: 320px;
+  --receipt-auto-print-chip-font: 10px;
+  --receipt-auto-print-chip-bottom: 88px;
+  --receipt-auto-print-chip-right: 18px;
   --receipt-auto-print-offscreen-left: -10000px;
   --receipt-auto-print-body-width: var(--print-content-w, 76mm);
 }
 
-/* ── Чек на экране (не скрываем до удаления host после печати) ───────────── */
+/* ── Маленький чек в углу: не на весь экран, не по центру ─────────────────── */
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen {
   position: fixed;
-  right: var(--receipt-auto-print-screen-right);
-  bottom: var(--receipt-auto-print-screen-bottom);
-  left: auto;
+  right: var(--receipt-auto-print-chip-right);
+  bottom: var(--receipt-auto-print-chip-bottom);
   top: auto;
-  z-index: var(--receipt-auto-print-z);
-  display: block;
+  left: auto;
   width: auto;
   height: auto;
-  max-width: calc(100vw - 24px);
+  max-width: none;
+  z-index: var(--receipt-auto-print-z);
+  display: block;
   margin: 0;
   padding: 0;
   pointer-events: none;
@@ -38,9 +38,9 @@
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .fiscal-print-dialog {
-  width: var(--receipt-auto-print-screen-width);
-  max-width: min(var(--receipt-auto-print-screen-width), calc(100vw - 32px));
-  max-height: var(--receipt-auto-print-screen-max-h);
+  width: var(--receipt-auto-print-chip-width);
+  max-width: var(--receipt-auto-print-chip-width);
+  max-height: var(--receipt-auto-print-chip-max-h);
   height: auto;
   margin: 0;
   padding: 0;
@@ -49,24 +49,25 @@
   background: #fff;
   border-radius: var(--receipt-auto-print-radius);
   box-shadow: var(--receipt-auto-print-shadow);
-  border: 1px solid rgb(148 163 184 / 0.25);
-  isolation: isolate;
+  border: 1px solid rgb(15 23 42 / 0.18);
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell {
   width: 100% !important;
   max-width: 100% !important;
   margin: 0;
-  padding: 6px 8px 8px;
-  color: #000;
-  background: #fff;
+  padding: 8px 10px 10px;
+  color: #0f172a !important;
+  background: #fff !important;
   overflow: hidden;
   transform: none !important;
   zoom: normal !important;
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* Нет хвоста 20mm на экранном чеке */
 #pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell::before,
 #pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell::after,
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root::before,
@@ -77,51 +78,59 @@
   content: none !important;
   height: 0 !important;
   min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root {
-  font-size: var(--receipt-auto-print-screen-font) !important;
-  line-height: 1.24 !important;
+  font-size: var(--receipt-auto-print-chip-font) !important;
+  line-height: 1.35 !important;
+  font-weight: 600 !important;
   padding: 0 !important;
-  overflow: hidden;
+  color: #0f172a !important;
+  background: #fff !important;
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root .receipt-title {
-  font-size: 9.5px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root .receipt-subtitle,
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root .receipt-secondary {
-  font-size: 7.75px !important;
+#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root .receipt-secondary,
+#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-meta-label {
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root .receipt-qr {
-  max-width: 68px !important;
-  width: 68px !important;
+  max-width: 88px !important;
+  width: 88px !important;
   height: auto !important;
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root footer {
-  margin-top: 0.35rem !important;
-  padding-top: 0.35rem !important;
+  image-rendering: crisp-edges;
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-row__value,
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-fiscal-sign {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
   overflow: visible !important;
-  text-overflow: clip !important;
-  white-space: normal !important;
   word-break: break-word !important;
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell * {
-  color: #000 !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  opacity: 1 !important;
+  filter: none !important;
 }
 
-/* Клон для принтера — пользователь не видит */
+html.dark #pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell,
+html.dark #pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell * {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background-color: #fff !important;
+}
+
+/* Клон для принтера — невидим */
 html.electron-silent-print.print-thermal-modal.electron-print-capturing
   #pos-auto-print-print-host-capture,
 #pos-auto-print-print-host-capture {
@@ -136,7 +145,17 @@ html.electron-auto-print-job .receipt-printing-overlay {
   display: none !important;
 }
 
-/* ── Capture: полный чек off-screen ─────────────────────────────────────── */
+/* На экране чек остаётся видимым на всём этапе печати */
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job
+  #pos-auto-print-print-host.pos-auto-print-host--on-screen,
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  #pos-auto-print-print-host.pos-auto-print-host--on-screen {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* ── Capture: полный чек для термопринтера ───────────────────────────────── */
 
 #pos-auto-print-print-host-capture.pos-auto-print-host--printing {
   position: fixed !important;
@@ -161,9 +180,12 @@ html.electron-auto-print-job .receipt-printing-overlay {
   width: 100% !important;
   font-size: var(--print-font-px, 13px) !important;
   line-height: var(--print-line-height, 1.5) !important;
+  font-weight: 700 !important;
   padding: var(--print-pad-y, 2mm) var(--print-pad-x, 3mm) !important;
   color: #000 !important;
   background: #fff !important;
+  -webkit-font-smoothing: auto !important;
+  text-rendering: geometricPrecision !important;
 }
 
 #pos-auto-print-print-host-capture #fiscal-print-shell-capture *,
@@ -171,6 +193,8 @@ html.electron-auto-print-job .receipt-printing-overlay {
   background-color: #fff !important;
   color: #000 !important;
   -webkit-text-fill-color: #000 !important;
+  opacity: 1 !important;
+  filter: none !important;
   -webkit-print-color-adjust: exact !important;
   print-color-adjust: exact !important;
 }
