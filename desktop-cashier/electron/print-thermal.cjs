@@ -277,13 +277,16 @@ async function runSilentReceiptAutoPrint(webContents, options = {}) {
   const deviceName = options.deviceName ? String(options.deviceName) : '';
   const printers = options.printers || [];
   const dims = options.dims || null;
+  const cleanDocument = Boolean(options.cleanDocument);
   const attempts = winPrintAttempts(deviceName, printers);
   const printerLabel = deviceName || 'принтер по умолчанию';
   const name = attempts[0] ?? deviceName;
 
   const tryPrint = async (opts) => {
-    await webContents.executeJavaScript(FORCE_RECEIPT_LIGHT_PRINT_JS);
-    await waitForPaintFrames(webContents);
+    if (!cleanDocument) {
+      await webContents.executeJavaScript(FORCE_RECEIPT_LIGHT_PRINT_JS);
+      await waitForPaintFrames(webContents);
+    }
     return invokeWebContentsPrint(webContents, opts, AUTO_PRINT_TIMEOUT_MS);
   };
 

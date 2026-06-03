@@ -549,7 +549,15 @@ async function waitReceiptReadyForAutoPrint(wc, attempts = 24) {
   return false;
 }
 
-ipcMain.handle('desktop:print-receipt-auto', async (event) => {
+ipcMain.handle('desktop:print-receipt-auto', async (event, payload) => {
+  if (payload?.sale) {
+    const { printReceiptInCleanWindow } = require('./receipt-print-window.cjs');
+    return printReceiptInCleanWindow(payload, {
+      resolveReceiptPrinterName,
+      listSystemPrinters,
+    });
+  }
+
   const wc = event.sender;
   if (!wc || wc.isDestroyed()) {
     throw new Error('Окно печати недоступно');

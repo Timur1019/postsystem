@@ -129,12 +129,18 @@ function normalizeDesktopPrintError(err) {
   return err instanceof Error ? err : new Error(raw || 'Тихая печать не выполнена');
 }
 
-async function invokeDesktopSilentPrint({ preferPrintHost = false } = {}) {
+async function invokeDesktopSilentPrint({ preferPrintHost = false, printPayload = null } = {}) {
   const { silentMaxAttempts, silentRetryBackoffBaseMs } = RECEIPT_PRINT_ENGINE;
   let lastErr;
 
   for (let attempt = 1; attempt <= silentMaxAttempts; attempt += 1) {
     try {
+      if (printPayload?.sale) {
+        console.info(`[Aurent] silent print IPC (clean window) attempt ${attempt}/${silentMaxAttempts}`);
+        await window.desktopCashier.printReceiptAuto(printPayload);
+        return;
+      }
+
       removeStaleDom();
       await waitForReceiptPaintSettled();
       await waitForBodyPrintImagesReady();
@@ -190,24 +196,31 @@ export async function printThermalReceiptDialog({ useModalShell } = {}) {
 export async function printThermalReceiptAuto({
   preferPrintHost = false,
   skipDomReadyWait = false,
+  printPayload = null,
 } = {}) {
   if (!isDesktopCashier() || typeof window.desktopCashier?.printReceiptAuto !== 'function') {
     return printThermalReceiptDialog({ useModalShell: true });
   }
 
-  await prepareDesktopForPrint();
-  const cleanup = prepareThermalPrint(SILENT_AUTO_PRINT_CLASSES);
+  const useCleanWindow = Boolean(printPayload?.sale);
+
+  if (!useCleanWindow) {
+    await prepareDesktopForPrint();
+  }
+  const cleanup = useCleanWindow ? () => {} : prepareThermalPrint(SILENT_AUTO_PRINT_CLASSES);
   try {
-    if (!skipDomReadyWait) {
+    if (!useCleanWindow && !skipDomReadyWait) {
       if (preferPrintHost) {
         await waitForPrintShellDomReady();
       } else {
         await waitForReceiptDomReady({ useModalShell: true });
       }
     }
-    await waitForReceiptPaintSettled();
-    await sleep(RECEIPT_PRINT_ENGINE.preSilentInvokeDelayMs);
-    await invokeDesktopSilentPrint({ preferPrintHost });
+    if (!useCleanWindow) {
+      await waitForReceiptPaintSettled();
+      await sleep(RECEIPT_PRINT_ENGINE.preSilentInvokeDelayMs);
+    }
+    await invokeDesktopSilentPrint({ preferPrintHost, printPayload });
     return 'silent';
   } finally {
     cleanup();

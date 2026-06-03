@@ -75,7 +75,7 @@ async function processPrintJob(receiptNumber) {
     assertPrintShellReadyForIpc();
     receiptStore.updateStatus(receiptNumber, 'printing');
 
-    const mode = await electronPrinter.printReceipt();
+    const mode = await electronPrinter.printReceipt(record.sale);
 
     receiptStore.updateStatus(receiptNumber, 'done');
 
