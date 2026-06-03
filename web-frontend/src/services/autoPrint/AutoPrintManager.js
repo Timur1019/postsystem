@@ -65,6 +65,9 @@ async function processPrintJob(receiptNumber) {
     await sleep(RECEIPT_AUTO_PRINT_UI.beforePrintSettleMs);
 
     receiptStore.updateStatus(receiptNumber, 'ready');
+    await receiptRenderer.syncPrintShellFromPreview();
+    await waitForDoubleAnimationFrame();
+    await waitForPrintShellDomReady();
     receiptStore.updateStatus(receiptNumber, 'printing');
 
     const mode = await electronPrinter.printReceipt();

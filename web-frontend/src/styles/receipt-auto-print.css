@@ -190,6 +190,16 @@ html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--ca
   transform: none !important;
 }
 
+/* На время IPC: print-host в нулевых координатах — Chromium иначе печатает пусто с left:-10000px */
+html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--body-print,
+html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--capturing {
+  left: 0 !important;
+  top: 0 !important;
+  opacity: 0.01 !important;
+  visibility: visible !important;
+  z-index: -1 !important;
+}
+
 html.electron-print-capturing #pos-auto-print-print-host #fiscal-print-shell {
   transform: none !important;
   box-shadow: none !important;

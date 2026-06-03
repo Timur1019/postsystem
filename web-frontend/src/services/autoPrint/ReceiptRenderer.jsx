@@ -44,14 +44,47 @@ function ensureShellInHost(host, shellId) {
 /** Единственный React-рендер — print-host на body (Electron). */
 export function renderToPrintHost(sale) {
   const host = ensureStablePrintHost();
-  printShellEl = ensureShellInHost(host, PRINT_SHELL_ID);
-  if (!printRoot) {
-    printRoot = createRoot(printShellEl);
+  try {
+    printRoot?.unmount();
+  } catch {
+    /* ignore */
   }
+  printRoot = null;
+  host.replaceChildren();
+  printShellEl = ensureShellInHost(host, PRINT_SHELL_ID);
+  printRoot = createRoot(printShellEl);
   printRoot.render(<FiscalReceiptBody sale={sale} />);
   void printShellEl.offsetHeight;
   void host.offsetHeight;
   return printShellEl;
+}
+
+/**
+ * Перед silent print: копия видимого превью → print-host (Electron меряет #fiscal-print-shell).
+ */
+export async function syncPrintShellFromPreview() {
+  const previewShell = document.querySelector(
+    `#${RECEIPT_PRINT_DOM.previewMountId} #${PREVIEW_SHELL_ID}`,
+  );
+  const printShell = getPrintShellElement();
+  if (!previewShell || !printShell) return null;
+
+  printShell.innerHTML = previewShell.innerHTML;
+  const area = printShell.querySelector(`#${RECEIPT_AREA_ID}-live`);
+  if (area) {
+    area.id = RECEIPT_AREA_ID;
+  }
+  await syncShellImagesBetween(previewShell, printShell);
+  try {
+    printRoot?.unmount();
+  } catch {
+    /* ignore */
+  }
+  printRoot = null;
+  void printShell.offsetHeight;
+  const host = document.getElementById(RECEIPT_PRINT_DOM.bodyPrintHostId);
+  if (host) void host.offsetHeight;
+  return printShell;
 }
 
 /** Превью в слоте — клон уже готового print-shell (после QR/layout). */

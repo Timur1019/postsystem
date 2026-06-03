@@ -15,6 +15,15 @@ import {
   prepareBodyPrintShellFromPreview,
   prepareMountForSilentCapture,
 } from './autoPrintMount';
+
+async function ensurePrintShellSyncedFromPreview() {
+  try {
+    const { syncPrintShellFromPreview } = await import('../services/autoPrint/ReceiptRenderer');
+    await syncPrintShellFromPreview();
+  } catch (err) {
+    console.warn('[Aurent] syncPrintShellFromPreview failed', err);
+  }
+}
 import {
   assertFiscalPrintShellReady,
   sleep,
@@ -131,6 +140,9 @@ async function invokeDesktopSilentPrint({ preferPrintHost = false } = {}) {
   for (let attempt = 1; attempt <= silentMaxAttempts; attempt += 1) {
     let undoBodyPrint = () => {};
     try {
+      if (preferPrintHost) {
+        await ensurePrintShellSyncedFromPreview();
+      }
       undoBodyPrint = await prepareBodyPrintShellForSilentPrint({ preferPrintHost });
       await waitForReceiptPaintSettled();
       await waitForBodyPrintImagesReady();

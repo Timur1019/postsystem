@@ -65,7 +65,7 @@
   background: #fff !important;
 }
 
-/* Print-host на body — полный layout off-screen для Electron (не превью в слоте) */
+/* Print-host на body — off-screen; при electron-print-capturing → receipt-auto-print.css left:0 */
 #pos-auto-print-print-host.pos-auto-print-host--body-print {
   position: fixed !important;
   left: -10000px !important;
