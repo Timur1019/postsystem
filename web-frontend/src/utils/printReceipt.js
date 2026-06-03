@@ -48,10 +48,24 @@ export function isDesktopCashier() {
   return typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
 }
 
+/** Сброс inline-стилей после FORCE_RECEIPT_LIGHT_PRINT_JS (Electron). */
+export function clearReceiptPrintCaptureOverrides() {
+  if (typeof document === 'undefined') return;
+  const root = document.getElementById('root');
+  root?.style.removeProperty('display');
+  root?.style.removeProperty('visibility');
+  document.documentElement.style.removeProperty('background-color');
+  document.body.style.removeProperty('background-color');
+  for (const id of [RECEIPT_PRINT_DOM.bodyPrintHostId, RECEIPT_PRINT_DOM.capturePrintHostId]) {
+    document.getElementById(id)?.removeAttribute('style');
+  }
+}
+
 export function cleanupDesktopPrintState() {
   if (typeof document === 'undefined') return;
   PRINT_HTML_CLASSES.forEach((c) => document.documentElement.classList.remove(c));
   document.getElementById(RECEIPT_PRINT_DOM.printJobPageStyleId)?.remove();
+  clearReceiptPrintCaptureOverrides();
   teardownAutoPrintDom({ force: true });
 }
 
@@ -77,13 +91,14 @@ export async function withElectronPrintCapture(
   { settleMs = RECEIPT_PRINT_ENGINE.captureSettleMs } = {},
 ) {
   document.documentElement.classList.add(ELECTRON_PRINT_CAPTURING_CLASS);
-  const undoCaptureLayout = prepareMountForSilentCapture();
+  const undoCaptureLayout = await prepareMountForSilentCapture();
   try {
     await waitForReceiptPaintSettled();
     await sleep(settleMs);
     return await runPrint();
   } finally {
-    undoCaptureLayout();
+    undoCaptureLayout?.();
+    clearReceiptPrintCaptureOverrides();
     await sleep(RECEIPT_PRINT_ENGINE.captureReleaseDelayMs);
     document.documentElement.classList.remove(ELECTRON_PRINT_CAPTURING_CLASS);
   }

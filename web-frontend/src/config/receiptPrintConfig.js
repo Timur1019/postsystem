@@ -6,6 +6,8 @@
 
 export const RECEIPT_PRINT_DOM = Object.freeze({
   bodyPrintHostId: 'pos-auto-print-print-host',
+  /** Клон для принтера (off-screen), экранный host не трогаем */
+  capturePrintHostId: 'pos-auto-print-print-host-capture',
   fiscalPrintShellId: 'fiscal-print-shell',
   receiptPrintAreaId: 'receipt-print-area',
   printJobPageStyleId: 'pos-print-job-page',
@@ -68,5 +70,4 @@ export const RECEIPT_PRINT_STYLES = Object.freeze({
   hostOnScreenClass: 'pos-auto-print-host--on-screen',
   /** На время IPC — полная ширина 80mm, без уезда за экран */
   hostPrintingClass: 'pos-auto-print-host--printing',
-  hostCapturingClass: 'pos-auto-print-host--capturing',
 });

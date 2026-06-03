@@ -26,7 +26,7 @@
 }
 
 /* Скрытый контейнер термочека (не print-host автопечати) */
-.fiscal-print-scene:not(#pos-auto-print-print-host) {
+.fiscal-print-scene:not(#pos-auto-print-print-host):not(#pos-auto-print-print-host-capture) {
   position: fixed;
   left: -10000px;
   top: 0;
@@ -38,7 +38,7 @@
   z-index: -1;
 }
 
-#pos-auto-print-print-host.fiscal-print-scene {
+#pos-auto-print-print-host.fiscal-print-scene:not(.pos-auto-print-host--on-screen) {
   opacity: 1 !important;
   visibility: visible !important;
   background: #fff !important;
@@ -129,6 +129,22 @@ html.electron-silent-print.print-thermal-modal .pos-pay-overlay:not(.receipt-pri
 html.electron-silent-print.print-thermal-modal [data-sonner-toaster] {
   visibility: hidden !important;
 }
+
+/* Автопечать: в кадре только capture-чек, не тёмный POS (иначе чёрная лента) */
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job #root,
+html.electron-silent-print.print-thermal-modal.electron-print-capturing #root {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* При capturing не белим весь экран — чек только в off-screen capture */
+html.electron-silent-print.print-thermal-modal.electron-print-capturing,
+html.electron-silent-print.print-thermal-modal.electron-print-capturing body,
+html.dark.electron-silent-print.print-thermal-modal.electron-print-capturing,
+html.dark.electron-silent-print.print-thermal-modal.electron-print-capturing body {
+  background: transparent !important;
+  background-color: transparent !important;
+}
 html.electron-silent-print.print-thermal-modal .thermal-report-print-host {
   display: block !important;
   visibility: visible !important;
@@ -162,10 +178,10 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing
   overflow: visible !important;
 }
 
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell *,
-html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
-html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell * {
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell *,
+html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell,
+html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell * {
   background: #fff !important;
   background-color: #fff !important;
   color: #000 !important;
@@ -410,6 +426,7 @@ html.dark .receipt-page__card {
   html.print-thermal-only #receipt-print-area::after,
   html.print-thermal-modal #fiscal-print-shell::after,
   html.electron-silent-print.print-thermal-only #receipt-print-area::after,
+  html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell::after,
   html.electron-silent-print.print-thermal-modal #fiscal-print-shell::after {
     content: '';
     display: block;

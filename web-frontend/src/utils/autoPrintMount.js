@@ -1,19 +1,19 @@
 /**
- * Один контейнер чека: #pos-auto-print-print-host на body.
- * На экране — компактно по центру; для принтера — класс --printing (полная ширина).
+ * Экран: #pos-auto-print-print-host — компактный чек по центру.
+ * Печать: #pos-auto-print-print-host-capture — клон off-screen (не мигает на экране).
  */
 import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_STYLES } from '../config/receiptPrintConfig';
 
 const {
   bodyPrintHostId: PRINT_HOST_ID,
+  capturePrintHostId: CAPTURE_HOST_ID,
   fiscalPrintShellId: PRINT_SHELL_ID,
   fiscalPrintDialogClass,
   autoPrintHostClass,
   staleDomIds,
 } = RECEIPT_PRINT_DOM;
 
-const { hostBodyPrintClass, hostOnScreenClass, hostPrintingClass, hostCapturingClass } =
-  RECEIPT_PRINT_STYLES;
+const { hostBodyPrintClass, hostOnScreenClass, hostPrintingClass } = RECEIPT_PRINT_STYLES;
 
 let autoPrintInFlight = false;
 
@@ -86,9 +86,14 @@ export function ensureStablePrintHost() {
   return el;
 }
 
+/** Для Electron: сначала capture-клон, иначе экранный shell. */
 export function getAutoPrintFiscalShell() {
-  const host = document.getElementById(PRINT_HOST_ID);
-  const shell = host?.querySelector(`#${PRINT_SHELL_ID}`);
+  const captureShell = document
+    .getElementById(CAPTURE_HOST_ID)
+    ?.querySelector(`#${PRINT_SHELL_ID}`);
+  if (captureShell) return captureShell;
+
+  const shell = document.getElementById(PRINT_HOST_ID)?.querySelector(`#${PRINT_SHELL_ID}`);
   if (shell) return shell;
 
   const root = document.getElementById('root');
@@ -98,31 +103,79 @@ export function getAutoPrintFiscalShell() {
   );
 }
 
-export function prepareMountForSilentCapture() {
-  const host = document.getElementById(PRINT_HOST_ID);
-  if (!host) return () => {};
-  host.classList.add(hostCapturingClass, hostPrintingClass);
-  const shell = host.querySelector(`#${PRINT_SHELL_ID}`);
-  if (shell) {
-    shell.style.background = '#ffffff';
-    shell.style.color = '#000000';
-    void shell.offsetHeight;
-  }
-  void host.offsetHeight;
-  return () => {
-    host.classList.remove(hostCapturingClass, hostPrintingClass);
-    if (shell) {
-      shell.style.background = '';
-      shell.style.color = '';
-    }
-  };
+export async function syncShellImagesBetween(sourceShell, targetShell) {
+  const liveImgs = Array.from(sourceShell.querySelectorAll('img'));
+  const printImgs = Array.from(targetShell.querySelectorAll('img'));
+  if (liveImgs.length === 0) return;
+
+  await Promise.all(
+    liveImgs.map(async (liveImg, index) => {
+      const printImg = printImgs[index];
+      if (!printImg) return;
+      const src = liveImg.currentSrc || liveImg.src;
+      if (!src) return;
+
+      if (liveImg.complete && liveImg.naturalWidth > 0) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = liveImg.naturalWidth;
+          canvas.height = liveImg.naturalHeight;
+          canvas.getContext('2d')?.drawImage(liveImg, 0, 0);
+          printImg.src = canvas.toDataURL('image/png');
+          return;
+        } catch {
+          /* fallback src */
+        }
+      }
+
+      printImg.src = src;
+      if (printImg.complete) return;
+      await new Promise((resolve) => {
+        printImg.onload = resolve;
+        printImg.onerror = resolve;
+      });
+    }),
+  );
+}
+
+function removeCapturePrintHost() {
+  document.getElementById(CAPTURE_HOST_ID)?.remove();
+}
+
+/** Клон чека off-screen для IPC — видимый host не меняется (нет мигания). */
+export async function prepareMountForSilentCapture() {
+  const source = document.getElementById(PRINT_HOST_ID);
+  const sourceShell = source?.querySelector(`#${PRINT_SHELL_ID}`);
+  if (!sourceShell) return () => {};
+
+  removeCapturePrintHost();
+
+  const capture = document.createElement('div');
+  capture.id = CAPTURE_HOST_ID;
+  capture.className = `pos-sale-print-host fiscal-print-scene ${autoPrintHostClass} ${hostBodyPrintClass} ${hostPrintingClass}`;
+  capture.setAttribute('aria-hidden', 'true');
+
+  const dialog = document.createElement('div');
+  dialog.className = fiscalPrintDialogClass;
+  const printShell = document.createElement('div');
+  printShell.id = PRINT_SHELL_ID;
+  printShell.innerHTML = sourceShell.innerHTML;
+  dialog.appendChild(printShell);
+  capture.appendChild(dialog);
+  document.body.appendChild(capture);
+
+  await syncShellImagesBetween(sourceShell, printShell);
+  void capture.offsetHeight;
+  void printShell.offsetHeight;
+
+  return removeCapturePrintHost;
 }
 
 export function destroyBodyPrintMount({ force = false } = {}) {
   if (!force && autoPrintInFlight) return;
+  removeCapturePrintHost();
   const host = document.getElementById(PRINT_HOST_ID);
   if (host) {
-    host.classList.remove(hostCapturingClass, hostPrintingClass, hostOnScreenClass);
     host.replaceChildren();
     host.remove();
   }
@@ -134,4 +187,4 @@ export function teardownAutoPrintDom({ force = false } = {}) {
   destroyBodyPrintMount({ force: true });
 }
 
-export { PRINT_HOST_ID, PRINT_SHELL_ID, fiscalPrintDialogClass };
+export { PRINT_HOST_ID, CAPTURE_HOST_ID, PRINT_SHELL_ID, fiscalPrintDialogClass };

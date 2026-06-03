@@ -9,7 +9,8 @@ const PRINT_CALLBACK_TIMEOUT_MS = IS_WIN ? 12000 : 8000;
 
 /** Находит чек автопечати на body, не внутри #root. */
 const FIND_FISCAL_PRINT_SHELL_JS = `
-  document.querySelector('#pos-auto-print-handbook-print-slot #fiscal-print-shell')
+  document.querySelector('#pos-auto-print-print-host-capture #fiscal-print-shell')
+    || document.querySelector('#pos-auto-print-handbook-print-slot #fiscal-print-shell')
     || document.querySelector('#pos-auto-print-handbook-print-area #fiscal-print-shell')
     || document.querySelector('#pos-auto-print-print-host #fiscal-print-shell')
     || Array.from(document.querySelectorAll('#fiscal-print-shell')).find(
@@ -124,15 +125,32 @@ function waitForPaintFrames(webContents) {
   `);
 }
 
-/** Перед печатью: полный 80mm, белый чек, прозрачный фон вокруг. */
+/** Светлый capture off-screen: не двигаем на экран (нет белой вспышки). */
 const FORCE_RECEIPT_LIGHT_PRINT_JS = `
 (() => {
-  const host = document.getElementById('pos-auto-print-print-host');
+  const root = document.getElementById('root');
+  if (root) {
+    root.style.setProperty('display', 'none', 'important');
+    root.style.setProperty('visibility', 'hidden', 'important');
+  }
+
+  const screenHost = document.getElementById('pos-auto-print-print-host');
+  if (screenHost) {
+    screenHost.style.setProperty('display', 'none', 'important');
+    screenHost.style.setProperty('visibility', 'hidden', 'important');
+  }
+
+  const host = document.getElementById('pos-auto-print-print-host-capture');
   const shell = host?.querySelector('#fiscal-print-shell');
   if (!host || !shell) return false;
-  host.classList.add('pos-auto-print-host--printing');
-  host.style.setProperty('background', 'transparent', 'important');
-  const nodes = [shell, ...shell.querySelectorAll('*')];
+
+  host.style.setProperty('left', '-10000px', 'important');
+  host.style.setProperty('top', '0', 'important');
+  host.style.setProperty('opacity', '1', 'important');
+  host.style.setProperty('visibility', 'visible', 'important');
+  host.style.setProperty('background-color', '#ffffff', 'important');
+
+  const nodes = [host, shell, ...shell.querySelectorAll('*')];
   for (const el of nodes) {
     if (!(el instanceof HTMLElement)) continue;
     el.style.setProperty('background-color', '#ffffff', 'important');
@@ -141,6 +159,7 @@ const FORCE_RECEIPT_LIGHT_PRINT_JS = `
     el.style.setProperty('opacity', '1', 'important');
     el.style.setProperty('visibility', 'visible', 'important');
     el.style.setProperty('filter', 'none', 'important');
+    el.style.setProperty('mix-blend-mode', 'normal', 'important');
   }
   return true;
 })()
