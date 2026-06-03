@@ -199,7 +199,7 @@ function ensureBodyPrintMount() {
   if (!el) {
     el = document.createElement('div');
     el.id = PRINT_HOST_ID;
-    el.className = `pos-sale-print-host ${autoPrintHostClass} ${hostBodyPrintClass}`;
+    el.className = `pos-sale-print-host fiscal-print-scene fiscal-print-scene--offscreen ${autoPrintHostClass} ${hostBodyPrintClass}`;
     el.setAttribute('aria-hidden', 'true');
     stampPrintOwner(el);
     document.body.appendChild(el);
@@ -208,10 +208,8 @@ function ensureBodyPrintMount() {
       hostEmbeddedClass,
       hostInSlotClass,
       RECEIPT_PRINT_STYLES.hostCenteredClass,
-      'fiscal-print-scene',
-      'fiscal-print-scene--offscreen',
     );
-    el.classList.add(hostBodyPrintClass);
+    el.classList.add(hostBodyPrintClass, 'fiscal-print-scene', 'fiscal-print-scene--offscreen');
     clearHostInlineStyles(el);
     stampPrintOwner(el);
     if (el.parentElement !== document.body) {

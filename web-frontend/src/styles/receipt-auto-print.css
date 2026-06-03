@@ -190,14 +190,30 @@ html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--ca
   transform: none !important;
 }
 
-/* На время IPC: print-host в нулевых координатах — Chromium иначе печатает пусто с left:-10000px */
+/* На время IPC: чек в кадре с opacity:1 — иначе silent print пустой при printBackground:false */
+html.electron-silent-print.print-thermal-modal.electron-print-capturing #root {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--body-print,
-html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--capturing {
+html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--capturing,
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
+  #pos-auto-print-print-host.fiscal-print-scene {
+  position: fixed !important;
   left: 0 !important;
   top: 0 !important;
-  opacity: 0.01 !important;
+  opacity: 1 !important;
   visibility: visible !important;
-  z-index: -1 !important;
+  display: block !important;
+  z-index: 2147483645 !important;
+  width: var(--receipt-auto-print-body-width) !important;
+  max-width: var(--receipt-auto-print-body-width) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #fff !important;
+  overflow: visible !important;
+  pointer-events: none !important;
 }
 
 html.electron-print-capturing #pos-auto-print-print-host #fiscal-print-shell {
@@ -490,7 +506,8 @@ html.electron-silent-print.print-thermal-modal .pos-sale-print-host:not(.pos-aut
   html.print-thermal-modal #pos-auto-print-handbook-print-area,
   html.print-thermal-modal #pos-auto-print-handbook-print-slot,
   html.print-thermal-modal #pos-auto-print-print-host,
-  html.print-thermal-modal #pos-auto-print-print-host.fiscal-print-scene {
+  html.print-thermal-modal #pos-auto-print-print-host.fiscal-print-scene,
+  html.print-thermal-modal #pos-auto-print-print-host.pos-auto-print-host--body-print {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
