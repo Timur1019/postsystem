@@ -112,6 +112,15 @@ function mountPreviewOnBodyPark(hostEl) {
   }
 }
 
+export function mountPreviewInSlotPublic(hostEl) {
+  mountPreviewInSlot(hostEl);
+}
+
+/** Стабильный print-host на body (вне #root) — единственный источник для Electron. */
+export function ensureStablePrintHost() {
+  return ensureBodyPrintMount();
+}
+
 function mountPreviewInSlot(hostEl) {
   const slot = document.getElementById(SLOT_ID);
   if (!slot?.isConnected) {

@@ -1,5 +1,6 @@
-import { cleanupDesktopPrintState } from './printReceipt';
+import { isAutoPrintInFlight } from '../services/autoPrint';
 import { RECEIPT_PRINT_DOM } from '../config/receiptPrintConfig';
+import { cleanupDesktopPrintState } from './printReceipt';
 
 /** Снимаем классы модалок/печати с document после F5 или сбоя во время print job. */
 const HTML_UI_CLASSES = [
@@ -16,11 +17,13 @@ const HTML_UI_CLASSES = [
 export function resetCashierDocumentUiState() {
   if (typeof document === 'undefined') return;
 
-  const printActive = HTML_UI_CLASSES.some(
-    (cls) =>
-      document.documentElement.classList.contains(cls) ||
-      document.body?.classList.contains(cls),
-  );
+  const printActive =
+    isAutoPrintInFlight() ||
+    HTML_UI_CLASSES.some(
+      (cls) =>
+        document.documentElement.classList.contains(cls) ||
+        document.body?.classList.contains(cls),
+    );
 
   HTML_UI_CLASSES.forEach((cls) => {
     document.documentElement.classList.remove(cls);

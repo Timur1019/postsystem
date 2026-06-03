@@ -7,7 +7,8 @@ import {
   HANDBOOK_GROUPS,
   modulesForScope,
 } from '../config/moduleHandbook';
-import { destroyBodyPrintMount, isAutoPrintInFlight } from '../utils/autoPrintMount';
+import { isAutoPrintInFlight } from '../services/autoPrint';
+import { destroyBodyPrintMount } from '../utils/autoPrintMount';
 import '../styles/handbook-page.css';
 
 export default function HandbookPage({ scope = 'admin' }) {

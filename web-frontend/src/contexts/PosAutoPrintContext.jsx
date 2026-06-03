@@ -1,26 +1,32 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import PosSaleAutoPrint from '../components/cashier/PosSaleAutoPrint';
+import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  enqueueReceipt,
+  getPreviewReceiptNumber,
+  setAutoPrintTranslator,
+  subscribePreview,
+} from '../services/autoPrint';
 
 const PosAutoPrintContext = createContext(null);
 
 export function PosAutoPrintProvider({ children }) {
-  const [autoPrintSale, setAutoPrintSale] = useState(null);
+  const { t } = useTranslation();
 
-  const clearAutoPrintSale = useCallback(() => setAutoPrintSale(null), []);
+  useEffect(() => {
+    setAutoPrintTranslator(t);
+  }, [t]);
 
-  const value = useMemo(
-    () => ({ autoPrintSale, setAutoPrintSale, clearAutoPrintSale }),
-    [autoPrintSale, clearAutoPrintSale],
+  const previewReceiptNumber = useSyncExternalStore(
+    subscribePreview,
+    getPreviewReceiptNumber,
+    () => null,
   );
 
-  return (
-    <PosAutoPrintContext.Provider value={value}>
-      {children}
-      {autoPrintSale ? (
-        <PosSaleAutoPrint sale={autoPrintSale} onDone={clearAutoPrintSale} />
-      ) : null}
-    </PosAutoPrintContext.Provider>
-  );
+  const enqueue = useCallback((sale) => enqueueReceipt(sale), []);
+
+  const value = useMemo(() => ({ enqueueReceipt: enqueue, previewReceiptNumber }), [enqueue, previewReceiptNumber]);
+
+  return <PosAutoPrintContext.Provider value={value}>{children}</PosAutoPrintContext.Provider>;
 }
 
 export function usePosAutoPrint() {
@@ -29,4 +35,14 @@ export function usePosAutoPrint() {
     throw new Error('usePosAutoPrint must be used within PosAutoPrintProvider');
   }
   return ctx;
+}
+
+/** @deprecated use enqueueReceipt */
+export function usePosAutoPrintLegacy() {
+  const { enqueueReceipt: enqueue } = usePosAutoPrint();
+  return {
+    setAutoPrintSale: enqueue,
+    autoPrintSale: null,
+    clearAutoPrintSale: () => {},
+  };
 }

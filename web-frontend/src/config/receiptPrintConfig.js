@@ -2,7 +2,7 @@
  * Конфиг автопечати фискального чека (касса + Electron).
  *
  * ┌─────────────────────────────────────────────────────────────┐
- * │  PosSaleAutoPrint  →  RECEIPT_AUTO_PRINT_UI                 │
+ * │  AutoPrintManager  →  RECEIPT_AUTO_PRINT_UI                 │
  * │  printReceipt.js   →  RECEIPT_PRINT_ENGINE + THRESHOLDS     │
  * │  autoPrintMount.js →  RECEIPT_PRINT_DOM                     │
  * │  receipt-auto-print.css → RECEIPT_PRINT_STYLES (CSS vars)  │
@@ -45,7 +45,7 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
 });
 
 /**
- * Этап 1 — React-комponent PosSaleAutoPrint (сразу после продажи).
+ * Этап 1 — AutoPrintManager / ReceiptRenderer (сразу после продажи).
  * Превью в слоте справа → копия на body → silent print.
  */
 export const RECEIPT_AUTO_PRINT_UI = Object.freeze({

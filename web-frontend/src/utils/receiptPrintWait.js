@@ -28,7 +28,53 @@ function qrSelectors() {
   ];
 }
 
-/** PosSaleAutoPrint: ждём QR на превью. */
+function findPrintShellPrintArea() {
+  const shell = getAutoPrintFiscalShell();
+  const root = document.getElementById('root');
+  if (!shell || root?.contains(shell)) return null;
+  return (
+    shell.querySelector(`#${RECEIPT_PRINT_DOM.receiptPrintAreaId}`) ||
+    shell.querySelector('.receipt-print-root') ||
+    shell
+  );
+}
+
+/** Очередь автопечати: готовность только print-host на body. */
+export async function waitForPrintShellDomReady() {
+  await document.fonts?.ready;
+  const { domReadyPollIntervalMs, domReadyMaxAttempts } = RECEIPT_PRINT_ENGINE;
+  for (let i = 0; i < domReadyMaxAttempts; i += 1) {
+    await sleep(domReadyPollIntervalMs);
+    const area = findPrintShellPrintArea();
+    if (isReceiptPrintAreaReady(area)) {
+      return;
+    }
+  }
+  throw new Error('Чек не готов для печати');
+}
+
+/** QR в print-shell (не зависит от превью в слоте). */
+export async function waitForPrintShellQrReady(
+  maxMs = RECEIPT_AUTO_PRINT_UI.qrWaitMaxMs,
+) {
+  const { fiscalPrintShellId, qrImageSelector } = RECEIPT_PRINT_DOM;
+  const sel = `#${RECEIPT_PRINT_DOM.bodyPrintHostId} #${fiscalPrintShellId} ${qrImageSelector}`;
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    const img = document.querySelector(sel);
+    if (img && img.complete && img.naturalWidth > 0 && img.src) {
+      return img.src;
+    }
+    if (!getAutoPrintFiscalShell()) {
+      await sleep(RECEIPT_AUTO_PRINT_UI.qrShellMissingPollMs);
+      continue;
+    }
+    await sleep(RECEIPT_AUTO_PRINT_UI.qrPollIntervalMs);
+  }
+  return null;
+}
+
+/** @deprecated prefer waitForPrintShellQrReady for auto-print queue */
 export async function waitForReceiptQrReady(
   maxMs = RECEIPT_AUTO_PRINT_UI.qrWaitMaxMs,
 ) {

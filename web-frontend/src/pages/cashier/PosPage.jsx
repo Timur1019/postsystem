@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { usePosAutoPrint } from '../../contexts/PosAutoPrintContext';
 import { isDesktopCashier } from '../../utils/printReceipt';
-import { isAutoPrintInFlight, parkPreviewMountOnBody } from '../../utils/autoPrintMount';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import { clampPayAmount, round2 } from '../../utils/taxAmounts';
 import { resolveProductUnitPrice } from '../../utils/productPrice';
@@ -55,7 +54,7 @@ export default function PosPage() {
   const [payOpen, setPayOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [discountOpen, setDiscountOpen] = useState(false);
-  const { setAutoPrintSale } = usePosAutoPrint();
+  const { enqueueReceipt } = usePosAutoPrint();
   const [posPane, setPosPane] = useState('register');
   const { setShell } = usePosShell() ?? {};
   const { open: shiftModalOpen, openShift: openShiftModal } = useCashierShiftModal();
@@ -99,14 +98,6 @@ export default function PosPage() {
   useEffect(() => {
     if (payOpen) setPosPane('register');
   }, [payOpen]);
-
-  useEffect(() => {
-    return () => {
-      if (isAutoPrintInFlight()) {
-        parkPreviewMountOnBody();
-      }
-    };
-  }, []);
 
   const { data: categories = [], isPending: categoriesLoading } = useQuery({
     queryKey: ['pos-categories'],
@@ -333,7 +324,7 @@ export default function PosPage() {
       toast.success(t('pos.saleSuccess'));
       if (shouldPrint) {
         if (isDesktopCashier()) {
-          setAutoPrintSale(res.data);
+          enqueueReceipt(res.data);
         } else {
           navigate(`/receipt/${receiptNum}`, {
             state: { autoPrint: true, fromCashier: true },
