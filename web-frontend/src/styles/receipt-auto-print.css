@@ -1,235 +1,53 @@
 /**
- * #pos-auto-print-print-host — маленький чек в углу (касса видна).
- * #pos-auto-print-print-host-capture — для принтера (невидим).
+ * Автопечать: только скрытый host (без превью на экране).
+ * Печать — отдельное окно Electron с HTML чека (buildReceiptPrintPayload).
  */
 
 :root {
-  --receipt-auto-print-radius: 10px;
-  --receipt-auto-print-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
-  --receipt-auto-print-z: 2147483000;
-  --receipt-auto-print-chip-width: 200px;
-  --receipt-auto-print-chip-max-h: 320px;
-  --receipt-auto-print-chip-font: 10px;
-  --receipt-auto-print-chip-bottom: 88px;
-  --receipt-auto-print-chip-right: 18px;
   --receipt-auto-print-offscreen-left: -10000px;
   --receipt-auto-print-body-width: var(--print-content-w, 76mm);
 }
 
-/* ── Маленький чек в углу: не на весь экран, не по центру ─────────────────── */
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen {
-  position: fixed;
-  right: var(--receipt-auto-print-chip-right);
-  bottom: var(--receipt-auto-print-chip-bottom);
-  top: auto;
-  left: auto;
-  width: auto;
-  height: auto;
-  max-width: none;
-  z-index: var(--receipt-auto-print-z);
-  display: block;
-  margin: 0;
-  padding: 0;
-  pointer-events: none;
-  overflow: visible;
-  background: transparent !important;
-  opacity: 1;
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .fiscal-print-dialog {
-  width: var(--receipt-auto-print-chip-width);
-  max-width: var(--receipt-auto-print-chip-width);
-  max-height: var(--receipt-auto-print-chip-max-h);
-  height: auto;
-  margin: 0;
-  padding: 0;
-  overflow: auto;
-  overflow-x: hidden;
-  background: #fff;
-  border-radius: var(--receipt-auto-print-radius);
-  box-shadow: var(--receipt-auto-print-shadow);
-  border: 1px solid rgb(15 23 42 / 0.18);
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0;
-  padding: 8px 10px 10px;
-  color: #0f172a !important;
-  background: #fff !important;
-  overflow: hidden;
-  transform: none !important;
-  zoom: normal !important;
-  box-sizing: border-box;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell::before,
-#pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell::after,
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root::before,
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root::after,
-#pos-auto-print-print-host.pos-auto-print-host--on-screen *::before,
-#pos-auto-print-print-host.pos-auto-print-host--on-screen *::after {
-  display: none !important;
-  content: none !important;
-  height: 0 !important;
-  min-height: 0 !important;
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root {
-  font-size: var(--receipt-auto-print-chip-font) !important;
-  line-height: 1.35 !important;
-  font-weight: 600 !important;
-  padding: 0 !important;
-  color: #0f172a !important;
-  background: #fff !important;
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root .receipt-title {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root .receipt-subtitle,
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root .receipt-secondary,
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-meta-label {
-  font-size: 9.5px !important;
-  font-weight: 600 !important;
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root .receipt-qr {
-  max-width: 88px !important;
-  width: 88px !important;
-  height: auto !important;
-  image-rendering: crisp-edges;
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-row__value,
-#pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-fiscal-sign {
-  color: #0f172a !important;
-  -webkit-text-fill-color: #0f172a !important;
-  overflow: visible !important;
-  word-break: break-word !important;
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell * {
-  color: #0f172a !important;
-  -webkit-text-fill-color: #0f172a !important;
-  opacity: 1 !important;
-  filter: none !important;
-}
-
-html.dark #pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell,
-html.dark #pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell * {
-  color: #0f172a !important;
-  -webkit-text-fill-color: #0f172a !important;
-  background-color: #fff !important;
-}
-
-/* Клон для принтера — невидим */
-html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  #pos-auto-print-print-host-capture,
+#pos-auto-print-print-host,
 #pos-auto-print-print-host-capture {
-  left: var(--receipt-auto-print-offscreen-left) !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job .receipt-printing-overlay,
-html.electron-auto-print-job .receipt-printing-overlay {
-  display: none !important;
-}
-
-/* На экране чек остаётся видимым на всём этапе печати */
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job
-  #pos-auto-print-print-host.pos-auto-print-host--on-screen,
-html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  #pos-auto-print-print-host.pos-auto-print-host--on-screen {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-/* ── Capture: полный чек для термопринтера ───────────────────────────────── */
-
-#pos-auto-print-print-host-capture.pos-auto-print-host--printing {
   position: fixed !important;
   left: var(--receipt-auto-print-offscreen-left) !important;
   top: 0 !important;
   width: var(--receipt-auto-print-body-width) !important;
   max-width: var(--receipt-auto-print-body-width) !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
   margin: 0 !important;
   padding: 0 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
   overflow: visible !important;
-  background: #fff !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
-#pos-auto-print-print-host-capture #fiscal-print-shell-capture,
-#pos-auto-print-print-host-capture #fiscal-print-shell {
-  transform: none !important;
-  zoom: normal !important;
-  width: 100% !important;
-  font-size: var(--print-font-px, 13px) !important;
-  line-height: var(--print-line-height, 1.5) !important;
-  font-weight: 700 !important;
+#pos-auto-print-print-host .fiscal-print-dialog,
+#pos-auto-print-print-host-capture .fiscal-print-dialog {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+#pos-auto-print-print-host #fiscal-print-shell,
+#pos-auto-print-print-host-capture #fiscal-print-shell,
+#pos-auto-print-print-host-capture #fiscal-print-shell-capture {
+  margin: 0 !important;
   padding: var(--print-pad-y, 2mm) var(--print-pad-x, 3mm) !important;
+  background: transparent !important;
+  box-shadow: none !important;
   color: #000 !important;
-  background: #fff !important;
-  -webkit-font-smoothing: auto !important;
-  text-rendering: geometricPrecision !important;
 }
 
-#pos-auto-print-print-host-capture #fiscal-print-shell-capture *:not(img):not(svg):not(canvas),
-#pos-auto-print-print-host-capture #fiscal-print-shell *:not(img):not(svg):not(canvas) {
-  background-color: #fff !important;
-  color: #000 !important;
-  -webkit-text-fill-color: #000 !important;
-  opacity: 1 !important;
-  filter: none !important;
-}
-
-#pos-auto-print-print-host-capture #fiscal-print-shell-capture img,
-#pos-auto-print-print-host-capture #fiscal-print-shell img,
-#pos-auto-print-print-host-capture .receipt-qr {
-  opacity: 1 !important;
-  filter: none !important;
-  image-rendering: crisp-edges;
-}
-
-@media print {
-  html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture,
-  html.print-thermal-modal #pos-auto-print-print-host-capture {
-    display: block !important;
-    position: static !important;
-    left: auto !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    width: var(--print-content-w, 72mm) !important;
-    margin: 0 auto !important;
-    background: #fff !important;
-  }
-
-  html.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell-capture::after,
-  html.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell::after,
-  html.electron-silent-print.print-thermal-modal
-    #pos-auto-print-print-host-capture
-    #fiscal-print-shell-capture::after {
-    content: '';
-    display: block;
-    height: 20mm;
-    min-height: 20mm;
-  }
-
-  html.print-thermal-modal #pos-auto-print-print-host.pos-auto-print-host--on-screen {
-    display: none !important;
-  }
+html.electron-silent-print.print-thermal-modal.electron-auto-print-job .receipt-printing-overlay,
+html.electron-auto-print-job .receipt-printing-overlay {
+  display: none !important;
 }

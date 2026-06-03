@@ -1,5 +1,5 @@
 /**
- * Один React-рендер чека в #pos-auto-print-print-host (экран + печать).
+ * Скрытый React-рендер чека в #pos-auto-print-print-host (off-screen, для bodyHtml + QR).
  */
 import { createRoot } from 'react-dom/client';
 import FiscalReceiptBody from '../../components/receipt/FiscalReceiptBody';

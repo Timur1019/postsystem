@@ -1,6 +1,5 @@
 /**
- * Экран: #pos-auto-print-print-host — компактный чек по центру.
- * Печать: #pos-auto-print-print-host-capture — клон off-screen (не мигает на экране).
+ * #pos-auto-print-print-host — скрытый рендер чека (off-screen).
  */
 import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_STYLES } from '../config/receiptPrintConfig';
 
@@ -14,7 +13,7 @@ const {
   staleDomIds,
 } = RECEIPT_PRINT_DOM;
 
-const { hostBodyPrintClass, hostOnScreenClass, hostPrintingClass } = RECEIPT_PRINT_STYLES;
+const { hostBodyPrintClass, hostOffscreenClass } = RECEIPT_PRINT_STYLES;
 
 let autoPrintInFlight = false;
 
@@ -61,8 +60,8 @@ function destroyPrintMountIfWrongOwner() {
   }
 }
 
-function applyOnScreenHostClasses(hostEl) {
-  hostEl.className = `pos-sale-print-host fiscal-print-scene ${autoPrintHostClass} ${hostBodyPrintClass} ${hostOnScreenClass}`;
+function applyOffscreenHostClasses(hostEl) {
+  hostEl.className = `pos-sale-print-host fiscal-print-scene ${autoPrintHostClass} ${hostBodyPrintClass} ${hostOffscreenClass}`;
   clearHostInlineStyles(hostEl);
 }
 
@@ -83,7 +82,7 @@ export function ensureStablePrintHost() {
       document.body.appendChild(el);
     }
   }
-  applyOnScreenHostClasses(el);
+  applyOffscreenHostClasses(el);
   return el;
 }
 
@@ -154,7 +153,7 @@ export async function prepareMountForSilentCapture() {
 
   const capture = document.createElement('div');
   capture.id = CAPTURE_HOST_ID;
-  capture.className = `pos-sale-print-host fiscal-print-scene ${autoPrintHostClass} ${hostBodyPrintClass} ${hostPrintingClass}`;
+  capture.className = `pos-sale-print-host fiscal-print-scene ${autoPrintHostClass} ${hostBodyPrintClass} ${hostOffscreenClass}`;
   capture.setAttribute('aria-hidden', 'true');
 
   const dialog = document.createElement('div');

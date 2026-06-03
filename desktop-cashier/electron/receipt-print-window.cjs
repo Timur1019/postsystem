@@ -1,5 +1,8 @@
 const { BrowserWindow } = require('electron');
-const { buildReceiptDocumentFromSale } = require('./receipt-html-builder.cjs');
+const {
+  buildReceiptDocumentFromSale,
+  buildThermalReceiptDocument,
+} = require('./receipt-html-builder.cjs');
 const {
   waitForPaintFrames,
   runSilentReceiptAutoPrint,
@@ -50,24 +53,46 @@ function normalizeBranding(branding = {}) {
   };
 }
 
+const STRIP_RECEIPT_PRINT_FILLS_JS = `
+(() => {
+  for (const el of document.querySelectorAll('*')) {
+    if (!(el instanceof HTMLElement)) continue;
+    const tag = el.tagName;
+    if (tag === 'IMG' || tag === 'SVG' || tag === 'CANVAS') continue;
+    el.style.setProperty('background', 'transparent', 'important');
+    el.style.setProperty('background-color', 'transparent', 'important');
+    el.style.setProperty('box-shadow', 'none', 'important');
+    el.style.setProperty('color', '#000000', 'important');
+    el.style.setProperty('-webkit-text-fill-color', '#000000', 'important');
+  }
+  document.documentElement.style.setProperty('background', 'transparent', 'important');
+  document.body.style.setProperty('background', 'transparent', 'important');
+  return true;
+})()
+`;
+
 /**
- * Тихая печать в отдельном скрытом окне с белым HTML (без React/Tailwind кассы).
- * @param {{ sale: object, branding?: object }} payload
- * @param {{ resolveReceiptPrinterName: Function, listSystemPrinters: Function }} deps
+ * Тихая печать в отдельном скрытом окне (HTML чека из кассы, без UI).
+ * @param {{ sale?: object, branding?: object, bodyHtml?: string }} payload
  */
 async function printReceiptInCleanWindow(payload, deps) {
   const sale = payload?.sale;
-  if (!sale || typeof sale !== 'object') {
+  const bodyHtml = String(payload?.bodyHtml || '').trim();
+  const branding = normalizeBranding(payload.branding);
+
+  let html;
+  if (bodyHtml.length > 80) {
+    html = buildThermalReceiptDocument(bodyHtml);
+  } else if (sale && typeof sale === 'object') {
+    html = buildReceiptDocumentFromSale(sale, branding);
+  } else {
     throw new Error('Нет данных чека для печати');
   }
 
-  const branding = normalizeBranding(payload.branding);
-  const html = buildReceiptDocumentFromSale(sale, branding);
-
   const printWin = new BrowserWindow({
     show: false,
-    width: 420,
-    height: 960,
+    width: 320,
+    height: 1200,
     backgroundColor: '#ffffff',
     webPreferences: {
       nodeIntegration: false,
@@ -83,6 +108,7 @@ async function printReceiptInCleanWindow(payload, deps) {
 
     const wc = printWin.webContents;
     await wc.executeJavaScript(WAIT_CLEAN_DOC_IMAGES_JS);
+    await wc.executeJavaScript(STRIP_RECEIPT_PRINT_FILLS_JS);
     await waitForPaintFrames(wc);
     await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 200 : 120));
 

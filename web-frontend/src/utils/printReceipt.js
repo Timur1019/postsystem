@@ -135,7 +135,7 @@ async function invokeDesktopSilentPrint({ preferPrintHost = false, printPayload 
 
   for (let attempt = 1; attempt <= silentMaxAttempts; attempt += 1) {
     try {
-      if (printPayload?.sale) {
+      if (printPayload?.sale || printPayload?.bodyHtml) {
         console.info(`[Aurent] silent print IPC (clean window) attempt ${attempt}/${silentMaxAttempts}`);
         await window.desktopCashier.printReceiptAuto(printPayload);
         return;
@@ -202,7 +202,7 @@ export async function printThermalReceiptAuto({
     return printThermalReceiptDialog({ useModalShell: true });
   }
 
-  const useCleanWindow = Boolean(printPayload?.sale);
+  const useCleanWindow = Boolean(printPayload?.sale || printPayload?.bodyHtml);
 
   if (!useCleanWindow) {
     await prepareDesktopForPrint();

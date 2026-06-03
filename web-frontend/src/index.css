@@ -38,16 +38,7 @@
   z-index: -1;
 }
 
-#pos-auto-print-print-host.fiscal-print-scene.pos-auto-print-host--on-screen {
-  background: transparent !important;
-}
-
-#pos-auto-print-print-host.fiscal-print-scene:not(.pos-auto-print-host--on-screen) {
-  opacity: 1 !important;
-  visibility: visible !important;
-  background: #fff !important;
-  color: #000 !important;
-}
+/* Автопечать: host всегда скрыт — styles/receipt-auto-print.css */
 
 .fiscal-print-scene--offscreen {
   opacity: 0;
@@ -177,45 +168,7 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing
   overflow: visible !important;
 }
 
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell-capture,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell,
-html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell-capture,
-html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell {
-  background: #fff !important;
-  background-color: #fff !important;
-  color: #000 !important;
-  -webkit-text-fill-color: #000 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  box-shadow: none !important;
-  filter: none !important;
-}
-
-html.electron-silent-print.print-thermal-modal
-  #pos-auto-print-print-host-capture
-  #fiscal-print-shell-capture
-  *:not(img):not(svg):not(canvas),
-html.electron-silent-print.print-thermal-modal
-  #pos-auto-print-print-host-capture
-  #fiscal-print-shell
-  *:not(img):not(svg):not(canvas),
-html.dark.electron-silent-print.print-thermal-modal
-  #pos-auto-print-print-host-capture
-  #fiscal-print-shell-capture
-  *:not(img):not(svg):not(canvas),
-html.dark.electron-silent-print.print-thermal-modal
-  #pos-auto-print-print-host-capture
-  #fiscal-print-shell
-  *:not(img):not(svg):not(canvas) {
-  background: #fff !important;
-  background-color: #fff !important;
-  color: #000 !important;
-  -webkit-text-fill-color: #000 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  box-shadow: none !important;
-  filter: none !important;
-}
+/* capture-host убран из автопечати — печать только clean window */
 #receipt-print-area,
 #receipt-print-area *,
 .receipt-print-root,

@@ -14,6 +14,16 @@ function readTenantBranding() {
   };
 }
 
+function extractReceiptBodyHtml() {
+  const host = document.getElementById(RECEIPT_PRINT_DOM.bodyPrintHostId);
+  if (!host) return null;
+  const area =
+    host.querySelector(`#${RECEIPT_PRINT_DOM.receiptPrintAreaId}`) ||
+    host.querySelector('.receipt-print-root');
+  const html = area?.outerHTML?.trim();
+  return html && html.length > 80 ? html : null;
+}
+
 function qrFromDom() {
   const host = document.getElementById(RECEIPT_PRINT_DOM.bodyPrintHostId);
   const img = host?.querySelector(RECEIPT_PRINT_DOM.qrImageSelector);
@@ -39,14 +49,16 @@ async function qrFromSale(sale) {
 }
 
 /**
- * JSON для Electron: белый HTML-чек без захвата тёмного UI кассы.
+ * JSON для Electron: HTML чека как в кассе, без UI и без заливки фона.
  * @param {object} sale — snapshot POST /sales
  */
 export async function buildReceiptPrintPayload(sale) {
   if (!sale) return null;
   const qrDataUrl = qrFromDom() || (await qrFromSale(sale));
+  const bodyHtml = extractReceiptBodyHtml();
   return {
     sale: { ...sale, qrDataUrl: qrDataUrl || null },
     branding: readTenantBranding(),
+    bodyHtml,
   };
 }

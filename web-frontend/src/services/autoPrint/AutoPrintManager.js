@@ -61,7 +61,6 @@ async function processPrintJob(receiptNumber) {
 
   try {
     receiptRenderer.renderToPrintHost(record.sale);
-    receiptStore.setPreviewReceipt(receiptNumber);
 
     await waitForDoubleAnimationFrame();
     await waitForPrintShellDomReady();

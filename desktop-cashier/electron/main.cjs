@@ -550,7 +550,7 @@ async function waitReceiptReadyForAutoPrint(wc, attempts = 24) {
 }
 
 ipcMain.handle('desktop:print-receipt-auto', async (event, payload) => {
-  if (payload?.sale) {
+  if (payload?.sale || payload?.bodyHtml) {
     const { printReceiptInCleanWindow } = require('./receipt-print-window.cjs');
     return printReceiptInCleanWindow(payload, {
       resolveReceiptPrinterName,
