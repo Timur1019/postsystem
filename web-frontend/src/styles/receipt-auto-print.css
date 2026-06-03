@@ -1,6 +1,6 @@
 /**
- * Экран: #pos-auto-print-print-host — компактная карточка.
- * Печать: #pos-auto-print-print-host-capture — off-screen.
+ * #pos-auto-print-print-host — чек по центру, виден пока формируется и печатается.
+ * #pos-auto-print-print-host-capture — только для принтера (невидим).
  */
 
 :root {
@@ -14,7 +14,7 @@
   --receipt-auto-print-body-width: var(--print-content-w, 76mm);
 }
 
-/* ── Экран: карточка чуть крупнее, без zoom (macOS) ─────────────────────── */
+/* ── Чек на экране (не скрываем до удаления host после печати) ───────────── */
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen {
   position: fixed;
@@ -28,11 +28,6 @@
   overflow: hidden;
   background: transparent !important;
   opacity: 1;
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--on-screen.pos-auto-print-host--preparing {
-  opacity: 0 !important;
-  visibility: hidden !important;
 }
 
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .fiscal-print-dialog {
@@ -66,7 +61,7 @@
   box-sizing: border-box;
 }
 
-/* Нет хвоста 20mm и прочих псевдо-элементов на превью */
+/* Нет хвоста 20mm на экранном чеке */
 #pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell::before,
 #pos-auto-print-print-host.pos-auto-print-host--on-screen #fiscal-print-shell::after,
 #pos-auto-print-print-host.pos-auto-print-host--on-screen .receipt-print-root::before,
@@ -121,19 +116,10 @@
   color: #000 !important;
 }
 
-/* На время IPC: превью не показываем */
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job
-  #pos-auto-print-print-host.pos-auto-print-host--on-screen,
+/* Клон для принтера — пользователь не видит */
 html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  #pos-auto-print-print-host.pos-auto-print-host--on-screen,
-#pos-auto-print-print-host.pos-auto-print-host--on-screen.pos-auto-print-host--preparing {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-}
-
-html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  #pos-auto-print-print-host-capture {
+  #pos-auto-print-print-host-capture,
+#pos-auto-print-print-host-capture {
   left: var(--receipt-auto-print-offscreen-left) !important;
   opacity: 0 !important;
   visibility: hidden !important;

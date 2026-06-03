@@ -8,7 +8,6 @@ import {
   destroyBodyPrintMount,
   isAutoPrintInFlight,
   setAutoPrintInFlight,
-  setPrintHostPreviewVisible,
 } from '../../utils/autoPrintMount';
 import {
   cleanupDesktopPrintState,
@@ -69,7 +68,6 @@ async function processPrintJob(receiptNumber) {
     await waitForPrintShellQrReady(RECEIPT_AUTO_PRINT_UI.qrWaitMaxMs, { required: true });
     await waitForDoubleAnimationFrame();
     await sleep(RECEIPT_AUTO_PRINT_UI.beforePrintSettleMs);
-    setPrintHostPreviewVisible(true);
 
     receiptStore.updateStatus(receiptNumber, 'ready');
     await waitForDoubleAnimationFrame();
@@ -111,7 +109,6 @@ async function processPrintJob(receiptNumber) {
       },
     );
   } finally {
-    setPrintHostPreviewVisible(false);
     restoreCashierUiAfterPrintJob();
     receiptRenderer.teardownRenderer();
     receiptStore.clearPreview();

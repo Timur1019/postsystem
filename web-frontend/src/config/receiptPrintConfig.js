@@ -1,7 +1,8 @@
 /**
  * Конфиг печати фискального чека (касса + Electron).
  *
- * Один DOM: #pos-auto-print-print-host — на экране компактно, в принтер полный размер.
+ * Экран: #pos-auto-print-print-host — чек по центру, виден до конца печати.
+ * Принтер: #pos-auto-print-print-host-capture — невидимый клон off-screen.
  */
 
 export const RECEIPT_PRINT_DOM = Object.freeze({
@@ -69,10 +70,8 @@ export const RECEIPT_PRINT_TOAST = Object.freeze({
 
 export const RECEIPT_PRINT_STYLES = Object.freeze({
   hostBodyPrintClass: 'pos-auto-print-host--body-print',
-  /** Компактный чек по центру (экран) */
+  /** Чек по центру на экране (компактный) */
   hostOnScreenClass: 'pos-auto-print-host--on-screen',
-  /** На время IPC — полная ширина 80mm, без уезда за экран */
+  /** Off-screen клон для принтера */
   hostPrintingClass: 'pos-auto-print-host--printing',
-  /** До готовности QR/DOM — превью не показываем (нет пустой вспышки) */
-  hostPreparingClass: 'pos-auto-print-host--preparing',
 });

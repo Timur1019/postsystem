@@ -7,7 +7,6 @@ import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_ENGINE } from '../config/receiptPrintC
 import {
   prepareMountForSilentCapture,
   removeStaleDom,
-  setPrintHostPreviewVisible,
   teardownAutoPrintDom,
 } from './autoPrintMount';
 import {
@@ -103,12 +102,10 @@ export async function withElectronPrintCapture(
     await waitForCaptureShellReady();
     await waitForReceiptPaintSettled();
     document.documentElement.classList.add(ELECTRON_PRINT_CAPTURING_CLASS);
-    setPrintHostPreviewVisible(false);
     await sleep(settleMs);
     assertCaptureShellReadyForIpc();
     return await runPrint();
   } finally {
-    setPrintHostPreviewVisible(false);
     undoCaptureLayout?.();
     clearReceiptPrintCaptureOverrides();
     await sleep(RECEIPT_PRINT_ENGINE.captureReleaseDelayMs);
