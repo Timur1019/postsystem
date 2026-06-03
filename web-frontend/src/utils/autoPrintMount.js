@@ -13,7 +13,8 @@ const {
   staleDomIds,
 } = RECEIPT_PRINT_DOM;
 
-const { hostBodyPrintClass, hostOnScreenClass, hostPrintingClass } = RECEIPT_PRINT_STYLES;
+const { hostBodyPrintClass, hostOnScreenClass, hostPrintingClass, hostPreparingClass } =
+  RECEIPT_PRINT_STYLES;
 
 let autoPrintInFlight = false;
 
@@ -60,9 +61,17 @@ function destroyPrintMountIfWrongOwner() {
   }
 }
 
-function applyOnScreenHostClasses(hostEl) {
+function applyOnScreenHostClasses(hostEl, { preparing = true } = {}) {
   hostEl.className = `pos-sale-print-host fiscal-print-scene ${autoPrintHostClass} ${hostBodyPrintClass} ${hostOnScreenClass}`;
+  hostEl.classList.toggle(hostPreparingClass, preparing);
   clearHostInlineStyles(hostEl);
+}
+
+/** Показать/скрыть превью на экране (без удаления DOM). */
+export function setPrintHostPreviewVisible(visible) {
+  const host = document.getElementById(PRINT_HOST_ID);
+  if (!host) return;
+  host.classList.toggle(hostPreparingClass, !visible);
 }
 
 export function ensureStablePrintHost() {

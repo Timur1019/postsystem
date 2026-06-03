@@ -8,6 +8,7 @@ import {
   destroyBodyPrintMount,
   isAutoPrintInFlight,
   setAutoPrintInFlight,
+  setPrintHostPreviewVisible,
 } from '../../utils/autoPrintMount';
 import {
   cleanupDesktopPrintState,
@@ -68,11 +69,13 @@ async function processPrintJob(receiptNumber) {
     await waitForPrintShellQrReady(RECEIPT_AUTO_PRINT_UI.qrWaitMaxMs, { required: true });
     await waitForDoubleAnimationFrame();
     await sleep(RECEIPT_AUTO_PRINT_UI.beforePrintSettleMs);
+    setPrintHostPreviewVisible(true);
 
     receiptStore.updateStatus(receiptNumber, 'ready');
     await waitForDoubleAnimationFrame();
     await waitForBodyPrintImagesReady();
     assertPrintShellReadyForIpc();
+    setPrintHostPreviewVisible(false);
     receiptStore.updateStatus(receiptNumber, 'printing');
 
     const mode = await electronPrinter.printReceipt();
@@ -109,8 +112,8 @@ async function processPrintJob(receiptNumber) {
       },
     );
   } finally {
+    setPrintHostPreviewVisible(false);
     restoreCashierUiAfterPrintJob();
-    await sleep(RECEIPT_AUTO_PRINT_UI.previewHoldAfterPrintMs);
     receiptRenderer.teardownRenderer();
     receiptStore.clearPreview();
     cleanupDesktopPrintState();

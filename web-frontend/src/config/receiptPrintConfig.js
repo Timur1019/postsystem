@@ -35,7 +35,7 @@ export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
   qrPollIntervalMs: 100,
   qrShellMissingPollMs: 80,
   beforePrintSettleMs: 180,
-  previewHoldAfterPrintMs: 1200,
+  previewHoldAfterPrintMs: 0,
   strictModeUnmountDelayMs: 280,
 });
 
@@ -70,4 +70,6 @@ export const RECEIPT_PRINT_STYLES = Object.freeze({
   hostOnScreenClass: 'pos-auto-print-host--on-screen',
   /** На время IPC — полная ширина 80mm, без уезда за экран */
   hostPrintingClass: 'pos-auto-print-host--printing',
+  /** До готовности QR/DOM — превью не показываем (нет пустой вспышки) */
+  hostPreparingClass: 'pos-auto-print-host--preparing',
 });
