@@ -7,13 +7,16 @@ import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_ENGINE } from '../config/receiptPrintC
 import {
   prepareMountForSilentCapture,
   removeStaleDom,
+  setPrintHostPreviewVisible,
   teardownAutoPrintDom,
 } from './autoPrintMount';
 import {
   assertFiscalPrintShellReady,
+  assertCaptureShellReadyForIpc,
   assertPrintShellReadyForIpc,
   sleep,
   waitForBodyPrintImagesReady,
+  waitForCaptureShellReady,
   waitForDoubleAnimationFrame,
   waitForFiscalPrintShellReady,
   waitForPrintShellDomReady,
@@ -95,13 +98,17 @@ export async function withElectronPrintCapture(
   runPrint,
   { settleMs = RECEIPT_PRINT_ENGINE.captureSettleMs } = {},
 ) {
-  document.documentElement.classList.add(ELECTRON_PRINT_CAPTURING_CLASS);
   const undoCaptureLayout = await prepareMountForSilentCapture();
   try {
+    await waitForCaptureShellReady();
     await waitForReceiptPaintSettled();
+    document.documentElement.classList.add(ELECTRON_PRINT_CAPTURING_CLASS);
+    setPrintHostPreviewVisible(false);
     await sleep(settleMs);
+    assertCaptureShellReadyForIpc();
     return await runPrint();
   } finally {
+    setPrintHostPreviewVisible(false);
     undoCaptureLayout?.();
     clearReceiptPrintCaptureOverrides();
     await sleep(RECEIPT_PRINT_ENGINE.captureReleaseDelayMs);
@@ -141,7 +148,7 @@ async function invokeDesktopSilentPrint({ preferPrintHost = false } = {}) {
       }
       console.info(`[Aurent] silent print IPC attempt ${attempt}/${silentMaxAttempts}`);
       await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto(), {
-        settleMs: preferPrintHost ? 80 : RECEIPT_PRINT_ENGINE.captureSettleMs,
+        settleMs: RECEIPT_PRINT_ENGINE.captureSettleMs,
       });
       return;
     } catch (err) {

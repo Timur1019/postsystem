@@ -9,7 +9,8 @@ const PRINT_CALLBACK_TIMEOUT_MS = IS_WIN ? 12000 : 8000;
 
 /** Находит чек автопечати на body, не внутри #root. */
 const FIND_FISCAL_PRINT_SHELL_JS = `
-  document.querySelector('#pos-auto-print-print-host-capture #fiscal-print-shell')
+  document.querySelector('#pos-auto-print-print-host-capture #fiscal-print-shell-capture')
+    || document.querySelector('#pos-auto-print-print-host-capture #fiscal-print-shell')
     || document.querySelector('#pos-auto-print-handbook-print-slot #fiscal-print-shell')
     || document.querySelector('#pos-auto-print-handbook-print-area #fiscal-print-shell')
     || document.querySelector('#pos-auto-print-print-host #fiscal-print-shell')
@@ -129,7 +130,9 @@ function waitForPaintFrames(webContents) {
 const FORCE_RECEIPT_LIGHT_PRINT_JS = `
 (() => {
   const host = document.getElementById('pos-auto-print-print-host-capture');
-  const shell = host?.querySelector('#fiscal-print-shell');
+  const shell =
+    host?.querySelector('#fiscal-print-shell-capture')
+    || host?.querySelector('#fiscal-print-shell');
   if (!host || !shell) return false;
 
   host.style.setProperty('left', '-10000px', 'important');

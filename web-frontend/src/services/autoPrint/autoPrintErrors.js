@@ -3,7 +3,7 @@
  */
 
 const FORMING_RE =
-  /не готов|не найден|пустой|формир|ready|height|text too|images not|автопечат/i;
+  /не готов|не найден|пустой|формир|ready|height|text too|images not|автопечат|не готов для печати/i;
 const PRINTER_RE =
   /принтер|printer|device|очеред|Aurent|remote method|Script failed|тихая печать/i;
 

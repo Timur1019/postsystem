@@ -58,13 +58,6 @@ export function assertPrintShellReadyForIpc() {
     throw new Error('Чек не готов для печати');
   }
 
-  const h = Math.max(printArea?.scrollHeight ?? 0, shell.scrollHeight ?? 0, printArea?.offsetHeight ?? 0);
-  if (h < RECEIPT_PRINT_THRESHOLDS.fiscalMinHeightPx && textLen >= RECEIPT_PRINT_THRESHOLDS.fiscalMinTextLength) {
-    /* компактный scale на экране — scrollHeight маленький, текст достаточен */
-  } else if (h < RECEIPT_PRINT_THRESHOLDS.fiscalMinHeightPx) {
-    throw new Error('Чек не готов для печати');
-  }
-
   const imgs = Array.from((printArea || shell).querySelectorAll('img'));
   const imgsReady =
     imgs.length === 0 ||
@@ -217,6 +210,53 @@ export async function waitForFiscalPrintShellReady(
   assertFiscalPrintShellReady();
 }
 
+function getCapturePrintArea() {
+  const { capturePrintHostId, captureFiscalShellId, receiptPrintAreaId } = RECEIPT_PRINT_DOM;
+  const shell =
+    document.getElementById(captureFiscalShellId) ||
+    document.getElementById(capturePrintHostId)?.querySelector(`#${captureFiscalShellId}`);
+  if (!shell) return null;
+  return (
+    shell.querySelector(`#${receiptPrintAreaId}`) ||
+    shell.querySelector('.receipt-print-root') ||
+    shell
+  );
+}
+
+/** Готовность capture-клона (для IPC после prepareMountForSilentCapture). */
+export function assertCaptureShellReadyForIpc() {
+  const area = getCapturePrintArea();
+  if (!area) {
+    throw new Error('Чек не найден для печати');
+  }
+  const textLen = (area.innerText || '').trim().length;
+  if (textLen < RECEIPT_PRINT_THRESHOLDS.fiscalMinTextLength) {
+    throw new Error('Чек не готов для печати');
+  }
+  const imgs = Array.from(area.querySelectorAll('img'));
+  const imgsReady =
+    imgs.length === 0 ||
+    imgs.every((img) => img.complete && img.naturalWidth > 0 && Boolean(img.src));
+  if (!imgsReady) {
+    throw new Error('Чек не готов для печати');
+  }
+}
+
+export async function waitForCaptureShellReady(
+  maxMs = RECEIPT_PRINT_ENGINE.captureReadyMaxMs ?? 4000,
+) {
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    try {
+      assertCaptureShellReadyForIpc();
+      return;
+    } catch {
+      await sleep(RECEIPT_PRINT_ENGINE.domReadyPollIntervalMs);
+    }
+  }
+  assertCaptureShellReadyForIpc();
+}
+
 export function assertFiscalPrintShellReady() {
   const shell = getAutoPrintFiscalShell();
   const root = document.getElementById('root');
@@ -251,7 +291,7 @@ export function assertFiscalPrintShellReady() {
     console.warn('[Aurent] body print shell: text too short', textLen);
     throw new Error('Чек не готов для печати');
   }
-  if (h < RECEIPT_PRINT_THRESHOLDS.fiscalMinHeightPx) {
+  if (h < RECEIPT_PRINT_THRESHOLDS.fiscalMinHeightPx && textLen < RECEIPT_PRINT_THRESHOLDS.fiscalMinTextLength) {
     console.warn('[Aurent] body print shell: height too small', h, 'scrollH', area.scrollHeight);
     throw new Error('Чек не готов для печати');
   }

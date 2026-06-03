@@ -9,6 +9,8 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
   /** Клон для принтера (off-screen), экранный host не трогаем */
   capturePrintHostId: 'pos-auto-print-print-host-capture',
   fiscalPrintShellId: 'fiscal-print-shell',
+  /** Клон shell в capture-host (отдельный id — не путается с экранным) */
+  captureFiscalShellId: 'fiscal-print-shell-capture',
   receiptPrintAreaId: 'receipt-print-area',
   printJobPageStyleId: 'pos-print-job-page',
   testPrintHostId: 'aurent-test-receipt-print-host',
@@ -31,7 +33,7 @@ export const RECEIPT_PRINT_DOM = Object.freeze({
 });
 
 export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
-  qrWaitMaxMs: 4000,
+  qrWaitMaxMs: 6000,
   qrPollIntervalMs: 100,
   qrShellMissingPollMs: 80,
   beforePrintSettleMs: 180,
@@ -43,10 +45,11 @@ export const RECEIPT_PRINT_ENGINE = Object.freeze({
   domReadyPollIntervalMs: 100,
   domReadyMaxAttempts: 60,
   paintSettleMs: 120,
-  preSilentInvokeDelayMs: 150,
-  silentMaxAttempts: 2,
-  silentRetryBackoffBaseMs: 350,
-  captureSettleMs: 80,
+  preSilentInvokeDelayMs: 280,
+  silentMaxAttempts: 3,
+  silentRetryBackoffBaseMs: 400,
+  captureSettleMs: 200,
+  captureReadyMaxMs: 4000,
   captureReleaseDelayMs: 60,
   bodyImageWaitMaxMs: 2500,
 });

@@ -173,8 +173,12 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing
   overflow: visible !important;
 }
 
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell-capture,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell-capture *,
 html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell,
 html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell *,
+html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell-capture,
+html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell-capture *,
 html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell,
 html.dark.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell * {
   background: #fff !important;

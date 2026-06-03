@@ -521,7 +521,8 @@ ipcMain.handle('print-label-page', async (event) => {
 
 const RECEIPT_READY_JS = `
   (() => {
-    const shell = document.querySelector('#pos-auto-print-print-host-capture #fiscal-print-shell')
+    const shell = document.querySelector('#pos-auto-print-print-host-capture #fiscal-print-shell-capture')
+      || document.querySelector('#pos-auto-print-print-host-capture #fiscal-print-shell')
       || document.querySelector('#pos-auto-print-handbook-print-slot #fiscal-print-shell')
       || document.querySelector('#pos-auto-print-handbook-print-area #fiscal-print-shell')
       || document.querySelector('#pos-auto-print-print-host #fiscal-print-shell')
@@ -533,14 +534,13 @@ const RECEIPT_READY_JS = `
     if (!shell) return false;
     const area = shell.querySelector('#receipt-print-area') || shell.querySelector('.receipt-print-root') || shell;
     const textLen = (area.innerText || '').trim().length;
-    const h = Math.max(area.scrollHeight, area.offsetHeight, shell.scrollHeight);
     const imgs = Array.from(area.querySelectorAll('img'));
     const imgsReady = imgs.length === 0 || imgs.every((i) => i.complete && i.naturalWidth > 0);
-    return textLen >= 80 && imgsReady && (h >= 120 || textLen >= 80);
+    return textLen >= 80 && imgsReady;
   })()
 `;
 
-async function waitReceiptReadyForAutoPrint(wc, attempts = 10) {
+async function waitReceiptReadyForAutoPrint(wc, attempts = 24) {
   for (let i = 0; i < attempts; i += 1) {
     const ready = await safeExecuteJavaScript(wc, RECEIPT_READY_JS, 'готовность');
     if (ready) return true;

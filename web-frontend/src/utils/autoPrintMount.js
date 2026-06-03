@@ -8,6 +8,7 @@ const {
   bodyPrintHostId: PRINT_HOST_ID,
   capturePrintHostId: CAPTURE_HOST_ID,
   fiscalPrintShellId: PRINT_SHELL_ID,
+  captureFiscalShellId: CAPTURE_SHELL_ID,
   fiscalPrintDialogClass,
   autoPrintHostClass,
   staleDomIds,
@@ -97,9 +98,10 @@ export function ensureStablePrintHost() {
 
 /** Для Electron: сначала capture-клон, иначе экранный shell. */
 export function getAutoPrintFiscalShell() {
-  const captureShell = document
-    .getElementById(CAPTURE_HOST_ID)
-    ?.querySelector(`#${PRINT_SHELL_ID}`);
+  const captureShell =
+    document.getElementById(CAPTURE_SHELL_ID) ||
+    document.getElementById(CAPTURE_HOST_ID)?.querySelector(`#${CAPTURE_SHELL_ID}`) ||
+    document.getElementById(CAPTURE_HOST_ID)?.querySelector(`#${PRINT_SHELL_ID}`);
   if (captureShell) return captureShell;
 
   const shell = document.getElementById(PRINT_HOST_ID)?.querySelector(`#${PRINT_SHELL_ID}`);
@@ -167,7 +169,7 @@ export async function prepareMountForSilentCapture() {
   const dialog = document.createElement('div');
   dialog.className = fiscalPrintDialogClass;
   const printShell = document.createElement('div');
-  printShell.id = PRINT_SHELL_ID;
+  printShell.id = CAPTURE_SHELL_ID;
   printShell.innerHTML = sourceShell.innerHTML;
   dialog.appendChild(printShell);
   capture.appendChild(dialog);
@@ -196,4 +198,10 @@ export function teardownAutoPrintDom({ force = false } = {}) {
   destroyBodyPrintMount({ force: true });
 }
 
-export { PRINT_HOST_ID, CAPTURE_HOST_ID, PRINT_SHELL_ID, fiscalPrintDialogClass };
+export {
+  PRINT_HOST_ID,
+  CAPTURE_HOST_ID,
+  PRINT_SHELL_ID,
+  CAPTURE_SHELL_ID,
+  fiscalPrintDialogClass,
+};

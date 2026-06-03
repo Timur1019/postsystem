@@ -163,6 +163,7 @@ html.electron-auto-print-job .receipt-printing-overlay {
   background: #fff !important;
 }
 
+#pos-auto-print-print-host-capture #fiscal-print-shell-capture,
 #pos-auto-print-print-host-capture #fiscal-print-shell {
   transform: none !important;
   zoom: normal !important;
@@ -174,6 +175,7 @@ html.electron-auto-print-job .receipt-printing-overlay {
   background: #fff !important;
 }
 
+#pos-auto-print-print-host-capture #fiscal-print-shell-capture *,
 #pos-auto-print-print-host-capture #fiscal-print-shell * {
   background-color: #fff !important;
   color: #000 !important;
@@ -195,10 +197,11 @@ html.electron-auto-print-job .receipt-printing-overlay {
     background: #fff !important;
   }
 
+  html.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell-capture::after,
   html.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell::after,
   html.electron-silent-print.print-thermal-modal
     #pos-auto-print-print-host-capture
-    #fiscal-print-shell::after {
+    #fiscal-print-shell-capture::after {
     content: '';
     display: block;
     height: 20mm;
