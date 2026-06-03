@@ -124,11 +124,41 @@ function waitForPaintFrames(webContents) {
   `);
 }
 
+/** Перед silent print: принудительно светлый чек (тёмная тема кассы иначе даёт чёрный лист). */
+const FORCE_RECEIPT_LIGHT_PRINT_JS = `
+(() => {
+  const host = document.getElementById('pos-auto-print-print-host');
+  const shell = host?.querySelector('#fiscal-print-shell');
+  if (!host || !shell) return false;
+  document.documentElement.style.setProperty('background', '#ffffff', 'important');
+  document.body.style.setProperty('background', '#ffffff', 'important');
+  host.style.setProperty('position', 'fixed', 'important');
+  host.style.setProperty('left', '0', 'important');
+  host.style.setProperty('top', '0', 'important');
+  host.style.setProperty('opacity', '1', 'important');
+  host.style.setProperty('visibility', 'visible', 'important');
+  host.style.setProperty('background', '#ffffff', 'important');
+  host.style.setProperty('color', '#000000', 'important');
+  host.style.setProperty('z-index', '2147483647', 'important');
+  const nodes = [host, shell, ...shell.querySelectorAll('*')];
+  for (const el of nodes) {
+    if (!(el instanceof HTMLElement)) continue;
+    el.style.setProperty('background-color', '#ffffff', 'important');
+    el.style.setProperty('color', '#000000', 'important');
+    el.style.setProperty('-webkit-text-fill-color', '#000000', 'important');
+    el.style.setProperty('opacity', '1', 'important');
+    el.style.setProperty('visibility', 'visible', 'important');
+    el.style.setProperty('filter', 'none', 'important');
+    el.style.setProperty('mix-blend-mode', 'normal', 'important');
+  }
+  return true;
+})()
+`;
+
 function buildStandardSilentPrintOpts(deviceName) {
   const opts = {
     silent: true,
-    /* false — иначе с тёмной темой кассы фон печатается чёрным; текст задаём в CSS (#fff/#000) */
-    printBackground: false,
+    printBackground: true,
     margins: { marginType: 'none' },
     copies: 1,
   };
@@ -262,7 +292,11 @@ async function runSilentReceiptAutoPrint(webContents, options = {}) {
   const printerLabel = deviceName || 'принтер по умолчанию';
   const name = attempts[0] ?? deviceName;
 
-  const tryPrint = (opts) => invokeWebContentsPrint(webContents, opts, AUTO_PRINT_TIMEOUT_MS);
+  const tryPrint = async (opts) => {
+    await webContents.executeJavaScript(FORCE_RECEIPT_LIGHT_PRINT_JS);
+    await waitForPaintFrames(webContents);
+    return invokeWebContentsPrint(webContents, opts, AUTO_PRINT_TIMEOUT_MS);
+  };
 
   try {
     const result = await tryPrint(buildStandardSilentPrintOpts(name));
@@ -334,6 +368,7 @@ module.exports = {
   waitForImages,
   waitForLabelImages,
   waitForPaintFrames,
+  FORCE_RECEIPT_LIGHT_PRINT_JS,
   runSilentReceiptAutoPrint,
   runSilentLabelPrint,
   buildStandardSilentPrintOpts,

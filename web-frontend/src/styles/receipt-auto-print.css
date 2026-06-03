@@ -116,12 +116,15 @@ html.electron-auto-print-job #pos-auto-print-preview-mount.pos-auto-print-host--
   visibility: visible;
 }
 
-html.electron-silent-print.print-thermal-modal.electron-print-capturing #root,
+html.electron-silent-print.print-thermal-modal.electron-print-capturing #root {
+  display: none !important;
+}
+
 html.electron-silent-print.print-thermal-modal.electron-print-capturing
   #pos-auto-print-preview-mount {
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
 
 html.electron-print-capturing,

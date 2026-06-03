@@ -585,6 +585,12 @@ ipcMain.handle('desktop:print-receipt-auto', async (event) => {
   const deviceName = await resolveReceiptPrinterName({ promptIfMissing: false });
   const printers = await listSystemPrinters();
   await waitForPaintFrames(wc);
+  await safeExecuteJavaScript(
+    wc,
+    require('./print-thermal.cjs').FORCE_RECEIPT_LIGHT_PRINT_JS,
+    'светлый чек'
+  );
+  await waitForPaintFrames(wc);
   await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 280 : 150));
   const result = await runSilentReceiptAutoPrint(wc, { deviceName, printers, dims });
   return { ok: true, ...result };
