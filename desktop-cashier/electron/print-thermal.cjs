@@ -127,8 +127,8 @@ function waitForPaintFrames(webContents) {
 function buildStandardSilentPrintOpts(deviceName) {
   const opts = {
     silent: true,
-    /* true — иначе на POS-80 часто пустой чек при silent print */
-    printBackground: true,
+    /* false — иначе с тёмной темой кассы фон печатается чёрным; текст задаём в CSS (#fff/#000) */
+    printBackground: false,
     margins: { marginType: 'none' },
     copies: 1,
   };

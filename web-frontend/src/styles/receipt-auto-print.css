@@ -77,13 +77,22 @@
   transform: none;
 }
 
+#pos-auto-print-print-host,
+#pos-auto-print-print-host .fiscal-print-dialog,
 #pos-auto-print-print-host #fiscal-print-shell,
 #pos-auto-print-print-host #fiscal-print-shell * {
   width: 100%;
   max-width: 100%;
   transform: none;
-  background: #fff;
-  color: #000;
+  background-color: #fff !important;
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
 }
 
 html.electron-silent-print.print-thermal-modal:not(.electron-print-capturing)
@@ -115,22 +124,35 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing
   pointer-events: none;
 }
 
+html.electron-print-capturing,
+html.electron-print-capturing body {
+  background: #fff !important;
+  background-color: #fff !important;
+}
+
 html.electron-print-capturing #pos-auto-print-print-host.fiscal-print-scene {
   position: fixed;
   left: 0;
   top: 0;
-  opacity: 1;
-  visibility: visible;
+  opacity: 1 !important;
+  visibility: visible !important;
   z-index: 2147483645;
   width: var(--receipt-auto-print-body-width);
   max-width: var(--receipt-auto-print-body-width);
-  background: #fff;
+  background: #fff !important;
   overflow: visible;
 }
 
 html.electron-print-capturing #pos-auto-print-print-host #fiscal-print-shell {
   box-shadow: none;
   border-radius: 0;
+}
+
+html.dark.electron-print-capturing #pos-auto-print-print-host,
+html.dark.electron-print-capturing #pos-auto-print-print-host * {
+  background-color: #fff !important;
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
 }
 
 /* X/Z и др. off-screen fiscal scenes (не автопечать POS) */

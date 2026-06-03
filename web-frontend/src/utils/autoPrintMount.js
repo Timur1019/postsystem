@@ -78,12 +78,12 @@ export function ensureStablePrintHost() {
   if (!el) {
     el = document.createElement('div');
     el.id = PRINT_HOST_ID;
-    el.className = `pos-sale-print-host fiscal-print-scene fiscal-print-scene--offscreen ${autoPrintHostClass} ${hostBodyPrintClass}`;
+    el.className = `pos-sale-print-host fiscal-print-scene ${autoPrintHostClass} ${hostBodyPrintClass}`;
     el.setAttribute('aria-hidden', 'true');
     stampPrintOwner(el);
     document.body.appendChild(el);
   } else {
-    el.className = `pos-sale-print-host fiscal-print-scene fiscal-print-scene--offscreen ${autoPrintHostClass} ${hostBodyPrintClass}`;
+    el.className = `pos-sale-print-host fiscal-print-scene ${autoPrintHostClass} ${hostBodyPrintClass}`;
     clearHostInlineStyles(el);
     stampPrintOwner(el);
     if (el.parentElement !== document.body) {
@@ -162,10 +162,24 @@ export function prepareMountForSilentCapture() {
   const host = document.getElementById(PRINT_HOST_ID);
   if (!host) return () => {};
   host.classList.add(hostCapturingClass);
-  void host.offsetHeight;
+  host.style.background = '#ffffff';
+  host.style.color = '#000000';
   const shell = host.querySelector(`#${PRINT_SHELL_ID}`);
-  if (shell) void shell.offsetHeight;
-  return () => host.classList.remove(hostCapturingClass);
+  if (shell) {
+    shell.style.background = '#ffffff';
+    shell.style.color = '#000000';
+    void shell.offsetHeight;
+  }
+  void host.offsetHeight;
+  return () => {
+    host.classList.remove(hostCapturingClass);
+    host.style.background = '';
+    host.style.color = '';
+    if (shell) {
+      shell.style.background = '';
+      shell.style.color = '';
+    }
+  };
 }
 
 export function destroyBodyPrintMount({ force = false } = {}) {
