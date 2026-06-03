@@ -25,8 +25,8 @@
   }
 }
 
-/* Скрытый контейнер термочека (не print-host автопечати) */
-.fiscal-print-scene:not(#pos-auto-print-print-host):not(#pos-auto-print-print-host-capture) {
+/* Скрытый контейнер термочека (off-screen) */
+.fiscal-print-scene {
   position: fixed;
   left: -10000px;
   top: 0;
@@ -38,13 +38,9 @@
   z-index: -1;
 }
 
-/* Автопечать: host всегда скрыт — styles/receipt-auto-print.css */
-
 .fiscal-print-scene--offscreen {
   opacity: 0;
 }
-
-/* Автопечать POS: styles/receipt-auto-print.css */
 
 .receipt-page {
   overflow-x: hidden;
@@ -73,7 +69,6 @@ html.electron-silent-print body {
   background: #0f172a !important;
 }
 
-/* Автопечать: белый фон страницы — прозрачный + printBackground даёт чёрный чек на термопринтере */
 html.electron-silent-print.print-thermal-modal,
 html.electron-silent-print.print-thermal-modal body,
 html.dark.electron-silent-print.print-thermal-modal,
@@ -168,7 +163,6 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing
   overflow: visible !important;
 }
 
-/* capture-host убран из автопечати — печать только clean window */
 #receipt-print-area,
 #receipt-print-area *,
 .receipt-print-root,
@@ -404,7 +398,6 @@ html.dark .receipt-page__card {
   html.print-thermal-only #receipt-print-area::after,
   html.print-thermal-modal #fiscal-print-shell::after,
   html.electron-silent-print.print-thermal-only #receipt-print-area::after,
-  html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host-capture #fiscal-print-shell::after,
   html.electron-silent-print.print-thermal-modal #fiscal-print-shell::after {
     content: '';
     display: block;
@@ -415,16 +408,9 @@ html.dark .receipt-page__card {
   html.print-thermal-modal #root,
   html.print-thermal-modal .pos-pay-overlay,
   html.print-thermal-modal [data-sonner-toaster],
-  html.print-thermal-modal body > *:not(.fiscal-print-scene):not(#pos-auto-print-print-host) {
+  html.print-thermal-modal body > *:not(.fiscal-print-scene) {
     display: none !important;
     visibility: hidden !important;
-  }
-  html.print-thermal-modal #pos-auto-print-print-host.fiscal-print-scene {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: static !important;
-    left: auto !important;
   }
   html.print-thermal-modal,
   html.print-thermal-modal body {

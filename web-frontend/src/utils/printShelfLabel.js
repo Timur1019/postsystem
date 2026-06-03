@@ -1,5 +1,5 @@
 import { ELECTRON_PRINT_CAPTURING_CLASS } from './printWithHtmlClass';
-import { isDesktopCashier, withElectronPrintCapture } from './printReceipt';
+import { isDesktopCashier } from './printReceipt';
 import { cancelScheduledLabelPrintUnmount } from './labelPrintMount';
 
 export const ELECTRON_SILENT_LABEL_CLASS = 'electron-silent-label';
@@ -104,13 +104,24 @@ function normalizeLabelPrintError(err) {
   return err instanceof Error ? err : new Error(raw || 'Печать этикетки не выполнена');
 }
 
+async function withLabelPrintCapture(runPrint, { settleMs = 450 } = {}) {
+  try {
+    await waitForPaintSettled();
+    document.documentElement.classList.add(ELECTRON_PRINT_CAPTURING_CLASS);
+    await new Promise((r) => setTimeout(r, settleMs));
+    return await runPrint();
+  } finally {
+    document.documentElement.classList.remove(ELECTRON_PRINT_CAPTURING_CLASS);
+  }
+}
+
 async function invokeDesktopLabelPrint(requireBarcode = true) {
   let lastErr;
   for (let attempt = 1; attempt <= SILENT_LABEL_MAX_ATTEMPTS; attempt += 1) {
     try {
       assertLabelLayerReady(requireBarcode);
       cancelScheduledLabelPrintUnmount();
-      await withElectronPrintCapture(() => window.desktopCashier.printLabelPage(), {
+      await withLabelPrintCapture(() => window.desktopCashier.printLabelPage(), {
         settleMs: 450,
       });
       return;

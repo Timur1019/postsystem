@@ -2,7 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Barcode, ChevronDown, Maximize, Printer, RefreshCw, Server, LogOut, FileText, Tag, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { printBrowserTestReceipt } from '../../utils/printReceipt';
+import { CASHIER_ESCPOS_TOAST } from '../../config/cashierEscposConfig';
+import {
+  isCashierEscposPrintAvailable,
+  printSaleReceiptEscpos,
+  resolveEscposPrintErrorMessage,
+} from '../../services/cashierEscpos';
+import { buildEscposTestSale } from '../../services/cashierEscpos/mockTestSale';
 
 function isDesktopCashier() {
   return typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
@@ -109,11 +115,17 @@ export default function CashierDesktopMenu({ appName }) {
 
   const runTestPrint = async () => {
     close();
+    if (!isCashierEscposPrintAvailable()) {
+      toast.error(t('desktop.testReceiptFailed'));
+      return;
+    }
     try {
-      await printBrowserTestReceipt();
-      toast.success(t('desktop.testReceiptSent'));
+      await printSaleReceiptEscpos(buildEscposTestSale(), t);
+      toast.success(t('desktop.testReceiptSent'), { id: CASHIER_ESCPOS_TOAST.toastId });
     } catch (e) {
-      toast.error(e?.message ?? t('desktop.testReceiptFailed'));
+      toast.error(resolveEscposPrintErrorMessage(e, t) ?? t('desktop.testReceiptFailed'), {
+        id: CASHIER_ESCPOS_TOAST.toastId,
+      });
     }
   };
 

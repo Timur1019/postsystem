@@ -4,7 +4,12 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { usePosAutoPrint } from '../../contexts/PosAutoPrintContext';
+import { CASHIER_ESCPOS_TOAST } from '../../config/cashierEscposConfig';
+import {
+  isCashierEscposPrintAvailable,
+  printSaleReceiptEscpos,
+  resolveEscposPrintErrorMessage,
+} from '../../services/cashierEscpos';
 import { isDesktopCashier } from '../../utils/printReceipt';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import { clampPayAmount, round2 } from '../../utils/taxAmounts';
@@ -54,7 +59,6 @@ export default function PosPage() {
   const [payOpen, setPayOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [discountOpen, setDiscountOpen] = useState(false);
-  const { enqueueReceipt } = usePosAutoPrint();
   const [posPane, setPosPane] = useState('register');
   const { setShell } = usePosShell() ?? {};
   const { open: shiftModalOpen, openShift: openShiftModal } = useCashierShiftModal();
@@ -322,14 +326,27 @@ export default function PosPage() {
       const receiptNum = res.data.receiptNumber;
       const shouldPrint = payment?.printReceipt !== false;
       toast.success(t('pos.saleSuccess'));
-      if (shouldPrint) {
-        if (isDesktopCashier()) {
-          enqueueReceipt(res.data);
-        } else {
-          navigate(`/receipt/${receiptNum}`, {
-            state: { autoPrint: true, fromCashier: true },
+
+      if (shouldPrint && isCashierEscposPrintAvailable()) {
+        try {
+          await printSaleReceiptEscpos(res.data, t);
+          toast.success(t('receipt.printSent'), {
+            id: CASHIER_ESCPOS_TOAST.toastId,
+            duration: CASHIER_ESCPOS_TOAST.successDurationMs,
+          });
+        } catch (err) {
+          toast.error(resolveEscposPrintErrorMessage(err, t), {
+            id: CASHIER_ESCPOS_TOAST.toastId,
+            duration: CASHIER_ESCPOS_TOAST.errorDurationMs,
           });
         }
+        return;
+      }
+
+      if (shouldPrint) {
+        navigate(`/receipt/${receiptNum}`, {
+          state: { autoPrint: true, fromCashier: true },
+        });
         return;
       }
       if (!isDesktopCashier()) {

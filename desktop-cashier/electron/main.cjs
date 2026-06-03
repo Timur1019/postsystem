@@ -14,12 +14,9 @@ const { showSetupWindow, configPath } = require('./setup-window.cjs');
 const { showPrinterPickerWindow } = require('./printer-picker-window.cjs');
 const { matchPrinterName } = require('./printer-match.cjs');
 const {
-  waitForImages,
   waitForLabelImages,
   waitForPaintFrames,
-  runSilentReceiptAutoPrint,
   runSilentLabelPrint,
-  MEASURE_RECEIPT_DIMS_JS,
   MEASURE_LABEL_DIMS_JS,
 } = require('./print-thermal.cjs');
 const { setupAutoUpdater, checkForUpdatesNow } = require('./auto-update.cjs');
@@ -213,6 +210,9 @@ function registerDesktopIpc() {
     config = loadConfig();
     return checkForUpdatesNow(config?.cashierUrl);
   });
+
+  const { registerEscposIpcHandlers } = require('./cashier-receipt-escpos');
+  registerEscposIpcHandlers(ipcMain, { resolveReceiptPrinterName });
 }
 
 function normalizeHost(host) {
@@ -517,75 +517,6 @@ ipcMain.handle('print-label-page', async (event) => {
   }
   await runSilentLabelPrint(wc, { deviceName, printers, dims });
   return { ok: true, deviceName };
-});
-
-const RECEIPT_READY_JS = `
-  (() => {
-    const shell = document.querySelector('#pos-auto-print-print-host-capture #fiscal-print-shell-capture')
-      || document.querySelector('#pos-auto-print-print-host-capture #fiscal-print-shell')
-      || document.querySelector('#pos-auto-print-handbook-print-slot #fiscal-print-shell')
-      || document.querySelector('#pos-auto-print-handbook-print-area #fiscal-print-shell')
-      || document.querySelector('#pos-auto-print-print-host #fiscal-print-shell')
-      || document.querySelector('#pos-auto-print-mount #fiscal-print-shell')
-      || Array.from(document.querySelectorAll('#fiscal-print-shell')).find(
-        (el) => !document.getElementById('root')?.contains(el)
-      )
-      || document.getElementById('fiscal-print-shell');
-    if (!shell) return false;
-    const area = shell.querySelector('#receipt-print-area') || shell.querySelector('.receipt-print-root') || shell;
-    const textLen = (area.innerText || '').trim().length;
-    const imgs = Array.from(area.querySelectorAll('img'));
-    const imgsReady = imgs.length === 0 || imgs.every((i) => i.complete && i.naturalWidth > 0);
-    return textLen >= 80 && imgsReady;
-  })()
-`;
-
-async function waitReceiptReadyForAutoPrint(wc, attempts = 24) {
-  for (let i = 0; i < attempts; i += 1) {
-    const ready = await safeExecuteJavaScript(wc, RECEIPT_READY_JS, 'готовность');
-    if (ready) return true;
-    await new Promise((r) => setTimeout(r, 180 + i * 120));
-  }
-  return false;
-}
-
-ipcMain.handle('desktop:print-receipt-auto', async (event, payload) => {
-  if (payload?.sale || payload?.bodyHtml) {
-    const { printReceiptInCleanWindow } = require('./receipt-print-window.cjs');
-    return printReceiptInCleanWindow(payload, {
-      resolveReceiptPrinterName,
-      listSystemPrinters,
-    });
-  }
-
-  const wc = event.sender;
-  if (!wc || wc.isDestroyed()) {
-    throw new Error('Окно печати недоступно');
-  }
-  const ready = await waitReceiptReadyForAutoPrint(wc);
-  if (!ready) {
-    throw new Error('Чек не готов для автопечати');
-  }
-  await waitForImages(wc);
-  await waitForPaintFrames(wc);
-  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 200));
-  const dims = await safeExecuteJavaScript(wc, MEASURE_RECEIPT_DIMS_JS, 'размер');
-  if (!dims?.textLen || dims.textLen < 80) {
-    throw new Error('Чек пустой для автопечати');
-  }
-  await waitForPaintFrames(wc);
-  const deviceName = await resolveReceiptPrinterName({ promptIfMissing: false });
-  const printers = await listSystemPrinters();
-  await waitForPaintFrames(wc);
-  await safeExecuteJavaScript(
-    wc,
-    require('./print-thermal.cjs').FORCE_RECEIPT_LIGHT_PRINT_JS,
-    'светлый чек'
-  );
-  await waitForPaintFrames(wc);
-  await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 280 : 150));
-  const result = await runSilentReceiptAutoPrint(wc, { deviceName, printers, dims });
-  return { ok: true, ...result };
 });
 
 function fitWindowToPosDisplay(win) {

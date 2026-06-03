@@ -15,7 +15,6 @@ import { useAuthStore } from '../../store/authStore';
 import { logoutAndResetSession } from '../../utils/authSession';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { CashierShiftModalProvider, useCashierShiftModal } from '../../contexts/CashierShiftModalContext';
-import { PosAutoPrintProvider } from '../../contexts/PosAutoPrintContext';
 import { CashierLockProvider, useCashierLock } from '../../contexts/CashierLockContext';
 import CashierLockOverlay from '../cashier/CashierLockOverlay';
 import { clearCashierScreenLocked } from '../../utils/cashierLock';
@@ -414,9 +413,7 @@ export default function CashierLayout() {
   return (
     <CashierLockProvider>
       <CashierShiftModalProvider>
-        <PosAutoPrintProvider>
-          <CashierLayoutShell />
-        </PosAutoPrintProvider>
+        <CashierLayoutShell />
       </CashierShiftModalProvider>
     </CashierLockProvider>
   );

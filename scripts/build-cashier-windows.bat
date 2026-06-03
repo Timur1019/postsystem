@@ -49,6 +49,10 @@ cd desktop-cashier
 call npm.cmd install
 if errorlevel 1 goto :error
 
+echo ==^> Native printer driver ^(Electron^)...
+call npm.cmd run rebuild:native
+if errorlevel 1 goto :error
+
 call npm.cmd run dist:win
 if not errorlevel 1 goto :success
 

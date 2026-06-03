@@ -14,6 +14,11 @@ if (fs.existsSync(webDist)) {
   extraResources.push({ from: 'web-dist', to: 'web-dist', filter: ['**/*'] });
 }
 
+build.asarUnpack = [
+  '**/node_modules/@thiagoelg/node-printer/**',
+  '**/node_modules/node-thermal-printer/**',
+  '**/node_modules/iconv-lite/**',
+];
 build.extraResources = extraResources;
 
 const updateUrl = process.env.DESKTOP_UPDATE_URL || 'http://127.0.0.1/downloads/desktop/';

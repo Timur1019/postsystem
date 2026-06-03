@@ -9,11 +9,14 @@
     "start": "POS_REMOTE_UI=1 POS_CASHIER_URL=http://localhost:5173 electron .",
     "start:dev": "POS_REMOTE_UI=1 POS_CASHIER_URL=http://localhost:5173 electron .",
     "dev": "POS_EMBEDDED=1 electron .",
+    "postinstall": "node scripts/rebuild-native-printer.cjs",
+    "rebuild:native": "node scripts/rebuild-native-printer.cjs --required",
     "dist": "electron-builder --config electron-builder.config.cjs",
     "dist:mac": "electron-builder --mac --config electron-builder.config.cjs --publish never",
-    "dist:win": "electron-builder --win --config electron-builder.config.cjs --publish never --config.win.signAndEditExecutable=false --config.win.verifyUpdateCodeSignature=false",
-    "dist:win:dir": "electron-builder --win dir --config electron-builder.config.cjs --publish never --config.win.signAndEditExecutable=false",
-    "test:print": "node scripts/test-print-logic.cjs"
+    "dist:win": "node scripts/rebuild-native-printer.cjs --required && electron-builder --win --config electron-builder.config.cjs --publish never --config.win.signAndEditExecutable=false --config.win.verifyUpdateCodeSignature=false",
+    "dist:win:dir": "node scripts/rebuild-native-printer.cjs --required && electron-builder --win dir --config electron-builder.config.cjs --publish never --config.win.signAndEditExecutable=false",
+    "test:print": "node scripts/test-print-logic.cjs",
+    "test:escpos": "node scripts/test-escpos-build.cjs"
   },
   "build": {
     "appId": "com.aurent.pos.cashier",
@@ -72,9 +75,13 @@
   "dependencies": {
     "electron-updater": "^6.8.3",
     "express": "^4.21.2",
-    "http-proxy-middleware": "^3.0.3"
+    "http-proxy-middleware": "^3.0.3",
+    "@thiagoelg/node-printer": "^0.6.2",
+    "iconv-lite": "^0.6.3",
+    "node-thermal-printer": "^4.6.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.7.1",
     "electron": "^28.3.3",
     "electron-builder": "^24.13.3"
   }

@@ -94,6 +94,11 @@ echo "==> electron-builder (${TARGET})..."
 cd "$ROOT/desktop-cashier"
 npm ci --silent 2>/dev/null || npm install
 
+if [[ "$TARGET" == "win" ]]; then
+  echo "==> Native printer driver (Electron)..."
+  npm run rebuild:native
+fi
+
 case "$TARGET" in
   mac)
     npm run dist:mac

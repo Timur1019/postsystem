@@ -101,7 +101,6 @@
   position: relative;
 }
 
-/* Автопечать fallback host → styles/receipt-auto-print.css */
 
 .pos-pay-panel--register-rail .pos-pay-panel__step {
   flex: 1 1 auto;
