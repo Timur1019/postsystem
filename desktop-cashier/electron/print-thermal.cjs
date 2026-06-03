@@ -125,21 +125,9 @@ function waitForPaintFrames(webContents) {
   `);
 }
 
-/** Светлый capture off-screen: не двигаем на экран (нет белой вспышки). */
+/** Светлый capture off-screen. #root не трогаем — иначе чёрный экран кассы. */
 const FORCE_RECEIPT_LIGHT_PRINT_JS = `
 (() => {
-  const root = document.getElementById('root');
-  if (root) {
-    root.style.setProperty('display', 'none', 'important');
-    root.style.setProperty('visibility', 'hidden', 'important');
-  }
-
-  const screenHost = document.getElementById('pos-auto-print-print-host');
-  if (screenHost) {
-    screenHost.style.setProperty('display', 'none', 'important');
-    screenHost.style.setProperty('visibility', 'hidden', 'important');
-  }
-
   const host = document.getElementById('pos-auto-print-print-host-capture');
   const shell = host?.querySelector('#fiscal-print-shell');
   if (!host || !shell) return false;

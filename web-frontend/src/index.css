@@ -130,12 +130,7 @@ html.electron-silent-print.print-thermal-modal [data-sonner-toaster] {
   visibility: hidden !important;
 }
 
-/* Автопечать: в кадре только capture-чек, не тёмный POS (иначе чёрная лента) */
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job #root,
-html.electron-silent-print.print-thermal-modal.electron-print-capturing #root {
-  display: none !important;
-  visibility: hidden !important;
-}
+/* Не скрываем #root на экране — иначе чёрное окно Aurent после печати */
 
 /* При capturing не белим весь экран — чек только в off-screen capture */
 html.electron-silent-print.print-thermal-modal.electron-print-capturing,

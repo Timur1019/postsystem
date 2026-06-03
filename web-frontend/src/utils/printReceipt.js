@@ -61,11 +61,16 @@ export function clearReceiptPrintCaptureOverrides() {
   }
 }
 
-export function cleanupDesktopPrintState() {
+/** Снять классы печати и вернуть UI — без удаления print-host. */
+export function restoreCashierUiAfterPrintJob() {
   if (typeof document === 'undefined') return;
   PRINT_HTML_CLASSES.forEach((c) => document.documentElement.classList.remove(c));
   document.getElementById(RECEIPT_PRINT_DOM.printJobPageStyleId)?.remove();
   clearReceiptPrintCaptureOverrides();
+}
+
+export function cleanupDesktopPrintState() {
+  restoreCashierUiAfterPrintJob();
   teardownAutoPrintDom({ force: true });
 }
 
@@ -202,6 +207,7 @@ export async function printThermalReceiptAuto({
     return 'silent';
   } finally {
     cleanup();
+    restoreCashierUiAfterPrintJob();
   }
 }
 

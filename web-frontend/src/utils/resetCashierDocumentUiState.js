@@ -1,6 +1,9 @@
 import { isAutoPrintInFlight } from '../services/autoPrint';
 import { RECEIPT_PRINT_DOM } from '../config/receiptPrintConfig';
-import { cleanupDesktopPrintState } from './printReceipt';
+import {
+  cleanupDesktopPrintState,
+  clearReceiptPrintCaptureOverrides,
+} from './printReceipt';
 
 const HTML_UI_CLASSES = [
   'pos-pay-screen-open',
@@ -16,13 +19,7 @@ const HTML_UI_CLASSES = [
 export function resetCashierDocumentUiState() {
   if (typeof document === 'undefined') return;
 
-  const printActive =
-    isAutoPrintInFlight() ||
-    HTML_UI_CLASSES.some(
-      (cls) =>
-        document.documentElement.classList.contains(cls) ||
-        document.body?.classList.contains(cls),
-    );
+  clearReceiptPrintCaptureOverrides();
 
   HTML_UI_CLASSES.forEach((cls) => {
     document.documentElement.classList.remove(cls);
@@ -33,7 +30,7 @@ export function resetCashierDocumentUiState() {
     document.body.style.overflow = '';
   }
 
-  if (!printActive) {
+  if (!isAutoPrintInFlight()) {
     for (const id of RECEIPT_PRINT_DOM.staleDomIds) {
       document.getElementById(id)?.remove();
     }

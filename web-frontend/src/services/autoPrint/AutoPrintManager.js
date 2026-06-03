@@ -9,7 +9,11 @@ import {
   isAutoPrintInFlight,
   setAutoPrintInFlight,
 } from '../../utils/autoPrintMount';
-import { cleanupDesktopPrintState, isDesktopCashier } from '../../utils/printReceipt';
+import {
+  cleanupDesktopPrintState,
+  isDesktopCashier,
+  restoreCashierUiAfterPrintJob,
+} from '../../utils/printReceipt';
 import {
   assertPrintShellReadyForIpc,
   sleep,
@@ -85,6 +89,7 @@ async function processPrintJob(receiptNumber) {
       );
     }
   } catch (err) {
+    restoreCashierUiAfterPrintJob();
     console.warn('[Aurent] auto print job failed', receiptNumber, err);
     receiptStore.updateStatus(receiptNumber, 'failed', err?.message);
     const msg = resolveAutoPrintToastMessage(err, toastT);
@@ -104,6 +109,7 @@ async function processPrintJob(receiptNumber) {
       },
     );
   } finally {
+    restoreCashierUiAfterPrintJob();
     await sleep(RECEIPT_AUTO_PRINT_UI.previewHoldAfterPrintMs);
     receiptRenderer.teardownRenderer();
     receiptStore.clearPreview();
