@@ -94,8 +94,8 @@ echo "==> electron-builder (${TARGET})..."
 cd "$ROOT/desktop-cashier"
 
 if [[ "$TARGET" == "mac" ]]; then
-  echo "==> npm ci (без native-принтера — ESC/POS только Windows)..."
-  SKIP_NATIVE_PRINTER=1 npm ci --omit=optional --silent 2>/dev/null || SKIP_NATIVE_PRINTER=1 npm install --omit=optional
+  echo "==> npm ci (Mac: без сборки native-принтера, optional @thiagoelg/node-printer может не собраться)..."
+  SKIP_NATIVE_PRINTER=1 npm ci --silent 2>/dev/null || SKIP_NATIVE_PRINTER=1 npm install
 elif [[ "$TARGET" == "win" ]]; then
   echo "==> npm ci + native printer (Electron)..."
   npm ci --silent 2>/dev/null || npm install

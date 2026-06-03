@@ -13,11 +13,7 @@ cp -R dist "$ROOT/desktop-cashier/web-dist"
 
 echo "==> Electron dependencies..."
 cd "$ROOT/desktop-cashier"
-if [[ "$(uname -s)" == "Darwin" ]]; then
-  SKIP_NATIVE_PRINTER=1 npm ci --omit=optional --silent 2>/dev/null || SKIP_NATIVE_PRINTER=1 npm install --omit=optional
-else
-  npm ci --silent 2>/dev/null || npm install
-fi
+SKIP_NATIVE_PRINTER=1 npm ci --silent 2>/dev/null || SKIP_NATIVE_PRINTER=1 npm install
 
 echo ""
 echo "Готово. Дальше:"

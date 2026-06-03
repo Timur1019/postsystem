@@ -84,7 +84,7 @@ POS_EMBEDDED=1 npm run dev
 
 Драйвер `@thiagoelg/node-printer` собирается **только при сборке Windows** (`dist:win`, GitHub Actions `build-windows`, `scripts\build-cashier-windows.bat`) и попадает в `.exe`.
 
-Сборка **macOS .dmg** в CI идёт **без** этого модуля (`npm ci --omit=optional`) — на Mac-кассах ESC/POS не используется. Проверка логики чека: `npm run test:escpos`.
+Сборка **macOS .dmg** в CI не собирает native-принтер (`SKIP_NATIVE_PRINTER=1`); пакет optional и может не установиться на Mac — на Mac-кассах ESC/POS не используется. Проверка логики чека: `npm run test:escpos`.
 
 ## Настройка на кассе
 
