@@ -211,7 +211,7 @@ function registerDesktopIpc() {
     return checkForUpdatesNow(config?.cashierUrl);
   });
 
-  const { registerEscposIpcHandlers } = require('./cashier-receipt-escpos');
+  const { registerEscposIpcHandlers } = require('./cashier-receipt-escpos/index.cjs');
   registerEscposIpcHandlers(ipcMain, { resolveReceiptPrinterName });
 }
 
