@@ -2,7 +2,6 @@ import { isAutoPrintInFlight } from '../services/autoPrint';
 import { RECEIPT_PRINT_DOM } from '../config/receiptPrintConfig';
 import { cleanupDesktopPrintState } from './printReceipt';
 
-/** Снимаем классы модалок/печати с document после F5 или сбоя во время print job. */
 const HTML_UI_CLASSES = [
   'pos-pay-screen-open',
   'print-thermal-only',
@@ -34,10 +33,11 @@ export function resetCashierDocumentUiState() {
     document.body.style.overflow = '';
   }
 
-  // Не трогаем mount во время print job — иначе Electron получит пустой DOM.
   if (!printActive) {
+    for (const id of RECEIPT_PRINT_DOM.staleDomIds) {
+      document.getElementById(id)?.remove();
+    }
     document.getElementById(RECEIPT_PRINT_DOM.previewMountId)?.remove();
-    document.getElementById(RECEIPT_PRINT_DOM.autoPrintMountId)?.remove();
     cleanupDesktopPrintState();
   }
 }

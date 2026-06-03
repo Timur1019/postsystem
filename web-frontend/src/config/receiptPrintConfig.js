@@ -1,91 +1,60 @@
 /**
- * Конфиг автопечати фискального чека (касса + Electron).
+ * Конфиг печати фискального чека (касса + Electron).
  *
- * ┌─────────────────────────────────────────────────────────────┐
- * │  AutoPrintManager  →  RECEIPT_AUTO_PRINT_UI                 │
- * │  printReceipt.js   →  RECEIPT_PRINT_ENGINE + THRESHOLDS     │
- * │  autoPrintMount.js →  RECEIPT_PRINT_DOM                     │
- * │  receipt-auto-print.css → RECEIPT_PRINT_STYLES (CSS vars)  │
- * └─────────────────────────────────────────────────────────────┘
- *
- * Тайминги и пороги менять только здесь.
+ * Поток: PosPage → AutoPrintManager → print-host (body) + screen preview → silent print.
  */
 
-/** Id элементов и селекторы DOM */
+/** Id DOM и селекторы */
 export const RECEIPT_PRINT_DOM = Object.freeze({
-  /** @deprecated legacy id; use bodyPrintHostId */
-  autoPrintMountId: 'pos-auto-print-mount',
-  /** Превью в правом слоте (React, только экран). */
   previewMountId: 'pos-auto-print-preview-mount',
-  autoPrintSlotId: 'pos-auto-print-slot',
-  /** Превью в слоте (React). Electron не использует — только для экрана. */
   previewShellId: 'fiscal-print-shell-live',
-  /** Единственный #fiscal-print-shell на body — только для silent print / Electron. */
   fiscalPrintShellId: 'fiscal-print-shell',
-  /** Print-host на document.body — Electron silent print (AutoPrintManager). */
   bodyPrintHostId: 'pos-auto-print-print-host',
-  /** @deprecated legacy ids — удаляются в teardown */
-  handbookPrintSlotId: 'pos-auto-print-handbook-print-slot',
-  handbookPrintAreaId: 'pos-auto-print-handbook-print-area',
-  /** @deprecated alias — use handbookPrintAreaId */
-  printSupportLaneId: 'pos-auto-print-handbook-print-area',
   receiptPrintAreaId: 'receipt-print-area',
   printJobPageStyleId: 'pos-print-job-page',
   testPrintHostId: 'aurent-test-receipt-print-host',
   qrImageSelector: '.receipt-qr',
+  fiscalPrintDialogClass: 'fiscal-print-dialog',
+  autoPrintHostClass: 'pos-auto-print-host',
+  /** Удаляются при teardown (старые версии UI) */
+  staleDomIds: Object.freeze([
+    'pos-auto-print-mount',
+    'pos-auto-print-slot',
+    'pos-auto-print-print-support-lane',
+    'pos-auto-print-handbook-print-area',
+    'pos-auto-print-handbook-print-slot',
+  ]),
   printRootSelectors: Object.freeze([
     '#fiscal-print-shell-live',
     '#fiscal-print-shell',
-    '#pos-sale-print-shell',
-    '.cashier-sales-receipt-pane__card',
+    '#receipt-print-area',
+    '.receipt-print-root',
   ]),
-  fiscalPrintDialogClass: 'fiscal-print-dialog',
-  autoPrintHostClass: 'pos-auto-print-host',
 });
 
-/**
- * Этап 1 — AutoPrintManager / ReceiptRenderer (сразу после продажи).
- * Превью в слоте справа → копия на body → silent print.
- */
+/** AutoPrintManager — после продажи */
 export const RECEIPT_AUTO_PRINT_UI = Object.freeze({
-  /** Макс. ожидание QR; выход раньше, если img.receipt-qr уже загружен */
   qrWaitMaxMs: 4000,
   qrPollIntervalMs: 100,
-  /** Если #fiscal-print-shell ещё не в DOM (StrictMode remount) */
   qrShellMissingPollMs: 80,
-  /**
-   * Пауза после layout/QR перед вызовом printThermalReceiptAuto.
-   * Меньше → быстрее, но выше риск ретраев Electron.
-   */
   beforePrintSettleMs: 550,
-  /** Держим превью на экране после печати (мс) */
   previewHoldAfterPrintMs: 2200,
-  /** React StrictMode: отложенный unmount при двойном mount */
   strictModeUnmountDelayMs: 280,
-  defaultUnmountDelayMs: 200,
 });
 
-/**
- * Этап 2 — printReceipt.js (подготовка DOM, silent print, ретраи).
- */
+/** printReceipt.js — silent print / ретраи */
 export const RECEIPT_PRINT_ENGINE = Object.freeze({
   domReadyPollIntervalMs: 100,
   domReadyMaxAttempts: 60,
-  /** Два rAF + пауза — «кадр отрисован» перед IPC */
   paintSettleMs: 350,
-  /** Доп. пауза после paintSettle перед invokeDesktopSilentPrint */
   preSilentInvokeDelayMs: 400,
   silentMaxAttempts: 2,
-  /** Пауза между ретраями: baseMs * номер попытки */
   silentRetryBackoffBaseMs: 350,
-  /** withElectronPrintCapture: пауза после класса electron-print-capturing */
   captureSettleMs: 120,
   captureReleaseDelayMs: 80,
-  /** Ожидание img в body-копии после innerHTML */
   bodyImageWaitMaxMs: 2500,
 });
 
-/** Когда считаем, что чек «готов» (текст, высота, картинки) */
 export const RECEIPT_PRINT_THRESHOLDS = Object.freeze({
   fiscalMinTextLength: 80,
   fiscalMinHeightPx: 120,
@@ -93,45 +62,15 @@ export const RECEIPT_PRINT_THRESHOLDS = Object.freeze({
   shiftReportMinHeightPx: 40,
 });
 
-/** Toast после автопечати */
 export const RECEIPT_PRINT_TOAST = Object.freeze({
   toastId: 'pos-auto-print',
   successDurationMs: 3000,
   errorDurationMs: 6000,
 });
 
-/**
- * CSS автопечати — styles/receipt-auto-print.css
- * Классы на <html> (printWithHtmlClass.js): print-thermal-modal, electron-auto-print-job, …
- * BEM слота: .pos-auto-print-slot, .pos-auto-print-host--embedded
- *
- * CSS-переменные (менять в :root файла стилей):
- *   --receipt-auto-print-preview-scale   масштаб превью в слоте
- *   --receipt-auto-print-slot-radius     скругление белого блока
- *   --receipt-auto-print-offscreen-left  позиция body-mount для Electron
- */
+/** Классы host — styles/receipt-auto-print.css */
 export const RECEIPT_PRINT_STYLES = Object.freeze({
-  file: 'styles/receipt-auto-print.css',
-  cssVars: Object.freeze({
-    previewScale: '--receipt-auto-print-preview-scale',
-    slotRadius: '--receipt-auto-print-slot-radius',
-    slotBg: '--receipt-auto-print-slot-bg',
-    offscreenLeft: '--receipt-auto-print-offscreen-left',
-    bodyWidth: '--receipt-auto-print-body-width',
-  }),
-  slotWrapClass: 'pos-auto-print-slot-wrap',
-  slotClass: 'pos-auto-print-slot',
-  hostEmbeddedClass: 'pos-auto-print-host--embedded',
-  hostInSlotClass: 'pos-auto-print-host--in-slot',
   hostBodyPrintClass: 'pos-auto-print-host--body-print',
-  hostPreviewParkClass: 'pos-auto-print-host--preview-park',
-  hostCenteredClass: 'pos-auto-print-host--centered',
-  /** Превью на экране: по центру, уменьшенное (не в слоте справа). */
   hostScreenPreviewClass: 'pos-auto-print-host--screen-preview',
   hostCapturingClass: 'pos-auto-print-host--capturing',
-  handbookPrintAreaClass: 'pos-auto-print-handbook-print-area',
-  handbookPrintAreaPosHiddenClass: 'pos-auto-print-handbook-print-area--pos-hidden',
-  handbookPrintSlotClass: 'handbook-page__print-slot',
-  /** @deprecated alias */
-  printSupportLaneClass: 'pos-auto-print-handbook-print-area',
 });

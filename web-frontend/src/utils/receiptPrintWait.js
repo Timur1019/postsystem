@@ -8,7 +8,7 @@ import {
   RECEIPT_PRINT_ENGINE,
   RECEIPT_PRINT_THRESHOLDS,
 } from '../config/receiptPrintConfig';
-import { findLivePreviewShell, getAutoPrintFiscalShell } from './autoPrintMount';
+import { findPreviewShell, getAutoPrintFiscalShell } from './autoPrintMount';
 
 export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -18,14 +18,6 @@ export function waitForDoubleAnimationFrame() {
   return new Promise((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(resolve));
   });
-}
-
-function qrSelectors() {
-  const { previewShellId, fiscalPrintShellId, qrImageSelector } = RECEIPT_PRINT_DOM;
-  return [
-    `#${previewShellId} ${qrImageSelector}`,
-    `#${fiscalPrintShellId} ${qrImageSelector}`,
-  ];
 }
 
 function findPrintShellPrintArea() {
@@ -144,35 +136,14 @@ export async function waitForPrintShellQrReady(
   return null;
 }
 
-/** @deprecated prefer waitForPrintShellQrReady for auto-print queue */
-export async function waitForReceiptQrReady(
-  maxMs = RECEIPT_AUTO_PRINT_UI.qrWaitMaxMs,
-) {
-  const deadline = Date.now() + maxMs;
-  while (Date.now() < deadline) {
-    for (const sel of qrSelectors()) {
-      const img = document.querySelector(sel);
-      if (img && img.complete && img.naturalWidth > 0 && img.src) {
-        return img.src;
-      }
-    }
-    if (!findLivePreviewShell()) {
-      await sleep(RECEIPT_AUTO_PRINT_UI.qrShellMissingPollMs);
-      continue;
-    }
-    await sleep(RECEIPT_AUTO_PRINT_UI.qrPollIntervalMs);
-  }
-  return null;
-}
-
 export function findReceiptPrintArea({ preferFiscalShell = false, previewOnly = false } = {}) {
   const { fiscalPrintShellId, previewShellId, receiptPrintAreaId, printRootSelectors } =
     RECEIPT_PRINT_DOM;
 
   if (previewOnly || preferFiscalShell) {
     const shell = previewOnly
-      ? findLivePreviewShell()
-      : findLivePreviewShell() || document.getElementById(fiscalPrintShellId);
+      ? findPreviewShell()
+      : findPreviewShell() || document.getElementById(fiscalPrintShellId);
     if (shell) {
       return (
         shell.querySelector(`#${receiptPrintAreaId}`) ||
@@ -194,7 +165,7 @@ export function findReceiptPrintArea({ preferFiscalShell = false, previewOnly = 
 
   return (
     document.getElementById(receiptPrintAreaId) ||
-    findLivePreviewShell() ||
+    findPreviewShell() ||
     document.getElementById(fiscalPrintShellId)
   );
 }
@@ -230,11 +201,11 @@ export function isReceiptPrintAreaReady(area, { requireImages = false } = {}) {
   return textLen >= minText && h >= minH && imgsReady;
 }
 
-/** Ждём готовности превью в слоте (до копии на body). */
+/** Ждём готовности DOM чека (модалка / тест / превью). */
 export async function waitForReceiptDomReady({ useModalShell = false } = {}) {
   const preferPreview =
     useModalShell ||
-    Boolean(findLivePreviewShell()) ||
+    Boolean(findPreviewShell()) ||
     Boolean(document.getElementById(RECEIPT_PRINT_DOM.fiscalPrintShellId));
 
   await document.fonts?.ready;

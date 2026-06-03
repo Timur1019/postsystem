@@ -1,35 +1,21 @@
 /**
  * Печать фискального чека: диалог браузера и тихая печать Electron.
  *
- * Поток автопечати после продажи:
- *   AutoPrintManager → printThermalReceiptAuto → invokeDesktopSilentPrint
- *
- * Тайминги / пороги / id DOM → config/receiptPrintConfig.js
- * Ожидание готовности DOM → utils/receiptPrintWait.js
- * Mount превью / body для print → utils/autoPrintMount.js
+ * Автопечать: AutoPrintManager → printThermalReceiptAuto({ preferPrintHost: true })
  */
 import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_ENGINE } from '../config/receiptPrintConfig';
+import { syncPrintHostFromPreview } from '../services/autoPrint/ReceiptRenderer';
 import {
-  destroyBodyPrintMount,
-  getAutoPrintFiscalShell,
-  prepareBodyPrintShellFromPreview,
   prepareMountForSilentCapture,
+  removeStaleDom,
+  teardownAutoPrintDom,
 } from './autoPrintMount';
-
-async function ensurePrintShellSyncedFromPreview() {
-  try {
-    const { syncPrintShellFromPreview } = await import('../services/autoPrint/ReceiptRenderer');
-    await syncPrintShellFromPreview();
-  } catch (err) {
-    console.warn('[Aurent] syncPrintShellFromPreview failed', err);
-  }
-}
 import {
   assertFiscalPrintShellReady,
+  assertPrintShellReadyForIpc,
   sleep,
   waitForBodyPrintImagesReady,
   waitForDoubleAnimationFrame,
-  assertPrintShellReadyForIpc,
   waitForFiscalPrintShellReady,
   waitForPrintShellDomReady,
   waitForReceiptDomReady,
@@ -67,9 +53,7 @@ export function cleanupDesktopPrintState() {
   if (typeof document === 'undefined') return;
   PRINT_HTML_CLASSES.forEach((c) => document.documentElement.classList.remove(c));
   document.getElementById(RECEIPT_PRINT_DOM.printJobPageStyleId)?.remove();
-  document.getElementById(RECEIPT_PRINT_DOM.autoPrintMountId)?.remove();
-  document.getElementById('pos-auto-print-print-support-lane')?.remove();
-  destroyBodyPrintMount({ force: true });
+  teardownAutoPrintDom({ force: true });
 }
 
 function shouldUseModalPrintShell(explicit) {
@@ -89,19 +73,16 @@ async function prepareDesktopForPrint() {
   }
 }
 
-/** Кадр для silent print — класс electron-print-capturing на <html>. */
 export async function withElectronPrintCapture(
   runPrint,
-  { settleMs = RECEIPT_PRINT_ENGINE.captureSettleMs, afterPrint } = {},
+  { settleMs = RECEIPT_PRINT_ENGINE.captureSettleMs } = {},
 ) {
   document.documentElement.classList.add(ELECTRON_PRINT_CAPTURING_CLASS);
   const undoCaptureLayout = prepareMountForSilentCapture();
   try {
     await waitForReceiptPaintSettled();
     await sleep(settleMs);
-    const result = await runPrint();
-    afterPrint?.();
-    return result;
+    return await runPrint();
   } finally {
     undoCaptureLayout();
     await sleep(RECEIPT_PRINT_ENGINE.captureReleaseDelayMs);
@@ -125,13 +106,12 @@ function normalizeDesktopPrintError(err) {
   return err instanceof Error ? err : new Error(raw || 'Тихая печать не выполнена');
 }
 
-async function prepareBodyPrintShellForSilentPrint({ preferPrintHost = false } = {}) {
-  const existing = getAutoPrintFiscalShell();
-  const root = document.getElementById('root');
-  if (preferPrintHost && existing && !root?.contains(existing)) {
-    return () => {};
+async function syncPrintHostIfPreviewExists() {
+  try {
+    await syncPrintHostFromPreview();
+  } catch (err) {
+    console.warn('[Aurent] syncPrintHostFromPreview failed', err);
   }
-  return prepareBodyPrintShellFromPreview();
 }
 
 async function invokeDesktopSilentPrint({ preferPrintHost = false } = {}) {
@@ -139,12 +119,11 @@ async function invokeDesktopSilentPrint({ preferPrintHost = false } = {}) {
   let lastErr;
 
   for (let attempt = 1; attempt <= silentMaxAttempts; attempt += 1) {
-    let undoBodyPrint = () => {};
     try {
+      removeStaleDom();
       if (preferPrintHost) {
-        await ensurePrintShellSyncedFromPreview();
+        await syncPrintHostIfPreviewExists();
       }
-      undoBodyPrint = await prepareBodyPrintShellForSilentPrint({ preferPrintHost });
       await waitForReceiptPaintSettled();
       await waitForBodyPrintImagesReady();
       if (preferPrintHost) {
@@ -156,12 +135,10 @@ async function invokeDesktopSilentPrint({ preferPrintHost = false } = {}) {
       await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto(), {
         settleMs: preferPrintHost ? 280 : RECEIPT_PRINT_ENGINE.captureSettleMs,
       });
-      undoBodyPrint();
       return;
     } catch (err) {
       lastErr = normalizeDesktopPrintError(err);
       console.warn(`[Aurent] silent print attempt ${attempt}/${silentMaxAttempts}`, lastErr.message);
-      undoBodyPrint();
       if (attempt < silentMaxAttempts) {
         if (preferPrintHost) {
           await waitForPrintShellDomReady().catch(() => undefined);
@@ -225,10 +202,7 @@ export async function printThermalReceiptAuto({
   }
 }
 
-export async function printThermalReceipt({
-  useModalShell,
-  receiptNumber: _receiptNumber = null,
-} = {}) {
+export async function printThermalReceipt({ useModalShell, receiptNumber: _receiptNumber = null } = {}) {
   await printThermalReceiptDialog({ useModalShell });
   return 'dialog';
 }
@@ -266,6 +240,7 @@ export async function printBrowserTestReceipt() {
       try {
         await waitForReceiptDomReady({ useModalShell: true });
         await waitForReceiptPaintSettled();
+        assertFiscalPrintShellReady();
         await invokeDesktopSilentPrint();
         return 'silent';
       } finally {

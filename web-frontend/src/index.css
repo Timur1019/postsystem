@@ -43,66 +43,7 @@
   opacity: 0;
 }
 
-/* Превью: только центр экрана (receipt-auto-print.css) */
-#pos-auto-print-preview-mount.pos-auto-print-host--embedded,
-#pos-auto-print-preview-mount.pos-auto-print-host--in-slot {
-  display: none !important;
-  visibility: hidden !important;
-}
-
-/* Print-host на body — off-screen; при electron-print-capturing → receipt-auto-print.css left:0 */
-#pos-auto-print-print-host.pos-auto-print-host--body-print {
-  position: fixed !important;
-  left: -10000px !important;
-  top: 0 !important;
-  width: var(--print-content-w, 76mm) !important;
-  max-width: var(--print-content-w, 76mm) !important;
-  overflow: visible !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  background: #fff !important;
-}
-
-html.electron-silent-print.print-thermal-modal:not(.electron-print-capturing)
-  #pos-auto-print-print-host.pos-auto-print-host--body-print,
-html.electron-silent-print.print-thermal-modal:not(.electron-print-capturing)
-  #pos-auto-print-print-host.pos-auto-print-host--capturing,
-html.electron-auto-print-job:not(.electron-print-capturing)
-  #pos-auto-print-print-host.pos-auto-print-host--body-print {
-  left: -10000px !important;
-  display: block !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-}
-
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell #receipt-print-area,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell .receipt-print-root,
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell * {
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  color: #000 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  box-shadow: none !important;
-}
-
-/* Legacy mount вне lane */
-#pos-auto-print-mount {
-  position: fixed !important;
-  left: -10000px !important;
-  top: 0 !important;
-  width: var(--print-content-w, 76mm) !important;
-  max-width: var(--print-content-w, 76mm) !important;
-  overflow: visible !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  background: #fff !important;
-}
+/* Автопечать POS: styles/receipt-auto-print.css */
 
 .receipt-page {
   overflow-x: hidden;
@@ -198,9 +139,8 @@ html.electron-silent-print.print-thermal-modal .thermal-report-print-host {
   z-index: 0 !important;
 }
 
-html.electron-silent-print.print-thermal-modal.electron-print-capturing .thermal-report-print-host:not(.fiscal-print-scene--offscreen),
 html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  #pos-auto-print-print-host.fiscal-print-scene {
+  .thermal-report-print-host:not(.fiscal-print-scene--offscreen) {
   position: fixed !important;
   left: 0 !important;
   top: 0 !important;
@@ -214,16 +154,11 @@ html.electron-silent-print.print-thermal-modal.electron-print-capturing
   overflow: visible !important;
 }
 
-/* pos-auto-print-* → styles/receipt-auto-print.css */
-
-html.electron-silent-print.print-thermal-modal .pos-sale-auto-print {
-  display: none !important;
-}
-html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host .fiscal-print-dialog,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell,
+html.electron-silent-print.print-thermal-modal #pos-auto-print-print-host #fiscal-print-shell *,
 html.electron-silent-print.print-thermal-modal #pos-auto-print-preview-mount #fiscal-print-shell-live,
 html.electron-silent-print.print-thermal-modal #pos-auto-print-preview-mount #fiscal-print-shell-live * {
-  background: #ffffff !important;
-  background-color: #ffffff !important;
+  background: #fff !important;
   color: #000 !important;
   opacity: 1 !important;
   visibility: visible !important;

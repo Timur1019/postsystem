@@ -1,524 +1,156 @@
 /**
- * Автопечать: превью в слоте + silent print через body-mount.
+ * Автопечать чека: центральное превью + print-host на body (Electron silent print).
  */
 
 :root {
-  --receipt-auto-print-center-backdrop: rgb(15 23 42 / 0.52);
-  --receipt-auto-print-center-radius: 14px;
-  --receipt-auto-print-center-shadow: 0 24px 48px rgb(0 0 0 / 0.38);
-  --receipt-auto-print-center-z: 2147483000;
-
-  /* legacy slot (не используется для превью) */
-  --receipt-auto-print-slot-radius: 12px;
-  --receipt-auto-print-slot-bg: #fff;
-  --receipt-auto-print-slot-border: rgb(148 163 184 / 0.35);
-  --receipt-auto-print-slot-min-spacer: 8px;
-
-  --receipt-auto-print-preview-scale: 1;
+  --receipt-auto-print-backdrop: rgb(15 23 42 / 0.52);
+  --receipt-auto-print-radius: 14px;
+  --receipt-auto-print-shadow: 0 24px 48px rgb(0 0 0 / 0.38);
+  --receipt-auto-print-z: 2147483000;
   --receipt-auto-print-screen-scale: 0.55;
   --receipt-auto-print-screen-width: 272px;
   --receipt-auto-print-screen-font-size: 10px;
   --receipt-auto-print-offscreen-left: -10000px;
   --receipt-auto-print-body-width: var(--print-content-w, 76mm);
-  --receipt-auto-print-capture-z: 2147483640;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   1. Превью на экране — по центру, компактное (#pos-auto-print-preview-mount)
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ── Превью на экране ───────────────────────────────────────────────────── */
 
 #pos-auto-print-preview-mount.pos-auto-print-host--screen-preview {
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: var(--receipt-auto-print-center-z) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin: 0 !important;
-  padding: 20px 16px !important;
-  width: auto !important;
-  max-width: none !important;
-  left: 0 !important;
-  top: 0 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: none !important;
-  overflow: auto !important;
-  transform: none !important;
-  background: var(--receipt-auto-print-center-backdrop) !important;
+  position: fixed;
+  inset: 0;
+  z-index: var(--receipt-auto-print-z);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  pointer-events: none;
+  overflow: auto;
+  background: var(--receipt-auto-print-backdrop);
 }
 
 #pos-auto-print-preview-mount.pos-auto-print-host--screen-preview .fiscal-print-dialog {
-  width: var(--receipt-auto-print-screen-width) !important;
-  max-width: min(var(--receipt-auto-print-screen-width), calc(100vw - 32px)) !important;
-  max-height: min(78vh, 520px) !important;
-  overflow: auto !important;
-  margin: 0 auto !important;
-  background: #fff !important;
-  border-radius: var(--receipt-auto-print-center-radius) !important;
-  box-shadow: var(--receipt-auto-print-center-shadow) !important;
-  border: 1px solid rgb(148 163 184 / 0.28) !important;
+  width: var(--receipt-auto-print-screen-width);
+  max-width: min(var(--receipt-auto-print-screen-width), calc(100vw - 32px));
+  max-height: min(78vh, 520px);
+  overflow: auto;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: var(--receipt-auto-print-radius);
+  box-shadow: var(--receipt-auto-print-shadow);
+  border: 1px solid rgb(148 163 184 / 0.28);
 }
 
 #pos-auto-print-preview-mount.pos-auto-print-host--screen-preview #fiscal-print-shell-live {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 auto !important;
-  transform: scale(var(--receipt-auto-print-screen-scale)) !important;
-  transform-origin: top center !important;
-  color: #000 !important;
-  background: #fff !important;
-  font-size: var(--receipt-auto-print-screen-font-size) !important;
-  line-height: 1.32 !important;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  transform: scale(var(--receipt-auto-print-screen-scale));
+  transform-origin: top center;
+  color: #000;
+  background: #fff;
+  font-size: var(--receipt-auto-print-screen-font-size);
+  line-height: 1.32;
   -webkit-font-smoothing: antialiased;
 }
 
 #pos-auto-print-preview-mount.pos-auto-print-host--screen-preview #fiscal-print-shell-live * {
-  color: #000 !important;
+  color: #000;
 }
 
-/* Слот справа отключён — не показывать legacy embedded/in-slot */
-#pos-auto-print-preview-mount.pos-auto-print-host--in-slot,
-#pos-auto-print-preview-mount.pos-auto-print-host--embedded {
-  display: none !important;
-  visibility: hidden !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   1b. Fallback: превью по центру (legacy)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.pos-auto-print-host--centered {
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: var(--receipt-auto-print-center-z) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 24px 16px !important;
-  margin: 0 !important;
-  width: auto !important;
-  max-width: none !important;
-  left: 0 !important;
-  top: 0 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: none !important;
-  overflow: auto !important;
-  transform: none !important;
-  background: var(--receipt-auto-print-center-backdrop) !important;
-}
-
-.pos-auto-print-host--centered .fiscal-print-dialog {
-  width: var(--receipt-auto-print-body-width) !important;
-  max-width: min(var(--receipt-auto-print-body-width), calc(100vw - 32px)) !important;
-  max-height: min(92vh, 780px) !important;
-  overflow: auto !important;
-  background: #fff !important;
-  border-radius: var(--receipt-auto-print-center-radius) !important;
-  box-shadow: var(--receipt-auto-print-center-shadow) !important;
-  border: 1px solid rgb(148 163 184 / 0.25) !important;
-}
-
-.pos-auto-print-host--centered #fiscal-print-shell,
-.pos-auto-print-host--centered #fiscal-print-shell-live {
-  width: 100% !important;
-  max-width: 100% !important;
-  transform: none !important;
-  transform-origin: top center;
-  color: #000 !important;
-  background: #fff !important;
-  padding: var(--print-pad-y, 2mm) var(--print-pad-x, 3mm) !important;
-}
-
-.pos-auto-print-host--centered #fiscal-print-shell *,
-.pos-auto-print-host--centered #fiscal-print-shell-live * {
-  color: #000 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   1c. Print-host на body — полный layout off-screen (Electron), не на экране кассы
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ── Print-host (только принтер, off-screen) ──────────────────────────────── */
 
 #pos-auto-print-print-host.pos-auto-print-host--body-print,
 #pos-auto-print-print-host.pos-auto-print-host--capturing {
-  position: fixed !important;
-  left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
-  top: 0 !important;
-  width: var(--receipt-auto-print-body-width) !important;
-  max-width: var(--receipt-auto-print-body-width) !important;
-  height: auto !important;
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  overflow: visible !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: #fff !important;
-  transform: none !important;
-}
-
-/* На экране print-host не показываем — только на время IPC (capturing) */
-html.electron-silent-print.print-thermal-modal:not(.electron-print-capturing)
-  #pos-auto-print-print-host.pos-auto-print-host--body-print,
-html.electron-silent-print.print-thermal-modal:not(.electron-print-capturing)
-  #pos-auto-print-print-host.pos-auto-print-host--capturing,
-html.electron-auto-print-job:not(.electron-print-capturing)
-  #pos-auto-print-print-host.pos-auto-print-host--body-print,
-html.electron-auto-print-job:not(.electron-print-capturing)
-  #pos-auto-print-print-host.pos-auto-print-host--capturing {
-  left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
-  top: 0 !important;
-  width: var(--receipt-auto-print-body-width) !important;
-  max-width: var(--receipt-auto-print-body-width) !important;
-  display: block !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  transform: none !important;
-  z-index: -1 !important;
-  pointer-events: none !important;
-}
-
-#pos-auto-print-print-host.pos-auto-print-host--body-print #fiscal-print-shell,
-#pos-auto-print-print-host.pos-auto-print-host--capturing #fiscal-print-shell,
-#pos-auto-print-print-host.pos-auto-print-host--body-print #fiscal-print-shell * {
-  width: 100% !important;
-  max-width: 100% !important;
-  transform: none !important;
-  background: #fff !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  color: #000 !important;
-}
-
-/* Превью на body во время автопечати (уход со /pos) — off-screen, полный layout */
-#pos-auto-print-preview-mount.pos-auto-print-host--preview-park {
-  position: fixed !important;
-  left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
-  top: 0 !important;
-  width: var(--receipt-auto-print-body-width) !important;
-  max-width: var(--receipt-auto-print-body-width) !important;
-  height: auto !important;
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  overflow: visible !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: #fff !important;
-  transform: none !important;
-}
-
-#pos-auto-print-preview-mount.pos-auto-print-host--preview-park #fiscal-print-shell-live,
-#pos-auto-print-preview-mount.pos-auto-print-host--preview-park #fiscal-print-shell-live * {
-  width: 100% !important;
-  max-width: 100% !important;
-  transform: none !important;
-}
-
-/* На время IPC: превью скрываем, печатаем только print-host */
-html.electron-silent-print.print-thermal-modal.electron-print-capturing #root,
-html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  #pos-auto-print-preview-mount {
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-html.electron-silent-print.print-thermal-modal.electron-print-capturing #root {
-  display: block !important;
-}
-
-html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--body-print,
-html.electron-print-capturing #pos-auto-print-print-host.pos-auto-print-host--capturing,
-html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  #pos-auto-print-print-host.fiscal-print-scene {
-  position: fixed !important;
-  left: 0 !important;
-  top: 0 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: block !important;
-  z-index: 2147483645 !important;
-  width: var(--receipt-auto-print-body-width) !important;
-  max-width: var(--receipt-auto-print-body-width) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: #fff !important;
-  overflow: visible !important;
-  pointer-events: none !important;
-}
-
-html.electron-print-capturing #pos-auto-print-print-host #fiscal-print-shell {
-  transform: none !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-}
-
-/* Legacy mount / handbook wrappers — удаляются в JS */
-#pos-auto-print-handbook-print-area,
-#pos-auto-print-handbook-print-slot {
-  display: none !important;
-}
-
-/* Legacy mount */
-#pos-auto-print-mount {
-  display: block !important;
-  position: fixed !important;
-  left: var(--receipt-auto-print-offscreen-left, -10000px) !important;
-  top: 0 !important;
-  width: var(--receipt-auto-print-body-width) !important;
-  max-width: var(--receipt-auto-print-body-width) !important;
-  height: auto !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  background: #fff !important;
-  z-index: -1 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  overflow: visible !important;
-  pointer-events: none !important;
-}
-
-/* print-host в справочнике — правила выше */
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   2. Legacy: слот в правой колонке (пустой spacer)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.pos-auto-print-slot-wrap {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.pos-auto-print-slot {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: 100%;
-  overflow: auto;
-  border-radius: var(--receipt-auto-print-slot-radius);
-  background: var(--receipt-auto-print-slot-bg);
-  box-shadow: 0 0 0 1px var(--receipt-auto-print-slot-border);
-}
-
-.pos-auto-print-slot:not(:empty) {
-  display: block !important;
-  min-height: 140px;
-  padding: 4px;
-}
-
-.pos-auto-print-slot:empty {
-  display: none;
-  min-height: 0;
-  max-height: 0;
+  position: fixed;
+  left: var(--receipt-auto-print-offscreen-left);
+  top: 0;
+  width: var(--receipt-auto-print-body-width);
+  max-width: var(--receipt-auto-print-body-width);
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+  z-index: -1;
+  margin: 0;
   padding: 0;
-  border: none;
-  box-shadow: none;
-  background: transparent;
+  background: #fff;
+  transform: none;
 }
 
-.pos-auto-print-slot-wrap:has(.pos-auto-print-slot:empty) {
-  flex: 1 1 auto;
-  min-height: var(--receipt-auto-print-slot-min-spacer);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   2. Host в слоте (embedded / in-slot)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.pos-auto-print-host--in-slot,
-.pos-auto-print-host--embedded {
-  position: static !important;
-  left: auto !important;
-  right: auto !important;
-  top: auto !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: none;
-  z-index: 1 !important;
-  overflow: visible !important;
-  transform: none !important;
-  background: transparent !important;
-}
-
-.pos-auto-print-host--in-slot #fiscal-print-shell,
-.pos-auto-print-host--in-slot #fiscal-print-shell-live,
-.pos-auto-print-host--embedded #fiscal-print-shell,
-.pos-auto-print-host--embedded #fiscal-print-shell-live {
-  width: 100% !important;
-  max-width: 100% !important;
-  transform-origin: top center;
-  transform: scale(var(--receipt-auto-print-preview-scale));
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   3. Fallback: host в панели оплаты (если слота нет)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.pos-auto-print-host--in-pay {
-  position: sticky;
-  top: 12px;
-  z-index: 30;
-  margin-bottom: 12px;
-  pointer-events: none;
-}
-
-.pos-auto-print-host--in-pay .fiscal-print-dialog {
+#pos-auto-print-print-host #fiscal-print-shell,
+#pos-auto-print-print-host #fiscal-print-shell * {
   width: 100%;
+  max-width: 100%;
+  transform: none;
+  background: #fff;
+  color: #000;
 }
 
-.pos-auto-print-host--in-pay #fiscal-print-shell {
-  overflow: hidden;
+html.electron-silent-print.print-thermal-modal:not(.electron-print-capturing)
+  #pos-auto-print-print-host,
+html.electron-auto-print-job:not(.electron-print-capturing) #pos-auto-print-print-host {
+  opacity: 0;
+  visibility: hidden;
 }
 
-.pos-auto-print-host--in-actions {
-  position: sticky;
-  top: 12px;
-  z-index: 30;
-  margin: 12px 14px;
-  pointer-events: none;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   4. Electron: класс html.electron-auto-print-job
-      Превью в UI, без full-screen overlay
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ── Electron: job / capture ────────────────────────────────────────────── */
 
 html.electron-silent-print.print-thermal-modal.electron-auto-print-job .receipt-printing-overlay,
 html.electron-auto-print-job .receipt-printing-overlay {
   display: none !important;
-  visibility: hidden !important;
 }
 
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job
-  .pos-sale-print-host.pos-auto-print-host--centered,
-html.electron-auto-print-job .pos-sale-print-host.pos-auto-print-host--centered {
-  position: fixed !important;
-  inset: 0 !important;
-  left: 0 !important;
-  top: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transform: none !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  z-index: var(--receipt-auto-print-center-z) !important;
-  width: auto !important;
-  max-width: none !important;
-  max-height: none !important;
-  overflow: auto !important;
-  background: var(--receipt-auto-print-center-backdrop) !important;
+html.electron-silent-print.print-thermal-modal #pos-auto-print-preview-mount.pos-auto-print-host--screen-preview,
+html.electron-auto-print-job #pos-auto-print-preview-mount.pos-auto-print-host--screen-preview {
+  display: flex;
+  opacity: 1;
+  visibility: visible;
 }
 
-/* Во время автопечати — только центральное превью */
-html.electron-silent-print.print-thermal-modal
-  #pos-auto-print-preview-mount.pos-auto-print-host--screen-preview,
-html.electron-auto-print-job
-  #pos-auto-print-preview-mount.pos-auto-print-host--screen-preview {
-  position: fixed !important;
-  inset: 0 !important;
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  z-index: var(--receipt-auto-print-center-z) !important;
-  background: var(--receipt-auto-print-center-backdrop) !important;
-}
-
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job
-  .pos-sale-print-host.pos-auto-print-host--centered,
-html.electron-auto-print-job .pos-sale-print-host.pos-auto-print-host--centered {
-  position: fixed !important;
-  inset: 0 !important;
-  left: 0 !important;
-  top: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  z-index: var(--receipt-auto-print-center-z) !important;
-  opacity: 1 !important;
-  background: var(--receipt-auto-print-center-backdrop) !important;
-}
-
-html.electron-silent-print.print-thermal-modal.electron-auto-print-job.electron-print-capturing
-  #pos-auto-print-preview-mount,
-html.electron-auto-print-job.electron-print-capturing
+html.electron-silent-print.print-thermal-modal.electron-print-capturing #root,
+html.electron-silent-print.print-thermal-modal.electron-print-capturing
   #pos-auto-print-preview-mount {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* Legacy centered — только .pos-auto-print-host--centered, не превью в слоте */
-html.electron-silent-print.print-thermal-modal .pos-sale-print-host.pos-auto-print-host--centered:not(#pos-auto-print-preview-mount) {
-  position: fixed !important;
-  inset: 0 !important;
-  left: 0 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: none !important;
-  z-index: var(--receipt-auto-print-center-z) !important;
+html.electron-print-capturing #pos-auto-print-print-host.fiscal-print-scene {
+  position: fixed;
+  left: 0;
+  top: 0;
+  opacity: 1;
+  visibility: visible;
+  z-index: 2147483645;
+  width: var(--receipt-auto-print-body-width);
+  max-width: var(--receipt-auto-print-body-width);
+  background: #fff;
+  overflow: visible;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   5. Electron: print-host (#pos-auto-print-print-host) — только принтер
-   ═══════════════════════════════════════════════════════════════════════════ */
+html.electron-print-capturing #pos-auto-print-print-host #fiscal-print-shell {
+  box-shadow: none;
+  border-radius: 0;
+}
 
-html.electron-auto-print-job #pos-auto-print-preview-mount:not(.pos-auto-print-host--screen-preview),
+/* X/Z и др. off-screen fiscal scenes (не автопечать POS) */
 html.electron-silent-print.print-thermal-modal
-  #pos-auto-print-preview-mount:not(.pos-auto-print-host--screen-preview) {
-  display: none !important;
-  visibility: hidden !important;
-}
-
-html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  .fiscal-print-scene:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(.pos-auto-print-host--centered):not(#pos-auto-print-handbook-print-area):not(#pos-auto-print-handbook-print-slot),
-html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  .thermal-report-print-host:not(.fiscal-print-scene--offscreen),
-html.electron-silent-print.print-thermal-modal.electron-print-capturing
-  .pos-sale-print-host:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(.pos-auto-print-host--centered):not(#pos-auto-print-handbook-print-area):not(#pos-auto-print-handbook-print-slot):not(#pos-auto-print-print-host):not(#pos-auto-print-preview-mount) {
-  left: 0 !important;
-  transform: none !important;
-  opacity: 1 !important;
-  z-index: var(--receipt-auto-print-capture-z) !important;
-}
-
-/* Legacy off-screen hosts (X/Z и т.д., не автопечать) */
-html.electron-silent-print.print-thermal-modal .fiscal-print-scene:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(#pos-auto-print-print-host),
-html.electron-silent-print.print-thermal-modal .pos-sale-print-host:not(.pos-auto-print-host--embedded):not(.pos-auto-print-host--body-print):not(#pos-auto-print-print-host):not(#pos-auto-print-preview-mount) {
-  display: block !important;
-  visibility: visible !important;
-  position: fixed !important;
-  left: var(--receipt-auto-print-offscreen-left) !important;
-  transform: none !important;
-  top: 0 !important;
-  opacity: 1 !important;
-  pointer-events: none !important;
-  width: var(--receipt-auto-print-body-width) !important;
-  max-width: var(--receipt-auto-print-body-width) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: #fff !important;
-  overflow: hidden !important;
-  z-index: 0 !important;
+  .fiscal-print-scene:not(#pos-auto-print-print-host):not(.fiscal-print-scene--offscreen),
+html.electron-silent-print.print-thermal-modal
+  .thermal-report-print-host:not(.fiscal-print-scene--offscreen) {
+  position: fixed;
+  left: var(--receipt-auto-print-offscreen-left);
+  top: 0;
+  width: var(--receipt-auto-print-body-width);
+  max-width: var(--receipt-auto-print-body-width);
+  opacity: 1;
+  pointer-events: none;
+  background: #fff;
+  z-index: 0;
 }
 
 @media print {
-  html.print-thermal-modal #pos-auto-print-handbook-print-area,
-  html.print-thermal-modal #pos-auto-print-handbook-print-slot,
-  html.print-thermal-modal #pos-auto-print-print-host,
-  html.print-thermal-modal #pos-auto-print-print-host.fiscal-print-scene,
-  html.print-thermal-modal #pos-auto-print-print-host.pos-auto-print-host--body-print {
+  html.print-thermal-modal #pos-auto-print-print-host {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;

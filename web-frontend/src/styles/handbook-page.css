@@ -184,31 +184,6 @@
   margin-bottom: 0;
 }
 
-.handbook-page__print-slot {
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px dashed rgb(148 163 184 / 0.5);
-}
-
-.handbook-page__print-slot:empty {
-  display: none;
-}
-
-.handbook-page__print-slot #pos-auto-print-print-host {
-  margin: 0 auto;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgb(15 23 42 / 0.08);
-}
-
-.dark .handbook-page__print-slot {
-  border-top-color: rgb(71 85 105 / 0.6);
-}
-
-.handbook-page--cashier .handbook-page__print-slot #pos-auto-print-print-host {
-  box-shadow: 0 2px 12px rgb(0 0 0 / 0.2);
-}
-
 @media (max-width: 768px) {
   .handbook-page__grid {
     grid-template-columns: 1fr;

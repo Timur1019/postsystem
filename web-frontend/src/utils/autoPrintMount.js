@@ -1,40 +1,22 @@
 /**
- * DOM автопечати: превью в слоте кассы + полная копия на body для Electron.
- *
- * Превью (экран)  → #pos-auto-print-preview-mount / #fiscal-print-shell-live
- * Печать (Electron) → #pos-auto-print-print-host / #fiscal-print-shell на document.body (off-screen)
- *
- * Print-host на body — стабильный слой (AutoPrintManager / ReceiptRenderer).
- * Превью в слоте кассы — только UI; после job DOM удаляется.
+ * DOM автопечати:
+ *   экран  → #pos-auto-print-preview-mount / #fiscal-print-shell-live
+ *   печать → #pos-auto-print-print-host / #fiscal-print-shell (document.body, off-screen)
  */
-import { RECEIPT_AUTO_PRINT_UI, RECEIPT_PRINT_DOM, RECEIPT_PRINT_STYLES } from '../config/receiptPrintConfig';
+import { RECEIPT_PRINT_DOM, RECEIPT_PRINT_STYLES } from '../config/receiptPrintConfig';
 
 const {
   bodyPrintHostId: PRINT_HOST_ID,
-  handbookPrintSlotId: HANDBOOK_PRINT_SLOT_ID,
   previewMountId: PREVIEW_MOUNT_ID,
-  autoPrintSlotId: SLOT_ID,
   previewShellId: PREVIEW_SHELL_ID,
   fiscalPrintShellId: PRINT_SHELL_ID,
   fiscalPrintDialogClass,
   autoPrintHostClass,
+  staleDomIds,
 } = RECEIPT_PRINT_DOM;
 
-const {
-  hostEmbeddedClass,
-  hostInSlotClass,
-  hostBodyPrintClass,
-  hostPreviewParkClass,
-  hostScreenPreviewClass,
-  hostCapturingClass,
-} = RECEIPT_PRINT_STYLES;
+const { hostBodyPrintClass, hostScreenPreviewClass, hostCapturingClass } = RECEIPT_PRINT_STYLES;
 
-/** Legacy id — удаляем при teardown */
-const LEGACY_PRINT_MOUNT_ID = RECEIPT_PRINT_DOM.autoPrintMountId;
-const LEGACY_SUPPORT_LANE_ID = 'pos-auto-print-print-support-lane';
-const LEGACY_HANDBOOK_AREA_ID = RECEIPT_PRINT_DOM.handbookPrintAreaId;
-
-let pendingUnmountTimer = null;
 let autoPrintInFlight = false;
 
 export function setAutoPrintInFlight(active) {
@@ -57,10 +39,17 @@ function getPrintOwnerKey() {
 
 function stampPrintOwner(hostEl) {
   const owner = getPrintOwnerKey();
-  if (owner) {
-    hostEl.dataset.printOwner = owner;
-  } else {
-    delete hostEl.dataset.printOwner;
+  if (owner) hostEl.dataset.printOwner = owner;
+  else delete hostEl.dataset.printOwner;
+}
+
+function clearHostInlineStyles(hostEl) {
+  hostEl.removeAttribute('style');
+}
+
+export function removeStaleDom() {
+  for (const id of staleDomIds) {
+    document.getElementById(id)?.remove();
   }
 }
 
@@ -69,154 +58,20 @@ function destroyPrintMountIfWrongOwner() {
   if (!host?.dataset.printOwner) return;
   const owner = getPrintOwnerKey();
   if (owner && host.dataset.printOwner !== owner) {
-    destroyBodyPrintMount();
+    destroyBodyPrintMount({ force: true });
   }
 }
 
-function removeLegacyPrintContainers() {
-  document.getElementById(LEGACY_PRINT_MOUNT_ID)?.remove();
-  document.getElementById(LEGACY_SUPPORT_LANE_ID)?.remove();
-  document.getElementById(LEGACY_HANDBOOK_AREA_ID)?.remove();
-  document.getElementById(HANDBOOK_PRINT_SLOT_ID)?.replaceChildren();
-}
-
-function clearHostInlineStyles(hostEl) {
-  hostEl.style.position = '';
-  hostEl.style.left = '';
-  hostEl.style.right = '';
-  hostEl.style.top = '';
-  hostEl.style.opacity = '';
-  hostEl.style.zIndex = '';
-  hostEl.style.visibility = '';
-  hostEl.style.display = '';
-  hostEl.style.width = '';
-  hostEl.style.maxWidth = '';
-  hostEl.style.overflow = '';
-}
-
-function mountPreviewOnBodyPark(hostEl) {
-  hostEl.classList.remove(
-    'fiscal-print-scene',
-    'fiscal-print-scene--offscreen',
-    hostBodyPrintClass,
-    hostCapturingClass,
-    hostEmbeddedClass,
-    hostInSlotClass,
-    RECEIPT_PRINT_STYLES.hostCenteredClass,
-    'pos-auto-print-host--in-pay',
-    'pos-auto-print-host--in-actions',
-  );
-  hostEl.classList.add(autoPrintHostClass, hostPreviewParkClass);
-  clearHostInlineStyles(hostEl);
-  if (hostEl.parentElement !== document.body) {
-    document.body.appendChild(hostEl);
-  }
-}
-
-/** Превью на экране: по центру, вне #root (не в правой колонке). */
 export function mountPreviewScreenCentered(hostEl) {
-  hostEl.classList.remove(
-    'fiscal-print-scene',
-    'fiscal-print-scene--offscreen',
-    hostBodyPrintClass,
-    hostCapturingClass,
-    hostEmbeddedClass,
-    hostInSlotClass,
-    hostPreviewParkClass,
-    RECEIPT_PRINT_STYLES.hostCenteredClass,
-    'pos-auto-print-host--in-pay',
-    'pos-auto-print-host--in-actions',
-  );
-  hostEl.classList.add(autoPrintHostClass, hostScreenPreviewClass);
+  hostEl.className = `pos-sale-print-host ${autoPrintHostClass} ${hostScreenPreviewClass}`;
   clearHostInlineStyles(hostEl);
   if (hostEl.parentElement !== document.body) {
     document.body.appendChild(hostEl);
   }
 }
 
-/** @deprecated — слот справа убран; используйте mountPreviewScreenCentered */
-export function mountPreviewInSlotPublic(hostEl) {
-  mountPreviewScreenCentered(hostEl);
-}
-
-/** Стабильный print-host на body (вне #root) — единственный источник для Electron. */
 export function ensureStablePrintHost() {
-  return ensureBodyPrintMount();
-}
-
-function mountPreviewInSlot(hostEl) {
-  const slot = document.getElementById(SLOT_ID);
-  if (!slot?.isConnected) {
-    if (isAutoPrintInFlight()) {
-      mountPreviewScreenCentered(hostEl);
-      return;
-    }
-  }
-
-  hostEl.classList.remove(
-    'fiscal-print-scene',
-    'fiscal-print-scene--offscreen',
-    hostBodyPrintClass,
-    hostCapturingClass,
-    hostPreviewParkClass,
-    RECEIPT_PRINT_STYLES.hostCenteredClass,
-    'pos-auto-print-host--in-pay',
-    'pos-auto-print-host--in-actions',
-  );
-  hostEl.classList.add(autoPrintHostClass, hostEmbeddedClass, hostInSlotClass);
-  clearHostInlineStyles(hostEl);
-
-  if (slot?.isConnected) {
-    slot.appendChild(hostEl);
-    return;
-  }
-  const fallback =
-    document.querySelector('.cashier-register__actions-col--pay .pos-pay-panel__scroll') ||
-    document.querySelector('.cashier-register__actions-col');
-  (fallback || document.body).appendChild(hostEl);
-}
-
-/** Сохранить превью на body, если слот кассы размонтирован (уход со /pos). */
-export function parkPreviewMountOnBody() {
-  const host = document.getElementById(PREVIEW_MOUNT_ID);
-  if (!host) return;
-  const slot = document.getElementById(SLOT_ID);
-  if (slot?.isConnected && slot.contains(host)) return;
-  mountPreviewOnBodyPark(host);
-}
-
-export function ensureAutoPrintMountInSlot() {
-  const el = document.getElementById(PREVIEW_MOUNT_ID);
-  if (!el) return;
-  if (el.classList.contains(hostScreenPreviewClass) && el.parentElement === document.body) {
-    return;
-  }
-  mountPreviewScreenCentered(el);
-}
-
-/** Контейнер превью на body (центр экрана). */
-export function getAutoPrintPreviewMountEl() {
-  let el = document.getElementById(PREVIEW_MOUNT_ID);
-  if (!el) {
-    el = document.createElement('div');
-    el.id = PREVIEW_MOUNT_ID;
-    el.className = `pos-sale-print-host ${autoPrintHostClass}`;
-    el.setAttribute('aria-live', 'polite');
-    mountPreviewScreenCentered(el);
-  } else {
-    mountPreviewScreenCentered(el);
-  }
-  return el;
-}
-
-/** @deprecated alias */
-export function getAutoPrintMountEl() {
-  return getAutoPrintPreviewMountEl();
-}
-
-/** Print-host на body (вне #root), полный layout off-screen — для Electron. */
-function ensureBodyPrintMount() {
-  removeLegacyPrintContainers();
+  removeStaleDom();
   destroyPrintMountIfWrongOwner();
 
   let el = document.getElementById(PRINT_HOST_ID);
@@ -228,12 +83,7 @@ function ensureBodyPrintMount() {
     stampPrintOwner(el);
     document.body.appendChild(el);
   } else {
-    el.classList.remove(
-      hostEmbeddedClass,
-      hostInSlotClass,
-      RECEIPT_PRINT_STYLES.hostCenteredClass,
-    );
-    el.classList.add(hostBodyPrintClass, 'fiscal-print-scene', 'fiscal-print-scene--offscreen');
+    el.className = `pos-sale-print-host fiscal-print-scene fiscal-print-scene--offscreen ${autoPrintHostClass} ${hostBodyPrintClass}`;
     clearHostInlineStyles(el);
     stampPrintOwner(el);
     if (el.parentElement !== document.body) {
@@ -243,30 +93,36 @@ function ensureBodyPrintMount() {
   return el;
 }
 
-export function findLivePreviewShell() {
-  const previewMount = document.getElementById(PREVIEW_MOUNT_ID);
-  return (
-    previewMount?.querySelector(`#${PREVIEW_SHELL_ID}`) ||
-    document.getElementById(PREVIEW_SHELL_ID) ||
-    null
-  );
+export function getAutoPrintPreviewMountEl() {
+  let el = document.getElementById(PREVIEW_MOUNT_ID);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = PREVIEW_MOUNT_ID;
+    el.setAttribute('aria-live', 'polite');
+    mountPreviewScreenCentered(el);
+  } else {
+    mountPreviewScreenCentered(el);
+  }
+  return el;
+}
+
+export function findPreviewShell() {
+  const mount = document.getElementById(PREVIEW_MOUNT_ID);
+  return mount?.querySelector(`#${PREVIEW_SHELL_ID}`) ?? document.getElementById(PREVIEW_SHELL_ID);
 }
 
 export function getAutoPrintFiscalShell() {
-  const printHost =
-    document.getElementById(PRINT_HOST_ID) || document.getElementById(LEGACY_PRINT_MOUNT_ID);
-  const shell = printHost?.querySelector(`#${PRINT_SHELL_ID}`);
+  const host = document.getElementById(PRINT_HOST_ID);
+  const shell = host?.querySelector(`#${PRINT_SHELL_ID}`);
   if (shell) return shell;
 
   const root = document.getElementById('root');
   return (
-    Array.from(document.querySelectorAll(`#${PRINT_SHELL_ID}`)).find(
-      (el) => !root?.contains(el),
-    ) ?? null
+    Array.from(document.querySelectorAll(`#${PRINT_SHELL_ID}`)).find((el) => !root?.contains(el)) ??
+    null
   );
 }
 
-/** Копирует src/canvas с картинок source → target (превью ↔ print). */
 export async function syncShellImagesBetween(sourceShell, targetShell) {
   const liveImgs = Array.from(sourceShell.querySelectorAll('img'));
   const printImgs = Array.from(targetShell.querySelectorAll('img'));
@@ -288,7 +144,7 @@ export async function syncShellImagesBetween(sourceShell, targetShell) {
           printImg.src = canvas.toDataURL('image/png');
           return;
         } catch {
-          /* fallback */
+          /* use src below */
         }
       }
 
@@ -302,113 +158,35 @@ export async function syncShellImagesBetween(sourceShell, targetShell) {
   );
 }
 
-/** Копия превью на body перед silent print (Electron). */
-export async function prepareBodyPrintShellFromPreview() {
-  parkPreviewMountOnBody();
-  const liveShell = findLivePreviewShell();
-  if (!liveShell) {
-    return () => {};
-  }
-
-  const host = ensureBodyPrintMount();
-  host.replaceChildren();
-
-  const dialog = document.createElement('div');
-  dialog.className = fiscalPrintDialogClass;
-
-  const printShell = document.createElement('div');
-  printShell.id = PRINT_SHELL_ID;
-  printShell.innerHTML = liveShell.innerHTML;
-
-  dialog.appendChild(printShell);
-  host.appendChild(dialog);
-
-  await syncShellImagesBetween(liveShell, printShell);
-  void printShell.offsetHeight;
-  void host.offsetHeight;
-
-  return () => {
-    destroyBodyPrintMount();
-  };
-}
-
-/** @deprecated */
-export function finalizeHandbookPrintMount() {
-  destroyBodyPrintMount();
-}
-
-/** @deprecated */
-export function hidePrintSupportLane() {}
-
-/** @deprecated */
-export function hideBodyPrintMountFromScreen() {
-  hidePrintSupportLane();
-}
-
-function preparePrintHostForCapture(host = document.getElementById(PRINT_HOST_ID)) {
-  if (!host) return;
+export function prepareMountForSilentCapture() {
+  const host = document.getElementById(PRINT_HOST_ID);
+  if (!host) return () => {};
   host.classList.add(hostCapturingClass);
   void host.offsetHeight;
   const shell = host.querySelector(`#${PRINT_SHELL_ID}`);
   if (shell) void shell.offsetHeight;
+  return () => host.classList.remove(hostCapturingClass);
 }
 
 export function destroyBodyPrintMount({ force = false } = {}) {
-  if (!force && isAutoPrintInFlight()) return;
-  for (const id of [PRINT_HOST_ID, LEGACY_PRINT_MOUNT_ID]) {
-    const host = document.getElementById(id);
-    if (!host) continue;
+  if (!force && autoPrintInFlight) return;
+  const host = document.getElementById(PRINT_HOST_ID);
+  if (host) {
     host.classList.remove(hostCapturingClass);
-    try {
-      host.replaceChildren();
-    } catch {
-      /* ignore */
-    }
+    host.replaceChildren();
     host.remove();
   }
-  removeLegacyPrintContainers();
+  removeStaleDom();
 }
 
-/** Перед webContents.print — print-host остаётся off-screen на body, layout полный. */
-export function prepareMountForSilentCapture() {
-  const mount = document.getElementById(PRINT_HOST_ID);
-  if (!mount) return () => {};
-  preparePrintHostForCapture(mount);
-  return () => {
-    mount.classList.remove(hostCapturingClass);
-  };
-}
-
-export function cancelScheduledAutoPrintUnmount() {
-  if (pendingUnmountTimer != null) {
-    clearTimeout(pendingUnmountTimer);
-    pendingUnmountTimer = null;
-  }
-}
-
-export function scheduleAutoPrintUnmount(
-  unmountFn,
-  delayMs = RECEIPT_AUTO_PRINT_UI.defaultUnmountDelayMs,
-) {
-  cancelScheduledAutoPrintUnmount();
-  pendingUnmountTimer = setTimeout(() => {
-    pendingUnmountTimer = null;
-    unmountFn();
-  }, delayMs);
-}
-
-export function teardownAutoPrintMount({ force = false } = {}) {
-  cancelScheduledAutoPrintUnmount();
-  if (!force && isAutoPrintInFlight()) return;
+export function teardownAutoPrintDom({ force = false } = {}) {
+  if (!force && autoPrintInFlight) return;
   document.getElementById(PREVIEW_MOUNT_ID)?.remove();
   destroyBodyPrintMount({ force: true });
 }
 
 export {
-  PRINT_HOST_ID as MOUNT_ID,
   PRINT_HOST_ID,
-  LEGACY_HANDBOOK_AREA_ID as HANDBOOK_PRINT_AREA_ID,
-  HANDBOOK_PRINT_SLOT_ID,
   PREVIEW_MOUNT_ID,
   PREVIEW_SHELL_ID,
   PRINT_SHELL_ID,
