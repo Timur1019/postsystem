@@ -161,8 +161,25 @@ const MEASURE_RECEIPT_DIMS_JS = `
   const shell = ${FIND_FISCAL_PRINT_SHELL_JS.trim()};
   if (!shell) return null;
   const area = shell.querySelector('#receipt-print-area') || shell.querySelector('.receipt-print-root') || shell;
-  const textLen = (area.innerText || '').trim().length;
-  const contentPx = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
+  const previewShell = document.querySelector('#pos-auto-print-preview-mount #fiscal-print-shell-live');
+  const previewArea = previewShell
+    ? (previewShell.querySelector('#receipt-print-area-live')
+      || previewShell.querySelector('#receipt-print-area')
+      || previewShell.querySelector('.receipt-print-root')
+      || previewShell)
+    : null;
+  const textLen = Math.max(
+    (area.innerText || '').trim().length,
+    (previewArea?.innerText || '').trim().length,
+  );
+  const contentPx = Math.max(
+    area.scrollHeight,
+    area.offsetHeight,
+    area.getBoundingClientRect().height,
+    previewArea?.scrollHeight ?? 0,
+    previewArea?.offsetHeight ?? 0,
+    previewArea?.getBoundingClientRect?.().height ?? 0,
+  );
   if (textLen < 80 || contentPx < 120) return null;
   const paperRaw = getComputedStyle(document.documentElement).getPropertyValue('--print-paper-w-mm').trim();
   const paperMm = parseFloat(paperRaw) || 80;

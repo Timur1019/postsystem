@@ -29,6 +29,7 @@ import {
   sleep,
   waitForBodyPrintImagesReady,
   waitForDoubleAnimationFrame,
+  assertPrintShellReadyForIpc,
   waitForFiscalPrintShellReady,
   waitForPrintShellDomReady,
   waitForReceiptDomReady,
@@ -146,7 +147,11 @@ async function invokeDesktopSilentPrint({ preferPrintHost = false } = {}) {
       undoBodyPrint = await prepareBodyPrintShellForSilentPrint({ preferPrintHost });
       await waitForReceiptPaintSettled();
       await waitForBodyPrintImagesReady();
-      await waitForFiscalPrintShellReady();
+      if (preferPrintHost) {
+        assertPrintShellReadyForIpc();
+      } else {
+        await waitForFiscalPrintShellReady();
+      }
       console.info(`[Aurent] silent print IPC attempt ${attempt}/${silentMaxAttempts}`);
       await withElectronPrintCapture(() => window.desktopCashier.printReceiptAuto(), {
         afterPrint: undoBodyPrint,
@@ -192,7 +197,10 @@ export async function printThermalReceiptDialog({ useModalShell } = {}) {
   });
 }
 
-export async function printThermalReceiptAuto({ preferPrintHost = false } = {}) {
+export async function printThermalReceiptAuto({
+  preferPrintHost = false,
+  skipDomReadyWait = false,
+} = {}) {
   if (!isDesktopCashier() || typeof window.desktopCashier?.printReceiptAuto !== 'function') {
     return printThermalReceiptDialog({ useModalShell: true });
   }
@@ -200,10 +208,12 @@ export async function printThermalReceiptAuto({ preferPrintHost = false } = {}) 
   await prepareDesktopForPrint();
   const cleanup = prepareThermalPrint(SILENT_AUTO_PRINT_CLASSES);
   try {
-    if (preferPrintHost) {
-      await waitForPrintShellDomReady();
-    } else {
-      await waitForReceiptDomReady({ useModalShell: true });
+    if (!skipDomReadyWait) {
+      if (preferPrintHost) {
+        await waitForPrintShellDomReady();
+      } else {
+        await waitForReceiptDomReady({ useModalShell: true });
+      }
     }
     await waitForReceiptPaintSettled();
     await sleep(RECEIPT_PRINT_ENGINE.preSilentInvokeDelayMs);

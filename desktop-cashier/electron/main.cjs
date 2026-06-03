@@ -531,10 +531,27 @@ const RECEIPT_READY_JS = `
       || document.getElementById('fiscal-print-shell');
     if (!shell) return false;
     const area = shell.querySelector('#receipt-print-area') || shell.querySelector('.receipt-print-root') || shell;
-    const textLen = (area.innerText || '').trim().length;
-    const h = Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height);
+    const previewShell = document.querySelector('#pos-auto-print-preview-mount #fiscal-print-shell-live');
+    const previewArea = previewShell
+      ? (previewShell.querySelector('#receipt-print-area-live')
+        || previewShell.querySelector('#receipt-print-area')
+        || previewShell.querySelector('.receipt-print-root')
+        || previewShell)
+      : null;
+    const textLen = Math.max(
+      (area.innerText || '').trim().length,
+      (previewArea?.innerText || '').trim().length,
+    );
+    const h = Math.max(
+      area.scrollHeight,
+      area.offsetHeight,
+      area.getBoundingClientRect().height,
+      previewArea?.scrollHeight ?? 0,
+      previewArea?.offsetHeight ?? 0,
+      previewArea?.getBoundingClientRect?.().height ?? 0,
+    );
     const imgs = Array.from(area.querySelectorAll('img'));
-    const imgsReady = imgs.length === 0 || imgs.every((i) => i.complete);
+    const imgsReady = imgs.length === 0 || imgs.every((i) => i.complete && i.naturalWidth > 0);
     return textLen >= 80 && h >= 120 && imgsReady;
   })()
 `;

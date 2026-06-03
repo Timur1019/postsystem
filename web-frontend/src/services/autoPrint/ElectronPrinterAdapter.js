@@ -4,7 +4,7 @@
 import { printThermalReceiptAuto } from '../../utils/printReceipt';
 
 export async function printReceipt() {
-  return printThermalReceiptAuto({ preferPrintHost: true });
+  return printThermalReceiptAuto({ preferPrintHost: true, skipDomReadyWait: true });
 }
 
 export async function printTestReceipt() {

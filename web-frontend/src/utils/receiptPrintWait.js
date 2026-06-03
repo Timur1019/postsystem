@@ -39,18 +39,78 @@ function findPrintShellPrintArea() {
   );
 }
 
-/** Очередь автопечати: готовность только print-host на body. */
+function findPreviewShellPrintArea() {
+  const { previewMountId, previewShellId, receiptPrintAreaId } = RECEIPT_PRINT_DOM;
+  const shell = document.querySelector(`#${previewMountId} #${previewShellId}`);
+  if (!shell) return null;
+  return (
+    shell.querySelector(`#${receiptPrintAreaId}-live`) ||
+    shell.querySelector(`#${receiptPrintAreaId}`) ||
+    shell.querySelector('.receipt-print-root') ||
+    shell
+  );
+}
+
+/** Очередь автопечати: готовность print-host (QR отдельно). */
 export async function waitForPrintShellDomReady() {
   await document.fonts?.ready;
   const { domReadyPollIntervalMs, domReadyMaxAttempts } = RECEIPT_PRINT_ENGINE;
   for (let i = 0; i < domReadyMaxAttempts; i += 1) {
     await sleep(domReadyPollIntervalMs);
     const area = findPrintShellPrintArea();
-    if (isReceiptPrintAreaReady(area, { requireImages: true })) {
+    if (isReceiptPrintAreaReady(area)) {
       return;
     }
   }
   throw new Error('Чек не готов для печати');
+}
+
+/**
+ * После sync превью → print-host: не проверяем scrollHeight off-screen (часто 0).
+ * Достаточно текста + картинок; высоту берём с видимого превью.
+ */
+export function assertPrintShellReadyForIpc() {
+  const shell = getAutoPrintFiscalShell();
+  const root = document.getElementById('root');
+  if (!shell || root?.contains(shell)) {
+    throw new Error('Чек не найден для печати');
+  }
+
+  const printArea = findPrintShellPrintArea();
+  const previewArea = findPreviewShellPrintArea();
+  const textLen = Math.max(
+    (printArea?.innerText || '').trim().length,
+    (previewArea?.innerText || '').trim().length,
+  );
+  if (textLen < RECEIPT_PRINT_THRESHOLDS.fiscalMinTextLength) {
+    throw new Error('Чек не готов для печати');
+  }
+
+  const hPrint = Math.max(
+    printArea?.scrollHeight ?? 0,
+    shell.scrollHeight ?? 0,
+    printArea?.offsetHeight ?? 0,
+  );
+  const hPreview = Math.max(
+    previewArea?.scrollHeight ?? 0,
+    previewArea?.offsetHeight ?? 0,
+    previewArea?.getBoundingClientRect?.().height ?? 0,
+  );
+  const h = Math.max(hPrint, hPreview);
+  if (h < RECEIPT_PRINT_THRESHOLDS.fiscalMinHeightPx) {
+    console.warn('[Aurent] print shell height low, using preview text ok', hPrint, hPreview);
+    if (textLen < RECEIPT_PRINT_THRESHOLDS.fiscalMinTextLength) {
+      throw new Error('Чек не готов для печати');
+    }
+  }
+
+  const imgs = Array.from((printArea || shell).querySelectorAll('img'));
+  const imgsReady =
+    imgs.length === 0 ||
+    imgs.every((img) => img.complete && img.naturalWidth > 0 && Boolean(img.src));
+  if (!imgsReady) {
+    throw new Error('Чек не готов для печати');
+  }
 }
 
 /** QR в print-shell (не зависит от превью в слоте). */
@@ -58,13 +118,19 @@ export async function waitForPrintShellQrReady(
   maxMs = RECEIPT_AUTO_PRINT_UI.qrWaitMaxMs,
   { required = false } = {},
 ) {
-  const { fiscalPrintShellId, qrImageSelector } = RECEIPT_PRINT_DOM;
-  const sel = `#${RECEIPT_PRINT_DOM.bodyPrintHostId} #${fiscalPrintShellId} ${qrImageSelector}`;
+  const { fiscalPrintShellId, previewShellId, previewMountId, qrImageSelector } =
+    RECEIPT_PRINT_DOM;
+  const selectors = [
+    `#${RECEIPT_PRINT_DOM.bodyPrintHostId} #${fiscalPrintShellId} ${qrImageSelector}`,
+    `#${previewMountId} #${previewShellId} ${qrImageSelector}`,
+  ];
   const deadline = Date.now() + maxMs;
   while (Date.now() < deadline) {
-    const img = document.querySelector(sel);
-    if (img && img.complete && img.naturalWidth > 0 && img.src) {
-      return img.src;
+    for (const sel of selectors) {
+      const img = document.querySelector(sel);
+      if (img && img.complete && img.naturalWidth > 0 && img.src) {
+        return img.src;
+      }
     }
     if (!getAutoPrintFiscalShell()) {
       await sleep(RECEIPT_AUTO_PRINT_UI.qrShellMissingPollMs);
@@ -197,7 +263,10 @@ export async function waitForBodyPrintImagesReady(
   const deadline = Date.now() + maxMs;
   while (Date.now() < deadline) {
     const imgs = Array.from(shell.querySelectorAll('img'));
-    if (imgs.length === 0 || imgs.every((img) => img.complete)) {
+    if (
+      imgs.length === 0 ||
+      imgs.every((img) => img.complete && (img.naturalWidth > 0 || !img.src))
+    ) {
       return;
     }
     await sleep(RECEIPT_PRINT_ENGINE.domReadyPollIntervalMs);

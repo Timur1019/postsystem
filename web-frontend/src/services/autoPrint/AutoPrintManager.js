@@ -11,7 +11,9 @@ import {
 } from '../../utils/autoPrintMount';
 import { cleanupDesktopPrintState, isDesktopCashier } from '../../utils/printReceipt';
 import {
+  assertPrintShellReadyForIpc,
   sleep,
+  waitForBodyPrintImagesReady,
   waitForDoubleAnimationFrame,
   waitForPrintShellDomReady,
   waitForPrintShellQrReady,
@@ -67,7 +69,8 @@ async function processPrintJob(receiptNumber) {
     receiptStore.updateStatus(receiptNumber, 'ready');
     await receiptRenderer.syncPrintShellFromPreview();
     await waitForDoubleAnimationFrame();
-    await waitForPrintShellDomReady();
+    await waitForBodyPrintImagesReady();
+    assertPrintShellReadyForIpc();
     receiptStore.updateStatus(receiptNumber, 'printing');
 
     const mode = await electronPrinter.printReceipt();
