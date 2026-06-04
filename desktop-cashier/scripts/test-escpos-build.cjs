@@ -12,6 +12,7 @@ const {
   sanitizePayloadForPrint,
   EXIT_CHINESE_MODE,
 } = require('../electron/cashier-receipt-escpos/escpos-encoding.cjs');
+const { interpolateLabel } = require('../electron/cashier-receipt-escpos/escpos-format.cjs');
 const { CharacterSet } = require('node-thermal-printer');
 
 const mockPayload = {
@@ -40,6 +41,9 @@ const mockPayload = {
     logo: false,
     companyName: true,
     items: true,
+    itemIkpu: true,
+    itemVatLine: true,
+    receiptNo: true,
     grandTotal: true,
     payment: true,
     qrCode: false,
@@ -48,9 +52,11 @@ const mockPayload = {
   labels: {
     date: 'Дата',
     time: 'Время',
+    receiptNoShort: 'Номер чека',
     item: 'Товар',
     qtyShort: 'Кол',
     lineTotalShort: 'Сумма',
+    vatLineShort: 'НДС {{rate}}%',
     grandTotal: 'ИТОГО',
     currency: 'сум',
     footer: 'Спасибо',
@@ -159,11 +165,20 @@ async function main() {
     assert.strictEqual(normalizePrintText('Qo\u2018llash', 'uz'), "Qo'llash");
   });
 
+  testSync('interpolateLabel подставляет {{rate}}', () => {
+    assert.strictEqual(
+      interpolateLabel('НДС {{rate}}%', { rate: '12' }),
+      'НДС 12%',
+    );
+  });
+
   await testAsync('buildReceiptOnPrinter формирует текст чека', async () => {
     const printer = createMockPrinter();
     await buildReceiptOnPrinter(printer, mockPayload, 'test-job');
     const text = printer.getText();
     assert.ok(text.includes('10042'), 'номер чека');
+    assert.ok(!text.includes('{{rate}}'), 'без сырого {{rate}}');
+    assert.ok(text.includes('НДС 12%'), 'НДС с подставленной ставкой');
     assert.ok(text.includes('AURENT'), 'компания');
     assert.ok(text.includes('Хлеб'), 'товар');
     assert.ok(text.includes('[CUT]'), 'отрез');

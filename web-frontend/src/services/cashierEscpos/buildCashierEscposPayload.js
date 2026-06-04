@@ -59,7 +59,7 @@ export function buildEscposLabels(t) {
     qtyShort: t('receipt.qtyShort'),
     lineTotalShort: t('receipt.lineTotalShort'),
     ikpuLine: t('receipt.ikpuLine'),
-    vatLineShort: t('fiscalReceipt.vatLineShort'),
+    vatLineShort: t('fiscalReceipt.vatLineShort', { rate: '12' }),
     currency: t('fiscalReceipt.currency'),
     lineDiscountsSum: t('fiscalReceipt.lineDiscountsSum'),
     orderDiscountSum: t('fiscalReceipt.orderDiscountSum'),

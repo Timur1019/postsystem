@@ -92,6 +92,33 @@ function lineVatAmount(item) {
  * @param {string|Date|null|undefined} iso
  * @returns {string}
  */
+/**
+ * Подстановка {{key}} из i18n-шаблонов (main без i18n).
+ * @param {string} template
+ * @param {Record<string, string|number>} vars
+ */
+function interpolateLabel(template, vars = {}) {
+  let s = String(template || '');
+  for (const [key, val] of Object.entries(vars)) {
+    s = s.replace(new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g'), String(val));
+  }
+  return s;
+}
+
+/**
+ * Ставка НДС для итога чека (как FiscalReceiptBody).
+ * @param {object} sale
+ * @returns {string}
+ */
+function saleVatRateLabel(sale) {
+  const rates = new Set(
+    (sale?.items || [])
+      .map((i) => (i.taxRatePercent != null ? Number(i.taxRatePercent) : 12))
+      .filter((r) => Number.isFinite(r) && r > 0),
+  );
+  return rates.size === 1 ? String([...rates][0]) : '—';
+}
+
 function fmtAt(iso) {
   if (!iso) return '—';
   try {
@@ -111,5 +138,7 @@ module.exports = {
   buildFiscalSign,
   buildQrPayload,
   lineVatAmount,
+  interpolateLabel,
+  saleVatRateLabel,
   fmtAt,
 };

@@ -12,6 +12,8 @@ const {
   buildFiscalSign,
   buildQrPayload,
   lineVatAmount,
+  interpolateLabel,
+  saleVatRateLabel,
 } = require('./escpos-format.cjs');
 const { logWarn } = require('./escpos-log.cjs');
 const { sanitizePayloadForPrint, preparePrinterEncoding } = require('./escpos-encoding.cjs');
@@ -125,7 +127,9 @@ function appendMeta(printer, payload) {
   const { sale, receiptFields, labels } = payload;
   const fields = receiptFields || {};
   const L = labels || {};
+  const hasReceiptNo = Boolean(sale.receiptNumber);
   const showMeta =
+    hasReceiptNo ||
     isOn(fields, 'dateTime') ||
     isOn(fields, 'receiptNo') ||
     isOn(fields, 'employee') ||
@@ -138,8 +142,8 @@ function appendMeta(printer, payload) {
     appendRow(printer, L.date || 'Date', date);
     appendRow(printer, L.time || 'Time', time);
   }
-  if (isOn(fields, 'receiptNo')) {
-    appendRow(printer, L.receiptNoShort || 'Receipt', `№${sale.receiptNumber}`);
+  if (hasReceiptNo) {
+    appendRow(printer, L.receiptNoShort || 'Receipt', String(sale.receiptNumber));
   }
   if (isOn(fields, 'employee') && sale.cashierName) {
     appendRow(printer, L.employee || 'Cashier', sale.cashierName);
@@ -193,10 +197,10 @@ function appendItems(printer, payload) {
     }
     if (isOn(fields, 'itemVatLine')) {
       const rate = item.taxRatePercent != null ? Number(item.taxRatePercent) : 12;
+      const rateStr = Number.isFinite(rate) ? String(Math.round(rate)) : '12';
       const vat = lineVatAmount(item);
-      printer.println(
-        `${L.vatLineShort || 'VAT'} ${rate}%: ${fmtMoney(vat)} ${L.currency || 'sum'}`,
-      );
+      const vatLabel = interpolateLabel(L.vatLineShort || 'VAT {{rate}}%', { rate: rateStr });
+      printer.println(`${vatLabel}: ${fmtMoney(vat)} ${L.currency || 'sum'}`);
     }
   }
   appendDivider(printer);
@@ -238,7 +242,10 @@ function appendTotals(printer, payload) {
     appendRow(printer, L.grandTotal || 'TOTAL', `${fmtMoney(sale.totalAmount)} ${cur}`, true);
   }
   if (isOn(fields, 'vatTotal')) {
-    appendRow(printer, L.vatTotalLine || 'VAT', `${fmtMoney(sale.taxTotal)} ${cur}`, true);
+    const vatLabel = interpolateLabel(L.vatTotalLine || 'VAT {{rate}}%', {
+      rate: saleVatRateLabel(sale),
+    });
+    appendRow(printer, vatLabel, `${fmtMoney(sale.taxTotal)} ${cur}`, true);
   }
   appendDivider(printer);
 }
@@ -307,7 +314,7 @@ function appendFiscalBlock(printer, payload) {
 
   appendRow(printer, L.virtualRegister || 'Reg.', virtualRegister);
   appendRow(printer, L.fmNumber || 'FM', String(fmNumber));
-  appendRow(printer, L.fiscalReceiptNo || 'Fiscal #', `№${sale.receiptNumber}`);
+  appendRow(printer, L.fiscalReceiptNo || 'Fiscal #', String(sale.receiptNumber));
   appendRow(printer, L.fiscalSign || 'Sign', fiscalSign);
   appendDivider(printer);
 }
