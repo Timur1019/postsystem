@@ -55,12 +55,16 @@ async function appendHeader(printer, payload, jobId) {
   const fields = receiptFields || {};
   const L = labels || {};
 
+  const phone = String(branding?.companyPhone || '').trim();
+  const stir = String(branding?.stir || '').trim();
   const showHeader =
     isOn(fields, 'logo') ||
     isOn(fields, 'companyName') ||
-    isOn(fields, 'companyAddress') ||
-    (isOn(fields, 'companyPhone') && branding?.companyPhone) ||
-    (isOn(fields, 'stir') && branding?.stir);
+    (isOn(fields, 'companyAddress') && branding?.companyAddress) ||
+    (isOn(fields, 'companyPhone') && phone) ||
+    (isOn(fields, 'stir') && stir) ||
+    phone ||
+    stir;
 
   if (!showHeader) return;
 
@@ -92,11 +96,11 @@ async function appendHeader(printer, payload, jobId) {
   if (isOn(fields, 'companyAddress') && branding?.companyAddress) {
     printer.println(String(branding.companyAddress));
   }
-  if (isOn(fields, 'companyPhone') && branding?.companyPhone) {
-    printer.println(`${L.phoneLabel || 'Tel'}: ${branding.companyPhone}`);
+  if (phone && isOn(fields, 'companyPhone')) {
+    printer.println(`${L.phoneLabel || 'Tel'}: ${phone}`);
   }
-  if (isOn(fields, 'stir') && branding?.stir) {
-    printer.println(`${L.stir || 'STIR'}: ${branding.stir}`);
+  if (stir && isOn(fields, 'stir')) {
+    printer.println(`${L.stir || 'STIR'}: ${stir}`);
   }
   printer.alignLeft();
   appendDivider(printer);

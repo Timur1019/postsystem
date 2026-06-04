@@ -96,7 +96,21 @@ export function buildCashierEscposPayload(sale, t) {
       APP_NAME;
   }
   if (!branding.companyAddress) {
-    branding.companyAddress = t('fiscalReceipt.defaultAddress');
+    branding.companyAddress =
+      import.meta.env.VITE_COMPANY_ADDRESS?.trim() ||
+      t('fiscalReceipt.defaultAddress');
+  }
+  if (!String(branding.companyPhone || '').trim()) {
+    branding.companyPhone =
+      import.meta.env.VITE_COMPANY_PHONE?.trim() ||
+      t('fiscalReceipt.defaultPhone') ||
+      '';
+  }
+  if (!String(branding.stir || '').trim()) {
+    branding.stir =
+      import.meta.env.VITE_COMPANY_STIR?.trim() ||
+      import.meta.env.VITE_STIR?.trim() ||
+      '';
   }
 
   const shiftFromReceipt = String(sale.receiptNumber || '')

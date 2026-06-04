@@ -33,6 +33,7 @@ const mockPayload = {
   branding: {
     companyName: 'AURENT TEST',
     companyAddress: 'Tashkent',
+    companyPhone: '+998 88 646 95 96',
     stir: '123456789',
     virtualRegister: '1',
     fmNumber: 'FM-001',
@@ -40,6 +41,7 @@ const mockPayload = {
   receiptFields: {
     logo: false,
     companyName: true,
+    companyPhone: true,
     items: true,
     itemIkpu: true,
     itemVatLine: true,
@@ -50,6 +52,7 @@ const mockPayload = {
     footer: true,
   },
   labels: {
+    phoneLabel: 'Tel',
     date: 'Дата',
     time: 'Время',
     receiptNoShort: 'Номер чека',
@@ -180,6 +183,7 @@ async function main() {
     assert.ok(!text.includes('{{rate}}'), 'без сырого {{rate}}');
     assert.ok(text.includes('НДС 12%'), 'НДС с подставленной ставкой');
     assert.ok(text.includes('AURENT'), 'компания');
+    assert.ok(text.includes('+998'), 'телефон в шапке');
     assert.ok(text.includes('Хлеб'), 'товар');
     assert.ok(text.includes('[CUT]'), 'отрез');
     const raw = printer.getRaw();
