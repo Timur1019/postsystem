@@ -6,9 +6,8 @@ import { productApi, tasnifApi } from '../services/api';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import TasnifPackagePickerModal from '../components/products/TasnifPackagePickerModal';
 import ShelfLabelPrintModal from '../components/users/ShelfLabelPrintModal';
-import {
-  isDesktopLabelEscposEnvironment,
-} from '../services/cashierEscpos';
+import { isDesktopLabelPrintEnvironment } from '../services/cashierEscpos';
+import { isDesktopCashier } from '../utils/printReceipt';
 import '../styles/tasnif-search.css';
 
 const inputCls =
@@ -58,7 +57,7 @@ export default function UsersBarcodePrintPage() {
   const [printOpen, setPrintOpen] = useState(false);
   const [labelPrinterName, setLabelPrinterName] = useState('');
 
-  const desktopLabelPrint = isDesktopLabelEscposEnvironment();
+  const desktopLabelPrint = isDesktopLabelPrintEnvironment();
   const canPickLabelPrinter =
     typeof window !== 'undefined' &&
     typeof window.desktopCashier?.openLabelPrinterPicker === 'function';
@@ -486,7 +485,7 @@ export default function UsersBarcodePrintPage() {
                   toast.error(t('usersBarcodePrint.noBarcodeForPrint'));
                   return;
                 }
-                if (!desktopLabelPrint) {
+                if (!isDesktopCashier()) {
                   toast.error(t('usersBarcodePrint.needDesktopApp'), { duration: 6000 });
                   return;
                 }

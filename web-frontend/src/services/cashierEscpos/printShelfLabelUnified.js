@@ -1,22 +1,32 @@
 /**
- * Единая печать этикетки: ESC/POS на desktop-кассе, иначе window.print / Chromium.
+ * Единая печать этикетки.
+ * На десктопе для XP-365 и аналогов — сначала печать через драйвер (HTML + printLabelPage),
+ * ESC/POS — запасной путь, если printLabelPage недоступен.
  */
+import { isDesktopLabelPrintAvailable } from '../../utils/printShelfLabel';
 import { isCashierEscposLabelPrintAvailable, printLabelEscpos } from './printLabelEscpos';
 
 /**
  * @param {object} labelInput — productName, barcode, price, copies, paperWmm…
  * @param {Function} t
- * @param {{ requireBarcode?: boolean, preferHtmlPrint?: boolean, fallback?: Function }} [opts]
+ * @param {{ requireBarcode?: boolean, preferDriverPrint?: boolean, fallback?: Function }} [opts]
  */
 export async function printShelfLabelUnified(labelInput, t, opts = {}) {
-  const { requireBarcode = true, preferHtmlPrint = false, fallback } = opts;
+  const { requireBarcode = true, preferDriverPrint = true, fallback } = opts;
 
   if (requireBarcode && labelInput?.showBarcode && !String(labelInput?.barcode || '').trim()) {
     throw new Error('No barcode');
   }
 
-  const useEscpos = isCashierEscposLabelPrintAvailable() && !preferHtmlPrint;
-  if (useEscpos) {
+  if (preferDriverPrint && isDesktopLabelPrintAvailable()) {
+    if (typeof fallback === 'function') {
+      return fallback();
+    }
+    const { printShelfLabelSilent } = await import('../../utils/printShelfLabel');
+    return printShelfLabelSilent({ requireBarcode });
+  }
+
+  if (isCashierEscposLabelPrintAvailable()) {
     return printLabelEscpos(labelInput, t);
   }
 

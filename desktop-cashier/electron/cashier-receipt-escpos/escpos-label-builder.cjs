@@ -97,6 +97,12 @@ function buildLabelsOnPrinter(printer, payload) {
       printer.clear();
       preparePrinterEncoding(printer);
       appendOneLabel(printer, item, safe);
+      printer.newLine();
+      printer.newLine();
+      printer.newLine();
+      if (typeof printer.feed === 'function') {
+        printer.feed(3);
+      }
       printer.cut();
     }
   }

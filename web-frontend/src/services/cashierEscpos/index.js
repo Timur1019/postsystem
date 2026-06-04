@@ -29,5 +29,6 @@ export { printThermalDocument } from './printThermalDocument';
 export { printShelfLabelUnified } from './printShelfLabelUnified';
 export {
   ensureDesktopLabelPrinter,
+  isDesktopLabelPrintEnvironment,
   isDesktopLabelEscposEnvironment,
 } from './ensureDesktopLabelPrinter';

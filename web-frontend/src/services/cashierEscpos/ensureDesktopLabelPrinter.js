@@ -1,6 +1,8 @@
 /**
  * Перед печатью этикетки — явно выбранный «Принтер штрих-кодов» в Aurent.
  */
+import { isDesktopCashier } from '../../utils/printReceipt';
+import { isDesktopLabelPrintAvailable } from '../../utils/printShelfLabel';
 import { isCashierEscposLabelPrintAvailable } from './printLabelEscpos';
 
 async function readLabelPrinterName() {
@@ -11,12 +13,25 @@ async function readLabelPrinterName() {
   return String(settings?.labelPrinterName || '').trim();
 }
 
+/** Десктоп Aurent с печатью этикеток (драйвер или ESC/POS). */
+export function isDesktopLabelPrintEnvironment() {
+  return (
+    isDesktopCashier() &&
+    (isDesktopLabelPrintAvailable() || isCashierEscposLabelPrintAvailable())
+  );
+}
+
+/** @deprecated используйте isDesktopLabelPrintEnvironment */
+export function isDesktopLabelEscposEnvironment() {
+  return isDesktopLabelPrintEnvironment();
+}
+
 /**
  * @param {Function} t
  * @returns {Promise<{ deviceName: string }>}
  */
 export async function ensureDesktopLabelPrinter(t) {
-  if (!isCashierEscposLabelPrintAvailable()) {
+  if (!isDesktopCashier()) {
     throw new Error(
       t('usersBarcodePrint.needDesktopApp', {
         defaultValue:
@@ -45,8 +60,4 @@ export async function ensureDesktopLabelPrinter(t) {
         'Принтер штрих-кодов не выбран. Меню Aurent → «Принтер штрих-кодов» — укажите термопринтер этикеток из списка Windows.',
     }),
   );
-}
-
-export function isDesktopLabelEscposEnvironment() {
-  return isCashierEscposLabelPrintAvailable();
 }

@@ -13,9 +13,9 @@ import {
 import {
   ensureDesktopLabelPrinter,
   isCashierEscposLabelPrintAvailable,
-  isDesktopLabelEscposEnvironment,
   printShelfLabelUnified,
 } from '../../services/cashierEscpos';
+import { isDesktopCashier } from '../../utils/printReceipt';
 import { resolveAutoLabelLayout } from '../../utils/resolveAutoLabelLayout';
 
 import '../../styles/shelf-label-print.css';
@@ -385,7 +385,7 @@ export default function ShelfLabelPrintModal({
     try {
       unmountPrintLayer();
 
-      if (!isDesktopLabelEscposEnvironment()) {
+      if (!isDesktopCashier()) {
         toast.error(
           t('usersBarcodePrint.needDesktopApp', {
             defaultValue:
@@ -397,7 +397,28 @@ export default function ShelfLabelPrintModal({
       }
 
       const { deviceName } = await ensureDesktopLabelPrinter(t);
-      await printShelfLabelUnified(labelInput, t);
+      applyLabelPrintCssVars(layout);
+
+      await printShelfLabelUnified(labelInput, t, {
+        requireBarcode: showBarcode,
+        preferDriverPrint: true,
+        fallback: async () => {
+          if (isDesktopLabelPrintAvailable() && copyCount > 1) {
+            for (let i = 0; i < copyCount; i += 1) {
+              printRootRef.current = mountLabelPrintLayer([buildPrintPage(`seq-${i}`)]);
+              await printShelfLabelSilent({ requireBarcode: showBarcode });
+              unmountPrintLayer();
+              if (i < copyCount - 1) {
+                await new Promise((r) => setTimeout(r, 280));
+              }
+            }
+            return;
+          }
+          printRootRef.current = mountLabelPrintLayer(printNodes);
+          return printShelfLabelSilent({ requireBarcode: showBarcode });
+        },
+      });
+
       toast.success(
         t('usersBarcodePrint.printSentTo', {
           defaultValue: 'Отправлено на принтер: {{name}}',
