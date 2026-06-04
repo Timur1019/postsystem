@@ -1,3 +1,10 @@
+/* Предпросмотр в модалке — ширина как у реальной этикетки */
+.shelflabel-preview-wrap {
+  width: min(100%, calc(var(--label-paper-w-mm, 58) * 1mm + 24px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Предпросмотр этикетки */
 .shelflabel-card {
   display: flex;
@@ -5,8 +12,30 @@
   align-items: stretch;
   gap: 0.5rem;
   width: 100%;
-  max-width: 80mm;
+  max-width: 100%;
   margin: 0 auto;
+}
+
+.shelflabel-card--pricetag {
+  justify-content: center;
+  gap: calc(0.2rem * var(--label-font-scale, 1));
+  min-height: 100%;
+}
+
+.shelflabel-card--pricetag .shelflabel-name {
+  font-size: calc(0.62rem * var(--label-font-scale, 1));
+  line-height: 1.12;
+  max-height: calc(2.4em * var(--label-font-scale, 1));
+  overflow: hidden;
+}
+
+.shelflabel-card--pricetag .shelflabel-price--large {
+  font-size: calc(1.05rem * var(--label-font-scale, 1));
+  letter-spacing: -0.02em;
+}
+
+.shelflabel-card--pricetag .shelflabel-barcode-svg {
+  max-height: calc(52px * var(--label-font-scale, 1));
 }
 
 .shelflabel-name {

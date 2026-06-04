@@ -2,6 +2,7 @@
  * Payload этикетки для ESC/POS.
  */
 import i18n from '../../i18n/config';
+import { resolveAutoLabelLayout } from '../../utils/resolveAutoLabelLayout';
 
 /**
  * @param {object} input
@@ -21,13 +22,26 @@ export function buildEscposLabelPayload(input, t) {
     copies,
     paperWmm,
     paperHmm,
+    layoutMode,
   } = input;
+
+  const auto =
+    layoutMode === 'auto' || paperWmm == null || paperHmm == null
+      ? resolveAutoLabelLayout({
+          variant,
+          showName,
+          showBarcode,
+          showPrice,
+          productName,
+          price,
+        })
+      : null;
 
   return {
     locale: String(i18n.language || 'ru').split('-')[0],
     copies: Math.min(999, Math.max(1, Number(copies) || 1)),
-    paperWmm: Number(paperWmm) || 58,
-    paperHmm: Number(paperHmm) || 40,
+    paperWmm: Number(auto?.paperWmm ?? paperWmm) || 58,
+    paperHmm: Number(auto?.paperHmm ?? paperHmm) || 40,
     labelsMeta: { currency: currency || t('fiscalReceipt.currency') },
     labels: [
       {

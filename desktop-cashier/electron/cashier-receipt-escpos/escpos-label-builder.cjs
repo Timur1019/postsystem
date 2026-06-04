@@ -1,8 +1,12 @@
 /**
- * Этикетки полки / штрихкод — ESC/POS на принтер этикеток.
+ * Этикетки полки / ценники — ESC/POS на принтер этикеток.
  */
 const { fmtMoney } = require('./escpos-format.cjs');
 const { sanitizePayloadForPrint, preparePrinterEncoding } = require('./escpos-encoding.cjs');
+const {
+  barcodeOptsForPaper,
+  printWrappedCenter,
+} = require('./escpos-label-layout.cjs');
 
 /**
  * @param {object} payload
@@ -27,34 +31,49 @@ function appendOneLabel(printer, item, payload) {
   const cur = item.currency || payload.labelsMeta?.currency || 'sum';
   const isPriceTag = item.variant === 'priceTag';
   const hasPrice = item.price != null && !Number.isNaN(Number(item.price));
+  const paperWmm = Number(payload.paperWmm) || 40;
+  const paperHmm = Number(payload.paperHmm) || 30;
+  const compact = paperHmm <= 28 || paperWmm <= 35;
 
   printer.alignCenter();
 
   if (isPriceTag && item.showPrice && hasPrice) {
     printer.bold(true);
-    printer.setTextDoubleHeight();
+    if (!compact) {
+      printer.setTextDoubleHeight();
+    }
     printer.println(`${fmtMoney(item.price)} ${cur}`);
     printer.setTextNormal();
     printer.bold(false);
-    printer.newLine();
+    if (!compact) {
+      printer.newLine();
+    }
   }
 
   if (item.showName && item.productName) {
-    printer.println(String(item.productName));
+    const maxNameLines = isPriceTag ? (compact ? 2 : 3) : 4;
+    printWrappedCenter(printer, item.productName, paperWmm, maxNameLines);
+    if (isPriceTag && compact) {
+      printer.newLine();
+    }
   }
 
   if (!isPriceTag && item.showPrice && hasPrice) {
     printer.bold(true);
     printer.println(`${fmtMoney(item.price)} ${cur}`);
     printer.bold(false);
+    printer.newLine();
   }
 
   if (item.showBarcode && item.barcode) {
     const code = String(item.barcode).replace(/\s/g, '');
     if (code) {
-      printer.newLine();
+      if (!compact) {
+        printer.newLine();
+      }
+      const opts = barcodeOptsForPaper(paperWmm, paperHmm);
       try {
-        printer.code128(code, { width: 2, height: 55 });
+        printer.code128(code, opts);
       } catch {
         printer.println(code);
       }

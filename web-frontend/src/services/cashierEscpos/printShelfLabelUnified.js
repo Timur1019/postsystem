@@ -6,16 +6,17 @@ import { isCashierEscposLabelPrintAvailable, printLabelEscpos } from './printLab
 /**
  * @param {object} labelInput — productName, barcode, price, copies, paperWmm…
  * @param {Function} t
- * @param {{ requireBarcode?: boolean, fallback?: Function }} [opts]
+ * @param {{ requireBarcode?: boolean, preferHtmlPrint?: boolean, fallback?: Function }} [opts]
  */
 export async function printShelfLabelUnified(labelInput, t, opts = {}) {
-  const { requireBarcode = true, fallback } = opts;
+  const { requireBarcode = true, preferHtmlPrint = false, fallback } = opts;
 
   if (requireBarcode && labelInput?.showBarcode && !String(labelInput?.barcode || '').trim()) {
     throw new Error('No barcode');
   }
 
-  if (isCashierEscposLabelPrintAvailable()) {
+  const useEscpos = isCashierEscposLabelPrintAvailable() && !preferHtmlPrint;
+  if (useEscpos) {
     return printLabelEscpos(labelInput, t);
   }
 

@@ -229,6 +229,43 @@ async function main() {
     assert.strictEqual(payload.labels.footer, "Qo'llash");
   });
 
+  await testAsync('buildLabelsOnPrinter ценник 40×30', async () => {
+    const { validateLabelPayload, buildLabelsOnPrinter } = require('../electron/cashier-receipt-escpos/escpos-label-builder.cjs');
+    const labelPayload = {
+      locale: 'ru',
+      paperWmm: 40,
+      paperHmm: 30,
+      copies: 1,
+      labelsMeta: { currency: 'сум' },
+      labels: [
+        {
+          productName: 'Молоко 1л',
+          barcode: '4870001234567',
+          price: 12500,
+          variant: 'priceTag',
+          showName: true,
+          showBarcode: true,
+          showPrice: true,
+          currency: 'сум',
+        },
+      ],
+    };
+    validateLabelPayload(labelPayload);
+    const printer = createMockPrinter();
+    buildLabelsOnPrinter(printer, labelPayload);
+    const text = printer.getText();
+    assert.ok(text.includes('12'), 'цена');
+    assert.ok(text.includes('Молоко'), 'название');
+    assert.ok(text.includes('[CUT]'), 'отрез');
+  });
+
+  testSync('wrapTextLines для узкой этикетки', () => {
+    const { wrapTextLines } = require('../electron/cashier-receipt-escpos/escpos-label-layout.cjs');
+    const lines = wrapTextLines('Очень длинное название товара для полки', 18);
+    assert.ok(lines.length >= 2);
+    assert.ok(lines.every((l) => l.length <= 18));
+  });
+
   console.log(`\nИтого: ${passed} ok, ${failed} fail`);
   process.exit(failed > 0 ? 1 : 0);
 }
