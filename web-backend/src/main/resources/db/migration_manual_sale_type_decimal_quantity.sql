@@ -53,6 +53,11 @@ BEGIN
             ALTER COLUMN total_quantity TYPE NUMERIC(18, 3)
             USING ROUND(COALESCE(total_quantity, 0)::numeric, 3);
     END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'stock_inventories') THEN
+        ALTER TABLE stock_inventories
+            ALTER COLUMN total_difference TYPE NUMERIC(18, 3)
+            USING ROUND(COALESCE(total_difference, 0)::numeric, 3);
+    END IF;
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'stock_inventory_lines') THEN
         ALTER TABLE stock_inventory_lines
             ALTER COLUMN system_quantity TYPE NUMERIC(18, 3)
@@ -60,5 +65,8 @@ BEGIN
         ALTER TABLE stock_inventory_lines
             ALTER COLUMN counted_quantity TYPE NUMERIC(18, 3)
             USING ROUND(COALESCE(counted_quantity, 0)::numeric, 3);
+        ALTER TABLE stock_inventory_lines
+            ALTER COLUMN difference TYPE NUMERIC(18, 3)
+            USING ROUND(COALESCE(difference, 0)::numeric, 3);
     END IF;
 END $$;
