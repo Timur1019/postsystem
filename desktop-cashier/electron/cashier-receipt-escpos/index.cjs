@@ -3,7 +3,7 @@
  * IPC: desktop:print-receipt-escpos
  */
 const { ESCPOS_ERROR_CODES, EscposPrintError } = require('./escpos-errors.cjs');
-const { createJobId, logStep, logError } = require('./escpos-log.cjs');
+const { createJobId, logStep, logError, logWarn } = require('./escpos-log.cjs');
 const { validatePayload, buildReceiptOnPrinter } = require('./escpos-sale-builder.cjs');
 const {
   createReceiptPrinter,
@@ -54,8 +54,8 @@ async function printSaleReceiptEscpos(payload, deps) {
 
   let printer;
   try {
-    logStep(jobId, 'create_printer');
-    printer = createReceiptPrinter(deviceName);
+    logStep(jobId, 'create_printer', { locale: payload.locale || 'ru' });
+    printer = createReceiptPrinter(deviceName, { locale: payload.locale });
   } catch (err) {
     logError(jobId, 'create_printer', err);
     throw err;
@@ -78,11 +78,16 @@ async function printSaleReceiptEscpos(payload, deps) {
     logStep(jobId, 'is_connected');
     const connected = await checkConnected(printer);
     if (!connected) {
-      throw new EscposPrintError(
-        ESCPOS_ERROR_CODES.NOT_CONNECTED,
-        `Принтер «${deviceName}» недоступен. Проверьте USB/драйвер и имя в Aurent.`,
-        { step: 'is_connected' },
-      );
+      // Windows-драйверы часто возвращают false при рабочем принтере — всё равно пробуем execute.
+      if (process.platform === 'win32') {
+        logWarn(jobId, 'is_connected_false_win_try_anyway', { deviceName });
+      } else {
+        throw new EscposPrintError(
+          ESCPOS_ERROR_CODES.NOT_CONNECTED,
+          `Принтер «${deviceName}» недоступен. Проверьте USB/драйвер и имя в Aurent.`,
+          { step: 'is_connected' },
+        );
+      }
     }
     logStep(jobId, 'execute');
     await executePrint(printer);

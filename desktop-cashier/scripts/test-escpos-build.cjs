@@ -5,6 +5,14 @@
  */
 const assert = require('assert');
 const { validatePayload, buildReceiptOnPrinter } = require('../electron/cashier-receipt-escpos/escpos-sale-builder.cjs');
+const {
+  normalizeLocale,
+  resolveCharacterSet,
+  normalizePrintText,
+  sanitizePayloadForPrint,
+  EXIT_CHINESE_MODE,
+} = require('../electron/cashier-receipt-escpos/escpos-encoding.cjs');
+const { CharacterSet } = require('node-thermal-printer');
 
 const mockPayload = {
   sale: {
@@ -47,14 +55,22 @@ const mockPayload = {
     currency: 'сум',
     footer: 'Спасибо',
   },
+  locale: 'ru',
 };
 
 /** Минимальный mock ThermalPrinter для buildReceiptOnPrinter. */
 function createMockPrinter() {
   const lines = [];
+  const raw = [];
   return {
     clear() {
       lines.length = 0;
+      raw.length = 0;
+    },
+    append(buf) {
+      if (Buffer.isBuffer(buf)) {
+        raw.push(buf);
+      }
     },
     alignCenter() {
       lines.push('[C]');
@@ -82,6 +98,9 @@ function createMockPrinter() {
     },
     getText() {
       return lines.join('\n');
+    },
+    getRaw() {
+      return Buffer.concat(raw);
     },
     async printImage() {},
   };
@@ -121,6 +140,22 @@ async function main() {
     validatePayload(mockPayload);
   });
 
+  testSync('normalizeLocale: ru / uz', () => {
+    assert.strictEqual(normalizeLocale('ru'), 'ru');
+    assert.strictEqual(normalizeLocale('ru-RU'), 'ru');
+    assert.strictEqual(normalizeLocale('uz'), 'uz');
+    assert.strictEqual(normalizeLocale('uz-UZ'), 'uz');
+  });
+
+  testSync('resolveCharacterSet по языку', () => {
+    assert.strictEqual(resolveCharacterSet('ru'), CharacterSet.PC866_CYRILLIC2);
+    assert.strictEqual(resolveCharacterSet('uz'), CharacterSet.WPC1252);
+  });
+
+  testSync('normalizePrintText для uz apostrophe', () => {
+    assert.strictEqual(normalizePrintText('Qo\u2018llash', 'uz'), "Qo'llash");
+  });
+
   await testAsync('buildReceiptOnPrinter формирует текст чека', async () => {
     const printer = createMockPrinter();
     await buildReceiptOnPrinter(printer, mockPayload, 'test-job');
@@ -129,6 +164,17 @@ async function main() {
     assert.ok(text.includes('AURENT'), 'компания');
     assert.ok(text.includes('Хлеб'), 'товар');
     assert.ok(text.includes('[CUT]'), 'отрез');
+    const raw = printer.getRaw();
+    assert.ok(raw.includes(EXIT_CHINESE_MODE), 'выход из китайского режима');
+  });
+
+  await testAsync('sanitizePayloadForPrint uz labels', async () => {
+    const payload = sanitizePayloadForPrint({
+      locale: 'uz',
+      labels: { item: 'Mahsulot', footer: 'Qo\u2018llash' },
+      sale: { receiptNumber: '1', items: [] },
+    });
+    assert.strictEqual(payload.labels.footer, "Qo'llash");
   });
 
   console.log(`\nИтого: ${passed} ok, ${failed} fail`);

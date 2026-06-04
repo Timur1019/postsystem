@@ -2,6 +2,7 @@
  * Собирает JSON для main process (подписи с i18n, поля из tenant store).
  */
 import { APP_NAME } from '../../config/brand';
+import i18n from '../../i18n/config';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 
 /**
@@ -110,6 +111,6 @@ export function buildCashierEscposPayload(sale, t) {
     branding,
     receiptFields: readReceiptFields(),
     labels: buildEscposLabels(t),
-    locale: t('common.locale', { defaultValue: 'ru' }),
+    locale: String(i18n.language || 'ru').split('-')[0],
   };
 }

@@ -2,8 +2,9 @@
  * Обёртка node-thermal-printer + системный драйвер принтера.
  * Не смешивать с print-thermal.cjs (этикетки через webContents.print).
  */
-const { ThermalPrinter, PrinterTypes, CharacterSet } = require('node-thermal-printer');
+const { ThermalPrinter, PrinterTypes } = require('node-thermal-printer');
 const { ESCPOS_ERROR_CODES, EscposPrintError } = require('./escpos-errors.cjs');
+const { normalizeLocale, resolveCharacterSet } = require('./escpos-encoding.cjs');
 
 const RECEIPT_WIDTH_CHARS = 48;
 
@@ -34,9 +35,10 @@ function loadPrinterDriver() {
 /**
  * Создаёт экземпляр ThermalPrinter для имени Windows/macOS принтера.
  * @param {string} deviceName — точное имя из настроек Aurent
+ * @param {{ locale?: string }} [options] — ru | uz с фронта (i18n)
  * @returns {import('node-thermal-printer').printer}
  */
-function createReceiptPrinter(deviceName) {
+function createReceiptPrinter(deviceName, options = {}) {
   const name = String(deviceName || '').trim();
   if (!name) {
     throw new EscposPrintError(
@@ -55,11 +57,14 @@ function createReceiptPrinter(deviceName) {
     );
   }
 
+  const locale = normalizeLocale(options.locale);
+  const characterSet = resolveCharacterSet(locale);
+
   return new ThermalPrinter({
     type: PrinterTypes.EPSON,
     width: RECEIPT_WIDTH_CHARS,
     interface: `printer:${name}`,
-    characterSet: CharacterSet.WPC1251_CYRILLIC,
+    characterSet,
     removeSpecialCharacters: false,
     driver,
     options: { timeout: 8000 },

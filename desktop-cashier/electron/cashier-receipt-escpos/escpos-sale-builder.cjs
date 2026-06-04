@@ -14,6 +14,7 @@ const {
   lineVatAmount,
 } = require('./escpos-format.cjs');
 const { logWarn } = require('./escpos-log.cjs');
+const { sanitizePayloadForPrint, preparePrinterEncoding } = require('./escpos-encoding.cjs');
 
 /** @param {Record<string, boolean>|undefined} fields */
 function isOn(fields, key) {
@@ -347,14 +348,16 @@ function appendQrAndFooter(printer, payload) {
  * @param {string} jobId
  */
 async function buildReceiptOnPrinter(printer, payload, jobId) {
+  const safePayload = sanitizePayloadForPrint(payload);
   printer.clear();
-  await appendHeader(printer, payload, jobId);
-  appendMeta(printer, payload);
-  appendItems(printer, payload);
-  appendTotals(printer, payload);
-  appendPayment(printer, payload);
-  appendFiscalBlock(printer, payload);
-  appendQrAndFooter(printer, payload);
+  preparePrinterEncoding(printer);
+  await appendHeader(printer, safePayload, jobId);
+  appendMeta(printer, safePayload);
+  appendItems(printer, safePayload);
+  appendTotals(printer, safePayload);
+  appendPayment(printer, safePayload);
+  appendFiscalBlock(printer, safePayload);
+  appendQrAndFooter(printer, safePayload);
   printer.newLine();
   printer.newLine();
   printer.cut();
