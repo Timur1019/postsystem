@@ -3,7 +3,10 @@
  * На десктопе для XP-365 и аналогов — сначала печать через драйвер (HTML + printLabelPage),
  * ESC/POS — запасной путь, если printLabelPage недоступен.
  */
-import { isDesktopLabelPrintAvailable } from '../../utils/printShelfLabel';
+import {
+  isDesktopLabelPrintAvailable,
+  printShelfLabelSilent,
+} from '../../utils/printShelfLabel';
 import { isCashierEscposLabelPrintAvailable, printLabelEscpos } from './printLabelEscpos';
 
 /**
@@ -22,7 +25,6 @@ export async function printShelfLabelUnified(labelInput, t, opts = {}) {
     if (typeof fallback === 'function') {
       return fallback();
     }
-    const { printShelfLabelSilent } = await import('../../utils/printShelfLabel');
     return printShelfLabelSilent({ requireBarcode });
   }
 
@@ -34,6 +36,5 @@ export async function printShelfLabelUnified(labelInput, t, opts = {}) {
     return fallback();
   }
 
-  const { printShelfLabelSilent } = await import('../../utils/printShelfLabel');
   return printShelfLabelSilent({ requireBarcode });
 }

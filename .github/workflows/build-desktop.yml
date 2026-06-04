@@ -20,9 +20,10 @@ on:
         required: true
         default: '111.88.132.126'
 
+# Не отменять текущую сборку при новом push — иначе Windows обрывается на npm ci / native printer.
 concurrency:
-  group: desktop-release
-  cancel-in-progress: true
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   SERVER_HOST: ${{ github.event.inputs.server_host || secrets.SERVER_HOST || '111.88.132.126' }}
@@ -33,6 +34,7 @@ env:
 jobs:
   build-mac:
     runs-on: macos-latest
+    timeout-minutes: 90
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -69,6 +71,7 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
+    timeout-minutes: 120
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -85,9 +88,17 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
           chmod +x scripts/*.sh
-          PLATFORM=win COPY_TO_DOWNLOADS=1 \
-            DESKTOP_UPDATE_URL="http://${SERVER_HOST}:${SERVER_WEB_PORT}/downloads/desktop/" \
-            bash scripts/build-desktop-release.sh
+          for attempt in 1 2 3; do
+            echo "==> Windows build attempt ${attempt}/3"
+            if PLATFORM=win COPY_TO_DOWNLOADS=1 \
+              DESKTOP_UPDATE_URL="http://${SERVER_HOST}:${SERVER_WEB_PORT}/downloads/desktop/" \
+              bash scripts/build-desktop-release.sh; then
+              exit 0
+            fi
+            echo "Windows build failed, retry in 30s..."
+            sleep 30
+          done
+          exit 1
 
       - uses: actions/upload-artifact@v4
         if: success()
