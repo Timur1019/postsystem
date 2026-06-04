@@ -32,6 +32,8 @@ function loadEscposModule() {
 }
 
 const escposModule = loadEscposModule();
+const { logStartup } = require('./startup-log.cjs');
+const { resolveWebDist } = require('./embedded-server.cjs');
 
 const ALLOWED_PATH_PREFIXES = ['/login', '/cashier', '/receipt', '/users/barcode-print'];
 
@@ -373,7 +375,9 @@ async function waitForServices() {
           port: config.embeddedPort,
           backendOrigin: config.backendOrigin,
         });
-        config.cashierUrl = url.replace(/\/$/, '');
+        if (url) {
+          config.cashierUrl = url.replace(/\/$/, '');
+        }
       }
       apiProbe = await probeApiHealth(config);
     } catch {
@@ -635,10 +639,23 @@ function registerTrustedCertificateHandler() {
   });
 }
 
-app.whenReady().then(async () => {
+async function bootstrapApp() {
+  logStartup('app_ready', {
+    version: app.getVersion(),
+    platform: process.platform,
+    packaged: app.isPackaged,
+    escpos: Boolean(escposModule),
+    webDist: Boolean(resolveWebDist()),
+  });
   registerDesktopIpc();
   buildAppMenu();
   config = loadConfig();
+  logStartup('config_loaded', {
+    useEmbedded: config.useEmbedded,
+    useRemoteUi: config.useRemoteUi,
+    cashierUrl: config.cashierUrl,
+    backendOrigin: config.backendOrigin,
+  });
   registerTrustedCertificateHandler();
 
   if (!hasUserServerConfig()) {
@@ -652,22 +669,31 @@ app.whenReady().then(async () => {
 
   let check = await waitForServices();
   if (!check.ok) {
+    logStartup('health_failed', { message: check.message });
+    const buttons =
+      process.platform === 'win32'
+        ? ['Настроить сервер', 'Открыть кассу всё равно', 'Закрыть']
+        : ['Настроить сервер', 'Закрыть'];
     const retry = dialog.showMessageBoxSync({
       type: 'error',
       title: 'Aurent — Касса',
       message: 'Не удалось подключиться к серверу',
-      detail: check.message,
-      buttons: ['Настроить сервер', 'Закрыть'],
+      detail: `${check.message}\n\nПроверьте интернет и порт 8081 (или 443 для HTTPS).`,
+      buttons,
       defaultId: 0,
-      cancelId: 1,
+      cancelId: buttons.length - 1,
     });
     if (retry === 0) {
       try {
         await configureServerInteractive();
+        config = loadConfig();
         check = await waitForServices();
       } catch {
         check = { ok: false, message: check.message };
       }
+    } else if (process.platform === 'win32' && retry === 1) {
+      logStartup('health_bypass_win');
+      check = { ok: true };
     }
     if (!check.ok) {
       dialog.showErrorBox('Aurent — Касса', check.message);
@@ -675,6 +701,7 @@ app.whenReady().then(async () => {
       return;
     }
   }
+  logStartup('create_window', { cashierUrl: config?.cashierUrl });
   createWindow();
 
   setupAutoUpdater({
@@ -687,6 +714,15 @@ app.whenReady().then(async () => {
       createWindow();
     }
   });
+}
+
+app.whenReady().then(bootstrapApp).catch((err) => {
+  logStartup('bootstrap_fatal', { message: err?.message || String(err) });
+  dialog.showErrorBox(
+    'Aurent — Касса',
+    `Ошибка запуска:\n${err?.message || err}\n\nЛог: %APPDATA%\\Aurent Cashier\\startup.log`,
+  );
+  app.quit();
 });
 
 app.on('window-all-closed', () => {

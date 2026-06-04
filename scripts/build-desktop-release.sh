@@ -114,6 +114,9 @@ case "$TARGET" in
     export CSC_IDENTITY_AUTO_DISCOVERY="${CSC_IDENTITY_AUTO_DISCOVERY:-false}"
     if npm run dist:win; then
       echo "==> Windows NSIS installer OK"
+      if [[ -d "$ROOT/desktop-cashier/release/win-unpacked" ]]; then
+        node "$ROOT/desktop-cashier/scripts/verify-windows-unpacked.cjs" || true
+      fi
     else
       echo "==> NSIS failed — portable ZIP (win-unpacked)..."
       npm run dist:win:dir
