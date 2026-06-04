@@ -10,6 +10,10 @@ import {
   isDesktopLabelPrintAvailable,
   printShelfLabelSilent,
 } from '../../utils/printShelfLabel';
+import {
+  isCashierEscposLabelPrintAvailable,
+  printShelfLabelUnified,
+} from '../../services/cashierEscpos';
 
 import '../../styles/shelf-label-print.css';
 
@@ -312,11 +316,30 @@ export default function ShelfLabelPrintModal({
     }
 
     const copyCount = Math.min(999, Math.max(1, Number(copies) || 1));
-    const useSequentialDesktop = isDesktopLabelPrintAvailable() && copyCount > 1;
+    const labelInput = {
+      productName,
+      barcode,
+      price,
+      variant,
+      showName,
+      showBarcode,
+      showPrice,
+      currency,
+      copies: copyCount,
+      paperWmm: labelSettings.paperWmm,
+      paperHmm: labelSettings.paperHmm,
+    };
 
     try {
       unmountPrintLayer();
 
+      if (isCashierEscposLabelPrintAvailable()) {
+        await printShelfLabelUnified(labelInput, t);
+        toast.success(t('usersBarcodePrint.printSent'));
+        return;
+      }
+
+      const useSequentialDesktop = isDesktopLabelPrintAvailable() && copyCount > 1;
       if (useSequentialDesktop) {
         for (let i = 0; i < copyCount; i += 1) {
           printRootRef.current = mountLabelPrintLayer([buildPrintPage(`seq-${i}`)]);
@@ -336,12 +359,30 @@ export default function ShelfLabelPrintModal({
       const msg = e?.message ?? t('usersBarcodePrint.printFailed');
       const hint = t('desktop.labelPrinter', { defaultValue: 'Принтер штрих-кодов' });
       const showHint =
-        isDesktopLabelPrintAvailable() && !/принтер/i.test(msg) && !/Aurent/i.test(msg);
+        (isDesktopLabelPrintAvailable() || isCashierEscposLabelPrintAvailable()) &&
+        !/принтер/i.test(msg) &&
+        !/Aurent/i.test(msg);
       toast.error(showHint ? `${msg}. Aurent → «${hint}».` : msg);
     } finally {
       unmountPrintLayer();
     }
-  }, [barcode, buildPrintPage, copies, printNodes, showBarcode, t, unmountPrintLayer]);
+  }, [
+    barcode,
+    buildPrintPage,
+    copies,
+    currency,
+    labelSettings.paperHmm,
+    labelSettings.paperWmm,
+    price,
+    printNodes,
+    productName,
+    showBarcode,
+    showName,
+    showPrice,
+    t,
+    unmountPrintLayer,
+    variant,
+  ]);
 
   const applySizePreset = useCallback((preset) => {
     setLabelSettings((s) => ({

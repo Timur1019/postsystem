@@ -2,15 +2,16 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 /**
  * Десктоп API для веб-кассы.
- * Чеки и X/Z — window.print() на фронте (как в браузере).
- * Electron: выбор принтера, этикетки, обновления, настройка сервера.
+ * Чеки, отчёты, этикетки — ESC/POS в main process; браузер — window.print().
  */
 contextBridge.exposeInMainWorld('desktopCashier', {
   isDesktop: true,
   getCompanyLoginCode: () => ipcRenderer.invoke('desktop:get-company-login-code'),
   printLabelPage: () => ipcRenderer.invoke('print-label-page'),
-  /** Автопечать чека ESC/POS после продажи (только main process, не window.print). */
   printReceiptEscpos: (payload) => ipcRenderer.invoke('desktop:print-receipt-escpos', payload),
+  printZReportEscpos: (payload) => ipcRenderer.invoke('desktop:print-z-report-escpos', payload),
+  printShiftReportEscpos: (payload) => ipcRenderer.invoke('desktop:print-shift-report-escpos', payload),
+  printLabelsEscpos: (payload) => ipcRenderer.invoke('desktop:print-label-escpos', payload),
   openServerSetup: () => ipcRenderer.invoke('desktop:open-server-setup'),
   reload: () => ipcRenderer.invoke('desktop:reload'),
   toggleFullscreen: () => ipcRenderer.invoke('desktop:toggle-fullscreen'),

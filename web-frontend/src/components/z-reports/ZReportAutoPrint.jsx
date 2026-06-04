@@ -37,6 +37,7 @@ export default function ZReportAutoPrint({ zReportId, onClose }) {
     <ThermalReportPrintPortal
       open
       printToken={zReportId}
+      zReport={z}
       onClose={() => onCloseRef.current?.()}
       onPrinted={() => toast.success(t('receipt.printSent'))}
     >

@@ -87,6 +87,23 @@ function lineVatAmount(item) {
   return (lineTotal * rate) / (100 + rate);
 }
 
+/**
+ * dd.MM.yyyy HH:mm из ISO.
+ * @param {string|Date|null|undefined} iso
+ * @returns {string}
+ */
+function fmtAt(iso) {
+  if (!iso) return '—';
+  try {
+    const d = iso instanceof Date ? iso : new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch {
+    return '—';
+  }
+}
+
 module.exports = {
   fmtMoney,
   fmtQty,
@@ -94,4 +111,5 @@ module.exports = {
   buildFiscalSign,
   buildQrPayload,
   lineVatAmount,
+  fmtAt,
 };

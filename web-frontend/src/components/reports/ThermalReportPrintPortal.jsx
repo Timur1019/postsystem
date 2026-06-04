@@ -7,18 +7,21 @@ import { printThermalReceiptDialog } from '../../utils/printReceipt';
 import { printThermalReport } from '../../utils/printThermalReport';
 import {
   isCashierEscposPrintAvailable,
-  printFiscalReceipt,
+  isCashierEscposReportPrintAvailable,
+  printThermalDocument,
   resolveEscposPrintErrorMessage,
 } from '../../services/cashierEscpos';
 
 /**
- * Скрытый термочек в DOM + печать; на экране — только модалка «Печатается…».
+ * Скрытый термочек в DOM + печать; на экране — модалка «Печатается…».
+ * Desktop: ESC/POS (чек / Z / X-Z); браузер: window.print().
  */
 export default function ThermalReportPrintPortal({
   open,
   printToken,
   receiptNumber: _receiptNumber,
   sale: _sale,
+  zReport = null,
   shiftReport = null,
   printMode = 'auto',
   overlayTitle,
@@ -38,7 +41,11 @@ export default function ThermalReportPrintPortal({
   onErrorRef.current = onError;
 
   const isShift = Boolean(shiftReport?.reportType);
-  const defaultTitle = isShift
+  const isZArchive = Boolean(zReport);
+  const canEscpos =
+    (_sale && isCashierEscposPrintAvailable()) ||
+    ((zReport || shiftReport) && isCashierEscposReportPrintAvailable());
+  const defaultTitle = isShift || isZArchive
     ? t('receipt.printingReportTitle', { defaultValue: 'Печатается отчёт…' })
     : t('receipt.printingTitle', { defaultValue: 'Печатается чек…' });
 
@@ -52,6 +59,30 @@ export default function ThermalReportPrintPortal({
     setShowOverlay(true);
 
     const run = async () => {
+      if (canEscpos) {
+        try {
+          await printThermalDocument({
+            sale: _sale,
+            z: zReport,
+            shiftReport,
+            t,
+            useModalShell: true,
+          });
+          if (!cancelled) {
+            onPrintedRef.current?.();
+            onCloseRef.current?.();
+          }
+        } catch (err) {
+          if (!cancelled) {
+            onErrorRef.current?.(new Error(resolveEscposPrintErrorMessage(err, t)));
+            onCloseRef.current?.();
+          }
+        } finally {
+          if (!cancelled) setShowOverlay(false);
+        }
+        return;
+      }
+
       await document.fonts?.ready;
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       let shell = null;
@@ -65,8 +96,8 @@ export default function ThermalReportPrintPortal({
         const h = area
           ? Math.max(area.scrollHeight, area.offsetHeight, area.getBoundingClientRect().height)
           : 0;
-        const minText = isShift ? 12 : 20;
-        const minH = isShift ? 40 : 80;
+        const minText = isShift || isZArchive ? 12 : 20;
+        const minH = isShift || isZArchive ? 40 : 80;
         const imgs = Array.from(area?.querySelectorAll('img') ?? []).filter((img) => {
           const host = document.getElementById('fiscal-print-shell');
           return host?.contains(img);
@@ -77,15 +108,13 @@ export default function ThermalReportPrintPortal({
       }
       if (cancelled) return;
       if (!shell && printMode !== 'auto') {
-        onErrorRef.current?.(new Error('Чек не успел подготовиться для печати'));
+        onErrorRef.current?.(new Error('Документ не успел подготовиться для печати'));
         onCloseRef.current?.();
         return;
       }
 
       try {
-        if (!isShift && _sale && isCashierEscposPrintAvailable()) {
-          await printFiscalReceipt({ sale: _sale, t, useModalShell: true });
-        } else if (printMode === 'dialog' || isShift) {
+        if (printMode === 'dialog' || isShift || isZArchive) {
           await printThermalReceiptDialog({ useModalShell: true });
         } else {
           await printThermalReport();
@@ -96,11 +125,7 @@ export default function ThermalReportPrintPortal({
         }
       } catch (err) {
         if (!cancelled) {
-          const wrapped =
-            !isShift && _sale && isCashierEscposPrintAvailable()
-              ? new Error(resolveEscposPrintErrorMessage(err, t))
-              : err;
-          onErrorRef.current?.(wrapped);
+          onErrorRef.current?.(err);
           onCloseRef.current?.();
         }
       } finally {
@@ -114,7 +139,7 @@ export default function ThermalReportPrintPortal({
       cancelled = true;
       setShowOverlay(false);
     };
-  }, [open, printToken, printMode, isShift, t]);
+  }, [open, printToken, printMode, isShift, isZArchive, _sale, zReport, shiftReport, canEscpos, t]);
 
   if (!open || !children) return null;
 

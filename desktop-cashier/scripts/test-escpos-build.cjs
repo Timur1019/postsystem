@@ -85,6 +85,9 @@ function createMockPrinter() {
     leftRight(a, b) {
       lines.push(`${a} | ${b}`);
     },
+    setTextDoubleHeight() {},
+    setTextNormal() {},
+    code128() {},
     drawLine() {
       lines.push('---');
     },
@@ -166,6 +169,36 @@ async function main() {
     assert.ok(text.includes('[CUT]'), 'отрез');
     const raw = printer.getRaw();
     assert.ok(raw.includes(EXIT_CHINESE_MODE), 'выход из китайского режима');
+  });
+
+  await testAsync('buildZReportOnPrinter формирует Z-отчёт', async () => {
+    const { validateZReportPayload, buildZReportOnPrinter } = require('../electron/cashier-receipt-escpos/escpos-z-report-builder.cjs');
+    const zPayload = {
+      locale: 'ru',
+      z: {
+        zNumber: 12,
+        brandName: 'AURENT',
+        storeName: 'Test Store',
+        cashTotal: 100000,
+        cardTotal: 50000,
+        vatAmount: 12000,
+        salesCount: 5,
+        returnsCash: 0,
+        returnsCard: 0,
+        vatReturn: 0,
+        returnsCount: 0,
+        totalAmount: 150000,
+        openedAt: '2026-06-03T08:00:00.000Z',
+        closedAt: '2026-06-03T18:00:00.000Z',
+      },
+      labels: { zReportTitle: 'Z-отчёт', currency: 'сум', grandTotal: 'ИТОГО' },
+    };
+    validateZReportPayload(zPayload);
+    const printer = createMockPrinter();
+    buildZReportOnPrinter(printer, zPayload);
+    const text = printer.getText();
+    assert.ok(text.includes('12'), 'номер Z');
+    assert.ok(text.includes('[CUT]'), 'отрез');
   });
 
   await testAsync('sanitizePayloadForPrint uz labels', async () => {

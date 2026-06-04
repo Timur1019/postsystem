@@ -226,7 +226,10 @@ function registerDesktopIpc() {
   });
 
   if (escposModule?.registerEscposIpcHandlers) {
-    escposModule.registerEscposIpcHandlers(ipcMain, { resolveReceiptPrinterName });
+    escposModule.registerEscposIpcHandlers(ipcMain, {
+      resolveReceiptPrinterName,
+      resolveLabelPrinterName,
+    });
   } else {
     ipcMain.handle('desktop:print-receipt-escpos', async () => {
       const err = new Error(

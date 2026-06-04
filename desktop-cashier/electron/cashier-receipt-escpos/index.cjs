@@ -1,132 +1,127 @@
 /**
- * Автопечать фискального чека после продажи (ESC/POS, main process).
- * IPC: desktop:print-receipt-escpos
+ * ESC/POS: чеки, Z/X-отчёты, этикетки (main process).
  */
 const { ESCPOS_ERROR_CODES, EscposPrintError } = require('./escpos-errors.cjs');
-const { createJobId, logStep, logError, logWarn } = require('./escpos-log.cjs');
+const { runEscposPrintJob } = require('./escpos-job.cjs');
 const { validatePayload, buildReceiptOnPrinter } = require('./escpos-sale-builder.cjs');
+const { validateZReportPayload, buildZReportOnPrinter } = require('./escpos-z-report-builder.cjs');
 const {
-  createReceiptPrinter,
-  checkConnected,
-  executePrint,
-} = require('./escpos-printer-service.cjs');
+  validateShiftReportPayload,
+  buildShiftReportOnPrinter,
+} = require('./escpos-shift-report-builder.cjs');
+const { validateLabelPayload, buildLabelsOnPrinter } = require('./escpos-label-builder.cjs');
+const { createReceiptPrinter, createLabelPrinter } = require('./escpos-printer-service.cjs');
 
-/**
- * Печать одного чека по payload с фронта.
- * @param {object} payload — sale, branding, receiptFields, labels
- * @param {{ resolveReceiptPrinterName: Function }} deps
- * @returns {Promise<{ ok: true, jobId: string, deviceName: string }>}
- */
+function wrapEscposError(err) {
+  if (err instanceof EscposPrintError) {
+    const e = new Error(err.message);
+    e.code = err.code;
+    e.step = err.step;
+    throw e;
+  }
+  throw err;
+}
+
 async function printSaleReceiptEscpos(payload, deps) {
-  const jobId = createJobId();
-  logStep(jobId, 'start');
-
   try {
-    validatePayload(payload);
+    return await runEscposPrintJob({
+      jobType: 'sale_receipt',
+      payload,
+      resolvePrinterName: deps.resolveReceiptPrinterName,
+      validatePayload,
+      createPrinter: (deviceName, p) => createReceiptPrinter(deviceName, { locale: p.locale }),
+      buildOnPrinter: (printer, p, jobId) => buildReceiptOnPrinter(printer, p, jobId),
+      noPrinterHint: 'Принтер чека не настроен. Aurent → «Принтер чека».',
+    });
   } catch (err) {
-    throw new EscposPrintError(
-      ESCPOS_ERROR_CODES.INVALID_PAYLOAD,
-      err?.message || 'Некорректные данные чека',
-      { step: 'validate', cause: err instanceof Error ? err : undefined },
-    );
-  }
-
-  let deviceName = '';
-  try {
-    logStep(jobId, 'resolve_printer');
-    deviceName = await deps.resolveReceiptPrinterName({ promptIfMissing: false });
-    if (!String(deviceName).trim()) {
-      throw new EscposPrintError(
-        ESCPOS_ERROR_CODES.NO_PRINTER,
-        'Принтер чека не настроен. Aurent → «Принтер чека».',
-        { step: 'resolve_printer' },
-      );
-    }
-    logStep(jobId, 'resolve_printer_ok', { deviceName });
-  } catch (err) {
-    if (err instanceof EscposPrintError) throw err;
-    throw new EscposPrintError(
-      ESCPOS_ERROR_CODES.NO_PRINTER,
-      err?.message || 'Не удалось выбрать принтер чека',
-      { step: 'resolve_printer', cause: err instanceof Error ? err : undefined },
-    );
-  }
-
-  let printer;
-  try {
-    logStep(jobId, 'create_printer', { locale: payload.locale || 'ru' });
-    printer = createReceiptPrinter(deviceName, { locale: payload.locale });
-  } catch (err) {
-    logError(jobId, 'create_printer', err);
-    throw err;
-  }
-
-  try {
-    logStep(jobId, 'build_buffer');
-    await buildReceiptOnPrinter(printer, payload, jobId);
-    logStep(jobId, 'build_buffer_ok', { textLen: printer.getText?.()?.length });
-  } catch (err) {
-    logError(jobId, 'build_buffer', err);
-    throw new EscposPrintError(
-      ESCPOS_ERROR_CODES.BUILD_FAILED,
-      err?.message || 'Не удалось сформировать чек',
-      { step: 'build_buffer', cause: err instanceof Error ? err : undefined },
-    );
-  }
-
-  try {
-    logStep(jobId, 'is_connected');
-    const connected = await checkConnected(printer);
-    if (!connected) {
-      // Windows-драйверы часто возвращают false при рабочем принтере — всё равно пробуем execute.
-      if (process.platform === 'win32') {
-        logWarn(jobId, 'is_connected_false_win_try_anyway', { deviceName });
-      } else {
-        throw new EscposPrintError(
-          ESCPOS_ERROR_CODES.NOT_CONNECTED,
-          `Принтер «${deviceName}» недоступен. Проверьте USB/драйвер и имя в Aurent.`,
-          { step: 'is_connected' },
-        );
-      }
-    }
-    logStep(jobId, 'execute');
-    await executePrint(printer);
-    logStep(jobId, 'done', { deviceName });
-    return { ok: true, jobId, deviceName, mode: 'escpos' };
-  } catch (err) {
-    logError(jobId, 'execute', err);
-    if (err instanceof EscposPrintError) throw err;
-    throw new EscposPrintError(
-      ESCPOS_ERROR_CODES.EXECUTE_FAILED,
-      err?.message || 'Печать не выполнена',
-      { step: 'execute', cause: err instanceof Error ? err : undefined },
-    );
+    wrapEscposError(err);
   }
 }
 
-/**
- * Регистрирует IPC handler desktop:print-receipt-escpos.
- * @param {import('electron').IpcMain} ipcMain
- * @param {{ resolveReceiptPrinterName: Function }} deps
- */
-function registerEscposIpcHandlers(ipcMain, deps) {
-  ipcMain.handle('desktop:print-receipt-escpos', async (_event, payload) => {
+async function printZReportEscpos(payload, deps) {
+  try {
+    return await runEscposPrintJob({
+      jobType: 'z_report',
+      payload,
+      resolvePrinterName: deps.resolveReceiptPrinterName,
+      validatePayload: validateZReportPayload,
+      createPrinter: (deviceName, p) => createReceiptPrinter(deviceName, { locale: p.locale }),
+      buildOnPrinter: (printer, p) => buildZReportOnPrinter(printer, p),
+      noPrinterHint: 'Принтер чека не настроен. Aurent → «Принтер чека».',
+    });
+  } catch (err) {
+    wrapEscposError(err);
+  }
+}
+
+async function printShiftReportEscpos(payload, deps) {
+  try {
+    return await runEscposPrintJob({
+      jobType: 'shift_report',
+      payload,
+      resolvePrinterName: deps.resolveReceiptPrinterName,
+      validatePayload: validateShiftReportPayload,
+      createPrinter: (deviceName, p) => createReceiptPrinter(deviceName, { locale: p.locale }),
+      buildOnPrinter: (printer, p) => buildShiftReportOnPrinter(printer, p),
+      noPrinterHint: 'Принтер чека не настроен. Aurent → «Принтер чека».',
+    });
+  } catch (err) {
+    wrapEscposError(err);
+  }
+}
+
+async function printLabelsEscpos(payload, deps) {
+  try {
+    return await runEscposPrintJob({
+      jobType: 'label',
+      payload,
+      resolvePrinterName: deps.resolveLabelPrinterName,
+      validatePayload: validateLabelPayload,
+      createPrinter: (deviceName, p) =>
+        createLabelPrinter(deviceName, { locale: p.locale, paperWmm: p.paperWmm }),
+      buildOnPrinter: (printer, p) => buildLabelsOnPrinter(printer, p),
+      noPrinterHint:
+        'Принтер этикеток не выбран. Aurent → «Принтер штрих-кодов» — выберите устройство.',
+    });
+  } catch (err) {
+    wrapEscposError(err);
+  }
+}
+
+function registerEscposIpcHandler(ipcMain, channel, handler) {
+  ipcMain.handle(channel, async (_event, payload) => {
     try {
-      return await printSaleReceiptEscpos(payload, deps);
+      return await handler(payload);
     } catch (err) {
-      if (err instanceof EscposPrintError) {
-        const e = new Error(err.message);
-        e.code = err.code;
-        e.step = err.step;
-        throw e;
-      }
-      throw err;
+      wrapEscposError(err);
     }
   });
 }
 
+/**
+ * @param {import('electron').IpcMain} ipcMain
+ * @param {{ resolveReceiptPrinterName: Function, resolveLabelPrinterName: Function }} deps
+ */
+function registerEscposIpcHandlers(ipcMain, deps) {
+  registerEscposIpcHandler(ipcMain, 'desktop:print-receipt-escpos', (payload) =>
+    printSaleReceiptEscpos(payload, deps),
+  );
+  registerEscposIpcHandler(ipcMain, 'desktop:print-z-report-escpos', (payload) =>
+    printZReportEscpos(payload, deps),
+  );
+  registerEscposIpcHandler(ipcMain, 'desktop:print-shift-report-escpos', (payload) =>
+    printShiftReportEscpos(payload, deps),
+  );
+  registerEscposIpcHandler(ipcMain, 'desktop:print-label-escpos', (payload) =>
+    printLabelsEscpos(payload, deps),
+  );
+}
+
 module.exports = {
   printSaleReceiptEscpos,
+  printZReportEscpos,
+  printShiftReportEscpos,
+  printLabelsEscpos,
   registerEscposIpcHandlers,
   EscposPrintError,
   ESCPOS_ERROR_CODES,

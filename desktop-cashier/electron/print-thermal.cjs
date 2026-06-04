@@ -1,6 +1,6 @@
 /**
- * Electron: тихая печать этикеток (webContents.print silent).
- * Фискальный чек — window.print() на фронте.
+ * Electron: тихая печать этикеток через ESC/POS (desktop:print-label-escpos).
+ * Fallback: webContents.print (legacy).
  */
 
 const IS_WIN = process.platform === 'win32';

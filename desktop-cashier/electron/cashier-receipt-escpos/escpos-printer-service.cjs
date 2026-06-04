@@ -1,6 +1,5 @@
 /**
  * Обёртка node-thermal-printer + системный драйвер принтера.
- * Не смешивать с print-thermal.cjs (этикетки через webContents.print).
  */
 const { ThermalPrinter, PrinterTypes } = require('node-thermal-printer');
 const { ESCPOS_ERROR_CODES, EscposPrintError } = require('./escpos-errors.cjs');
@@ -11,10 +10,6 @@ const RECEIPT_WIDTH_CHARS = 48;
 /** @type {object|null} */
 let cachedPrinterDriver = undefined;
 
-/**
- * Загружает native-драйвер (optionalDependency).
- * @returns {object|null}
- */
 function loadPrinterDriver() {
   if (cachedPrinterDriver !== undefined) {
     return cachedPrinterDriver;
@@ -33,17 +28,33 @@ function loadPrinterDriver() {
 }
 
 /**
- * Создаёт экземпляр ThermalPrinter для имени Windows/macOS принтера.
- * @param {string} deviceName — точное имя из настроек Aurent
- * @param {{ locale?: string }} [options] — ru | uz с фронта (i18n)
- * @returns {import('node-thermal-printer').printer}
+ * @param {{ paperWmm?: number, kind?: 'receipt'|'label' }} options
  */
-function createReceiptPrinter(deviceName, options = {}) {
+function resolvePrintWidth(options = {}) {
+  if (options.width) return options.width;
+  if (options.kind === 'label') {
+    const mm = Number(options.paperWmm) || 58;
+    if (mm <= 35) return 24;
+    if (mm <= 45) return 28;
+    return 32;
+  }
+  return RECEIPT_WIDTH_CHARS;
+}
+
+/**
+ * @param {string} deviceName
+ * @param {{ locale?: string, kind?: 'receipt'|'label', paperWmm?: number, width?: number, noPrinterMessage?: string, driverMissingMessage?: string }} [options]
+ */
+function createEscposPrinter(deviceName, options = {}) {
   const name = String(deviceName || '').trim();
+  const isLabel = options.kind === 'label';
   if (!name) {
     throw new EscposPrintError(
       ESCPOS_ERROR_CODES.NO_PRINTER,
-      'Принтер чека не выбран. Aurent → «Принтер чека».',
+      options.noPrinterMessage ||
+        (isLabel
+          ? 'Принтер этикеток не выбран. Aurent → «Принтер штрих-кодов».'
+          : 'Принтер чека не выбран. Aurent → «Принтер чека».'),
       { step: 'create_printer' },
     );
   }
@@ -52,7 +63,8 @@ function createReceiptPrinter(deviceName, options = {}) {
   if (!driver) {
     throw new EscposPrintError(
       ESCPOS_ERROR_CODES.DRIVER_MISSING,
-      'Модуль печати чека не найден в установке. Обновите Aurent Cashier (установщик с /install) или обратитесь в поддержку.',
+      options.driverMissingMessage ||
+        'Модуль печати не найден в установке. Обновите Aurent Cashier или обратитесь в поддержку.',
       { step: 'load_driver' },
     );
   }
@@ -62,7 +74,7 @@ function createReceiptPrinter(deviceName, options = {}) {
 
   return new ThermalPrinter({
     type: PrinterTypes.EPSON,
-    width: RECEIPT_WIDTH_CHARS,
+    width: resolvePrintWidth(options),
     interface: `printer:${name}`,
     characterSet,
     removeSpecialCharacters: false,
@@ -71,11 +83,18 @@ function createReceiptPrinter(deviceName, options = {}) {
   });
 }
 
-/**
- * Проверяет доступность принтера перед печатью.
- * @param {import('node-thermal-printer').printer} printer
- * @returns {Promise<boolean>}
- */
+function createReceiptPrinter(deviceName, options = {}) {
+  return createEscposPrinter(deviceName, { ...options, kind: 'receipt' });
+}
+
+function createLabelPrinter(deviceName, options = {}) {
+  return createEscposPrinter(deviceName, {
+    ...options,
+    kind: 'label',
+    paperWmm: options.paperWmm,
+  });
+}
+
 async function checkConnected(printer) {
   try {
     return await printer.isPrinterConnected();
@@ -84,11 +103,6 @@ async function checkConnected(printer) {
   }
 }
 
-/**
- * Отправляет буфер ESC/POS на принтер.
- * @param {import('node-thermal-printer').printer} printer
- * @returns {Promise<void>}
- */
 async function executePrint(printer) {
   try {
     const ok = await printer.execute();
@@ -107,7 +121,10 @@ async function executePrint(printer) {
 module.exports = {
   RECEIPT_WIDTH_CHARS,
   loadPrinterDriver,
+  createEscposPrinter,
   createReceiptPrinter,
+  createLabelPrinter,
+  resolvePrintWidth,
   checkConnected,
   executePrint,
 };
