@@ -504,19 +504,33 @@ async function safeExecuteJavaScript(wc, script, stepLabel) {
 
 const LABEL_READY_JS = `
   (() => {
-    const layer = document.getElementById('shelf-label-print-layer');
-    if (!layer) return false;
-    const pages = layer.querySelectorAll('.shelflabel-print-page');
-    if (!pages.length) return false;
-    const h = Math.max(layer.scrollHeight, layer.offsetHeight, layer.getBoundingClientRect().height);
-    if (h < 30) return false;
-    const svgs = layer.querySelectorAll('.shelflabel-barcode-svg');
-    if (!svgs.length) return true;
-    return [...svgs].every((s) => s.querySelector('rect, path, line, g'));
+    document.documentElement.classList.add('shelflabel-layout-measure');
+    try {
+      const layer = document.getElementById('shelf-label-print-layer');
+      if (!layer) return false;
+      const pages = layer.querySelectorAll('.shelflabel-print-page');
+      if (!pages.length) return false;
+      const page = pages[0];
+      const h = Math.max(
+        page.offsetHeight || 0,
+        page.scrollHeight || 0,
+        page.getBoundingClientRect().height || 0,
+        layer.scrollHeight || 0
+      );
+      const paperHmm = parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue('--label-paper-h-mm')
+      ) || 0;
+      if (h < 8 && paperHmm < 15) return false;
+      const svgs = layer.querySelectorAll('.shelflabel-barcode-svg');
+      if (!svgs.length) return true;
+      return [...svgs].every((s) => s.querySelector('rect, path, line, g, text'));
+    } finally {
+      document.documentElement.classList.remove('shelflabel-layout-measure');
+    }
   })()
 `;
 
-async function waitLabelReadyForPrint(wc, attempts = 10) {
+async function waitLabelReadyForPrint(wc, attempts = 45) {
   for (let i = 0; i < attempts; i += 1) {
     const ready = await safeExecuteJavaScript(wc, LABEL_READY_JS, 'этикетка');
     if (ready) return true;

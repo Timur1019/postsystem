@@ -4,6 +4,7 @@ import { cancelScheduledLabelPrintUnmount } from './labelPrintMount';
 
 export const ELECTRON_SILENT_LABEL_CLASS = 'electron-silent-label';
 export const SHELF_LABEL_PRINT_ACTIVE_CLASS = 'shelflabel-printing-active';
+const LAYOUT_MEASURE_CLASS = 'shelflabel-layout-measure';
 
 const LABEL_PRINT_HTML_CLASSES = [
   ELECTRON_SILENT_LABEL_CLASS,
@@ -22,6 +23,7 @@ export function isDesktopLabelPrintAvailable() {
 
 export function cleanupLabelPrintState() {
   if (typeof document === 'undefined') return;
+  document.documentElement.classList.remove(LAYOUT_MEASURE_CLASS);
   LABEL_PRINT_HTML_CLASSES.forEach((c) => document.documentElement.classList.remove(c));
   document.body.classList.remove(SHELF_LABEL_PRINT_ACTIVE_CLASS);
   document.getElementById(LABEL_JOB_PAGE_STYLE_ID)?.remove();
@@ -55,22 +57,52 @@ function barcodeSvgsReady(layer, requireBarcode) {
   if (!requireBarcode) return true;
   const svgs = layer.querySelectorAll('.shelflabel-barcode-svg');
   if (!svgs.length) return false;
-  return [...svgs].every((svg) => svg.querySelector('rect, path, line, g'));
+  return [...svgs].every((svg) => {
+    const shapes = svg.querySelectorAll('rect, path, line, g, text');
+    return shapes.length > 0;
+  });
+}
+
+function pageHasLayout(pages) {
+  if (!pages.length) return false;
+  const page = pages[0];
+  const h = Math.max(
+    page.offsetHeight || 0,
+    page.scrollHeight || 0,
+    page.getBoundingClientRect().height || 0,
+  );
+  if (h >= 8) return true;
+  const root = document.documentElement;
+  const paperHmm = parseFloat(root.style.getPropertyValue('--label-paper-h-mm')) || 0;
+  return paperHmm >= 15;
+}
+
+/**
+ * @param {HTMLElement} layer
+ * @param {boolean} requireBarcode
+ */
+export function isLabelPrintLayerReady(layer, requireBarcode = true) {
+  if (!layer) return false;
+  const pages = layer.querySelectorAll('.shelflabel-print-page');
+  if (!pages.length) return false;
+  if (!barcodeSvgsReady(layer, requireBarcode)) return false;
+  return pageHasLayout(pages);
 }
 
 export async function waitForLabelDomReady({ requireBarcode = true } = {}) {
   await document.fonts?.ready;
-  for (let i = 0; i < 60; i += 1) {
-    await new Promise((r) => setTimeout(r, 80));
-    const layer = document.getElementById('shelf-label-print-layer');
-    if (!layer) continue;
-    const pages = layer.querySelectorAll('.shelflabel-print-page');
-    if (!pages.length) continue;
-    if (!barcodeSvgsReady(layer, requireBarcode)) continue;
-    const h = Math.max(layer.scrollHeight, layer.offsetHeight, layer.getBoundingClientRect().height);
-    if (h >= 30) {
-      return;
+  document.documentElement.classList.add(LAYOUT_MEASURE_CLASS);
+  try {
+    for (let i = 0; i < 90; i += 1) {
+      await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => setTimeout(r, i < 5 ? 120 : 80));
+      const layer = document.getElementById('shelf-label-print-layer');
+      if (isLabelPrintLayerReady(layer, requireBarcode)) {
+        return;
+      }
     }
+  } finally {
+    document.documentElement.classList.remove(LAYOUT_MEASURE_CLASS);
   }
   throw new Error('Этикетка не готова для печати');
 }
@@ -83,8 +115,16 @@ function assertLabelLayerReady(requireBarcode) {
   if (!layer.querySelectorAll('.shelflabel-print-page').length) {
     throw new Error('Нет страниц для печати');
   }
-  if (requireBarcode && !barcodeSvgsReady(layer, true)) {
-    throw new Error('Штрихкод ещё не отрисован');
+  document.documentElement.classList.add(LAYOUT_MEASURE_CLASS);
+  try {
+    if (!isLabelPrintLayerReady(layer, requireBarcode)) {
+      if (requireBarcode && !barcodeSvgsReady(layer, true)) {
+        throw new Error('Штрихкод ещё не отрисован');
+      }
+      throw new Error('Этикетка не готова для печати');
+    }
+  } finally {
+    document.documentElement.classList.remove(LAYOUT_MEASURE_CLASS);
   }
 }
 
@@ -153,7 +193,6 @@ export async function printShelfLabelSilent({ requireBarcode = true } = {}) {
       };
       window.addEventListener('afterprint', done);
       const fallback = setTimeout(() => {
-        // Mobile/Safari иногда не вызывает afterprint. Не зависаем — считаем, что диалог уже был.
         cleanupLabelPrintState();
         window.removeEventListener('afterprint', done);
         resolve('dialog');
@@ -164,11 +203,8 @@ export async function printShelfLabelSilent({ requireBarcode = true } = {}) {
       };
       window.removeEventListener('afterprint', done);
       window.addEventListener('afterprint', doneWrapped);
-      // В браузерах `window.print()` часто блокируется, если вызвать после `await` (теряется user gesture).
-      // Поэтому: не ждём async-ready, а даём 1-2 кадра на отрисовку и сразу открываем диалог печати.
       void waitForLabelDomReady({ requireBarcode }).catch(() => undefined);
       try {
-        // Пробуем вызвать максимально “жёстко”, без лишних await/Promise.
         requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
       } catch (e) {
         clearTimeout(fallback);

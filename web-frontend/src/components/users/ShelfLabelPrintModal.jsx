@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Printer, Settings2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import { getLabelPrintMountEl, teardownLabelPrintMount } from '../../utils/label
 import {
   isDesktopLabelPrintAvailable,
   printShelfLabelSilent,
+  waitForLabelDomReady,
 } from '../../utils/printShelfLabel';
 import {
   ensureDesktopLabelPrinter,
@@ -71,7 +72,7 @@ function applyLabelPrintCssVars(settings) {
 function BarcodeBlock({ value }) {
   const svgRef = useRef(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = svgRef.current;
     if (!el || !value?.trim()) return;
     try {
@@ -403,10 +404,14 @@ export default function ShelfLabelPrintModal({
         requireBarcode: showBarcode,
         preferDriverPrint: true,
         fallback: async () => {
+          const printOneMounted = async (nodes) => {
+            printRootRef.current = mountLabelPrintLayer(nodes);
+            await waitForLabelDomReady({ requireBarcode: showBarcode });
+            return printShelfLabelSilent({ requireBarcode: showBarcode });
+          };
           if (isDesktopLabelPrintAvailable() && copyCount > 1) {
             for (let i = 0; i < copyCount; i += 1) {
-              printRootRef.current = mountLabelPrintLayer([buildPrintPage(`seq-${i}`)]);
-              await printShelfLabelSilent({ requireBarcode: showBarcode });
+              await printOneMounted([buildPrintPage(`seq-${i}`)]);
               unmountPrintLayer();
               if (i < copyCount - 1) {
                 await new Promise((r) => setTimeout(r, 280));
@@ -414,8 +419,7 @@ export default function ShelfLabelPrintModal({
             }
             return;
           }
-          printRootRef.current = mountLabelPrintLayer(printNodes);
-          return printShelfLabelSilent({ requireBarcode: showBarcode });
+          return printOneMounted(printNodes);
         },
       });
 

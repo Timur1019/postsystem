@@ -73,6 +73,18 @@
   max-height: calc(72px * var(--label-font-scale, 1));
 }
 
+/* Временно для замера макета перед печатью (иначе off-screen → высота 0) */
+html.shelflabel-layout-measure #pos-label-print-mount,
+html.shelflabel-layout-measure #shelf-label-print-layer {
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
 /* Слой только для диалога печати: на экране прячем содержимое */
 @media screen {
   .shelflabel-print-layer {
@@ -83,6 +95,11 @@
     pointer-events: none;
     z-index: 0;
     overflow: hidden;
+  }
+
+  html.shelflabel-layout-measure .shelflabel-print-layer {
+    left: 0 !important;
+    opacity: 0 !important;
   }
 }
 
