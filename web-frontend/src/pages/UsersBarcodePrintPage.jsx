@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader, Printer, Search } from 'lucide-react';
+import { Loader, Printer, Search, Settings2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { productApi, tasnifApi } from '../services/api';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import TasnifPackagePickerModal from '../components/products/TasnifPackagePickerModal';
 import ShelfLabelPrintModal from '../components/users/ShelfLabelPrintModal';
+import {
+  isDesktopLabelEscposEnvironment,
+} from '../services/cashierEscpos';
 import '../styles/tasnif-search.css';
 
 const inputCls =
@@ -53,6 +56,45 @@ export default function UsersBarcodePrintPage() {
   const [packageItem, setPackageItem] = useState(null);
   const [pendingQuery, setPendingQuery] = useState('');
   const [printOpen, setPrintOpen] = useState(false);
+  const [labelPrinterName, setLabelPrinterName] = useState('');
+
+  const desktopLabelPrint = isDesktopLabelEscposEnvironment();
+  const canPickLabelPrinter =
+    typeof window !== 'undefined' &&
+    typeof window.desktopCashier?.openLabelPrinterPicker === 'function';
+
+  const reloadLabelPrinter = useCallback(async () => {
+    if (!canPickLabelPrinter) {
+      setLabelPrinterName('');
+      return '';
+    }
+    try {
+      const settings = await window.desktopCashier.getPrinterSettings();
+      const name = String(settings?.labelPrinterName || '').trim();
+      setLabelPrinterName(name);
+      return name;
+    } catch {
+      setLabelPrinterName('');
+      return '';
+    }
+  }, [canPickLabelPrinter]);
+
+  useEffect(() => {
+    void reloadLabelPrinter();
+  }, [reloadLabelPrinter]);
+
+  const openLabelPrinterPicker = useCallback(async () => {
+    if (!canPickLabelPrinter) return;
+    try {
+      await window.desktopCashier.openLabelPrinterPicker();
+      const name = await reloadLabelPrinter();
+      if (name) {
+        toast.success(t('usersBarcodePrint.printerSaved'));
+      }
+    } catch {
+      toast.error(t('usersBarcodePrint.printFailed'));
+    }
+  }, [canPickLabelPrinter, reloadLabelPrinter, t]);
 
   useEffect(() => {
     if (draft) {
@@ -290,6 +332,36 @@ export default function UsersBarcodePrintPage() {
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('usersBarcodePrint.intro')}</p>
       </div>
 
+      {!desktopLabelPrint ? (
+        <div
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+          role="status"
+        >
+          {t('usersBarcodePrint.needDesktopApp')}
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="min-w-0 text-sm text-slate-700 dark:text-slate-200">
+            <span className="font-medium">{t('desktop.labelPrinter')}:</span>{' '}
+            {labelPrinterName ? (
+              <span className="text-emerald-800 dark:text-emerald-300">{labelPrinterName}</span>
+            ) : (
+              <span className="text-amber-700 dark:text-amber-300">
+                {t('usersBarcodePrint.labelPrinterNotSet')}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => void openLabelPrinterPicker()}
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-emerald-600 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-200 dark:hover:bg-emerald-900/50"
+          >
+            <Settings2 size={16} aria-hidden />
+            {t('usersBarcodePrint.chooseLabelPrinter')}
+          </button>
+        </div>
+      )}
+
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
           {t('usersBarcodePrint.searchLabel')}
@@ -412,6 +484,10 @@ export default function UsersBarcodePrintPage() {
               onClick={() => {
                 if (!draft?.barcode?.trim()) {
                   toast.error(t('usersBarcodePrint.noBarcodeForPrint'));
+                  return;
+                }
+                if (!desktopLabelPrint) {
+                  toast.error(t('usersBarcodePrint.needDesktopApp'), { duration: 6000 });
                   return;
                 }
                 setPrintOpen(true);

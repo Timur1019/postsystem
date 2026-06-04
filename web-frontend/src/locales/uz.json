@@ -1265,7 +1265,14 @@
     "copies": "Nusxalar",
     "print": "Chop etish",
     "printSent": "Yorliq printerga yuborildi",
-    "printFailed": "Yorliqni chop etib bo‘lmadi"
+    "printSentTo": "Printerga yuborildi: {{name}}",
+    "printFailed": "Yorliqni chop etib bo‘lmadi",
+    "needDesktopApp": "Narx yorlig‘i faqat Aurent desktop ilovasida chop etiladi. Sahifani brauzer emas, Aurent orqali oching. Menyu → «Shtrix-kod printeri».",
+    "labelPrinterRequired": "Shtrix-kod printeri tanlanmagan. Aurent → «Shtrix-kod printeri» — yorliq termoprinterini tanlang.",
+    "labelPrinterNotSet": "tanlanmagan",
+    "chooseLabelPrinter": "Printerni tanlash",
+    "printerSaved": "Yorliq printeri saqlandi",
+    "autoPaperSize": "Qog‘oz o‘lchami avtomatik: {{w}} × {{h}} mm"
   },
   "receipt": {
     "loading": "Chek yuklanmoqda…",

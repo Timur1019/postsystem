@@ -1,6 +1,6 @@
 {
   "name": "masterpiece-pos-cashier-desktop",
-  "version": "1.0.50",
+  "version": "1.0.51",
   "private": true,
   "description": "Desktop shell for Aurent cashier (same UI as web)",
   "main": "electron/main.cjs",

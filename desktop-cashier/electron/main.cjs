@@ -451,12 +451,12 @@ async function resolvePrinterByKind(kind, { promptIfMissing = true } = {}) {
         /label|zebra|tsc|barcode|этикет|штрих|godex|argox|xprinter.*365|xp-365/i.test(p.name)
       );
       if (labelLike?.name) return labelLike.name;
-    } else {
-      const thermal = printers.find((p) =>
-        /pos-80|pos80|xprinter|termo|receipt|thermal|чек/i.test(p.name)
-      );
-      if (thermal?.name) return thermal.name;
+      return '';
     }
+    const thermal = printers.find((p) =>
+      /pos-80|pos80|xprinter|termo|receipt|thermal|чек/i.test(p.name)
+    );
+    if (thermal?.name) return thermal.name;
     const def = printers.find((p) => p.isDefault);
     if (def?.name) return def.name;
     return saved || '';

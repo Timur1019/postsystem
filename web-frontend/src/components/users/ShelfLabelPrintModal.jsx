@@ -11,7 +11,9 @@ import {
   printShelfLabelSilent,
 } from '../../utils/printShelfLabel';
 import {
+  ensureDesktopLabelPrinter,
   isCashierEscposLabelPrintAvailable,
+  isDesktopLabelEscposEnvironment,
   printShelfLabelUnified,
 } from '../../services/cashierEscpos';
 import { resolveAutoLabelLayout } from '../../utils/resolveAutoLabelLayout';
@@ -383,28 +385,25 @@ export default function ShelfLabelPrintModal({
     try {
       unmountPrintLayer();
 
-      if (isCashierEscposLabelPrintAvailable()) {
-        await printShelfLabelUnified(labelInput, t);
-        toast.success(t('usersBarcodePrint.printSent'));
+      if (!isDesktopLabelEscposEnvironment()) {
+        toast.error(
+          t('usersBarcodePrint.needDesktopApp', {
+            defaultValue:
+              'Печать ценников — только в приложении Aurent (десктоп). В браузере принтер этикеток не подключается.',
+          }),
+          { duration: 6000 },
+        );
         return;
       }
 
-      const useSequentialDesktop = isDesktopLabelPrintAvailable() && copyCount > 1;
-      if (useSequentialDesktop) {
-        for (let i = 0; i < copyCount; i += 1) {
-          printRootRef.current = mountLabelPrintLayer([buildPrintPage(`seq-${i}`)]);
-          await printShelfLabelSilent({ requireBarcode: showBarcode });
-          unmountPrintLayer();
-          if (i < copyCount - 1) {
-            await new Promise((r) => setTimeout(r, 280));
-          }
-        }
-      } else {
-        printRootRef.current = mountLabelPrintLayer(printNodes);
-        await printShelfLabelSilent({ requireBarcode: showBarcode });
-      }
-
-      toast.success(t('usersBarcodePrint.printSent'));
+      const { deviceName } = await ensureDesktopLabelPrinter(t);
+      await printShelfLabelUnified(labelInput, t);
+      toast.success(
+        t('usersBarcodePrint.printSentTo', {
+          defaultValue: 'Отправлено на принтер: {{name}}',
+          name: deviceName,
+        }),
+      );
     } catch (e) {
       const msg = e?.message ?? t('usersBarcodePrint.printFailed');
       const hint = t('desktop.labelPrinter', { defaultValue: 'Принтер штрих-кодов' });

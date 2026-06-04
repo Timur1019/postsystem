@@ -26,6 +26,15 @@ export async function printLabelEscpos(labelInput, t) {
   try {
     return await window.desktopCashier.printLabelsEscpos(payload);
   } catch (err) {
+    const msg = err?.message || String(err || '');
+    if (/NO_PRINTER|принтер этикет|штрих-код/i.test(msg)) {
+      throw new Error(
+        t('usersBarcodePrint.labelPrinterRequired', {
+          defaultValue:
+            'Принтер штрих-кодов не выбран. Меню Aurent → «Принтер штрих-кодов» — укажите термопринтер этикеток из списка Windows.',
+        }),
+      );
+    }
     throw new Error(resolveEscposPrintErrorMessage(err, t));
   }
 }
