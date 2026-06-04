@@ -1,8 +1,7 @@
 /**
- * Перед печатью этикетки — явно выбранный «Принтер штрих-кодов» в Aurent.
+ * Перед печатью этикетки — выбранный «Принтер штрих-кодов» в Aurent.
  */
 import { isDesktopCashier } from '../../utils/printReceipt';
-import { isDesktopLabelPrintAvailable } from '../../utils/printShelfLabel';
 import { isCashierEscposLabelPrintAvailable } from './printLabelEscpos';
 
 async function readLabelPrinterName() {
@@ -13,17 +12,9 @@ async function readLabelPrinterName() {
   return String(settings?.labelPrinterName || '').trim();
 }
 
-/** Десктоп Aurent с печатью этикеток (драйвер или ESC/POS). */
+/** Десктоп Aurent с ESC/POS печатью этикеток. */
 export function isDesktopLabelPrintEnvironment() {
-  return (
-    isDesktopCashier() &&
-    (isDesktopLabelPrintAvailable() || isCashierEscposLabelPrintAvailable())
-  );
-}
-
-/** @deprecated используйте isDesktopLabelPrintEnvironment */
-export function isDesktopLabelEscposEnvironment() {
-  return isDesktopLabelPrintEnvironment();
+  return isDesktopCashier() && isCashierEscposLabelPrintAvailable();
 }
 
 /**
@@ -36,6 +27,14 @@ export async function ensureDesktopLabelPrinter(t) {
       t('usersBarcodePrint.needDesktopApp', {
         defaultValue:
           'Печать ценников работает только в приложении Aurent (десктоп). Установите с раздела загрузки, войдите и выберите «Принтер штрих-кодов» в меню.',
+      }),
+    );
+  }
+
+  if (!isCashierEscposLabelPrintAvailable()) {
+    throw new Error(
+      t('pos.escposDriverMissing', {
+        defaultValue: 'Печать недоступна в этой версии приложения. Обновите Aurent Cashier.',
       }),
     );
   }
@@ -57,7 +56,7 @@ export async function ensureDesktopLabelPrinter(t) {
   throw new Error(
     t('usersBarcodePrint.labelPrinterRequired', {
       defaultValue:
-        'Принтер штрих-кодов не выбран. Меню Aurent → «Принтер штрих-кодов» — укажите термопринтер этикеток из списка Windows.',
+        'Принтер штрих-кодов не выбран. Меню Aurent → «Принтер штрих-кодов» — укажите термопринтер этикеток.',
     }),
   );
 }

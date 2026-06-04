@@ -1,6 +1,6 @@
 /**
  * Конфиг автопечати чека ESC/POS (только desktop-cashier).
- * Не смешивать с printReceipt.js (window.print) и printShelfLabel.js.
+ * Не смешивать с printReceipt.js (window.print).
  */
 
 export const CASHIER_ESCPOS_IPC = 'desktop:print-receipt-escpos';

@@ -16,19 +16,17 @@ export {
   buildEscposShiftReportPayload,
   buildEscposShiftReportLabels,
 } from './buildEscposShiftReportPayload';
-export { buildEscposLabelPayload } from './buildEscposLabelPayload';
 export {
   isCashierEscposReportPrintAvailable,
   printReportEscpos,
 } from './printReportEscpos';
+export { printThermalDocument } from './printThermalDocument';
+export { buildEscposLabelPayload } from './buildEscposLabelPayload';
 export {
   isCashierEscposLabelPrintAvailable,
   printLabelEscpos,
 } from './printLabelEscpos';
-export { printThermalDocument } from './printThermalDocument';
-export { printShelfLabelUnified } from './printShelfLabelUnified';
 export {
   ensureDesktopLabelPrinter,
   isDesktopLabelPrintEnvironment,
-  isDesktopLabelEscposEnvironment,
 } from './ensureDesktopLabelPrinter';

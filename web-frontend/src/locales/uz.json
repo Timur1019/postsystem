@@ -1255,6 +1255,7 @@
     "sourceCatalog": "Sizning katalogingiz",
     "sourceTasnif": "Tasnif",
     "priceHint": "Tasnifdan kelgan pozitsiyalar uchun narxi qoʻlda kiritish mumkin.",
+    "sectionDisabled": "Yorliq va narx yorlig‘i chop etish vaqtincha o‘chirilgan. Bo‘lim qayta ishlanadi.",
     "openPrint": "Yorliq / narxi",
     "modalTitle": "Yorliq",
     "tabLabel": "Yorliq",

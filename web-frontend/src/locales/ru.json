@@ -1255,6 +1255,7 @@
     "sourceCatalog": "Ваш каталог",
     "sourceTasnif": "Tasnif",
     "priceHint": "Для позиций из Tasnif цену можно указать вручную.",
+    "sectionDisabled": "Печать этикеток и ценников временно отключена. Раздел будет переработан.",
     "openPrint": "Этикетка / ценник",
     "modalTitle": "Этикетка",
     "tabLabel": "Этикетка",

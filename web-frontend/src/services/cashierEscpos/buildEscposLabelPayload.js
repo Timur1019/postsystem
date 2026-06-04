@@ -1,58 +1,43 @@
 /**
- * Payload этикетки для ESC/POS.
+ * Payload этикетки для ESC/POS (как чек / Z / X).
  */
 import i18n from '../../i18n/config';
-import { resolveAutoLabelLayout } from '../../utils/resolveAutoLabelLayout';
+import { resolveAutoLabelLayout } from '../../shelfLabelPrint/resolveAutoLabelLayout';
 
-/**
- * @param {object} input
- * @param {Function} t
- */
-export function buildEscposLabelPayload(input, t) {
-  if (!input) return null;
-  const {
-    productName,
-    barcode,
-    price,
-    variant,
-    showName,
-    showBarcode,
-    showPrice,
-    currency,
-    copies,
-    paperWmm,
-    paperHmm,
-    layoutMode,
-  } = input;
+/** @param {object} printJob — результат buildLabelPrintJob @param {Function} t */
+export function buildEscposLabelPayload(printJob, t) {
+  if (!printJob) return null;
 
   const auto =
-    layoutMode === 'auto' || paperWmm == null || paperHmm == null
+    printJob.layoutMode === 'auto'
       ? resolveAutoLabelLayout({
-          variant,
-          showName,
-          showBarcode,
-          showPrice,
-          productName,
-          price,
+          variant: printJob.variant,
+          showName: printJob.showName,
+          showBarcode: printJob.showBarcode,
+          showPrice: printJob.showPrice,
+          productName: printJob.productName,
+          price: printJob.price,
         })
       : null;
 
+  const currency = printJob.currency || t('fiscalReceipt.currency');
+
   return {
     locale: String(i18n.language || 'ru').split('-')[0],
-    copies: Math.min(999, Math.max(1, Number(copies) || 1)),
-    paperWmm: Number(auto?.paperWmm ?? paperWmm) || 58,
-    paperHmm: Number(auto?.paperHmm ?? paperHmm) || 40,
-    labelsMeta: { currency: currency || t('fiscalReceipt.currency') },
+    copies: Math.min(999, Math.max(1, Number(printJob.copies) || 1)),
+    paperWmm: Number(auto?.paperWmm ?? printJob.paperWmm) || 58,
+    paperHmm: Number(auto?.paperHmm ?? printJob.paperHmm) || 40,
+    labelsMeta: { currency },
     labels: [
       {
-        productName: productName || '',
-        barcode: barcode || '',
-        price,
-        variant: variant || 'label',
-        showName: showName !== false,
-        showBarcode: showBarcode !== false,
-        showPrice: showPrice !== false,
-        currency: currency || t('fiscalReceipt.currency'),
+        productName: printJob.productName || '',
+        barcode: printJob.barcode || '',
+        price: printJob.price,
+        variant: printJob.variant || 'label',
+        showName: printJob.showName !== false,
+        showBarcode: printJob.showBarcode !== false,
+        showPrice: printJob.showPrice !== false,
+        currency,
       },
     ],
   };
