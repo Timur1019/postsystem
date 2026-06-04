@@ -16,6 +16,8 @@ if (fs.existsSync(webDist)) {
 
 build.asarUnpack = [
   '**/node_modules/@thiagoelg/node-printer/**',
+  '**/node_modules/serialport/**',
+  '**/node_modules/@serialport/**',
   '**/node_modules/node-thermal-printer/**',
   '**/node_modules/iconv-lite/**',
 ];

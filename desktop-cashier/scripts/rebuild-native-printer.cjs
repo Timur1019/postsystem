@@ -46,17 +46,27 @@ if (!fs.existsSync(printerDir)) {
   process.exit(required ? 1 : 0);
 }
 
-log('Сборка @thiagoelg/node-printer для Electron…');
+const nativeModules = ['@thiagoelg/node-printer'];
+const serialDir = path.join(root, 'node_modules', 'serialport');
+if (fs.existsSync(serialDir)) {
+  nativeModules.push('serialport');
+}
+
+log(`Сборка native-модулей для Electron: ${nativeModules.join(', ')}…`);
 
 const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-const result = spawnSync(
-  npx,
-  ['@electron/rebuild', '-f', '-w', '@thiagoelg/node-printer'],
-  { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' },
-);
+const rebuildArgs = ['@electron/rebuild', '-f'];
+for (const mod of nativeModules) {
+  rebuildArgs.push('-w', mod);
+}
+const result = spawnSync(npx, rebuildArgs, {
+  cwd: root,
+  stdio: 'inherit',
+  shell: process.platform === 'win32',
+});
 
 if (result.status === 0) {
-  log('Драйвер принтера для Electron готов');
+  log('Native-модули (принтер, весы) для Electron готовы');
   process.exit(0);
 }
 
