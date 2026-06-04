@@ -55,20 +55,34 @@ if (fs.existsSync(serialDir)) {
 log(`Сборка native-модулей для Electron: ${nativeModules.join(', ')}…`);
 
 const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-const rebuildArgs = ['@electron/rebuild', '-f'];
-for (const mod of nativeModules) {
-  rebuildArgs.push('-w', mod);
-}
-const result = spawnSync(npx, rebuildArgs, {
-  cwd: root,
-  stdio: 'inherit',
-  shell: process.platform === 'win32',
-});
+let printerFailed = false;
+let lastStatus = 0;
 
-if (result.status === 0) {
+for (const mod of nativeModules) {
+  log(`@electron/rebuild -w ${mod}`);
+  const result = spawnSync(
+    npx,
+    ['@electron/rebuild', '-f', '-w', mod],
+    { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' },
+  );
+  if (result.status === 0) {
+    continue;
+  }
+  lastStatus = result.status || 1;
+  if (mod === 'serialport') {
+    console.warn('[desktop-cashier] serialport не собран — весы по COM могут не работать');
+    continue;
+  }
+  printerFailed = true;
+  break;
+}
+
+if (!printerFailed) {
   log('Native-модули (принтер, весы) для Electron готовы');
   process.exit(0);
 }
+
+const result = { status: lastStatus };
 
 const hint =
   'Не удалось собрать драйвер ESC/POS. На Windows: Visual Studio Build Tools, затем npm run rebuild:native --required';
