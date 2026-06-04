@@ -33,12 +33,12 @@ public class SaleItem {
     @Column(name = "unit_price", nullable = false, precision = 18, scale = 2)
     private BigDecimal unitPrice;
 
-    @Column(nullable = false)
-    private int quantity;
+    @Column(nullable = false, precision = 18, scale = 3)
+    private BigDecimal quantity;
 
-    @Column(name = "returned_quantity", nullable = false)
+    @Column(name = "returned_quantity", nullable = false, precision = 18, scale = 3)
     @Builder.Default
-    private int returnedQuantity = 0;
+    private BigDecimal returnedQuantity = BigDecimal.ZERO;
 
     @Column(precision = 18, scale = 2)
     private BigDecimal discount = BigDecimal.ZERO;

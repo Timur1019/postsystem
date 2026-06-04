@@ -16,6 +16,7 @@ import com.pos.security.CurrentUserProvider;
 import com.pos.service.stock.StockWriteOffService;
 import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.TenantAccessSupport;
+import com.pos.util.QuantityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,8 +44,9 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
 
     @Override
     public WriteOffRowResponse create(CreateWriteOffRequest request) {
-        if (request.quantity() < 1) {
-            throw new BadRequestException("Quantity must be at least 1");
+        BigDecimal qty = QuantityUtil.normalize(request.quantity());
+        if (qty.signum() <= 0) {
+            throw new BadRequestException("Quantity must be greater than zero");
         }
         Product product = productRepository.findById(request.productId())
             .orElseThrow(() -> new BadRequestException("Product not found"));
@@ -59,10 +61,11 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
             throw new BadRequestException(ex.getMessage());
         }
         Store store = storeStockService.resolveStoreForProduct(product, request.storeId());
-        storeStockService.requireAvailable(product, store, request.quantity());
+        com.pos.util.QuantityValidator.validate(product, qty);
+        storeStockService.requireAvailable(product, store, qty);
         User user = currentUserProvider.requireCurrentUser();
 
-        storeStockService.decrease(product, store, request.quantity());
+        storeStockService.decrease(product, store, qty);
         productRepository.save(product);
 
         String notes = request.notes() != null ? request.notes().trim() : null;
@@ -71,7 +74,7 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
             .store(store)
             .movementType(StockMovementType.WRITE_OFF)
             .writeOffReason(reason.name())
-            .quantity(-request.quantity())
+            .quantity(qty.negate())
             .notes(notes)
             .createdBy(user)
             .build();
@@ -97,9 +100,9 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
     }
 
     private WriteOffRowResponse toRow(StockMovement m, Product product) {
-        int units = m.getQuantity() < 0 ? -m.getQuantity() : m.getQuantity();
+        BigDecimal units = m.getQuantity().signum() < 0 ? m.getQuantity().negate() : m.getQuantity();
         BigDecimal loss = product.getCostPrice()
-            .multiply(BigDecimal.valueOf(units))
+            .multiply(units)
             .setScale(2, RoundingMode.HALF_UP);
         String createdByName = m.getCreatedBy() != null ? m.getCreatedBy().getFullName() : null;
         String storeName = m.getStore() != null ? m.getStore().getName() : null;

@@ -4,6 +4,7 @@ import com.pos.dto.cashier.CashierShiftResponse;
 import com.pos.dto.cashier.ShiftReportResponse;
 import com.pos.entity.CashierShift;
 import com.pos.service.cashier.support.ShiftBannerAggregate;
+import com.pos.service.cashier.support.ShiftReturnsAggregate;
 import org.mapstruct.Mapper;
 
 import java.math.BigDecimal;
@@ -64,13 +65,33 @@ public interface CashierShiftMapper {
         );
     }
 
+    default boolean isEmptyReturnsRow(Object[] raw) {
+        Object[] row = unwrapAggregateRow(raw);
+        return toInt(row[0]) == 0
+            && toBigDecimal(row[1]).signum() == 0
+            && toBigDecimal(row[2]).signum() == 0
+            && toBigDecimal(row[3]).signum() == 0;
+    }
+
+    default ShiftReturnsAggregate fromReturnsRow(Object[] raw) {
+        Object[] row = unwrapAggregateRow(raw);
+        return new ShiftReturnsAggregate(
+            toInt(row[0]),
+            toBigDecimal(row[1]),
+            toBigDecimal(row[2]),
+            toBigDecimal(row[3])
+        );
+    }
+
     default ShiftReportResponse toReport(
         String type,
         CashierShift shift,
         Instant periodFrom,
         Instant reportAt,
-        ShiftBannerAggregate aggregate
+        ShiftBannerAggregate aggregate,
+        ShiftReturnsAggregate returns
     ) {
+        ShiftReturnsAggregate ret = returns != null ? returns : ShiftReturnsAggregate.empty();
         return new ShiftReportResponse(
             type,
             shift.getId(),
@@ -86,7 +107,11 @@ public interface CashierShiftMapper {
             aggregate.vatAmount(),
             aggregate.discountTotal(),
             aggregate.lineDiscountTotal(),
-            aggregate.orderDiscountTotal()
+            aggregate.orderDiscountTotal(),
+            ret.returnsCount(),
+            ret.returnsCash(),
+            ret.returnsCard(),
+            ret.returnsVat()
         );
     }
 

@@ -1,5 +1,6 @@
 package com.pos.dto.warehouse;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -12,7 +13,7 @@ public record StockTransferResponse(
     Integer toStoreId,
     String toStoreName,
     String notes,
-    int totalQuantity,
+    BigDecimal totalQuantity,
     String createdByName,
     Instant createdAt,
     List<StockTransferLineResponse> lines

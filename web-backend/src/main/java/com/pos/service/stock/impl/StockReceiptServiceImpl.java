@@ -25,6 +25,7 @@ import com.pos.service.stock.StockReceiptService;
 import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.ProductValueNormalizer;
 import com.pos.service.support.TenantAccessSupport;
+import com.pos.util.QuantityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -78,12 +79,12 @@ public class StockReceiptServiceImpl implements StockReceiptService {
             .store(store)
             .notes(trimToNull(request.notes()))
             .createdBy(user)
-            .totalQuantity(0)
+            .totalQuantity(BigDecimal.ZERO)
             .totalCost(BigDecimal.ZERO)
             .build());
         UUID receiptId = receipt.getId();
 
-        int totalQty = 0;
+        BigDecimal totalQty = BigDecimal.ZERO;
         BigDecimal totalCost = BigDecimal.ZERO;
         List<StockReceiptLine> lines = new ArrayList<>();
 
@@ -93,10 +94,11 @@ public class StockReceiptServiceImpl implements StockReceiptService {
             if (!product.isActive()) {
                 throw new BadRequestException("Product is not active: " + product.getName());
             }
-            int q = lineReq.quantity();
-            if (q < 1) {
-                throw new BadRequestException("Quantity must be at least 1");
+            BigDecimal q = QuantityUtil.normalize(lineReq.quantity());
+            if (q.signum() <= 0) {
+                throw new BadRequestException("Quantity must be greater than zero");
             }
+            com.pos.util.QuantityValidator.validate(product, q);
 
             product.setCostPrice(lineReq.purchasePrice());
             product.setSellingPrice(lineReq.unitSellingPrice());
@@ -113,7 +115,7 @@ public class StockReceiptServiceImpl implements StockReceiptService {
             productRepository.save(product);
 
             BigDecimal lineCost = lineReq.purchasePrice()
-                .multiply(BigDecimal.valueOf(q))
+                .multiply(q)
                 .setScale(2, RoundingMode.HALF_UP);
             StockReceiptLine line = StockReceiptLine.builder()
                 .receipt(receipt)
@@ -135,7 +137,7 @@ public class StockReceiptServiceImpl implements StockReceiptService {
                 .createdBy(user)
                 .build());
 
-            totalQty += q;
+            totalQty = QuantityUtil.add(totalQty, q);
             totalCost = totalCost.add(lineCost);
         }
 

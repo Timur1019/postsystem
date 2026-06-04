@@ -35,8 +35,8 @@ public class StockReceipt {
 
     private String notes;
 
-    @Column(name = "total_quantity", nullable = false)
-    private int totalQuantity;
+    @Column(name = "total_quantity", nullable = false, precision = 18, scale = 3)
+    private BigDecimal totalQuantity = BigDecimal.ZERO;
 
     @Column(name = "total_cost", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalCost = BigDecimal.ZERO;

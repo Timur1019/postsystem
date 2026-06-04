@@ -1,5 +1,6 @@
 package com.pos.dto.report.stock;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -10,7 +11,7 @@ public record StockMovementRowResponse(
     UUID productId,
     String productName,
     String sku,
-    int quantity,
+    BigDecimal quantity,
     String notes,
     String writeOffReason,
     Integer storeId,

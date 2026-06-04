@@ -131,7 +131,7 @@ public class ProductController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ProductResponse> adjustStock(
         @PathVariable UUID id,
-        @RequestParam int quantity,
+        @RequestParam BigDecimal quantity,
         @RequestParam(defaultValue = "ADJUSTMENT") String movementType,
         @RequestParam(required = false) String notes,
         @RequestParam(required = false) Integer storeId

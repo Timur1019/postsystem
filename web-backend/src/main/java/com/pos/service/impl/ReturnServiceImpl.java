@@ -124,7 +124,7 @@ public class ReturnServiceImpl implements ReturnService {
                 .product(product)
                 .store(sale.getStore())
                 .movementType(StockMovementType.SALE)
-                .quantity(-item.getQuantity())
+                .quantity(item.getQuantity().negate())
                 .referenceId(sale.getId())
                 .createdBy(sale.getCashier())
                 .notes("Отмена возврата, восстановление продажи")

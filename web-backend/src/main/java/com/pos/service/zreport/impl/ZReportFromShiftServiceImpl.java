@@ -219,6 +219,10 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
                 shift.getVatAmount(),
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 BigDecimal.ZERO
             );
             createForClosedShift(shift, report);

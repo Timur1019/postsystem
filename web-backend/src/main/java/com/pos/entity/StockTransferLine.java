@@ -3,6 +3,7 @@ package com.pos.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -26,6 +27,6 @@ public class StockTransferLine {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Column(nullable = false)
-    private int quantity;
+    @Column(nullable = false, precision = 18, scale = 3)
+    private BigDecimal quantity;
 }

@@ -8,7 +8,7 @@ public record ProductLifecycleEventResponse(
     UUID id,
     Instant occurredAt,
     String eventType,
-    int quantityDelta,
+    BigDecimal quantityDelta,
     Integer stockAfter,
     Integer storeId,
     String storeName,

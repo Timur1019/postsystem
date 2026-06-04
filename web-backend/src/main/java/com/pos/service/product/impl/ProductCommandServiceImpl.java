@@ -18,6 +18,8 @@ import com.pos.repository.StockMovementRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.service.product.ProductCommandService;
 import com.pos.service.product.ProductResponseAssembler;
+import com.pos.service.product.ProductQuantityRulesResolver;
+import com.pos.service.product.SaleTypeSupport;
 import com.pos.service.support.AbstractProductCatalogSupport;
 import com.pos.service.support.ProductValueNormalizer;
 import com.pos.service.support.TenantAccessSupport;
@@ -98,7 +100,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
             .sellingPrice(req.sellingPrice())
             .defaultDiscountPercent(ProductValueNormalizer.discountPercent(req.defaultDiscountPercent()))
             .taxRate(ProductValueNormalizer.taxRatePercent(req.taxRate()))
-            .stockQuantity(req.initialStock() != null ? req.initialStock() : 0)
+            .stockQuantity(BigDecimal.ZERO)
             .lowStockAlert(req.lowStockAlert() != null ? req.lowStockAlert() : 10)
             .barcode(req.barcode())
             .imageUrl(req.imageUrl())
@@ -106,7 +108,12 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
             .externalProductId(req.externalProductId())
             .ikpu(req.ikpu())
             .ikpuStatus(StringUtils.hasText(req.ikpuStatus()) ? req.ikpuStatus() : "UNKNOWN")
-            .unitOfMeasure(StringUtils.hasText(req.unitOfMeasure()) ? req.unitOfMeasure() : "pcs")
+            .unitOfMeasure(
+                SaleTypeSupport.defaultUnitOfMeasure(
+                    SaleTypeSupport.resolve(req.saleType(), req.unitOfMeasure()),
+                    req.unitOfMeasure()
+                )
+            )
             .unitMeasureCode(req.unitMeasureCode())
             .packageCode(req.packageCode())
             .soldIndividually(req.soldIndividually() == null || req.soldIndividually())
@@ -119,6 +126,17 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
                 StringUtils.hasText(req.uzInvoiceDocumentId()) ? req.uzInvoiceDocumentId().trim().toUpperCase() : null
             )
             .build();
+        ProductQuantityRulesResolver.applyTo(
+            product,
+            req.saleType(),
+            req.unitCode(),
+            req.quantityScale(),
+            req.allowFraction(),
+            req.unitOfMeasure()
+        );
+        if (!org.springframework.util.StringUtils.hasText(product.getUnitOfMeasure())) {
+            product.setUnitOfMeasure(SaleTypeSupport.defaultUnitOfMeasure(product.getSaleType(), req.unitOfMeasure()));
+        }
 
         Product saved = productRepository.save(product);
         applyStorePrices(saved, req.storePrices());
@@ -191,6 +209,19 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         }
         if (req.taxRate() != null) {
             product.setTaxRate(ProductValueNormalizer.taxRatePercent(req.taxRate()));
+        }
+        if (req.saleType() != null || req.unitCode() != null || req.quantityScale() != null || req.allowFraction() != null) {
+            ProductQuantityRulesResolver.applyTo(
+                product,
+                req.saleType() != null ? req.saleType() : product.getSaleType(),
+                req.unitCode(),
+                req.quantityScale(),
+                req.allowFraction(),
+                req.unitOfMeasure() != null ? req.unitOfMeasure() : product.getUnitOfMeasure()
+            );
+            if (req.unitOfMeasure() == null) {
+                product.setUnitOfMeasure(SaleTypeSupport.defaultUnitOfMeasure(product.getSaleType(), null));
+            }
         }
         if (req.lowStockAlert() != null) {
             product.setLowStockAlert(req.lowStockAlert());
@@ -321,8 +352,18 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
             StringUtils.hasText(req.uzInvoiceDocumentId()) ? req.uzInvoiceDocumentId().trim().toUpperCase() : null
         );
 
-        int initialStock = req.initialStock() != null ? req.initialStock() : 0;
-        product.setStockQuantity(0);
+        BigDecimal initialStock = req.initialStock() != null
+            ? com.pos.util.QuantityUtil.normalize(req.initialStock())
+            : BigDecimal.ZERO;
+        ProductQuantityRulesResolver.applyTo(
+            product,
+            req.saleType(),
+            req.unitCode(),
+            req.quantityScale(),
+            req.allowFraction(),
+            req.unitOfMeasure()
+        );
+        product.setStockQuantity(BigDecimal.ZERO);
 
         Product saved = productRepository.save(product);
         applyStorePrices(saved, req.storePrices());
@@ -335,15 +376,18 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
 
     private void applyInitialStock(
         Product product,
-        Integer initialStockRaw,
+        BigDecimal initialStockRaw,
         List<ProductStorePriceRequest> storePrices,
         Integer companyId,
         String movementNote
     ) {
-        int initialStock = initialStockRaw != null ? initialStockRaw : 0;
-        if (initialStock <= 0 || companyId == null) {
+        BigDecimal initialStock = initialStockRaw != null
+            ? com.pos.util.QuantityUtil.normalize(initialStockRaw)
+            : BigDecimal.ZERO;
+        if (initialStock.signum() <= 0 || companyId == null || !com.pos.util.StockCalculator.tracksStock(product)) {
             return;
         }
+        com.pos.util.QuantityValidator.validate(product, initialStock);
         List<Integer> targetStoreIds = new java.util.ArrayList<>();
         if (storePrices != null && !storePrices.isEmpty()) {
             storePrices.stream().map(ProductStorePriceRequest::storeId).distinct().forEach(targetStoreIds::add);
@@ -367,7 +411,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
 
     private void recordStockMovement(
         Product product,
-        int quantity,
+        BigDecimal quantity,
         String movementType,
         String notes,
         com.pos.entity.Store store
@@ -376,7 +420,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
             .product(product)
             .store(store)
             .movementType(movementType)
-            .quantity(quantity)
+            .quantity(com.pos.util.QuantityUtil.normalize(quantity))
             .notes(notes)
             .build());
     }

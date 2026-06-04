@@ -1,5 +1,6 @@
 package com.pos.service.stock;
 
+import com.pos.domain.SaleType;
 import com.pos.entity.Product;
 import com.pos.entity.Store;
 import com.pos.entity.StoreStock;
@@ -7,10 +8,12 @@ import com.pos.exception.BadRequestException;
 import com.pos.repository.StoreRepository;
 import com.pos.repository.StoreStockRepository;
 import com.pos.service.support.TenantAccessSupport;
+import com.pos.util.QuantityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -26,41 +29,46 @@ public class StoreStockService {
     private final StoreRepository storeRepository;
     private final TenantAccessSupport tenantAccess;
 
-    public int getQuantity(UUID productId, Integer storeId) {
+    public BigDecimal getQuantity(UUID productId, Integer storeId) {
         if (productId == null || storeId == null) {
-            return 0;
+            return BigDecimal.ZERO.setScale(QuantityUtil.SCALE);
         }
         return storeStockRepository.findByProductIdAndStoreId(productId, storeId)
             .map(StoreStock::getQuantity)
-            .orElse(0);
+            .map(QuantityUtil::normalize)
+            .orElse(BigDecimal.ZERO.setScale(QuantityUtil.SCALE));
     }
 
-    public Map<UUID, Integer> getQuantities(Collection<UUID> productIds, Integer storeId) {
+    public Map<UUID, BigDecimal> getQuantities(Collection<UUID> productIds, Integer storeId) {
         if (productIds == null || productIds.isEmpty() || storeId == null) {
             return Map.of();
         }
-        Map<UUID, Integer> map = new HashMap<>();
+        Map<UUID, BigDecimal> map = new HashMap<>();
         for (Object[] row : storeStockRepository.quantitiesByStoreAndProductIds(storeId, productIds)) {
-            map.put((UUID) row[0], ((Number) row[1]).intValue());
+            map.put((UUID) row[0], QuantityUtil.normalizeFromNumber((Number) row[1]));
         }
         return map;
     }
 
-    public void requireAvailable(Product product, Store store, int quantity) {
+    public void requireAvailable(Product product, Store store, BigDecimal quantity) {
+        if (!com.pos.util.StockCalculator.tracksStock(product)) {
+            return;
+        }
         if (store == null) {
             throw new BadRequestException("Store is required for stock operations");
         }
-        int available = getQuantity(product.getId(), store.getId());
-        if (available < quantity) {
+        BigDecimal requested = QuantityUtil.normalize(quantity);
+        BigDecimal available = getQuantity(product.getId(), store.getId());
+        if (available.compareTo(requested) < 0) {
+            String unit = product.getSaleType() == SaleType.WEIGHT
+                ? " " + (product.getUnitCode() != null ? product.getUnitCode().displayLabel() : "kg")
+                : "";
             throw new BadRequestException(
-                "Insufficient stock for: " + product.getName() + ". Available: " + available
+                "Insufficient stock for: " + product.getName() + ". Available: " + available + unit
             );
         }
     }
 
-    /**
-     * Resolves store for stock ops: explicit id, or the only store of the product company.
-     */
     public Store resolveStoreForProduct(Product product, Integer storeId) {
         if (storeId != null) {
             Store store = storeRepository.findById(storeId)
@@ -86,58 +94,65 @@ public class StoreStockService {
         throw new BadRequestException("Укажите магазин (storeId)");
     }
 
-    public void setQuantity(Product product, Store store, int quantity) {
+    public void setQuantity(Product product, Store store, BigDecimal quantity) {
         if (store == null) {
             throw new BadRequestException("Store is required for stock operations");
         }
-        if (quantity < 0) {
+        BigDecimal q = QuantityUtil.normalize(quantity);
+        if (q.signum() < 0) {
             throw new BadRequestException("Quantity cannot be negative");
         }
         StoreStock stock = storeStockRepository.findByProductIdAndStoreId(product.getId(), store.getId())
-            .orElseGet(() -> StoreStock.builder().product(product).store(store).quantity(0).build());
-        stock.setQuantity(quantity);
+            .orElseGet(() -> StoreStock.builder().product(product).store(store).quantity(BigDecimal.ZERO).build());
+        stock.setQuantity(q);
         storeStockRepository.save(stock);
         syncProductTotal(product);
     }
 
-    public void decrease(Product product, Store store, int quantity) {
+    public void decrease(Product product, Store store, BigDecimal quantity) {
+        if (!com.pos.util.StockCalculator.tracksStock(product)) {
+            return;
+        }
+        BigDecimal q = QuantityUtil.normalize(quantity);
         StoreStock stock = storeStockRepository.findByProductIdAndStoreId(product.getId(), store.getId())
             .orElseGet(() -> StoreStock.builder()
                 .product(product)
                 .store(store)
-                .quantity(0)
+                .quantity(BigDecimal.ZERO)
                 .build());
-        stock.setQuantity(stock.getQuantity() - quantity);
+        stock.setQuantity(QuantityUtil.normalize(stock.getQuantity().subtract(q)));
         storeStockRepository.save(stock);
         syncProductTotal(product);
     }
 
-    public void increase(Product product, Store store, int quantity) {
+    public void increase(Product product, Store store, BigDecimal quantity) {
+        if (!com.pos.util.StockCalculator.tracksStock(product)) {
+            return;
+        }
+        BigDecimal q = QuantityUtil.normalize(quantity);
         StoreStock stock = storeStockRepository.findByProductIdAndStoreId(product.getId(), store.getId())
             .orElseGet(() -> StoreStock.builder()
                 .product(product)
                 .store(store)
-                .quantity(0)
+                .quantity(BigDecimal.ZERO)
                 .build());
-        stock.setQuantity(stock.getQuantity() + quantity);
+        stock.setQuantity(QuantityUtil.normalize(stock.getQuantity().add(q)));
         storeStockRepository.save(stock);
         syncProductTotal(product);
     }
 
-    public void initializeForStore(Product product, Store store, int quantity) {
+    public void initializeForStore(Product product, Store store, BigDecimal quantity) {
         StoreStock stock = storeStockRepository.findByProductIdAndStoreId(product.getId(), store.getId())
-            .orElseGet(() -> StoreStock.builder().product(product).store(store).quantity(0).build());
-        stock.setQuantity(quantity);
+            .orElseGet(() -> StoreStock.builder().product(product).store(store).quantity(BigDecimal.ZERO).build());
+        stock.setQuantity(QuantityUtil.normalize(quantity));
         storeStockRepository.save(stock);
         syncProductTotal(product);
     }
 
-    public void initializeForCompanyStores(Product product, Integer companyId, int quantity) {
-        // caller ensures stores exist; bulk init done in migration / product create for all company stores
+    public void initializeForCompanyStores(Product product, Integer companyId, BigDecimal quantity) {
         syncProductTotal(product);
     }
 
-    /** Explicit store or the only store of the company; error if several stores and id omitted. */
     public Store requireStoreForCompany(Integer companyId, Integer storeId) {
         if (companyId == null) {
             throw new BadRequestException("Company is required");
@@ -165,10 +180,10 @@ public class StoreStockService {
         if (product.getCompany() == null) {
             return;
         }
-        int total = storeStockRepository.sumQuantityByProductAndCompany(
+        BigDecimal total = storeStockRepository.sumQuantityByProductAndCompany(
             product.getId(),
             product.getCompany().getId()
         );
-        product.setStockQuantity(total);
+        product.setStockQuantity(QuantityUtil.normalize(total));
     }
 }

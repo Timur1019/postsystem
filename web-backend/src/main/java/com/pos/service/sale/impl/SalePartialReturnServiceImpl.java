@@ -19,6 +19,7 @@ import com.pos.service.sale.SalePartialReturnService;
 import com.pos.service.salesledger.SalesLedgerCacheService;
 import com.pos.service.stock.StoreStockService;
 import com.pos.util.LogUtil;
+import com.pos.util.QuantityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,18 +65,24 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
             if (item == null) {
                 throw new BadRequestException("Позиция чека не найдена: " + line.saleItemId());
             }
-            int remaining = item.getQuantity() - item.getReturnedQuantity();
-            if (line.quantity() > remaining) {
+            BigDecimal returnQty = item.getProduct() != null
+                ? com.pos.util.QuantityValidator.normalizeForProduct(item.getProduct(), line.quantity())
+                : QuantityUtil.normalize(line.quantity());
+            if (returnQty.signum() <= 0) {
+                continue;
+            }
+            if (item.getProduct() != null) {
+                com.pos.util.QuantityValidator.validate(item.getProduct(), returnQty);
+            }
+            BigDecimal remaining = QuantityUtil.subtract(item.getQuantity(), item.getReturnedQuantity());
+            if (returnQty.compareTo(remaining) > 0) {
                 throw new BadRequestException(
                     "Нельзя вернуть больше, чем осталось по позиции: " + item.getProductName()
                 );
             }
-            if (line.quantity() <= 0) {
-                continue;
-            }
 
-            item.setReturnedQuantity(item.getReturnedQuantity() + line.quantity());
-            restoreStock(sale, item, line.quantity(), reason);
+            item.setReturnedQuantity(QuantityUtil.add(item.getReturnedQuantity(), returnQty));
+            restoreStock(sale, item, returnQty, reason);
             anyReturned = true;
         }
 
@@ -105,20 +112,22 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
 
     static boolean allItemsFullyReturned(Sale sale) {
         return sale.getItems().stream()
-            .allMatch(item -> item.getReturnedQuantity() >= item.getQuantity());
+            .allMatch(item -> item.getReturnedQuantity().compareTo(item.getQuantity()) >= 0);
     }
 
-    static BigDecimal lineReturnAmount(SaleItem item, int returnQty) {
-        if (returnQty <= 0) {
+    static BigDecimal lineReturnAmount(SaleItem item, BigDecimal returnQty) {
+        if (returnQty == null || returnQty.signum() <= 0) {
             return BigDecimal.ZERO;
         }
-        if (returnQty >= item.getQuantity()) {
+        BigDecimal qty = QuantityUtil.normalize(item.getQuantity());
+        BigDecimal ret = QuantityUtil.normalize(returnQty);
+        if (ret.compareTo(qty) >= 0) {
             return item.getLineTotal() != null ? item.getLineTotal() : BigDecimal.ZERO;
         }
         BigDecimal lineTotal = item.getLineTotal() != null ? item.getLineTotal() : BigDecimal.ZERO;
         return lineTotal
-            .multiply(BigDecimal.valueOf(returnQty))
-            .divide(BigDecimal.valueOf(item.getQuantity()), 2, RoundingMode.HALF_UP);
+            .multiply(ret)
+            .divide(qty, 2, RoundingMode.HALF_UP);
     }
 
     public static BigDecimal totalReturnedAmount(Sale sale) {
@@ -129,7 +138,7 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
         return sum;
     }
 
-    private void restoreStock(Sale sale, SaleItem item, int qty, String reason) {
+    private void restoreStock(Sale sale, SaleItem item, BigDecimal qty, String reason) {
         Product product = item.getProduct();
         if (sale.getStore() != null) {
             storeStockService.increase(product, sale.getStore(), qty);

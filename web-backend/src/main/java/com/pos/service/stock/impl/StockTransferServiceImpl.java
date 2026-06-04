@@ -28,6 +28,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.pos.util.QuantityUtil;
+
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -78,11 +81,11 @@ public class StockTransferServiceImpl implements StockTransferService {
             .toStore(toStore)
             .notes(trimToNull(request.notes()))
             .createdBy(user)
-            .totalQuantity(0)
+            .totalQuantity(BigDecimal.ZERO)
             .build());
         UUID transferId = transfer.getId();
 
-        int totalQty = 0;
+        BigDecimal totalQty = BigDecimal.ZERO;
         List<StockTransferLine> lines = new ArrayList<>();
 
         for (StockTransferLineRequest lineReq : request.lines()) {
@@ -91,11 +94,12 @@ public class StockTransferServiceImpl implements StockTransferService {
             if (!product.isActive()) {
                 throw new BadRequestException("Product is not active: " + product.getName());
             }
-            int q = lineReq.quantity();
-            if (q < 1) {
-                throw new BadRequestException("Quantity must be at least 1");
+            BigDecimal q = QuantityUtil.normalize(lineReq.quantity());
+            if (q.signum() <= 0) {
+                throw new BadRequestException("Quantity must be greater than zero");
             }
-            if (product.getStockQuantity() < q) {
+            com.pos.util.QuantityValidator.validate(product, q);
+            if (product.getStockQuantity().compareTo(q) < 0) {
                 throw new BadRequestException("Insufficient stock for " + product.getName());
             }
 
@@ -109,7 +113,7 @@ public class StockTransferServiceImpl implements StockTransferService {
                 .product(product)
                 .store(fromStore)
                 .movementType(StockMovementType.ADJUSTMENT)
-                .quantity(-q)
+                .quantity(q.negate())
                 .referenceId(transferId)
                 .notes("Перемещение " + number + " → " + toStore.getName())
                 .createdBy(user)
@@ -124,7 +128,7 @@ public class StockTransferServiceImpl implements StockTransferService {
                 .createdBy(user)
                 .build());
 
-            totalQty += q;
+            totalQty = QuantityUtil.add(totalQty, q);
         }
 
         transfer.getLines().clear();

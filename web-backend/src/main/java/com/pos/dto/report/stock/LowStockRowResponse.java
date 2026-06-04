@@ -8,9 +8,9 @@ public record LowStockRowResponse(
     String productName,
     String sku,
     String barcode,
-    int stockQuantity,
+    BigDecimal stockQuantity,
     int lowStockAlert,
-    int deficit,
+    BigDecimal deficit,
     BigDecimal costPrice,
     BigDecimal stockValueEstimate
 ) {}

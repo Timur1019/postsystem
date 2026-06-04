@@ -1614,6 +1614,18 @@
   background: #fff;
 }
 
+.pos-qty-control--compact .pos-qty-control__val--weight {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1.2;
+}
+
+.pos-qty-control--compact .pos-qty-control__val--weight:hover {
+  background: #f0fdf4;
+  color: #047857;
+}
+
 /* Qty control */
 .pos-qty-control {
   display: inline-flex;

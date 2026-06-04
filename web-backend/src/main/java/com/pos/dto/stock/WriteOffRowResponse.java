@@ -10,7 +10,7 @@ public record WriteOffRowResponse(
     UUID productId,
     String productName,
     String sku,
-    int quantity,
+    BigDecimal quantity,
     String reason,
     String notes,
     Integer storeId,

@@ -33,4 +33,20 @@ public class CashierShiftAggregateLoader {
         }
         return cashierShiftMapper.fromBannerRow(rows.get(0));
     }
+
+    public ShiftReturnsAggregate loadReturnsForShift(CashierShift shift, Instant periodFrom, Instant reportAt) {
+        List<Object[]> rows = saleRepository.aggregateReturnsByShiftId(shift.getId(), periodFrom, reportAt);
+        if (rows.isEmpty() || cashierShiftMapper.isEmptyReturnsRow(rows.get(0))) {
+            rows = saleRepository.aggregateReturnsByCashierAndTime(
+                shift.getCashier().getId(),
+                shift.getStore().getId(),
+                periodFrom,
+                reportAt
+            );
+        }
+        if (rows.isEmpty()) {
+            return ShiftReturnsAggregate.empty();
+        }
+        return cashierShiftMapper.fromReturnsRow(rows.get(0));
+    }
 }

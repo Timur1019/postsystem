@@ -126,13 +126,13 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
         if (storeId == null) {
             return PageResponse.from(page.map(p -> assembler.toResponse(p, storeCounts, dispatched)));
         }
-        Map<UUID, Integer> storeQty = storeStockService.getQuantities(
+        Map<UUID, java.math.BigDecimal> storeQty = storeStockService.getQuantities(
             content.stream().map(Product::getId).toList(),
             storeId
         );
         return PageResponse.from(page.map(p -> {
             ProductResponse base = assembler.toResponse(p, storeCounts, dispatched);
-            int qty = storeQty.getOrDefault(p.getId(), 0);
+            java.math.BigDecimal qty = storeQty.getOrDefault(p.getId(), java.math.BigDecimal.ZERO);
             ProductResponse withQty = assembler.withStockQuantity(base, qty);
             BigDecimal price = productStorePriceRepository
                 .findByProduct_IdAndStore_Id(p.getId(), storeId)
@@ -146,7 +146,7 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
         if (storeId == null) {
             return base;
         }
-        int qty = storeStockService.getQuantity(product.getId(), storeId);
+        java.math.BigDecimal qty = storeStockService.getQuantity(product.getId(), storeId);
         ProductResponse withQty = assembler.withStockQuantity(base, qty);
         BigDecimal price = productStorePriceRepository
             .findByProduct_IdAndStore_Id(product.getId(), storeId)

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Barcode, ChevronDown, Maximize, Printer, RefreshCw, Server, LogOut, FileText, Tag, Download } from 'lucide-react';
+import { Barcode, ChevronDown, Maximize, Printer, RefreshCw, Server, LogOut, FileText, Tag, Download, Scale } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { CASHIER_ESCPOS_TOAST } from '../../config/cashierEscposConfig';
@@ -20,6 +20,7 @@ export default function CashierDesktopMenu({ appName }) {
   const [open, setOpen] = useState(false);
   const [printerName, setPrinterName] = useState('');
   const [labelPrinterName, setLabelPrinterName] = useState('');
+  const [scalePort, setScalePort] = useState('');
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -31,6 +32,10 @@ export default function CashierDesktopMenu({ appName }) {
       const s = await window.desktopCashier.getPrinterSettings();
       setPrinterName(s?.receiptPrinterName || '');
       setLabelPrinterName(s?.labelPrinterName || '');
+      if (typeof window.desktopCashier.scaleGetSettings === 'function') {
+        const sc = await window.desktopCashier.scaleGetSettings();
+        setScalePort(sc?.port || '');
+      }
     } catch {
       /* ignore */
     }
@@ -129,6 +134,20 @@ export default function CashierDesktopMenu({ appName }) {
     }
   };
 
+  const openScalePicker = async () => {
+    close();
+    if (typeof window.desktopCashier?.openScalePicker !== 'function') return;
+    try {
+      const s = await window.desktopCashier.openScalePicker();
+      setScalePort(s?.port || '');
+      if (s?.port) {
+        toast.success(t('desktop.scaleSaved'));
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
   const openBarcodePage = () => {
     close();
     if (typeof window.desktopCashier?.openBarcodePage === 'function') {
@@ -158,6 +177,7 @@ export default function CashierDesktopMenu({ appName }) {
   const label = appName || 'Aurent';
   const printerLabel = printerName || t('desktop.receiptPrinterNotSet');
   const labelPrinterLabel = labelPrinterName || t('desktop.receiptPrinterNotSet');
+  const scaleLabel = scalePort || t('desktop.scaleNotSet');
 
   return (
     <div
@@ -232,6 +252,20 @@ export default function CashierDesktopMenu({ appName }) {
         >
           <Barcode size={18} strokeWidth={2} aria-hidden />
           <span>{t('desktop.barcodePrint')}</span>
+        </button>
+        <button
+          type="button"
+          className="cashier-desktop-menu__item cashier-desktop-menu__item--stacked"
+          role="menuitem"
+          onClick={openScalePicker}
+        >
+          <Scale size={18} strokeWidth={2} aria-hidden />
+          <span className="cashier-desktop-menu__item-text">
+            <span>{t('desktop.scale')}</span>
+            <span className="cashier-desktop-menu__item-meta">
+              {t('desktop.scaleHint', { port: scaleLabel })}
+            </span>
+          </span>
         </button>
         <div className="cashier-desktop-menu__sep" role="separator" />
         <button

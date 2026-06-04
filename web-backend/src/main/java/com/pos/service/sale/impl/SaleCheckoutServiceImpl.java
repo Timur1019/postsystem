@@ -31,6 +31,9 @@ import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.CashierSaleSupport;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
+import com.pos.util.MoneyCalculator;
+import com.pos.util.QuantityUtil;
+import com.pos.util.QuantityValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,13 +91,15 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
                 throw new BadRequestException("Product is inactive: " + product.getName());
             }
             tenantAccess.assertProductBelongsToTenant(product);
-            storeStockService.requireAvailable(product, store, itemReq.quantity());
+            BigDecimal lineQty = QuantityValidator.normalizeForProduct(product, itemReq.quantity());
+            QuantityValidator.validate(product, lineQty);
+            storeStockService.requireAvailable(product, store, lineQty);
 
             BigDecimal lineDiscount = itemReq.discount() != null ? itemReq.discount() : BigDecimal.ZERO;
             BigDecimal unitPrice = resolveCheckoutUnitPrice(itemReq, product, store.getId());
-            BigDecimal lineGross = unitPrice.multiply(BigDecimal.valueOf(itemReq.quantity())).subtract(lineDiscount);
+            BigDecimal lineGross = MoneyCalculator.lineGross(unitPrice, lineQty, lineDiscount);
             BigDecimal rate = product.getTaxRate() != null ? product.getTaxRate() : new BigDecimal("12");
-            BigDecimal taxAmt = SaleVatCalculator.extractFromInclusive(lineGross, rate);
+            BigDecimal taxAmt = MoneyCalculator.vatFromInclusiveLine(lineGross, rate);
             BigDecimal netLine = lineGross.subtract(taxAmt);
             BigDecimal lineTotal = lineGross;
 
@@ -102,10 +107,10 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
                 .product(product)
                 .productName(product.getName())
                 .unitPrice(unitPrice)
-                .quantity(itemReq.quantity())
+                .quantity(lineQty)
                 .discount(lineDiscount)
-                .taxAmount(taxAmt.setScale(2, RoundingMode.HALF_UP))
-                .lineTotal(lineTotal.setScale(2, RoundingMode.HALF_UP))
+                .taxAmount(taxAmt)
+                .lineTotal(lineTotal)
                 .build();
 
             items.add(saleItem);
@@ -114,7 +119,7 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
             taxTotal = taxTotal.add(taxAmt);
             lineDiscountTotal = lineDiscountTotal.add(lineDiscount);
 
-            storeStockService.decrease(product, store, itemReq.quantity());
+            storeStockService.decrease(product, store, lineQty);
         }
 
         BigDecimal grossTotal = subtotal.add(taxTotal).setScale(2, RoundingMode.HALF_UP);
@@ -168,7 +173,7 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
                 .product(item.getProduct())
                 .store(store)
                 .movementType(StockMovementType.SALE)
-                .quantity(-item.getQuantity())
+                .quantity(item.getQuantity().negate())
                 .referenceId(saved.getId())
                 .createdBy(cashier)
                 .notes("Продажа " + saved.getReceiptNumber())

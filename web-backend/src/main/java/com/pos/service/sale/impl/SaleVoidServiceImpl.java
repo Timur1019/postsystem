@@ -16,10 +16,12 @@ import com.pos.service.sale.SaleVoidService;
 import com.pos.service.salesledger.SalesLedgerCacheService;
 import com.pos.service.stock.StoreStockService;
 import com.pos.util.LogUtil;
+import com.pos.util.QuantityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
@@ -50,8 +52,8 @@ public class SaleVoidServiceImpl implements SaleVoidService {
         boolean anyRemaining = false;
 
         for (var item : sale.getItems()) {
-            int remaining = item.getQuantity() - item.getReturnedQuantity();
-            if (remaining <= 0) {
+            BigDecimal remaining = QuantityUtil.subtract(item.getQuantity(), item.getReturnedQuantity());
+            if (remaining.signum() <= 0) {
                 continue;
             }
             anyRemaining = true;

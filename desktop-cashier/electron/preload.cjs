@@ -25,4 +25,20 @@ contextBridge.exposeInMainWorld('desktopCashier', {
   openLabelPrinterPicker: () => ipcRenderer.invoke('desktop:open-label-printer-picker'),
   openBarcodePage: () => ipcRenderer.invoke('desktop:open-barcode-page'),
   checkForUpdates: () => ipcRenderer.invoke('desktop:check-updates'),
+
+  scaleIsAvailable: () => ipcRenderer.invoke('desktop:scale-is-available'),
+  scaleStatus: () => ipcRenderer.invoke('desktop:scale-status'),
+  scaleListPorts: () => ipcRenderer.invoke('desktop:scale-list-ports'),
+  scaleGetSettings: () => ipcRenderer.invoke('desktop:scale-get-settings'),
+  scaleSetSettings: (patch) => ipcRenderer.invoke('desktop:scale-set-settings', patch),
+  scaleStart: () => ipcRenderer.invoke('desktop:scale-start'),
+  scaleStop: () => ipcRenderer.invoke('desktop:scale-stop'),
+  scaleCapture: () => ipcRenderer.invoke('desktop:scale-capture'),
+  onScaleWeight: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on('desktop:scale-weight', listener);
+    return () => ipcRenderer.removeListener('desktop:scale-weight', listener);
+  },
+  openScalePicker: () => ipcRenderer.invoke('desktop:open-scale-picker'),
+  scaleAutoDetect: (opts) => ipcRenderer.invoke('desktop:scale-auto-detect', opts || {}),
 });

@@ -3,6 +3,7 @@ package com.pos.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -26,12 +27,12 @@ public class StockInventoryLine {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Column(name = "system_quantity", nullable = false)
-    private int systemQuantity;
+    @Column(name = "system_quantity", nullable = false, precision = 18, scale = 3)
+    private BigDecimal systemQuantity = BigDecimal.ZERO;
 
-    @Column(name = "counted_quantity", nullable = false)
-    private int countedQuantity;
+    @Column(name = "counted_quantity", nullable = false, precision = 18, scale = 3)
+    private BigDecimal countedQuantity = BigDecimal.ZERO;
 
-    @Column(nullable = false)
-    private int difference;
+    @Column(nullable = false, precision = 18, scale = 3)
+    private BigDecimal difference = BigDecimal.ZERO;
 }

@@ -193,7 +193,7 @@ function appendItems(printer, payload) {
   for (const item of sale.items || []) {
     printer.tableCustom([
       { text: String(item.productName || ''), align: 'LEFT', width: 0.55 },
-      { text: fmtQty(item.quantity), align: 'CENTER', width: 0.15 },
+      { text: fmtQty(item.quantity, item.saleType), align: 'CENTER', width: 0.15 },
       { text: fmtMoney(item.lineTotal), align: 'RIGHT', width: 0.3 },
     ]);
     if (isOn(fields, 'itemIkpu') && item.ikpu) {

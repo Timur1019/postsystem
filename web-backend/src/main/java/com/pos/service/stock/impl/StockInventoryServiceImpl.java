@@ -29,6 +29,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.pos.util.QuantityUtil;
+
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -71,12 +74,12 @@ public class StockInventoryServiceImpl implements StockInventoryService {
             .notes(trimToNull(request.notes()))
             .createdBy(user)
             .totalLines(0)
-            .totalDifference(0)
+            .totalDifference(BigDecimal.ZERO)
             .build());
         UUID inventoryId = inventory.getId();
 
         int totalLines = 0;
-        int totalDiff = 0;
+        BigDecimal totalDiff = BigDecimal.ZERO;
         List<StockInventoryLine> lines = new ArrayList<>();
 
         for (StockInventoryLineRequest lineReq : request.lines()) {
@@ -85,9 +88,9 @@ public class StockInventoryServiceImpl implements StockInventoryService {
             if (!product.isActive()) {
                 throw new BadRequestException("Product is not active: " + product.getName());
             }
-            int systemQty = storeStockService.getQuantity(product.getId(), store.getId());
-            int counted = lineReq.countedQuantity();
-            int diff = counted - systemQty;
+            BigDecimal systemQty = storeStockService.getQuantity(product.getId(), store.getId());
+            BigDecimal counted = QuantityUtil.normalize(lineReq.countedQuantity());
+            BigDecimal diff = QuantityUtil.subtract(counted, systemQty);
             lines.add(StockInventoryLine.builder()
                 .inventory(inventory)
                 .product(product)
@@ -96,7 +99,7 @@ public class StockInventoryServiceImpl implements StockInventoryService {
                 .difference(diff)
                 .build());
 
-            if (diff != 0) {
+            if (diff.signum() != 0) {
                 storeStockService.setQuantity(product, store, counted);
                 productRepository.save(product);
                 stockMovementRepository.save(StockMovement.builder()
@@ -110,7 +113,7 @@ public class StockInventoryServiceImpl implements StockInventoryService {
                     .build());
             }
             totalLines++;
-            totalDiff += Math.abs(diff);
+            totalDiff = totalDiff.add(diff.abs());
         }
 
         inventory.getLines().clear();

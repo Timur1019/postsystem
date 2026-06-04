@@ -32,6 +32,7 @@ function loadEscposModule() {
 }
 
 const escposModule = loadEscposModule();
+const { registerScaleIpc } = require('./scales/index.cjs');
 const { logStartup } = require('./startup-log.cjs');
 const { resolveWebDist } = require('./embedded-server.cjs');
 
@@ -224,6 +225,8 @@ function registerDesktopIpc() {
     config = loadConfig();
     return checkForUpdatesNow(config?.cashierUrl);
   });
+
+  registerScaleIpc(ipcMain, () => mainWindow);
 
   if (escposModule?.registerEscposIpcHandlers) {
     escposModule.registerEscposIpcHandlers(ipcMain, {

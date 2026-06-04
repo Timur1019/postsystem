@@ -3,6 +3,7 @@ package com.pos.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +37,8 @@ public class StockInventory {
     @Column(name = "total_lines", nullable = false)
     private int totalLines;
 
-    @Column(name = "total_difference", nullable = false)
-    private int totalDifference;
+    @Column(name = "total_difference", nullable = false, precision = 18, scale = 3)
+    private BigDecimal totalDifference = BigDecimal.ZERO;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")

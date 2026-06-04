@@ -22,6 +22,11 @@ export function buildEscposShiftReportLabels(t) {
     lineDiscountsSum: t('fiscalReceipt.lineDiscountsSum'),
     orderDiscountSum: t('fiscalReceipt.orderDiscountSum'),
     discountsSum: t('fiscalReceipt.discountsSum'),
+    sectionReturn: t('zReports.sectionReturn'),
+    returnCash: t('zReports.returnCash'),
+    returnCard: t('zReports.returnCard'),
+    returnVat: t('zReports.returnVat'),
+    returnCount: t('zReports.returnCount'),
     currency: t('fiscalReceipt.currency'),
   };
 }

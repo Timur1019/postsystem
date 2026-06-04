@@ -15,6 +15,7 @@ import com.pos.service.cashier.CashierShiftService;
 import com.pos.service.cashier.support.CashierShiftAccessPolicy;
 import com.pos.service.cashier.support.CashierShiftAggregateLoader;
 import com.pos.service.cashier.support.ShiftBannerAggregate;
+import com.pos.service.cashier.support.ShiftReturnsAggregate;
 import com.pos.service.support.CashierSaleSupport;
 import com.pos.service.zreport.ZReportFromShiftService;
 import com.pos.util.LogUtil;
@@ -145,7 +146,8 @@ public class CashierShiftServiceImpl implements CashierShiftService {
     private ShiftReportResponse buildReport(String type, CashierShift shift, Instant reportAt) {
         Instant periodFrom = periodStart(shift);
         ShiftBannerAggregate aggregate = aggregateLoader.loadForShift(shift, periodFrom, reportAt);
-        return cashierShiftMapper.toReport(type, shift, periodFrom, reportAt, aggregate);
+        ShiftReturnsAggregate returns = aggregateLoader.loadReturnsForShift(shift, periodFrom, reportAt);
+        return cashierShiftMapper.toReport(type, shift, periodFrom, reportAt, aggregate, returns);
     }
 
     private CashierShiftResponse toLiveResponse(CashierShift shift, String storeName) {

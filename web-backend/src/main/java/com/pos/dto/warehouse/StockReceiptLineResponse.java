@@ -8,7 +8,7 @@ public record StockReceiptLineResponse(
     UUID productId,
     String productName,
     String sku,
-    int quantity,
+    BigDecimal quantity,
     BigDecimal purchasePrice,
     BigDecimal unitSellingPrice,
     BigDecimal lineCost

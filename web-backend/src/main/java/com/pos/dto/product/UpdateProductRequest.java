@@ -2,6 +2,9 @@ package com.pos.dto.product;
 
 import jakarta.validation.Valid;
 
+import com.pos.domain.SaleType;
+import com.pos.domain.UnitCode;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -12,6 +15,10 @@ public record UpdateProductRequest(
     BigDecimal defaultDiscountPercent,
     BigDecimal costPrice,
     BigDecimal taxRate,
+    SaleType saleType,
+    UnitCode unitCode,
+    Integer quantityScale,
+    Boolean allowFraction,
     Integer lowStockAlert,
     String imageUrl,
     Integer categoryId,

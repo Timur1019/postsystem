@@ -13,7 +13,7 @@ public record StockReceiptResponse(
     Integer storeId,
     String storeName,
     String notes,
-    int totalQuantity,
+    BigDecimal totalQuantity,
     BigDecimal totalCost,
     String createdByName,
     Instant createdAt,

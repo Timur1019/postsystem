@@ -76,7 +76,11 @@ CREATE TABLE products (
     selling_price       NUMERIC(18, 2) NOT NULL,
     default_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0,
     tax_rate            NUMERIC(5, 2) DEFAULT 0,
-    stock_quantity      INT NOT NULL DEFAULT 0,
+    sale_type           VARCHAR(20) NOT NULL DEFAULT 'PIECE',
+    unit_code           VARCHAR(10) NOT NULL DEFAULT 'PCS',
+    quantity_scale      INT NOT NULL DEFAULT 0,
+    allow_fraction      BOOLEAN NOT NULL DEFAULT FALSE,
+    stock_quantity      NUMERIC(18, 3) NOT NULL DEFAULT 0,
     low_stock_alert     INT DEFAULT 10,
     barcode             VARCHAR(100) UNIQUE,
     image_url           VARCHAR(500),
@@ -250,7 +254,7 @@ CREATE TABLE stock_movements (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id      UUID NOT NULL REFERENCES products(id),
     movement_type   VARCHAR(20) NOT NULL,  -- SALE, RESTOCK, ADJUSTMENT, RETURN
-    quantity        INT NOT NULL,           -- negative for reductions
+    quantity        NUMERIC(18, 3) NOT NULL, -- negative for reductions
     reference_id    UUID,                  -- sale_id or purchase_id
     notes           TEXT,
     created_by      UUID REFERENCES users(id),
@@ -338,8 +342,8 @@ CREATE TABLE sale_items (
     product_id      UUID NOT NULL REFERENCES products(id),
     product_name    VARCHAR(255) NOT NULL,  -- snapshot at time of sale
     unit_price      NUMERIC(18, 2) NOT NULL,
-    quantity        INT NOT NULL,
-    returned_quantity INT NOT NULL DEFAULT 0,
+    quantity          NUMERIC(18, 3) NOT NULL,
+    returned_quantity NUMERIC(18, 3) NOT NULL DEFAULT 0,
     discount        NUMERIC(18, 2) DEFAULT 0,
     tax_amount      NUMERIC(18, 2) DEFAULT 0,
     line_total      NUMERIC(18, 2) NOT NULL

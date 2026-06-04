@@ -1,7 +1,10 @@
 package com.pos.mapper;
 
+import com.pos.domain.SaleType;
+import com.pos.domain.UnitCode;
 import com.pos.dto.sale.SaleResponse;
 import com.pos.entity.SaleItem;
+import com.pos.util.QuantityUtil;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -14,6 +17,8 @@ public interface SaleLineMapper {
 
     @Mapping(target = "returnableQuantity", source = "item", qualifiedByName = "returnableQty")
     @Mapping(target = "productName", source = "productName")
+    @Mapping(target = "saleType", source = "item", qualifiedByName = "saleTypeName")
+    @Mapping(target = "unitOfMeasure", source = "item", qualifiedByName = "unitOfMeasure")
     @Mapping(target = "lineDiscount", source = "discount", qualifiedByName = "orZero")
     @Mapping(target = "taxAmount", source = "taxAmount", qualifiedByName = "orZero")
     @Mapping(target = "taxRatePercent", source = "item", qualifiedByName = "taxRate")
@@ -24,11 +29,33 @@ public interface SaleLineMapper {
     List<SaleResponse.SaleLineDto> toLineDtoList(List<SaleItem> items);
 
     @Named("returnableQty")
-    default int returnableQty(SaleItem item) {
+    default BigDecimal returnableQty(SaleItem item) {
         if (item == null) {
-            return 0;
+            return BigDecimal.ZERO.setScale(QuantityUtil.SCALE);
         }
-        return Math.max(0, item.getQuantity() - item.getReturnedQuantity());
+        BigDecimal left = QuantityUtil.subtract(item.getQuantity(), item.getReturnedQuantity());
+        return left.signum() < 0 ? BigDecimal.ZERO.setScale(QuantityUtil.SCALE) : left;
+    }
+
+    @Named("saleTypeName")
+    default String saleTypeName(SaleItem item) {
+        if (item == null || item.getProduct() == null || item.getProduct().getSaleType() == null) {
+            return SaleType.PIECE.name();
+        }
+        return item.getProduct().getSaleType().name();
+    }
+
+    @Named("unitOfMeasure")
+    default String unitOfMeasure(SaleItem item) {
+        if (item == null || item.getProduct() == null) {
+            return null;
+        }
+        UnitCode unitCode = item.getProduct().getUnitCode();
+        if (unitCode != null) {
+            return unitCode.displayLabel();
+        }
+        String uom = item.getProduct().getUnitOfMeasure();
+        return uom != null && !uom.isBlank() ? uom : "pcs";
     }
 
     @Named("orZero")

@@ -22,7 +22,10 @@ import com.pos.service.imports.source.ProductImportSourceHandlers;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.parser.HtmlExcelTableParser;
 import com.pos.spreadsheet.parser.UzInvoiceJsonParser;
+import com.pos.domain.SaleType;
+import com.pos.service.product.SaleTypeSupport;
 import com.pos.util.ProductImportParseUtil;
+import com.pos.util.QuantityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -243,9 +246,12 @@ public class ProductImportServiceImpl implements ProductImportService {
 
         BigDecimal costPrice = BigDecimal.ZERO;
         BigDecimal taxRate = ProductImportParseUtil.normalizeTaxRatePercent(row.taxRatePercent());
-        int initialStock = Math.max(0, row.quantity());
-
         String unit = StringUtils.hasText(row.unitOfMeasure()) ? row.unitOfMeasure().trim() : "dona";
+        SaleType saleType = SaleTypeSupport.resolve(null, unit);
+        BigDecimal initialStock = QuantityUtil.normalize(row.quantity());
+        if (initialStock.signum() < 0) {
+            initialStock = BigDecimal.ZERO;
+        }
 
         Integer storeId = defaultStoreId;
         if (rowOpts != null && rowOpts.storeId() != null) {
@@ -277,6 +283,10 @@ public class ProductImportServiceImpl implements ProductImportService {
             sellingPrice,
             BigDecimal.ZERO,
             taxRate,
+            saleType,
+            null,
+            null,
+            null,
             initialStock,
             10,
             null,

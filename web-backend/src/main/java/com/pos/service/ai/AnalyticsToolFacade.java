@@ -257,7 +257,8 @@ public class AnalyticsToolFacade {
         for (StoreStock ss : storeStocks) {
             UUID productId = ss.getProduct().getId();
             Integer storeId = ss.getStore().getId();
-            stockByProductStore.computeIfAbsent(productId, k -> new HashMap<>()).put(storeId, ss.getQuantity());
+            stockByProductStore.computeIfAbsent(productId, k -> new HashMap<>())
+                .put(storeId, ss.getQuantity().intValue());
             productNameById.put(productId, ss.getProduct().getName());
             storeNameById.put(storeId, ss.getStore().getName());
         }
@@ -716,7 +717,7 @@ public class AnalyticsToolFacade {
         for (StoreStock ss : storeStocks) {
             Integer storeId = ss.getStore().getId();
             UUID productId = ss.getProduct().getId();
-            stockQtyByStore.merge(storeId, (long) ss.getQuantity(), Long::sum);
+            stockQtyByStore.merge(storeId, ss.getQuantity().longValue(), Long::sum);
             storeNameById.put(storeId, ss.getStore().getName());
             productNameByStoreProduct.put(storeId + ":" + productId, ss.getProduct().getName());
         }

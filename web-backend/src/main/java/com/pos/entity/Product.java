@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
 
+import com.pos.domain.SaleType;
+import com.pos.domain.UnitCode;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -55,8 +58,27 @@ public class Product {
     @Column(name = "tax_rate", precision = 5, scale = 2)
     private BigDecimal taxRate = new BigDecimal("12");
 
-    @Column(name = "stock_quantity", nullable = false)
-    private int stockQuantity = 0;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sale_type", nullable = false, length = 20)
+    @Builder.Default
+    private SaleType saleType = SaleType.PIECE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "unit_code", nullable = false, length = 10)
+    @Builder.Default
+    private UnitCode unitCode = UnitCode.PCS;
+
+    @Column(name = "quantity_scale", nullable = false)
+    @Builder.Default
+    private int quantityScale = 0;
+
+    @Column(name = "allow_fraction", nullable = false)
+    @Builder.Default
+    private boolean allowFraction = false;
+
+    @Column(name = "stock_quantity", nullable = false, precision = 18, scale = 3)
+    @Builder.Default
+    private BigDecimal stockQuantity = BigDecimal.ZERO;
 
     @Column(name = "low_stock_alert")
     private int lowStockAlert = 10;
@@ -137,6 +159,6 @@ public class Product {
     }
 
     public boolean isLowStock() {
-        return stockQuantity <= lowStockAlert;
+        return stockQuantity.compareTo(BigDecimal.valueOf(lowStockAlert)) <= 0;
     }
 }

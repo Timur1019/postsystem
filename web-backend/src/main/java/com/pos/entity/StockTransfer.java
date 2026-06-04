@@ -3,6 +3,7 @@ package com.pos.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,8 @@ public class StockTransfer {
 
     private String notes;
 
-    @Column(name = "total_quantity", nullable = false)
-    private int totalQuantity;
+    @Column(name = "total_quantity", nullable = false, precision = 18, scale = 3)
+    private BigDecimal totalQuantity = BigDecimal.ZERO;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")

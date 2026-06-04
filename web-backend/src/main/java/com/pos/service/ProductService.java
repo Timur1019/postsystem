@@ -62,7 +62,7 @@ public interface ProductService {
 
     ProductResponse updateProduct(UUID id, UpdateProductRequest req);
 
-    ProductResponse adjustStock(UUID id, int quantity, String movementType, String notes, Integer storeId);
+    ProductResponse adjustStock(UUID id, BigDecimal quantity, String movementType, String notes, Integer storeId);
 
     ProductResponse receiveWarehouseStock(WarehouseReceiveRequest req);
 

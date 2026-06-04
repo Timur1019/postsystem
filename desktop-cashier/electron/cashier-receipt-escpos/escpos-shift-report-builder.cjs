@@ -60,6 +60,15 @@ function buildShiftReportOnPrinter(printer, payload) {
   if (Number(report.discountTotal ?? 0) > 0) {
     appendRow(printer, L.discountsSum || 'Discount', `${fmtMoney(report.discountTotal)} ${cur}`, true);
   }
+  appendDivider(printer);
+
+  printer.bold(true);
+  printer.println(L.sectionReturn || 'Returns');
+  printer.bold(false);
+  appendRow(printer, L.returnCash || 'Cash', `${fmtMoney(report.returnsCash)} ${cur}`);
+  appendRow(printer, L.returnCard || 'Card', `${fmtMoney(report.returnsCard)} ${cur}`);
+  appendRow(printer, L.returnVat || 'VAT', `${fmtMoney(report.returnsVat)} ${cur}`);
+  appendRow(printer, L.returnCount || 'Count', String(report.returnsCount ?? 0));
 
   printer.newLine();
   printer.newLine();

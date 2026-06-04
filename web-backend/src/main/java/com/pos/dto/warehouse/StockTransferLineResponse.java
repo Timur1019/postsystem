@@ -1,5 +1,6 @@
 package com.pos.dto.warehouse;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 public record StockTransferLineResponse(
@@ -7,5 +8,5 @@ public record StockTransferLineResponse(
     UUID productId,
     String productName,
     String sku,
-    int quantity
+    BigDecimal quantity
 ) {}

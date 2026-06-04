@@ -3,6 +3,7 @@ package com.pos.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -34,8 +35,8 @@ public class StockMovement {
     @Column(name = "write_off_reason", length = 30)
     private String writeOffReason;
 
-    @Column(nullable = false)
-    private int quantity;
+    @Column(nullable = false, precision = 18, scale = 3)
+    private BigDecimal quantity;
 
     @Column(name = "reference_id")
     private UUID referenceId;

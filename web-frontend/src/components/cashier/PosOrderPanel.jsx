@@ -4,6 +4,7 @@ import { Minus, Plus, Trash2, Percent } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { lineDiscountAmount, lineSubtotal, useCartStore } from '../../store/cartStore';
 import { fmtMoney as fmt, fmtMoneyCompact as fmtCompact } from '../../utils/formatMoney';
+import { formatQty } from '../../utils/quantityFormat';
 
 export default function PosOrderPanel({
   items,
@@ -28,8 +29,8 @@ export default function PosOrderPanel({
     items.length === 0 ? 0 : Math.round(items.reduce((s, i) => s + (i.taxRate ?? 0), 0) / items.length);
   const isRegister = variant === 'register';
   const rowRefs = useRef({});
-  const selected = items.find((i) => i.productId === selectedLineId);
-  const [editingPriceId, setEditingPriceId] = useState(null);
+  const selected = items.find((i) => i.lineId === selectedLineId);
+  const [editingPriceLineId, setEditingPriceLineId] = useState(null);
   const [priceDraft, setPriceDraft] = useState('');
 
   useEffect(() => {
@@ -37,10 +38,10 @@ export default function PosOrderPanel({
     rowRefs.current[selectedLineId]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [selectedLineId, items]);
 
-  const commitPrice = (productId) => {
+  const commitPrice = (lineId) => {
     const num = Number(String(priceDraft).replace(',', '.'));
-    if (!Number.isNaN(num)) onUpdatePrice(productId, num);
-    setEditingPriceId(null);
+    if (!Number.isNaN(num)) onUpdatePrice(lineId, num);
+    setEditingPriceLineId(null);
   };
 
   return (
@@ -80,18 +81,19 @@ export default function PosOrderPanel({
               </li>
             ) : (
               items.map((item) => {
-                const active = selectedLineId === item.productId;
+                const active = selectedLineId === item.lineId;
                 const lineSum = lineSubtotal(item);
+                const isWeight = item.saleType === 'WEIGHT';
                 return (
                   <li
-                    key={item.productId}
+                    key={item.lineId}
                     ref={(el) => {
-                      if (el) rowRefs.current[item.productId] = el;
-                      else delete rowRefs.current[item.productId];
+                      if (el) rowRefs.current[item.lineId] = el;
+                      else delete rowRefs.current[item.lineId];
                     }}
                     className={`pos-cart-table__row${active ? ' is-active' : ''}`}
                     role="row"
-                    onClick={() => onSelectLine(item.productId)}
+                    onClick={() => onSelectLine(item.lineId)}
                   >
                     <div className="pos-cart-table__col pos-cart-table__col--name">
                       <span className="pos-cart-table__name" title={item.name}>
@@ -105,7 +107,7 @@ export default function PosOrderPanel({
                     </div>
 
                     <div className="pos-cart-table__col pos-cart-table__col--price">
-                      {editingPriceId === item.productId ? (
+                      {editingPriceLineId === item.lineId ? (
                         <input
                           type="number"
                           step="0.01"
@@ -113,10 +115,10 @@ export default function PosOrderPanel({
                           value={priceDraft}
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => setPriceDraft(e.target.value)}
-                          onBlur={() => commitPrice(item.productId)}
+                          onBlur={() => commitPrice(item.lineId)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') commitPrice(item.productId);
-                            if (e.key === 'Escape') setEditingPriceId(null);
+                            if (e.key === 'Enter') commitPrice(item.lineId);
+                            if (e.key === 'Escape') setEditingPriceLineId(null);
                           }}
                           autoFocus
                         />
@@ -126,7 +128,7 @@ export default function PosOrderPanel({
                           className="pos-cart-table__price-btn"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setEditingPriceId(item.productId);
+                            setEditingPriceLineId(item.lineId);
                             setPriceDraft(String(item.unitPrice));
                           }}
                         >
@@ -137,11 +139,26 @@ export default function PosOrderPanel({
 
                     <div className="pos-cart-table__col pos-cart-table__col--qty" onClick={(e) => e.stopPropagation()}>
                       <div className="pos-qty-control pos-qty-control--compact" role="group" aria-label={t('pos.colQty')}>
-                        <button type="button" className="pos-qty-control__btn" onClick={() => onQtyDelta(item.productId, -1)}>
+                        <button
+                          type="button"
+                          className="pos-qty-control__btn"
+                          onClick={() => onQtyDelta(item.lineId, -1)}
+                        >
                           <Minus size={14} strokeWidth={2} />
                         </button>
-                        <span className="pos-qty-control__val">{item.quantity}</span>
-                        <button type="button" className="pos-qty-control__btn" onClick={() => onQtyDelta(item.productId, 1)}>
+                        <button
+                          type="button"
+                          className="pos-qty-control__val pos-qty-control__val--weight"
+                          onClick={() => isWeight && onQtyDelta(item.lineId, 1)}
+                          title={isWeight ? t('pos.weightEditQty') : undefined}
+                        >
+                          {formatQty(item.quantity, item.saleType, item.unitCode)}
+                        </button>
+                        <button
+                          type="button"
+                          className="pos-qty-control__btn"
+                          onClick={() => onQtyDelta(item.lineId, 1)}
+                        >
                           <Plus size={14} strokeWidth={2} />
                         </button>
                       </div>
@@ -157,7 +174,7 @@ export default function PosOrderPanel({
                       <button
                         type="button"
                         className="pos-cart-table__remove-btn"
-                        onClick={() => onRemove(item.productId)}
+                        onClick={() => onRemove(item.lineId)}
                         aria-label={t('pos.removeLine', { name: item.name })}
                         title={t('common.delete')}
                       >
@@ -204,7 +221,10 @@ export default function PosOrderPanel({
               <button
                 type="button"
                 onClick={() =>
-                  onUpdateDiscountPercent(selected.productId, Math.max(0, (Number(selected.discountPercent) || 0) - 1))
+                  onUpdateDiscountPercent(
+                    selected.lineId,
+                    Math.max(0, (Number(selected.discountPercent) || 0) - 1)
+                  )
                 }
               >
                 <Minus size={16} />
@@ -216,11 +236,11 @@ export default function PosOrderPanel({
                 onChange={(e) => {
                   const v = e.target.value.replace(',', '.');
                   if (v === '' || v === '.') {
-                    onUpdateDiscountPercent(selected.productId, 0);
+                    onUpdateDiscountPercent(selected.lineId, 0);
                     return;
                   }
                   const n = Number(v);
-                  if (!Number.isNaN(n)) onUpdateDiscountPercent(selected.productId, n);
+                  if (!Number.isNaN(n)) onUpdateDiscountPercent(selected.lineId, n);
                 }}
               />
               <span>%</span>
@@ -228,7 +248,7 @@ export default function PosOrderPanel({
                 type="button"
                 onClick={() =>
                   onUpdateDiscountPercent(
-                    selected.productId,
+                    selected.lineId,
                     Math.min(100, (Number(selected.discountPercent) || 0) + 1)
                   )
                 }
@@ -239,7 +259,7 @@ export default function PosOrderPanel({
             <button
               type="button"
               className="pos-line-toolbar__remove"
-              onClick={() => onRemove(selected.productId)}
+              onClick={() => onRemove(selected.lineId)}
               title={t('common.delete')}
             >
               <Trash2 size={18} />

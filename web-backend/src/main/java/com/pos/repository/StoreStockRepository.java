@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +23,7 @@ public interface StoreStockRepository extends JpaRepository<StoreStock, UUID> {
         JOIN ss.store st
         WHERE ss.product.id = :productId AND st.company.id = :companyId
         """)
-    int sumQuantityByProductAndCompany(@Param("productId") UUID productId, @Param("companyId") Integer companyId);
+    BigDecimal sumQuantityByProductAndCompany(@Param("productId") UUID productId, @Param("companyId") Integer companyId);
 
     @Query("""
         SELECT ss.product.id, ss.quantity

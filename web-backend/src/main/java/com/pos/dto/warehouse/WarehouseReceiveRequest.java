@@ -11,10 +11,9 @@ import java.util.UUID;
 public record WarehouseReceiveRequest(
     @NotNull UUID productId,
     Integer storeId,
-    @NotNull @Min(1) Integer quantity,
+    @NotNull @DecimalMin("0.001") BigDecimal quantity,
     @NotNull @DecimalMin(value = "0.0", inclusive = true) BigDecimal unitSellingPrice,
     @NotNull @DecimalMin(value = "0.0", inclusive = true) BigDecimal purchasePrice,
-    /** null — не менять НДС; 0 или 12 — установить процент */
     @Min(0) @Max(100) Integer vatPercent,
     boolean markedProduct,
     String storageLocation

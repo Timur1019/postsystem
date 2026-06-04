@@ -45,7 +45,7 @@ public interface ProductLifecycleMapper {
     ) {
         BigDecimal cost = unitCost != null ? unitCost : BigDecimal.ZERO;
         BigDecimal costDelta = cost
-            .multiply(BigDecimal.valueOf(movement.getQuantity()))
+            .multiply(movement.getQuantity())
             .setScale(2, RoundingMode.HALF_UP);
         return new ProductLifecycleEventContext(movement, stockAfter, reference, cost, costDelta, linkedSale);
     }

@@ -12,7 +12,7 @@ public record ProductImportRowFields(
     String uzInvoiceDocumentId,
     BigDecimal sellingPrice,
     BigDecimal taxRatePercent,
-    int quantity,
+    BigDecimal quantity,
     String unitOfMeasure
 ) {
 }

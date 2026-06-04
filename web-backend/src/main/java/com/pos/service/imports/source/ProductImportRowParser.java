@@ -42,7 +42,8 @@ public final class ProductImportRowParser {
         BigDecimal taxRate = ProductImportParseUtil.normalizeTaxRatePercent(
             ProductImportParseUtil.parseDecimalOpt(ProductImportParseUtil.cell(row, "tax_rate_percent_nds")).orElse(null)
         );
-        int qty = ProductImportParseUtil.parseIntOpt(ProductImportParseUtil.cell(row, "stock_quantity")).orElse(0);
+        BigDecimal qty = ProductImportParseUtil.parseDecimalOpt(ProductImportParseUtil.cell(row, "stock_quantity"))
+            .orElse(BigDecimal.ZERO);
         String unit = ProductImportParseUtil.cell(row, "unit_of_measure");
 
         return Result.ok(new ProductImportRowFields(

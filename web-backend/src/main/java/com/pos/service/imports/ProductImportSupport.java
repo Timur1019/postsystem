@@ -34,7 +34,7 @@ public final class ProductImportSupport {
 
     public static ProductImportPreviewRow invalidRow(int rowNum, String message) {
         return new ProductImportPreviewRow(
-            rowNum, "", "", null, null, null, "", 0,
+            rowNum, "", "", null, null, null, "", BigDecimal.ZERO,
             BigDecimal.ZERO, null, BigDecimal.ZERO,
             ProductImportPreviewRow.STATUS_INVALID,
             null, null, message

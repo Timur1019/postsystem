@@ -8,6 +8,7 @@ import com.pos.mapper.ProductStorePriceMapper;
 import com.pos.repository.ProductStorePriceRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.repository.projection.ProductDispatchedSum;
+import com.pos.util.QuantityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -56,27 +57,13 @@ public class ProductResponseAssembler {
     }
 
     public ProductResponse withSellingPrice(ProductResponse base, BigDecimal sellingPrice) {
-        return new ProductResponse(
-            base.id(), base.sku(), base.name(), base.description(), base.categoryId(), base.categoryName(),
-            base.costPrice(), sellingPrice, base.defaultDiscountPercent(), base.taxRate(), base.stockQuantity(),
-            base.stockDispatched(), base.lowStockAlert(), base.lowStock(),
-            base.barcode(), base.barcodes(), base.imageUrl(), base.active(), base.createdAt(), base.externalProductId(),
-            base.ikpu(), base.ikpuStatus(), base.unitOfMeasure(), base.unitMeasureCode(), base.packageCode(),
-            base.soldIndividually(), base.markedProduct(), base.storageLocation(), base.ownerType(),
-            base.commissionTin(), base.commissionPinfl(), base.storesCount(), base.storePrices()
-        );
+        return copy(base, base.stockQuantity(), base.stockDispatched(), base.lowStock(), sellingPrice);
     }
 
-    public ProductResponse withStockQuantity(ProductResponse base, int stockQuantity) {
-        return new ProductResponse(
-            base.id(), base.sku(), base.name(), base.description(), base.categoryId(), base.categoryName(),
-            base.costPrice(), base.sellingPrice(), base.defaultDiscountPercent(), base.taxRate(), stockQuantity,
-            base.stockDispatched(), base.lowStockAlert(), stockQuantity <= base.lowStockAlert(),
-            base.barcode(), base.barcodes(), base.imageUrl(), base.active(), base.createdAt(), base.externalProductId(),
-            base.ikpu(), base.ikpuStatus(), base.unitOfMeasure(), base.unitMeasureCode(), base.packageCode(),
-            base.soldIndividually(), base.markedProduct(), base.storageLocation(), base.ownerType(),
-            base.commissionTin(), base.commissionPinfl(), base.storesCount(), base.storePrices()
-        );
+    public ProductResponse withStockQuantity(ProductResponse base, BigDecimal stockQuantity) {
+        BigDecimal qty = QuantityUtil.normalize(stockQuantity);
+        boolean low = qty.compareTo(BigDecimal.valueOf(base.lowStockAlert())) <= 0;
+        return copy(base, qty, base.stockDispatched(), low, base.sellingPrice());
     }
 
     public Map<UUID, Integer> loadDispatchedCounts(List<Product> products) {
@@ -92,14 +79,54 @@ public class ProductResponseAssembler {
     }
 
     private static ProductResponse withStockDispatched(ProductResponse r, int stockDispatched) {
+        return copy(r, r.stockQuantity(), stockDispatched, r.lowStock(), r.sellingPrice());
+    }
+
+    private static ProductResponse copy(
+        ProductResponse r,
+        BigDecimal stockQuantity,
+        int stockDispatched,
+        boolean lowStock,
+        BigDecimal sellingPrice
+    ) {
         return new ProductResponse(
-            r.id(), r.sku(), r.name(), r.description(), r.categoryId(), r.categoryName(),
-            r.costPrice(), r.sellingPrice(), r.defaultDiscountPercent(), r.taxRate(), r.stockQuantity(), stockDispatched,
-            r.lowStockAlert(), r.lowStock(),
-            r.barcode(), r.barcodes(), r.imageUrl(), r.active(), r.createdAt(), r.externalProductId(),
-            r.ikpu(), r.ikpuStatus(), r.unitOfMeasure(), r.unitMeasureCode(), r.packageCode(),
-            r.soldIndividually(), r.markedProduct(), r.storageLocation(), r.ownerType(),
-            r.commissionTin(), r.commissionPinfl(), r.storesCount(), r.storePrices()
+            r.id(),
+            r.sku(),
+            r.name(),
+            r.description(),
+            r.categoryId(),
+            r.categoryName(),
+            r.costPrice(),
+            sellingPrice,
+            r.defaultDiscountPercent(),
+            r.taxRate(),
+            r.saleType(),
+            r.unitCode(),
+            r.quantityScale(),
+            r.allowFraction(),
+            stockQuantity,
+            stockDispatched,
+            r.lowStockAlert(),
+            lowStock,
+            r.barcode(),
+            r.barcodes(),
+            r.imageUrl(),
+            r.active(),
+            r.createdAt(),
+            r.externalProductId(),
+            r.ikpu(),
+            r.ikpuStatus(),
+            r.unitOfMeasure(),
+            r.unitMeasureCode(),
+            r.packageCode(),
+            r.soldIndividually(),
+            r.markedProduct(),
+            r.storageLocation(),
+            r.ownerType(),
+            r.commissionTin(),
+            r.commissionPinfl(),
+            r.storesCount(),
+            r.storePrices()
         );
     }
 }

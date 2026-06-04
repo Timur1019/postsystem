@@ -19,5 +19,9 @@ public record ShiftReportResponse(
     BigDecimal vatAmount,
     BigDecimal discountTotal,
     BigDecimal lineDiscountTotal,
-    BigDecimal orderDiscountTotal
+    BigDecimal orderDiscountTotal,
+    int returnsCount,
+    BigDecimal returnsCash,
+    BigDecimal returnsCard,
+    BigDecimal returnsVat
 ) {}

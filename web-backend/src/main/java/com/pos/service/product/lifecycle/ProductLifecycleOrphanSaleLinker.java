@@ -5,7 +5,10 @@ import com.pos.entity.Sale;
 import com.pos.entity.SaleItem;
 import com.pos.entity.StockMovement;
 import com.pos.repository.SaleRepository;
+import com.pos.util.QuantityUtil;
 import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -109,12 +112,14 @@ public class ProductLifecycleOrphanSaleLinker {
     }
 
     private static boolean quantityMatches(StockMovement movement, SaleItem item) {
-        int qty = Math.abs(movement.getQuantity());
+        BigDecimal qty = movement.getQuantity().abs();
         if (StockMovementType.SALE.equals(movement.getMovementType())) {
-            return movement.getQuantity() < 0 && item.getQuantity() == qty;
+            return movement.getQuantity().signum() < 0
+                && QuantityUtil.compare(item.getQuantity(), qty) == 0;
         }
         if (StockMovementType.RETURN.equals(movement.getMovementType())) {
-            return movement.getQuantity() > 0 && item.getReturnedQuantity() >= qty;
+            return movement.getQuantity().signum() > 0
+                && QuantityUtil.compare(item.getReturnedQuantity(), qty) >= 0;
         }
         return false;
     }

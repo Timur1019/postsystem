@@ -73,6 +73,16 @@ export default function ShiftReportPrintBody({ report }) {
           />
         ) : null}
       </section>
+
+      <div className="receipt-divider my-2 border-t border-dotted border-black" />
+
+      <section className="receipt-section space-y-0.5">
+        <p className="receipt-section-title mb-1">{t('zReports.sectionReturn')}</p>
+        <Row label={t('zReports.returnCash')} value={`${fmtMoney(report.returnsCash)} ${currency}`} />
+        <Row label={t('zReports.returnCard')} value={`${fmtMoney(report.returnsCard)} ${currency}`} />
+        <Row label={t('zReports.returnVat')} value={`${fmtMoney(report.returnsVat)} ${currency}`} />
+        <Row label={t('zReports.returnCount')} value={String(report.returnsCount ?? 0)} />
+      </section>
     </>
   );
 }

@@ -17,6 +17,7 @@ import com.pos.service.product.ProductStockService;
 import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.AbstractProductCatalogSupport;
 import com.pos.service.support.ProductValueNormalizer;
+import com.pos.util.QuantityUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -49,12 +50,13 @@ public class ProductStockServiceImpl extends AbstractProductCatalogSupport imple
     }
 
     @Override
-    public ProductResponse adjustStock(UUID id, int quantity, String movementType, String notes, Integer storeId) {
+    public ProductResponse adjustStock(UUID id, BigDecimal quantity, String movementType, String notes, Integer storeId) {
         Product product = findById(id);
         Store store = storeStockService.resolveStoreForProduct(product, storeId);
-        applyStockDelta(product, quantity, store);
+        BigDecimal delta = QuantityUtil.normalize(quantity);
+        applyStockDelta(product, delta, store);
         productRepository.save(product);
-        recordStockMovement(product, quantity, movementType, notes, store);
+        recordStockMovement(product, delta, movementType, notes, store);
         ProductResponse base = assembler.toResponse(product);
         return assembler.withStockQuantity(base, storeStockService.getQuantity(product.getId(), store.getId()));
     }
@@ -62,9 +64,9 @@ public class ProductStockServiceImpl extends AbstractProductCatalogSupport imple
     @Override
     public ProductResponse receiveWarehouseStock(WarehouseReceiveRequest req) {
         Product product = findDetailed(req.productId());
-        int q = req.quantity();
-        if (q < 1) {
-            throw new BadRequestException("Quantity must be at least 1");
+        BigDecimal q = QuantityUtil.normalize(req.quantity());
+        if (q.signum() <= 0) {
+            throw new BadRequestException("Quantity must be greater than zero");
         }
         Store store = storeStockService.resolveStoreForProduct(product, req.storeId());
         applyStockDelta(product, q, store);
@@ -82,20 +84,20 @@ public class ProductStockServiceImpl extends AbstractProductCatalogSupport imple
         return assembler.toResponse(saved);
     }
 
-    private void applyStockDelta(Product product, int delta, Store store) {
-        if (delta == 0) {
+    private void applyStockDelta(Product product, BigDecimal delta, Store store) {
+        if (delta.signum() == 0) {
             throw new BadRequestException("Quantity must be non-zero");
         }
-        if (delta > 0) {
+        if (delta.signum() > 0) {
             storeStockService.increase(product, store, delta);
         } else {
-            storeStockService.decrease(product, store, -delta);
+            storeStockService.decrease(product, store, delta.negate());
         }
     }
 
     private void recordStockMovement(
         Product product,
-        int quantity,
+        BigDecimal quantity,
         String movementType,
         String notes,
         Store store
@@ -104,7 +106,7 @@ public class ProductStockServiceImpl extends AbstractProductCatalogSupport imple
             .product(product)
             .store(store)
             .movementType(movementType)
-            .quantity(quantity)
+            .quantity(QuantityUtil.normalize(quantity))
             .notes(notes)
             .build());
     }

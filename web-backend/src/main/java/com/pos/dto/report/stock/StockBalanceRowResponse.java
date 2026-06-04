@@ -9,7 +9,7 @@ public record StockBalanceRowResponse(
     String sku,
     String barcode,
     String categoryName,
-    int stockQuantity,
+    BigDecimal stockQuantity,
     int lowStockAlert,
     BigDecimal costPrice,
     BigDecimal stockValue

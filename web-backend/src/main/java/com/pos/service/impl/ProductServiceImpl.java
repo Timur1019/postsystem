@@ -139,7 +139,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse adjustStock(UUID id, int quantity, String movementType, String notes, Integer storeId) {
+    public ProductResponse adjustStock(UUID id, BigDecimal quantity, String movementType, String notes, Integer storeId) {
         return stockService.adjustStock(id, quantity, movementType, notes, storeId);
     }
 

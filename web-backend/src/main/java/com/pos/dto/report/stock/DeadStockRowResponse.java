@@ -10,7 +10,7 @@ public record DeadStockRowResponse(
     String sku,
     String barcode,
     String categoryName,
-    int stockQuantity,
+    BigDecimal stockQuantity,
     BigDecimal stockValue,
     LocalDate lastSaleDate,
     int daysWithoutSale

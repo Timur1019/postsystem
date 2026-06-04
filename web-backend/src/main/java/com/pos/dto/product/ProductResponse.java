@@ -1,5 +1,8 @@
 package com.pos.dto.product;
 
+import com.pos.domain.SaleType;
+import com.pos.domain.UnitCode;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -16,7 +19,11 @@ public record ProductResponse(
     BigDecimal sellingPrice,
     BigDecimal defaultDiscountPercent,
     BigDecimal taxRate,
-    int stockQuantity,
+    SaleType saleType,
+    UnitCode unitCode,
+    int quantityScale,
+    boolean allowFraction,
+    BigDecimal stockQuantity,
     /** Суммарно списано со склада (продажи, корректировки в минус) по журналу движений. */
     int stockDispatched,
     int lowStockAlert,

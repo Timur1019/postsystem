@@ -1,6 +1,6 @@
 {
   "name": "masterpiece-pos-cashier-desktop",
-  "version": "1.0.57",
+  "version": "1.0.58",
   "private": true,
   "description": "Desktop shell for Aurent cashier (same UI as web)",
   "main": "electron/main.cjs",
@@ -81,7 +81,9 @@
     "node-thermal-printer": "^4.6.0"
   },
   "optionalDependencies": {
-    "@thiagoelg/node-printer": "^0.6.2"
+    "@serialport/parser-readline": "^12.0.0",
+    "@thiagoelg/node-printer": "^0.6.2",
+    "serialport": "^12.0.0"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.1",

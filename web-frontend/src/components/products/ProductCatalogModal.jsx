@@ -66,6 +66,10 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
         barcode: z.string().optional(),
         externalProductId: z.string().optional(),
         ikpu: z.string().optional(),
+        saleType: z.enum(['PIECE', 'WEIGHT', 'SERVICE']),
+        unitCode: z.enum(['PCS', 'KG', 'G', 'L', 'M']),
+        quantityScale: z.coerce.number().min(0).max(3),
+        allowFraction: z.boolean(),
         unitOfMeasure: z.string().min(1, t('productCatalog.unitRequired')),
         unitMeasureCode: z.string().optional(),
         packageCode: z.string().optional(),
@@ -98,6 +102,10 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       active: true,
       ownerType: 'OWN',
       unitOfMeasure: 'pcs',
+      saleType: 'PIECE',
+      unitCode: 'PCS',
+      quantityScale: 0,
+      allowFraction: false,
     },
   });
 
@@ -118,6 +126,10 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       barcode: full.barcode ?? '',
       externalProductId: full.externalProductId ?? '',
       ikpu: full.ikpu ?? '',
+      saleType: full.saleType || 'PIECE',
+      unitCode: full.unitCode || 'PCS',
+      quantityScale: full.quantityScale ?? 0,
+      allowFraction: full.allowFraction ?? false,
       unitOfMeasure: full.unitOfMeasure || 'pcs',
       unitMeasureCode: full.unitMeasureCode ?? '',
       packageCode: full.packageCode ?? '',
@@ -142,6 +154,25 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
 
   const sellingPriceWatch = watch('sellingPrice');
   const costPriceWatch = watch('costPrice');
+  const saleTypeWatch = watch('saleType');
+
+  useEffect(() => {
+    if (saleTypeWatch === 'WEIGHT') {
+      if (getValues('unitOfMeasure') === 'pcs') setValue('unitOfMeasure', 'kg');
+      setValue('unitCode', 'KG');
+      setValue('quantityScale', 3);
+      setValue('allowFraction', true);
+    } else if (saleTypeWatch === 'SERVICE') {
+      setValue('unitCode', 'PCS');
+      setValue('quantityScale', 0);
+      setValue('allowFraction', false);
+    } else if (saleTypeWatch === 'PIECE') {
+      if (getValues('unitOfMeasure') === 'kg') setValue('unitOfMeasure', 'pcs');
+      setValue('unitCode', 'PCS');
+      setValue('quantityScale', 0);
+      setValue('allowFraction', false);
+    }
+  }, [saleTypeWatch, getValues, setValue]);
 
   useEffect(() => {
     if (sellingPriceWatch == null || sellingPriceWatch === '') return;
@@ -209,6 +240,10 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       barcode: values.barcode || undefined,
       externalProductId: values.externalProductId || undefined,
       ikpu: values.ikpu || undefined,
+      saleType: values.saleType,
+      unitCode: values.unitCode,
+      quantityScale: values.quantityScale,
+      allowFraction: values.allowFraction,
       unitOfMeasure: values.unitOfMeasure,
       unitMeasureCode: values.unitMeasureCode || undefined,
       packageCode: values.packageCode || undefined,
@@ -287,6 +322,34 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
               <Field label={t('productModal.name')} required error={errors.name?.message}>
                 <input {...register('name')} className={inputCls} />
               </Field>
+              <Field label={t('productCatalog.saleType')} required error={errors.saleType?.message}>
+                <select {...register('saleType')} className={inputCls}>
+                  <option value="PIECE">{t('productCatalog.saleTypePiece')}</option>
+                  <option value="WEIGHT">{t('productCatalog.saleTypeWeight')}</option>
+                  <option value="SERVICE">{t('productCatalog.saleTypeService')}</option>
+                </select>
+              </Field>
+              <Field label={t('productCatalog.unitCode')} required error={errors.unitCode?.message}>
+                <select {...register('unitCode')} className={inputCls}>
+                  <option value="PCS">{t('productCatalog.unitCodePcs')}</option>
+                  <option value="KG">{t('productCatalog.unitCodeKg')}</option>
+                  <option value="G">{t('productCatalog.unitCodeG')}</option>
+                  <option value="L">{t('productCatalog.unitCodeL')}</option>
+                  <option value="M">{t('productCatalog.unitCodeM')}</option>
+                </select>
+              </Field>
+              <Field label={t('productCatalog.quantityScale')} error={errors.quantityScale?.message}>
+                <select {...register('quantityScale')} className={inputCls}>
+                  <option value={0}>0</option>
+                  <option value={1}>1</option>
+                  <option value={2}>2</option>
+                  <option value={3}>3</option>
+                </select>
+              </Field>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300 md:col-span-2">
+                <input type="checkbox" {...register('allowFraction')} className="rounded border-slate-400 dark:border-slate-600" />
+                {t('productCatalog.allowFraction')}
+              </label>
               <Field label={t('productCatalog.unit')} required error={errors.unitOfMeasure?.message}>
                 <input {...register('unitOfMeasure')} className={inputCls} />
               </Field>

@@ -442,6 +442,25 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
         @Param("reportAt") Instant reportAt
     );
 
+    @Query(value = """
+        SELECT COUNT(*),
+               COALESCE(SUM(tax_total), 0),
+               COALESCE(SUM(cash_amount), 0),
+               COALESCE(SUM(card_amount), 0)
+        FROM sales
+        WHERE cashier_id = :cashierId
+          AND store_id = :storeId
+          AND status IN ('REFUNDED', 'VOIDED')
+          AND created_at >= :periodFrom
+          AND created_at < :reportAt
+        """, nativeQuery = true)
+    List<Object[]> aggregateReturnsByCashierAndTime(
+        @Param("cashierId") UUID cashierId,
+        @Param("storeId") Integer storeId,
+        @Param("periodFrom") Instant periodFrom,
+        @Param("reportAt") Instant reportAt
+    );
+
     @Query("""
         SELECT DISTINCT s FROM Sale s
         JOIN FETCH s.cashier

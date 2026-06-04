@@ -16,10 +16,17 @@ function fmtMoney(value) {
  * @param {number|string} value
  * @returns {string}
  */
-function fmtQty(value) {
+function fmtQty(value, saleType) {
   const n = Number(value);
   if (!Number.isFinite(n)) return '0';
-  return Number.isInteger(n) ? String(n) : n.toFixed(3).replace(/\.?0+$/, '');
+  if (saleType === 'WEIGHT') {
+    const s = n.toFixed(3).replace(/\.?0+$/, '') || '0';
+    return `${s} kg`;
+  }
+  if (Number.isInteger(n) || Math.abs(n - Math.round(n)) < 0.0005) {
+    return String(Math.round(n));
+  }
+  return n.toFixed(3).replace(/\.?0+$/, '');
 }
 
 /**

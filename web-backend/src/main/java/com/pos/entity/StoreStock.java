@@ -3,6 +3,7 @@ package com.pos.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -30,8 +31,9 @@ public class StoreStock {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
-    @Column(nullable = false)
-    private int quantity;
+    @Column(nullable = false, precision = 18, scale = 3)
+    @Builder.Default
+    private BigDecimal quantity = BigDecimal.ZERO;
 
     @Column(name = "updated_at")
     private Instant updatedAt;

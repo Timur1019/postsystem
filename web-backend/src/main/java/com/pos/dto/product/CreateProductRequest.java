@@ -5,6 +5,9 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import com.pos.domain.SaleType;
+import com.pos.domain.UnitCode;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -17,7 +20,11 @@ public record CreateProductRequest(
     @NotNull @DecimalMin("0.01") BigDecimal sellingPrice,
     @DecimalMin("0") BigDecimal defaultDiscountPercent,
     @NotNull BigDecimal taxRate,
-    Integer initialStock,
+    SaleType saleType,
+    UnitCode unitCode,
+    Integer quantityScale,
+    Boolean allowFraction,
+    BigDecimal initialStock,
     Integer lowStockAlert,
     String barcode,
     String imageUrl,

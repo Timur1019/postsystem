@@ -204,7 +204,10 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
                   <div key={idx} className="receipt-items-table__item border-b border-dotted border-black pb-2 last:border-0">
                     <div className="receipt-items-table__row">
                       <span className="receipt-items-table__name">{item.productName}</span>
-                      <span className="receipt-items-table__qty">{fmtQty(item.quantity)}</span>
+                      <span className="receipt-items-table__qty">
+                        {fmtQty(item.quantity, item.saleType)}
+                        {item.saleType !== 'WEIGHT' && item.unitOfMeasure ? ` ${item.unitOfMeasure}` : ''}
+                      </span>
                       <span className="receipt-items-table__sum">{fmtMoney(item.lineTotal)}</span>
                     </div>
                     {isOn('itemIkpu') && item.ikpu ? (

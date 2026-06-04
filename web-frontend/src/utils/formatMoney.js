@@ -21,9 +21,16 @@ export function fmtMoneyCompact(n) {
   return moneyFormatter.format(rounded);
 }
 
-export function fmtQty(q) {
+export function fmtQty(q, saleType) {
+  if (saleType === 'WEIGHT') {
+    const n = Number(q) || 0;
+    return `${(Math.round(n * 1000) / 1000).toFixed(3).replace(/\.?0+$/, '') || '0'} кг`;
+  }
   const n = Number(q) || 0;
-  return Number.isInteger(n) ? String(n) : n.toFixed(2);
+  if (Number.isInteger(n) || Math.abs(n - Math.round(n)) < 0.0005) {
+    return String(Math.round(n));
+  }
+  return (Math.round(n * 1000) / 1000).toFixed(3);
 }
 
 /** Целые числа (клавиатура, счётчики). */

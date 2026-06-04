@@ -425,7 +425,7 @@ public class StockReportServiceImpl implements StockReportService {
         String sku = (String) row[2];
         String barcode = (String) row[3];
         String category = (String) row[4];
-        int stockQty = ((Number) row[5]).intValue();
+        BigDecimal stockQty = toBigDecimal(row[5]);
         BigDecimal stockValue = toBigDecimal(row[6]);
         LocalDate lastSale = row[7] != null ? LocalDate.parse(row[7].toString()) : null;
         int daysWithout = lastSale != null
@@ -446,7 +446,7 @@ public class StockReportServiceImpl implements StockReportService {
 
     private StockBalanceRowResponse toBalanceRow(Product p) {
         BigDecimal stockValue = p.getCostPrice()
-            .multiply(BigDecimal.valueOf(p.getStockQuantity()))
+            .multiply(p.getStockQuantity())
             .setScale(2, RoundingMode.HALF_UP);
         return new StockBalanceRowResponse(
             p.getId(),
@@ -462,9 +462,10 @@ public class StockReportServiceImpl implements StockReportService {
     }
 
     private LowStockRowResponse toLowStockRow(Product p) {
-        int deficit = Math.max(0, p.getLowStockAlert() - p.getStockQuantity());
+        BigDecimal alert = BigDecimal.valueOf(p.getLowStockAlert());
+        BigDecimal deficit = alert.subtract(p.getStockQuantity()).max(BigDecimal.ZERO);
         BigDecimal stockValue = p.getCostPrice()
-            .multiply(BigDecimal.valueOf(p.getStockQuantity()))
+            .multiply(p.getStockQuantity())
             .setScale(2, RoundingMode.HALF_UP);
         return new LowStockRowResponse(
             p.getId(),
