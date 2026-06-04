@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { CASHIER_ESCPOS_TOAST } from '../../config/cashierEscposConfig';
 import {
   isCashierEscposPrintAvailable,
-  printSaleReceiptEscpos,
+  printFiscalReceipt,
   resolveEscposPrintErrorMessage,
 } from '../../services/cashierEscpos';
 import { isDesktopCashier } from '../../utils/printReceipt';
@@ -329,7 +329,7 @@ export default function PosPage() {
 
       if (shouldPrint && isCashierEscposPrintAvailable()) {
         try {
-          await printSaleReceiptEscpos(res.data, t);
+          await printFiscalReceipt({ sale: res.data, t });
           toast.success(t('receipt.printSent'), {
             id: CASHIER_ESCPOS_TOAST.toastId,
             duration: CASHIER_ESCPOS_TOAST.successDurationMs,

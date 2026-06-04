@@ -3,26 +3,38 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Printer, X, Settings2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { saleApi } from '../../services/api';
 import {
-  printWithHtmlClass,
-  PRINT_THERMAL_CLASS,
-  PRINT_THERMAL_MODAL_CLASS,
-} from '../../utils/printWithHtmlClass';
+  printFiscalReceipt,
+  resolveEscposPrintErrorMessage,
+} from '../../services/cashierEscpos';
 import ThermalPrintSettingsPanel from '../receipt/ThermalPrintSettingsPanel';
 import FiscalReceiptBody from '../receipt/FiscalReceiptBody';
 
 export default function SaleFiscalPrintModal({ saleId, onClose }) {
   const { t } = useTranslation();
   const [printSettingsOpen, setPrintSettingsOpen] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const { data: sale, isPending, isError, error } = useQuery({
     queryKey: ['sale-fiscal', saleId],
     queryFn: () => saleApi.getById(saleId).then((r) => r.data),
     enabled: Boolean(saleId),
   });
 
-  const handlePrint = () => {
-    printWithHtmlClass([PRINT_THERMAL_CLASS, PRINT_THERMAL_MODAL_CLASS]);
+  const handlePrint = async () => {
+    if (!sale || printing) return;
+    setPrinting(true);
+    try {
+      await printFiscalReceipt({ sale, t, useModalShell: true });
+      toast.success(t('receipt.printSent'), { id: 'sale-fiscal-print' });
+    } catch (e) {
+      toast.error(resolveEscposPrintErrorMessage(e, t) ?? t('receipt.printFailed'), {
+        id: 'sale-fiscal-print',
+      });
+    } finally {
+      setPrinting(false);
+    }
   };
 
   if (!saleId) return null;
@@ -63,10 +75,11 @@ export default function SaleFiscalPrintModal({ saleId, onClose }) {
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1 rounded-lg border border-emerald-700 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 dark:border-emerald-500 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-slate-800"
+              disabled={!sale || printing}
+              className="inline-flex items-center gap-1 rounded-lg border border-emerald-700 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-500 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-slate-800"
             >
               <Printer size={14} />
-              {t('receipt.print')}
+              {printing ? t('common.loading') : t('receipt.print')}
             </button>
             <button
               type="button"
@@ -106,9 +119,10 @@ export default function SaleFiscalPrintModal({ saleId, onClose }) {
           <button
             type="button"
             onClick={handlePrint}
-            className="rounded-lg border border-slate-400 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 dark:border-slate-500 dark:text-slate-200 dark:hover:bg-slate-800"
+            disabled={!sale || printing}
+            className="rounded-lg border border-slate-400 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-500 dark:text-slate-200 dark:hover:bg-slate-800"
           >
-            {t('receipt.print')}
+            {printing ? t('common.loading') : t('receipt.print')}
           </button>
           <button
             type="button"

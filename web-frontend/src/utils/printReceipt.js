@@ -1,5 +1,6 @@
 /**
  * Печать фискального чека через диалог браузера (window.print).
+ * На desktop-кассе для продаж используйте printFiscalReceipt из services/cashierEscpos.
  */
 import { RECEIPT_PRINT_DOM } from '../config/receiptPrintConfig';
 import {

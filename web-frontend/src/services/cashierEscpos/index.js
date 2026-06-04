@@ -7,3 +7,4 @@ export {
   printSaleReceiptEscpos,
   resolveEscposPrintErrorMessage,
 } from './printSaleReceiptEscpos';
+export { printFiscalReceipt } from './printFiscalReceipt';

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { CASHIER_ESCPOS_TOAST } from '../../config/cashierEscposConfig';
 import {
   isCashierEscposPrintAvailable,
-  printSaleReceiptEscpos,
+  printFiscalReceipt,
   resolveEscposPrintErrorMessage,
 } from '../../services/cashierEscpos';
 import { buildEscposTestSale } from '../../services/cashierEscpos/mockTestSale';
@@ -120,7 +120,7 @@ export default function CashierDesktopMenu({ appName }) {
       return;
     }
     try {
-      await printSaleReceiptEscpos(buildEscposTestSale(), t);
+      await printFiscalReceipt({ sale: buildEscposTestSale(), t });
       toast.success(t('desktop.testReceiptSent'), { id: CASHIER_ESCPOS_TOAST.toastId });
     } catch (e) {
       toast.error(resolveEscposPrintErrorMessage(e, t) ?? t('desktop.testReceiptFailed'), {

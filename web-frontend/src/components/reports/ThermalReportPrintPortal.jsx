@@ -5,6 +5,11 @@ import { useTranslation } from 'react-i18next';
 import ReceiptPrintingOverlay from '../cashier/ReceiptPrintingOverlay';
 import { printThermalReceiptDialog } from '../../utils/printReceipt';
 import { printThermalReport } from '../../utils/printThermalReport';
+import {
+  isCashierEscposPrintAvailable,
+  printFiscalReceipt,
+  resolveEscposPrintErrorMessage,
+} from '../../services/cashierEscpos';
 
 /**
  * Скрытый термочек в DOM + печать; на экране — только модалка «Печатается…».
@@ -78,7 +83,9 @@ export default function ThermalReportPrintPortal({
       }
 
       try {
-        if (printMode === 'dialog' || isShift) {
+        if (!isShift && _sale && isCashierEscposPrintAvailable()) {
+          await printFiscalReceipt({ sale: _sale, t, useModalShell: true });
+        } else if (printMode === 'dialog' || isShift) {
           await printThermalReceiptDialog({ useModalShell: true });
         } else {
           await printThermalReport();
@@ -89,7 +96,11 @@ export default function ThermalReportPrintPortal({
         }
       } catch (err) {
         if (!cancelled) {
-          onErrorRef.current?.(err);
+          const wrapped =
+            !isShift && _sale && isCashierEscposPrintAvailable()
+              ? new Error(resolveEscposPrintErrorMessage(err, t))
+              : err;
+          onErrorRef.current?.(wrapped);
           onCloseRef.current?.();
         }
       } finally {

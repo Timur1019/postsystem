@@ -7,6 +7,11 @@ import { saleApi } from '../services/api';
 import { ArrowLeft, Printer, Settings2, Receipt } from 'lucide-react';
 import { POS_RECEIPT_PRINT_EVENT } from '../utils/printWithHtmlClass';
 import { printReceiptDialog } from '../utils/printReceipt';
+import {
+  isCashierEscposPrintAvailable,
+  printFiscalReceipt,
+  resolveEscposPrintErrorMessage,
+} from '../services/cashierEscpos';
 import toast from 'react-hot-toast';
 import ThermalPrintSettingsPanel from '../components/receipt/ThermalPrintSettingsPanel';
 import FiscalReceiptBody from '../components/receipt/FiscalReceiptBody';
@@ -36,14 +41,20 @@ export default function ReceiptPage() {
 
   const runPrint = useCallback(async () => {
     try {
-      const mode = await printReceiptDialog(receiptNumber);
-      if (mode) {
-        toast.success(t('receipt.printSent'), { id: 'receipt-print' });
+      if (isCashierEscposPrintAvailable() && sale) {
+        await printFiscalReceipt({ sale, t, useModalShell: false });
+      } else {
+        await printReceiptDialog(receiptNumber);
       }
+      toast.success(t('receipt.printSent'), { id: 'receipt-print' });
     } catch (e) {
-      toast.error(e?.message ?? t('receipt.printFailed'), { id: 'receipt-print' });
+      const msg =
+        isCashierEscposPrintAvailable() && sale
+          ? resolveEscposPrintErrorMessage(e, t)
+          : e?.message ?? t('receipt.printFailed');
+      toast.error(msg, { id: 'receipt-print' });
     }
-  }, [receiptNumber, t]);
+  }, [receiptNumber, sale, t]);
 
   useEffect(() => {
     window.addEventListener(POS_RECEIPT_PRINT_EVENT, runPrint);

@@ -9,6 +9,11 @@ import { saleApi } from '../../services/api';
 import SalePartialReturnModal from '../../components/sales/SalePartialReturnModal';
 import FiscalReceiptBody from '../../components/receipt/FiscalReceiptBody';
 import ThermalReportPrintPortal from '../../components/reports/ThermalReportPrintPortal';
+import {
+  isCashierEscposPrintAvailable,
+  printFiscalReceipt,
+  resolveEscposPrintErrorMessage,
+} from '../../services/cashierEscpos';
 import { useCashierShift } from '../../hooks/useCashierShift';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -435,9 +440,22 @@ function SalesReceiptPane({ receiptNumber, selectedRow, returnDisabled, onReturn
   const canReturn = selectedRow && selectedRow.status !== 'VOIDED';
   const canPrint = Boolean(sale && receiptNumber);
 
-  const handlePrint = () => {
-    if (!canPrint || printing) return;
+  const handlePrint = async () => {
+    if (!canPrint || printing || !sale) return;
     setPrinting(true);
+
+    if (isCashierEscposPrintAvailable()) {
+      try {
+        await printFiscalReceipt({ sale, t });
+        toast.success(t('receipt.printSent'), { id: 'cashier-sales-print' });
+      } catch (err) {
+        toast.error(resolveEscposPrintErrorMessage(err, t), { id: 'cashier-sales-print' });
+      } finally {
+        setPrinting(false);
+      }
+      return;
+    }
+
     setPrintToken(Date.now());
   };
 
