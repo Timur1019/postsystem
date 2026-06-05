@@ -1348,10 +1348,16 @@
     "sizePresets": "Типовые размеры",
     "settingsPersistHint": "Настройки сохраняются автоматически — подкрутите один раз под ваш принтер.",
     "calibrationTitle": "Калибровка печати",
-    "calibrationHint": "Подстройка под ваш принтер. Эталон 58×40 уже задан по умолчанию.",
+    "calibrationHint": "Сдвиги по умолчанию 0. Подстройте после калибровки FEED и драйвера Windows.",
     "resetPresetDefaults": "Сбросить эталон",
     "presetDefaultsRestored": "Эталонные значения восстановлены",
-    "fineSettings": "Тонкая настройка"
+    "fineSettings": "Тонкая настройка",
+    "currentItemEmpty": "Найдите товар через поиск или отсканируйте штрихкод.",
+    "printerCalibrationTitle": "XP-365B: сначала принтер",
+    "printerCalibrationFeed": "Выключите → зажмите FEED → включите → держите, пока не протянет этикетки. FEED один раз = ровно одна этикетка.",
+    "printerCalibrationDriver": "Windows: Label/Gap, размер 58×40 мм, масштаб 100%, средняя скорость и плотность.",
+    "printerCalibrationOffset": "Потом подстройте сдвиги ниже (шаг 0.5–1 мм).",
+    "offsetCalibrationHint": "Уходит вправо → offsetX −1. Влево → +1. Вниз → offsetY −1. Вверх → +1."
   },
   "receipt": {
     "loading": "Загрузка чека…",

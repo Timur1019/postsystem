@@ -1348,10 +1348,16 @@
     "sizePresets": "Standart o‘lchamlar",
     "settingsPersistHint": "Sozlamalar avtomatik saqlanadi — printerni bir marta sozlang.",
     "calibrationTitle": "Chop etish kalibrlash",
-    "calibrationHint": "Printerni sozlash. 58×40 etalon allaqachon o‘rnatilgan.",
+    "calibrationHint": "Siljishlar standart 0. FEED kalibrlash va Windows drayveridan keyin sozlang.",
     "resetPresetDefaults": "Etalonni tiklash",
     "presetDefaultsRestored": "Etalon qiymatlari tiklandi",
-    "fineSettings": "Nozik sozlash"
+    "fineSettings": "Nozik sozlash",
+    "currentItemEmpty": "Qidiruv yoki skaner orqali tovarni toping.",
+    "printerCalibrationTitle": "XP-365B: avval printer",
+    "printerCalibrationFeed": "O‘chiring → FEED ni ushlang → yoqing → yorliqlar chiqmaguncha ushlab turing. FEED bir marta = bitta yorliq.",
+    "printerCalibrationDriver": "Windows: Label/Gap, 58×40 mm, masshtab 100%, o‘rta tezlik va zichlik.",
+    "printerCalibrationOffset": "Keyin quyidagi siljishlarni sozlang (0.5–1 mm qadam).",
+    "offsetCalibrationHint": "O‘ngga ketsa → offsetX −1. Chapga → +1. Pastga → offsetY −1. Yuqoriga → +1."
   },
   "receipt": {
     "loading": "Chek yuklanmoqda…",

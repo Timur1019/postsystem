@@ -10,6 +10,7 @@ import {
 const LEGACY_LABEL_PRINT_SETTINGS_KEYS = [
   'aurent_label_print_settings_v1',
   'aurent_label_print_settings_v2',
+  'aurent_label_print_settings_v3',
 ];
 
 export const clampNum = (v, min, max) => {

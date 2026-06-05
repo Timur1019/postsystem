@@ -17,6 +17,7 @@ import {
   resolveLabelBarcodeFromTasnif,
 } from '../utils/labelBarcode';
 import '../styles/tasnif-search.css';
+import '../styles/users-barcode-print.css';
 
 const inputCls =
   'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white';
@@ -279,158 +280,172 @@ function UsersBarcodePrintPageContent() {
   };
 
   return (
-    <div className="max-w-2xl space-y-5">
-      <div>
+    <div className="barcode-print-page">
+      <header className="barcode-print-page__header">
         <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t('usersBarcodePrint.title')}</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('usersBarcodePrint.intro')}</p>
-      </div>
+      </header>
 
-      <ShelfLabelPrintSettingsPanel
-        t={t}
-        layout={layoutSettings.layout}
-        patchLayout={layoutSettings.patchLayout}
-        maxPadXmm={layoutSettings.maxPadXmm}
-        maxPadYmm={layoutSettings.maxPadYmm}
-        applyPreset={layoutSettings.applyPreset}
-        resetPresetDefaults={layoutSettings.resetPresetDefaults}
-      />
-
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          {t('usersBarcodePrint.searchLabel')}
-        </label>
-        <div className="flex gap-2">
-          <input
-            ref={searchRef}
-            className={inputCls}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                runLookup();
-              }
-            }}
-            placeholder={t('usersBarcodePrint.searchPh')}
+      <div className="barcode-print-page__grid">
+        <aside className="barcode-print-page__settings">
+          <ShelfLabelPrintSettingsPanel
+            t={t}
+            layout={layoutSettings.layout}
+            patchLayout={layoutSettings.patchLayout}
+            maxPadXmm={layoutSettings.maxPadXmm}
+            maxPadYmm={layoutSettings.maxPadYmm}
+            applyPreset={layoutSettings.applyPreset}
+            resetPresetDefaults={layoutSettings.resetPresetDefaults}
+            sidebar
           />
-          <button
-            type="button"
-            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-            onClick={() => runLookup()}
-            disabled={loading}
-          >
-            {loading ? <Loader size={18} className="animate-spin" /> : <Search size={18} />}
-          </button>
-        </div>
-        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('usersBarcodePrint.searchHint')}</p>
+        </aside>
 
-        {catalogResults.length > 0 && (
-          <div className="mt-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
-              {t('usersBarcodePrint.catalogResultsTitle')}
-            </p>
-            <div className="tasnif-search__results rounded-lg border border-emerald-200 dark:border-emerald-800">
-              {catalogResults.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className="tasnif-search__item flex w-full flex-col border-b border-slate-100 text-left dark:border-slate-700"
-                  onClick={() => {
-                    void applyCatalogProduct(p, query.trim() || pendingQuery.trim());
-                  }}
-                >
-                  <div className="tasnif-search__item-name font-medium">{p.name}</div>
-                  <div className="tasnif-search__item-meta text-xs opacity-90">{renderCatalogMeta(p)}</div>
-                </button>
-              ))}
+        <div className="barcode-print-page__workspace">
+          <section className="barcode-print-page__card">
+            <p className="barcode-print-page__card-title">{t('usersBarcodePrint.searchLabel')}</p>
+            <div className="flex gap-2">
+              <input
+                ref={searchRef}
+                className={inputCls}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    runLookup();
+                  }
+                }}
+                placeholder={t('usersBarcodePrint.searchPh')}
+              />
+              <button
+                type="button"
+                className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                onClick={() => runLookup()}
+                disabled={loading}
+              >
+                {loading ? <Loader size={18} className="animate-spin" /> : <Search size={18} />}
+              </button>
             </div>
-          </div>
-        )}
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('usersBarcodePrint.searchHint')}</p>
 
-        {tasnifResults.length > 0 && (
-          <div className="mt-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {t('usersBarcodePrint.tasnifResultsTitle')}
-            </p>
-            <div className="tasnif-search__results rounded-lg border border-slate-200 dark:border-slate-600">
-              {tasnifResults.map((item) => (
-                <button
-                  key={`${item.mxik}-${item.name}`}
-                  type="button"
-                  className="tasnif-search__item flex w-full flex-col border-b border-slate-100 text-left dark:border-slate-700"
-                  onClick={() => pickTasnifItem(item)}
-                >
-                  <div className="tasnif-search__item-name font-medium">{item.name}</div>
-                  <div className="tasnif-search__item-meta text-xs opacity-90">
-                    {t('productCatalog.ikpu')}: {item.mxik}
-                    {item.barcode || item.internalCode
-                      ? ` · ${t('productModal.barcode')}: ${item.barcode || item.internalCode}`
-                      : ''}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {draft && (
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <div className="mb-4 flex flex-wrap items-center gap-3">
-            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('usersBarcodePrint.currentItem')}</h2>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
-              {draft.source === 'catalog' ? t('usersBarcodePrint.sourceCatalog') : t('usersBarcodePrint.sourceTasnif')}
-            </span>
-          </div>
-          <div className="space-y-3 text-sm">
-            <div>
-              <label className="block text-xs text-slate-500">{t('products.colName')}</label>
-              <p className="font-medium text-slate-900 dark:text-white">{draft.name}</p>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-500">{t('productModal.barcode')}</label>
-              <p className="font-mono text-slate-900 dark:text-white">{draft.barcode || '—'}</p>
-            </div>
-            {draft.mxik && (
-              <div>
-                <label className="block text-xs text-slate-500">{t('productCatalog.ikpu')}</label>
-                <p className="font-mono text-slate-900 dark:text-white">{draft.mxik}</p>
+            {catalogResults.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
+                  {t('usersBarcodePrint.catalogResultsTitle')}
+                </p>
+                <div className="tasnif-search__results rounded-lg border border-emerald-200 dark:border-emerald-800">
+                  {catalogResults.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="tasnif-search__item flex w-full flex-col border-b border-slate-100 text-left dark:border-slate-700"
+                      onClick={() => {
+                        void applyCatalogProduct(p, query.trim() || pendingQuery.trim());
+                      }}
+                    >
+                      <div className="tasnif-search__item-name font-medium">{p.name}</div>
+                      <div className="tasnif-search__item-meta text-xs opacity-90">{renderCatalogMeta(p)}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-            <div>
-              <label className="block text-xs text-slate-500">{t('products.colPrice')}</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  className={`${inputCls} max-w-[12rem]`}
-                  value={priceInput}
-                  onChange={(e) => setPriceInput(e.target.value)}
-                />
-              </div>
-              <p className="mt-1 text-xs text-slate-500">{t('usersBarcodePrint.priceHint')}</p>
-            </div>
-          </div>
 
-          <div className="mt-6 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                if (!draft?.barcode?.trim()) {
-                  toast.error(t('usersBarcodePrint.noBarcodeForPrint'));
-                  return;
-                }
-                setPrintOpen(true);
-              }}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-            >
-              <Printer size={18} aria-hidden />
-              {t('usersBarcodePrint.openPrint')}
-            </button>
-          </div>
-        </section>
-      )}
+            {tasnifResults.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {t('usersBarcodePrint.tasnifResultsTitle')}
+                </p>
+                <div className="tasnif-search__results rounded-lg border border-slate-200 dark:border-slate-600">
+                  {tasnifResults.map((item) => (
+                    <button
+                      key={`${item.mxik}-${item.name}`}
+                      type="button"
+                      className="tasnif-search__item flex w-full flex-col border-b border-slate-100 text-left dark:border-slate-700"
+                      onClick={() => pickTasnifItem(item)}
+                    >
+                      <div className="tasnif-search__item-name font-medium">{item.name}</div>
+                      <div className="tasnif-search__item-meta text-xs opacity-90">
+                        {t('productCatalog.ikpu')}: {item.mxik}
+                        {item.barcode || item.internalCode
+                          ? ` · ${t('productModal.barcode')}: ${item.barcode || item.internalCode}`
+                          : ''}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="barcode-print-page__card">
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                {t('usersBarcodePrint.currentItem')}
+              </h2>
+              {draft ? (
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+                  {draft.source === 'catalog' ? t('usersBarcodePrint.sourceCatalog') : t('usersBarcodePrint.sourceTasnif')}
+                </span>
+              ) : null}
+            </div>
+
+            {!draft ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t('usersBarcodePrint.currentItemEmpty')}</p>
+            ) : (
+              <>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <label className="block text-xs text-slate-500">{t('products.colName')}</label>
+                    <p className="font-medium text-slate-900 dark:text-white">{draft.name}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500">{t('productModal.barcode')}</label>
+                    <p className="font-mono text-slate-900 dark:text-white">{draft.barcode || '—'}</p>
+                  </div>
+                  {draft.mxik && (
+                    <div>
+                      <label className="block text-xs text-slate-500">{t('productCatalog.ikpu')}</label>
+                      <p className="font-mono text-slate-900 dark:text-white">{draft.mxik}</p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-xs text-slate-500">{t('products.colPrice')}</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className={`${inputCls} max-w-[12rem]`}
+                        value={priceInput}
+                        onChange={(e) => setPriceInput(e.target.value)}
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">{t('usersBarcodePrint.priceHint')}</p>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!draft?.barcode?.trim()) {
+                        toast.error(t('usersBarcodePrint.noBarcodeForPrint'));
+                        return;
+                      }
+                      setPrintOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                  >
+                    <Printer size={18} aria-hidden />
+                    {t('usersBarcodePrint.openPrint')}
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      </div>
 
       <TasnifPackagePickerModal
         open={!!packageItem}

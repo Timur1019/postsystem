@@ -1,0 +1,84 @@
+.barcode-print-page {
+  max-width: 72rem;
+}
+
+.barcode-print-page__header {
+  margin-bottom: 1.25rem;
+}
+
+.barcode-print-page__grid {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .barcode-print-page__grid {
+    grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+.barcode-print-page__settings {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .barcode-print-page__settings {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+}
+
+.barcode-print-page__workspace {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.barcode-print-page__card {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: #fff;
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+}
+
+.dark .barcode-print-page__card {
+  border-color: rgb(51 65 85);
+  background: rgb(15 23 42);
+}
+
+.barcode-print-page__card-title {
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgb(100 116 139);
+}
+
+.dark .barcode-print-page__card-title {
+  color: rgb(148 163 184);
+}
+
+.shelflabel-settings--sidebar .shelflabel-settings__preset-grid {
+  grid-template-columns: 1fr !important;
+}
+
+.shelflabel-settings--sidebar .shelflabel-settings__group-title {
+  font-size: 0.65rem;
+}
+
+.shelflabel-settings--sidebar .shelflabel-settings__printer-guide {
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.shelflabel-settings--sidebar .shelflabel-settings__offset-hint {
+  font-size: 0.7rem;
+  line-height: 1.45;
+}

@@ -49,6 +49,7 @@ async function printViaDriver(printJob) {
   try {
     let deviceName = '';
     for (let i = 0; i < copies; i += 1) {
+      applyLabelPrintCssVars(layoutFromJob(printJob));
       root = mountLabelPrintLayer(sheetProps, 1);
       const result = await printShelfLabelSilent({ requireBarcode });
       deviceName = result?.deviceName || deviceName;
@@ -60,7 +61,7 @@ async function printViaDriver(printJob) {
       root = null;
       teardownLabelPrintMount();
       if (i < copies - 1) {
-        await new Promise((r) => setTimeout(r, 280));
+        await new Promise((r) => setTimeout(r, 450));
       }
     }
     return { mode: 'driver', deviceName };

@@ -38,7 +38,7 @@ export const LABEL_PRINTER_STANDARD_MAX_WIDTH_MM = 82;
 
 export const DEFAULT_PRESET_ID = 'standard_58_40';
 
-export const LABEL_PRINT_SETTINGS_KEY = 'aurent_label_print_settings_v3';
+export const LABEL_PRINT_SETTINGS_KEY = 'aurent_label_print_settings_v4';
 
 export const LABEL_SIZE_CATEGORIES = [
   { id: 'micro', i18nKey: 'usersBarcodePrint.sizeCategory.micro' },
@@ -128,9 +128,9 @@ export const LABEL_SIZE_PRESETS = [
     padXmm: 2.5,
     padYmm: 2.5,
     fontScale: 1,
-    offsetXmm: 2.5,
-    offsetYmm: 1.5,
-    rotate180: true,
+    offsetXmm: 0,
+    offsetYmm: 0,
+    rotate180: false,
     i18nKey: 'usersBarcodePrint.sizePreset.standard_58_40',
   },
   {
