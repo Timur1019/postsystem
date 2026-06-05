@@ -118,17 +118,24 @@ html.shelflabel-layout-measure #shelf-label-print-layer {
     var(--label-pad-y, 10mm),
     calc((var(--label-paper-h-mm, 40) * 1mm - 8mm) / 2)
   );
-  padding: var(--label-safe-pad-y) var(--label-safe-pad-x);
+  --label-offset-x: calc(var(--label-offset-x-mm, 0) * 1mm);
+  --label-offset-y: calc(var(--label-offset-y-mm, 0) * 1mm);
+  padding:
+    calc(var(--label-safe-pad-y) - var(--label-offset-y))
+    calc(var(--label-safe-pad-x) - var(--label-offset-x))
+    calc(var(--label-safe-pad-y) + var(--label-offset-y))
+    calc(var(--label-safe-pad-x) + var(--label-offset-x));
   overflow: hidden;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
 }
 
 /* Поворот делаем на самой карточке, иначе некоторые драйверы “режут” макет на 2 этикетки. */
 .shelflabel-card {
+  width: 100%;
   transform: rotate(var(--label-rotate, 0deg));
-  transform-origin: center;
+  transform-origin: center center;
 }
 
 /* Electron: тихая печать этикетки (как автопечать чека) */

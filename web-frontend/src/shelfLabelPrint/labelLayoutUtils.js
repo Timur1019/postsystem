@@ -41,6 +41,8 @@ export function applyLabelPrintCssVars(settings) {
   root.style.setProperty('--label-paper-w-mm', String(settings.paperWmm ?? 58));
   root.style.setProperty('--label-paper-h-mm', String(settings.paperHmm ?? 40));
   root.style.setProperty('--label-page-margin-mm', String(settings.pageMarginMm ?? 0));
+  root.style.setProperty('--label-offset-x-mm', String(settings.offsetXmm ?? 0));
+  root.style.setProperty('--label-offset-y-mm', String(settings.offsetYmm ?? 0));
 }
 
 /** @param {Record<string, unknown>} parsed */
@@ -57,6 +59,8 @@ function normalizeSavedLayout(parsed) {
     fontScale: clampNum(parsed.fontScale, 0.8, 1.6),
     padXmm: clampNum(parsed.padXmm, 0, 50),
     padYmm: clampNum(parsed.padYmm, 0, 70),
+    offsetXmm: clampNum(parsed.offsetXmm ?? base.offsetXmm ?? 0, -5, 5),
+    offsetYmm: clampNum(parsed.offsetYmm ?? base.offsetYmm ?? 0, -5, 5),
     paperWmm: preset?.paperWmm ?? clampNum(parsed.paperWmm, 30, 120),
     paperHmm: preset?.paperHmm ?? clampNum(parsed.paperHmm, 20, 150),
     pageMarginMm: clampNum(parsed.pageMarginMm, 0, 10),
@@ -98,6 +102,8 @@ export function saveLabelLayout(settings) {
         fontScale: settings.fontScale,
         padXmm: settings.padXmm,
         padYmm: settings.padYmm,
+        offsetXmm: settings.offsetXmm,
+        offsetYmm: settings.offsetYmm,
         paperWmm: settings.paperWmm,
         paperHmm: settings.paperHmm,
         pageMarginMm: settings.pageMarginMm,

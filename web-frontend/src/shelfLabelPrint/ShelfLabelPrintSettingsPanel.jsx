@@ -195,6 +195,22 @@ export default function ShelfLabelPrintSettingsPanel({ t, layout, patchLayout, m
             className="w-24"
             onChange={(pageMarginMm) => patchLayout({ pageMarginMm })}
           />
+          <NumField
+            label={t('usersBarcodePrint.offsetX', { defaultValue: 'Сдвиг вправо (мм)' })}
+            value={layout.offsetXmm ?? 0}
+            min={-3}
+            max={3}
+            step={0.1}
+            onChange={(offsetXmm) => patchLayout({ offsetXmm })}
+          />
+          <NumField
+            label={t('usersBarcodePrint.offsetY', { defaultValue: 'Сдвиг вверх (мм)' })}
+            value={layout.offsetYmm ?? 0}
+            min={-3}
+            max={3}
+            step={0.1}
+            onChange={(offsetYmm) => patchLayout({ offsetYmm })}
+          />
         </div>
       ) : null}
     </div>

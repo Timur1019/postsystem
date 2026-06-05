@@ -143,15 +143,10 @@ function buildLabelSilentPrintOpts(deviceName, dims) {
   }
   const widthMm = dims?.widthMm || 58;
   const pageHmm = dims?.pageHmm || dims?.heightMm || 40;
-  const pageCount = Math.max(1, Number(dims?.pageCount) || 1);
-  const gapMm = Number(dims?.gapMm) || 0;
-  const heightMm =
-    dims?.heightMm && dims.heightMm > 0
-      ? dims.heightMm
-      : pageHmm * pageCount + gapMm * Math.max(0, pageCount - 1);
+  // Одна этикетка за задание — иначе термопринтер проматывает пустые листы.
   opts.pageSize = {
     width: Math.round(widthMm * 1000),
-    height: Math.round(Math.max(heightMm, pageHmm) * 1000),
+    height: Math.round(pageHmm * 1000),
   };
   return opts;
 }
@@ -168,7 +163,8 @@ async function runSilentLabelPrint(webContents, options = {}) {
     );
   }
 
-  const attempts = winPrintAttempts(deviceName, printers);
+  const requested = String(deviceName || '').trim();
+  const attempts = requested ? [requested] : winPrintAttempts(deviceName, printers);
   let lastErr;
 
   for (const name of attempts) {
@@ -178,7 +174,7 @@ async function runSilentLabelPrint(webContents, options = {}) {
         webContents,
         opts,
         LABEL_PRINT_TIMEOUT_MS,
-        { acceptCallbackTimeout: false }
+        { acceptCallbackTimeout: true }
       );
       if (result.callbackTimeout) {
         throw new Error('Принтер не подтвердил печать этикетки');

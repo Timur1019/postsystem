@@ -13,6 +13,8 @@
  * @property {number} padYmm
  * @property {number} fontScale
  * @property {string} i18nKey
+ * @property {number} [offsetXmm] — калибровка вправо (+)
+ * @property {number} [offsetYmm] — калибровка вверх (+)
  * @property {boolean} [widePrinterOnly] — шире 82 мм (XP-365B не поддерживает)
  */
 
@@ -22,6 +24,8 @@
  * @property {number} fontScale
  * @property {number} padXmm
  * @property {number} padYmm
+ * @property {number} offsetXmm
+ * @property {number} offsetYmm
  * @property {number} paperWmm
  * @property {number} paperHmm
  * @property {number} pageMarginMm
@@ -89,6 +93,19 @@ export const LABEL_SIZE_PRESETS = [
     i18nKey: 'usersBarcodePrint.sizePreset.ean_nominal',
   },
   {
+    id: 'standard_50_40',
+    category: 'standard',
+    paperWmm: 50,
+    paperHmm: 40,
+    profileId: '50x40',
+    padXmm: 2.5,
+    padYmm: 2.5,
+    fontScale: 1,
+    offsetXmm: 1,
+    offsetYmm: 0.8,
+    i18nKey: 'usersBarcodePrint.sizePreset.standard_50_40',
+  },
+  {
     id: 'standard_58_30',
     category: 'standard',
     paperWmm: 58,
@@ -97,6 +114,8 @@ export const LABEL_SIZE_PRESETS = [
     padXmm: 2.5,
     padYmm: 2.5,
     fontScale: 1,
+    offsetXmm: 0.8,
+    offsetYmm: 0.5,
     i18nKey: 'usersBarcodePrint.sizePreset.standard_58_30',
   },
   {
@@ -106,8 +125,10 @@ export const LABEL_SIZE_PRESETS = [
     paperHmm: 40,
     profileId: '58x40',
     padXmm: 3,
-    padYmm: 3,
+    padYmm: 2.5,
     fontScale: 1,
+    offsetXmm: 1,
+    offsetYmm: 0.8,
     i18nKey: 'usersBarcodePrint.sizePreset.standard_58_40',
   },
   {
@@ -215,6 +236,8 @@ export function layoutFromPreset(presetId, overrides = {}) {
     paperHmm: preset.paperHmm,
     padXmm: preset.padXmm,
     padYmm: preset.padYmm,
+    offsetXmm: preset.offsetXmm ?? 0,
+    offsetYmm: preset.offsetYmm ?? 0,
     fontScale: preset.fontScale,
     rotate180: false,
     pageMarginMm: 0,

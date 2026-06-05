@@ -30,6 +30,8 @@ function layoutFromJob(printJob) {
     paperHmm: printJob.paperHmm,
     padXmm: printJob.padXmm,
     padYmm: printJob.padYmm,
+    offsetXmm: printJob.offsetXmm,
+    offsetYmm: printJob.offsetYmm,
     fontScale: printJob.fontScale,
     rotate180: printJob.rotate180,
     pageMarginMm: printJob.pageMarginMm,
@@ -45,29 +47,23 @@ async function printViaDriver(printJob) {
   let root = null;
 
   try {
-    if (isDesktopLabelPrintAvailable() && copies > 1) {
-      let deviceName = '';
-      for (let i = 0; i < copies; i += 1) {
-        root = mountLabelPrintLayer(sheetProps, 1);
-        const result = await printShelfLabelSilent({ requireBarcode });
-        deviceName = result?.deviceName || deviceName;
-        try {
-          root.unmount();
-        } catch {
-          /* ignore */
-        }
-        root = null;
-        teardownLabelPrintMount();
-        if (i < copies - 1) {
-          await new Promise((r) => setTimeout(r, 280));
-        }
+    let deviceName = '';
+    for (let i = 0; i < copies; i += 1) {
+      root = mountLabelPrintLayer(sheetProps, 1);
+      const result = await printShelfLabelSilent({ requireBarcode });
+      deviceName = result?.deviceName || deviceName;
+      try {
+        root.unmount();
+      } catch {
+        /* ignore */
       }
-      return { mode: 'driver', deviceName };
+      root = null;
+      teardownLabelPrintMount();
+      if (i < copies - 1) {
+        await new Promise((r) => setTimeout(r, 280));
+      }
     }
-
-    root = mountLabelPrintLayer(sheetProps, copies);
-    const result = await printShelfLabelSilent({ requireBarcode });
-    return { mode: 'driver', deviceName: result?.deviceName };
+    return { mode: 'driver', deviceName };
   } finally {
     try {
       root?.unmount();

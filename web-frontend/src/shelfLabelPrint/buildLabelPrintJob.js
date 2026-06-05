@@ -51,6 +51,8 @@ export function buildLabelPrintJob(input) {
     fontScale: Number(layout.fontScale) || 1,
     padXmm: Number(layout.padXmm) || 0,
     padYmm: Number(layout.padYmm) || 0,
+    offsetXmm: Number(layout.offsetXmm) || 0,
+    offsetYmm: Number(layout.offsetYmm) || 0,
     paperWmm: Number(layout.paperWmm) || 58,
     paperHmm: Number(layout.paperHmm) || 40,
     pageMarginMm: Number(layout.pageMarginMm) || 0,

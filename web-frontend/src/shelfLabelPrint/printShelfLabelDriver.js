@@ -11,7 +11,8 @@ const LABEL_PRINT_HTML_CLASSES = [
   ELECTRON_PRINT_CAPTURING_CLASS,
 ];
 
-const SILENT_LABEL_MAX_ATTEMPTS = 3;
+/** Повторы проматывают ленту — одна попытка на этикетку. */
+const SILENT_LABEL_MAX_ATTEMPTS = 1;
 const LABEL_JOB_PAGE_STYLE_ID = 'pos-label-job-page';
 
 export function isDesktopLabelPrintAvailable() {

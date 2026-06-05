@@ -1320,6 +1320,7 @@
       "micro_43_25": "Dorixona / mayda chakana",
       "micro_47_25": "Kabel / aksessuar",
       "ean_nominal": "EAN nominal 37×26",
+      "standard_50_40": "Narx yorlig‘i 50×40",
       "standard_58_30": "Tejamkor (58×30)",
       "standard_58_40": "Standart narx yorlig‘i — XP-365B",
       "standard_58_60": "Uzun nom",
@@ -1341,6 +1342,8 @@
     "paperW": "Kenglik (mm)",
     "paperH": "Balandlik (mm)",
     "pageMargin": "@page maydonlari (mm)",
+    "offsetX": "O‘ngga siljish (mm)",
+    "offsetY": "Yuqoriga siljish (mm)",
     "sizePresets": "Standart o‘lchamlar"
   },
   "receipt": {
