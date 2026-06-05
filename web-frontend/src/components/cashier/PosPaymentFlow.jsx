@@ -239,6 +239,7 @@ export default function PosPaymentFlow({
 
   const selectReceiptType = (id) => {
     setReceiptType(id);
+    if (id === 'SALE') setStep('method');
   };
 
   const deferredReceipt = isDeferredReceiptType(receiptType);
@@ -277,14 +278,9 @@ export default function PosPaymentFlow({
           onClick={submitDeferred}
         >
           {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
-          <span>{t('pos.completeSale')}</span>
+          <span>{t('pos.completeReceiptType', { type: t(`pos.receiptType.${receiptType}`) })}</span>
         </button>
-      ) : (
-        <button type="button" className="pos-pay-panel__primary" onClick={() => setStep('method')}>
-          {t('pos.continuePay')}
-          <ArrowRight size={18} />
-        </button>
-      )
+      ) : null
     ) : step === 'mixedCash' ? (
       <button
         type="button"

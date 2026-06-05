@@ -1701,6 +1701,7 @@
     "summaryDiscount": "Chegirma",
     "summaryToPay": "To'lovga",
     "continuePay": "Davom etish",
+    "completeReceiptType": "{{type}} rasmiylashtirish",
     "payOther": "Boshqa usul",
     "cardTypeTitle": "Karta turini tanlang",
     "cardTypeLead": "Xaridor to'layotgan karta turini bosing",

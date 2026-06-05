@@ -1701,6 +1701,7 @@
     "summaryDiscount": "Скидка",
     "summaryToPay": "К оплате",
     "continuePay": "Продолжить",
+    "completeReceiptType": "Оформить {{type}}",
     "payOther": "Другой способ",
     "cardTypeTitle": "Выберите тип карты",
     "cardTypeLead": "Нажмите тип карты, которой оплачивает покупатель",
