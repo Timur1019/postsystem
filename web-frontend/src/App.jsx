@@ -56,6 +56,7 @@ import PlatformStoresPage from './pages/platform/PlatformStoresPage';
 import PlatformUsersPage from './pages/platform/PlatformUsersPage';
 import PlatformModuleAccessPage from './pages/platform/PlatformModuleAccessPage';
 import PlatformMonitoringPage from './pages/platform/PlatformMonitoringPage';
+import PlatformEmailPage from './pages/platform/PlatformEmailPage';
 import { useModuleAccess } from './hooks/useModuleAccess';
 import HtmlLangSync      from './components/shared/HtmlLangSync';
 import AuthBootstrap     from './components/shared/AuthBootstrap';
@@ -144,6 +145,7 @@ export default function App() {
             <Route path="users" element={<PlatformUsersPage />} />
             <Route path="access" element={<PlatformModuleAccessPage />} />
             <Route path="monitoring" element={<PlatformMonitoringPage />} />
+            <Route path="email" element={<PlatformEmailPage />} />
           </Route>
 
           <Route path="/" element={

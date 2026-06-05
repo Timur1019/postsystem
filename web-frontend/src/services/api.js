@@ -170,6 +170,12 @@ export const platformModuleAccessApi = {
   resetUser: (userId) => api.delete(`/platform/module-access/users/${userId}`),
 };
 
+export const platformEmailApi = {
+  templates: () => api.get('/platform/email/templates'),
+  preview: (body) => api.post('/platform/email/templates/preview', body),
+  broadcast: (body) => api.post('/platform/email/broadcast', body),
+};
+
 export const platformMonitoringApi = {
   overview: () => api.get('/platform/monitoring/overview'),
   metrics: (search) => api.get('/platform/monitoring/metrics', { params: { search } }),

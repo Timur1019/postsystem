@@ -18,6 +18,7 @@ import com.pos.security.RoleName;
 import com.pos.service.AuditService;
 import com.pos.service.AuthService;
 import com.pos.service.ModuleAccessService;
+import com.pos.service.email.EmailService;
 import com.pos.util.CompanyLoginCodeUtil;
 import com.pos.util.CashierPinUtil;
 import com.pos.util.LogUtil;
@@ -44,6 +45,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthMapper authMapper;
     private final ModuleAccessService moduleAccessService;
     private final CurrentUserProvider currentUserProvider;
+    private final EmailService emailService;
     @Value("${app.jwt.secret}")
     private String pinSecret;
 
@@ -80,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional(readOnly = true)
-    public AuthResponse authenticate(AuthRequest request) {
+    public AuthResponse authenticate(AuthRequest request, String clientIp, String userAgent) {
         String username = UserLoginUtil.normalizeUsername(request.username());
         String companyCode = CompanyLoginCodeUtil.normalize(request.companyLoginCode());
 
@@ -92,6 +94,10 @@ public class AuthServiceImpl implements AuthService {
         }
 
         auditService.log(user, "LOGIN", null, null, null, null);
+
+        if (RoleName.SUPER_ADMIN.matches(user)) {
+            emailService.notifySuperAdminLogin(user, clientIp, userAgent);
+        }
 
         String token = jwtService.generateToken(user);
         LogUtil.info(

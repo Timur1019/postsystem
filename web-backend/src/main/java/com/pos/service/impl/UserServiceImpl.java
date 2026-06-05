@@ -14,6 +14,7 @@ import com.pos.mapper.UserMapper;
 import com.pos.repository.RoleRepository;
 import com.pos.repository.UserRepository;
 import com.pos.service.UserService;
+import com.pos.service.email.EmailService;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
 import com.pos.util.CashierPinUtil;
@@ -44,6 +45,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final TenantAccessSupport tenantAccess;
     private final UserMapper userMapper;
+    private final EmailService emailService;
     @Value("${app.jwt.secret}")
     private String pinSecret;
 
@@ -109,6 +111,7 @@ public class UserServiceImpl implements UserService {
             applyCashierPinForCreate(user, role.getName(), companyId, req.pin());
 
             User saved = userRepository.saveAndFlush(user);
+            emailService.sendUserCredentials(loadUserForResponse(saved.getId(), saved), rawPassword);
             LogUtil.info(UserServiceImpl.class, "User created: id={}, username={}", saved.getId(), saved.getUsername());
             return userMapper.toResponse(loadUserForResponse(saved.getId(), saved));
         } catch (BadRequestException | ConflictException ex) {

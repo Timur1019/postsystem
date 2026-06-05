@@ -2,12 +2,14 @@ package com.pos.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.concurrent.DelegatingSecurityContextExecutor;
 
 import java.util.concurrent.Executor;
 
 @Configuration
+@EnableAsync
 public class AsyncConfig {
 
     @Bean(name = "reportCacheExecutor")
@@ -32,5 +34,16 @@ public class AsyncConfig {
         executor.initialize();
         // Propagate JWT SecurityContext into parallel AI analytics workers.
         return new DelegatingSecurityContextExecutor(executor);
+    }
+
+    @Bean(name = "emailExecutor")
+    public Executor emailExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setThreadNamePrefix("email-");
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(256);
+        executor.initialize();
+        return executor;
     }
 }

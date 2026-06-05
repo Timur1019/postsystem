@@ -7,6 +7,8 @@ import com.pos.dto.auth.RegisterRequest;
 import com.pos.dto.auth.VerifyPinRequest;
 import com.pos.dto.auth.VerifyPasswordRequest;
 import com.pos.service.AuthService;
+import com.pos.util.ClientIpResolver;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +22,15 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
-        return ResponseEntity.ok(authService.authenticate(request));
+    public ResponseEntity<AuthResponse> login(
+        @Valid @RequestBody AuthRequest request,
+        HttpServletRequest httpRequest
+    ) {
+        return ResponseEntity.ok(authService.authenticate(
+            request,
+            ClientIpResolver.resolve(httpRequest),
+            httpRequest.getHeader("User-Agent")
+        ));
     }
 
     @PostMapping("/cashier-pin/login")

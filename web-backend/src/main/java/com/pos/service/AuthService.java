@@ -9,7 +9,7 @@ public interface AuthService {
 
     AuthResponse register(RegisterRequest request);
 
-    AuthResponse authenticate(AuthRequest request);
+    AuthResponse authenticate(AuthRequest request, String clientIp, String userAgent);
 
     AuthResponse authenticateCashierPin(CashierPinAuthRequest request);
 
