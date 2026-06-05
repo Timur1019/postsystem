@@ -10,16 +10,19 @@
 | `printShelfLabel.js` | Точка входа печати (→ ESC/POS) |
 | `resolveAutoLabelLayout.js` | Авторазмер бумаги (мм) |
 
-## Печать (как чек / Z / X на кассе)
+## Печать
 
 ```
 buildLabelPrintJob → printShelfLabel(printJob, t)
   → ensureDesktopLabelPrinter
-  → buildEscposLabelPayload
-  → window.desktopCashier.printLabelsEscpos
+  → printShelfLabelUnified (preferDriverPrint)
+      1. HTML + printLabelPage (драйвер, XP-365B и аналоги)
+      2. ESC/POS — запасной путь (printLabelsEscpos)
 ```
 
 Принтер: Aurent → «Принтер штрих-кодов». Размер бумаги при `autoLabelPrint` — из `resolveAutoLabelLayout`.
+
+XP-365B и многие термопринтеры этикеток на Windows игнорируют сырой ESC/POS — поэтому основной путь через драйвер.
 
 ## Режимы
 

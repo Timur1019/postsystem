@@ -66,6 +66,7 @@ export function buildReturnReceiptSale(originalSale, qtyByItemId, opts = {}) {
     amountTendered,
     changeGiven: 0,
     receiptDocumentType: 'RETURN',
+    originalReceiptNumber: originalSale.receiptNumber ?? null,
     createdAt: new Date().toISOString(),
     returnReason: reason,
   };

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Loader, RotateCcw, X } from 'lucide-react';
 import { saleApi } from '../../services/api';
+import { printReturnReceiptWithToast } from '../../utils/printReturnReceipt';
 import PosModalPortal from '../cashier/PosModalPortal';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import SaleReturnLinesEditor, {
@@ -41,8 +42,19 @@ export default function SalePartialReturnModal({
       }
       return saleApi.returnItems(sale.id, payload).then((r) => r.data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      const returnReason = reason.trim() || t('pos.returnDefaultReason');
       toast.success(t('pos.returnSuccess'));
+
+      if (sale) {
+        await printReturnReceiptWithToast({
+          originalSale: sale,
+          qtyByItemId,
+          reason: returnReason,
+          t,
+        });
+      }
+
       onClose();
       onSuccess?.();
     },

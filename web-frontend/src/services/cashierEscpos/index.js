@@ -30,3 +30,4 @@ export {
   ensureDesktopLabelPrinter,
   isDesktopLabelPrintEnvironment,
 } from './ensureDesktopLabelPrinter';
+export { printShelfLabelUnified } from './printShelfLabelUnified';

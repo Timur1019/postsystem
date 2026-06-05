@@ -10,6 +10,9 @@ import {
 } from '../services/cashierEscpos';
 import { buildReturnReceiptSale } from './buildReturnReceiptSale';
 import { printThermalReceiptDialog } from './printReceipt';
+import toast from 'react-hot-toast';
+import { CASHIER_ESCPOS_TOAST } from '../config/cashierEscposConfig';
+import { resolveEscposPrintErrorMessage } from '../services/cashierEscpos';
 
 const EPHEMERAL_HOST_ID = 'return-receipt-ephemeral-host';
 
@@ -55,5 +58,21 @@ export async function printReturnReceipt({ originalSale, qtyByItemId, reason, t 
   } finally {
     root.unmount();
     host.remove();
+  }
+}
+
+/** Печать чека возврата с toast (касса, «Мои продажи», журнал). */
+export async function printReturnReceiptWithToast({ originalSale, qtyByItemId, reason, t }) {
+  try {
+    await printReturnReceipt({ originalSale, qtyByItemId, reason, t });
+    toast.success(t('receipt.printSent'), {
+      id: CASHIER_ESCPOS_TOAST.toastId,
+      duration: CASHIER_ESCPOS_TOAST.successDurationMs,
+    });
+  } catch (err) {
+    toast.error(resolveEscposPrintErrorMessage(err, t) ?? t('receipt.printFailed'), {
+      id: CASHIER_ESCPOS_TOAST.toastId,
+      duration: CASHIER_ESCPOS_TOAST.errorDurationMs,
+    });
   }
 }
