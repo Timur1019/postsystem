@@ -46,6 +46,7 @@ const mockPayload = {
     itemIkpu: true,
     itemVatLine: true,
     receiptNo: true,
+    receiptType: true,
     grandTotal: true,
     payment: true,
     qrCode: false,
@@ -63,6 +64,11 @@ const mockPayload = {
     grandTotal: 'ИТОГО',
     currency: 'сум',
     footer: 'Спасибо',
+    receiptType: 'Тип чека',
+    receiptTypeSale: 'Продажа',
+    receiptTypeReturn: 'Возврат',
+    receiptTypeAdvance: 'Аванс',
+    receiptTypeCredit: 'Кредит',
   },
   locale: 'ru',
 };
@@ -185,6 +191,7 @@ async function main() {
     assert.ok(text.includes('AURENT'), 'компания');
     assert.ok(text.includes('+998'), 'телефон в шапке');
     assert.ok(text.includes('Хлеб'), 'товар');
+    assert.ok(text.includes('Продажа'), 'тип чека — продажа');
     assert.ok(text.includes('[CUT]'), 'отрез');
     const raw = printer.getRaw();
     assert.ok(raw.includes(EXIT_CHINESE_MODE), 'выход из китайского режима');
@@ -218,6 +225,42 @@ async function main() {
     const text = printer.getText();
     assert.ok(text.includes('12'), 'номер Z');
     assert.ok(text.includes('[CUT]'), 'отрез');
+  });
+
+  await testAsync('buildReceiptOnPrinter печатает тип Возврат', async () => {
+    const printer = createMockPrinter();
+    const returnPayload = {
+      ...mockPayload,
+      sale: {
+        ...mockPayload.sale,
+        receiptDocumentType: 'RETURN',
+        receiptTypeDisplay: 'Возврат',
+        originalReceiptNumber: '10001',
+      },
+    };
+    await buildReceiptOnPrinter(printer, returnPayload, 'test-return');
+    const text = printer.getText();
+    assert.ok(text.includes('Возврат'), 'тип возврат');
+    assert.ok(text.includes('10001'), 'чек основания');
+  });
+
+  await testAsync('buildReceiptOnPrinter печатает тип Аванс без receiptTypeDisplay', async () => {
+    const printer = createMockPrinter();
+    const advancePayload = {
+      ...mockPayload,
+      sale: {
+        ...mockPayload.sale,
+        receiptType: 'ADVANCE',
+        receiptTypeDisplay: undefined,
+      },
+      labels: {
+        ...mockPayload.labels,
+        receiptTypeAdvance: 'Аванс',
+      },
+    };
+    await buildReceiptOnPrinter(printer, advancePayload, 'test-advance');
+    const text = printer.getText();
+    assert.ok(text.includes('Аванс'), 'тип аванс из fallback');
   });
 
   await testAsync('sanitizePayloadForPrint uz labels', async () => {

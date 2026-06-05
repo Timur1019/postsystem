@@ -555,7 +555,7 @@ ipcMain.handle('print-label-page', async (event) => {
   await waitForPaintFrames(wc);
   await new Promise((r) => setTimeout(r, process.platform === 'win32' ? 400 : 250));
   const dims = await safeExecuteJavaScript(wc, MEASURE_LABEL_DIMS_JS, 'размер этикетки');
-  if (!dims?.heightMm) {
+  if (!dims?.pageHmm || dims.pageCount !== 1) {
     throw new Error('Этикетка пустая для печати');
   }
   const printers = await listSystemPrinters();

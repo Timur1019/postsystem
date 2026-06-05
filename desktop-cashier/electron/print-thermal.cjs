@@ -1,6 +1,5 @@
 /**
- * Electron: тихая печать этикеток через ESC/POS (desktop:print-label-escpos).
- * Fallback: webContents.print (legacy).
+ * Electron: тихая печать этикеток через webContents.print.
  */
 
 const IS_WIN = process.platform === 'win32';
@@ -109,13 +108,16 @@ function winPrintAttempts(requestedName, printers, platformIsWin = IS_WIN) {
 
 const LABEL_PRINT_TIMEOUT_MS = IS_WIN ? 20000 : 12000;
 
-const MEASURE_LABEL_DIMS_JS = `
+/** Жёстко одна страница: убираем лишние .shelflabel-print-page и фиксируем высоту. */
+const LOCK_SINGLE_LABEL_PAGE_JS = `
 (() => {
   const layer = document.getElementById('shelf-label-print-layer');
   if (!layer) return null;
-  const pages = layer.querySelectorAll('.shelflabel-print-page');
-  const pageCount = pages.length || 0;
-  if (pageCount < 1) return null;
+  const pages = [...layer.querySelectorAll('.shelflabel-print-page')];
+  pages.slice(1).forEach((node) => node.remove());
+  const page = layer.querySelector('.shelflabel-print-page');
+  if (!page) return null;
+
   const parseMm = (raw, fallback) => {
     const n = parseFloat(String(raw || '').trim());
     return Number.isFinite(n) && n > 0 ? n : fallback;
@@ -123,12 +125,44 @@ const MEASURE_LABEL_DIMS_JS = `
   const root = document.documentElement;
   const widthMm = parseMm(root.style.getPropertyValue('--label-paper-w-mm'), 58);
   const pageHmm = parseMm(root.style.getPropertyValue('--label-paper-h-mm'), 40);
-  const gapMm = parseMm(root.style.getPropertyValue('--label-gap-mm'), 0);
-  const heightMm = pageHmm * pageCount + gapMm * Math.max(0, pageCount - 1);
-  if (heightMm < 15) return null;
-  return { widthMm, pageHmm, heightMm, pageCount, gapMm };
+  const styleId = 'pos-label-single-page-lock';
+  document.getElementById(styleId)?.remove();
+  const el = document.createElement('style');
+  el.id = styleId;
+  el.textContent = [
+    '@page { size: ' + widthMm + 'mm ' + pageHmm + 'mm; margin: 0 !important; }',
+    'html, body {',
+    '  width: ' + widthMm + 'mm !important;',
+    '  height: ' + pageHmm + 'mm !important;',
+    '  max-width: ' + widthMm + 'mm !important;',
+    '  max-height: ' + pageHmm + 'mm !important;',
+    '  overflow: hidden !important;',
+    '  margin: 0 !important;',
+    '  padding: 0 !important;',
+    '}',
+    '#pos-label-print-mount, #shelf-label-print-layer {',
+    '  width: ' + widthMm + 'mm !important;',
+    '  height: ' + pageHmm + 'mm !important;',
+    '  max-width: ' + widthMm + 'mm !important;',
+    '  max-height: ' + pageHmm + 'mm !important;',
+    '  overflow: hidden !important;',
+    '  margin: 0 !important;',
+    '  padding: 0 !important;',
+    '}',
+    '.shelflabel-print-page {',
+    '  page-break-before: avoid !important;',
+    '  page-break-after: avoid !important;',
+    '  break-before: avoid !important;',
+    '  break-after: avoid !important;',
+    '}',
+  ].join('\\n');
+  document.head.appendChild(el);
+
+  return { widthMm, pageHmm, heightMm: pageHmm, pageCount: 1, gapMm: 0 };
 })()
 `;
+
+const MEASURE_LABEL_DIMS_JS = LOCK_SINGLE_LABEL_PAGE_JS;
 
 function buildLabelSilentPrintOpts(deviceName, dims) {
   const opts = {
@@ -136,6 +170,9 @@ function buildLabelSilentPrintOpts(deviceName, dims) {
     printBackground: true,
     margins: { marginType: 'none' },
     copies: 1,
+    pageRanges: '1',
+    preferCSSPageSize: true,
+    landscape: false,
   };
   const name = String(deviceName || '').trim();
   if (name) {
@@ -143,7 +180,6 @@ function buildLabelSilentPrintOpts(deviceName, dims) {
   }
   const widthMm = dims?.widthMm || 58;
   const pageHmm = dims?.pageHmm || dims?.heightMm || 40;
-  // Одна этикетка за задание — иначе термопринтер проматывает пустые листы.
   opts.pageSize = {
     width: Math.round(widthMm * 1000),
     height: Math.round(pageHmm * 1000),
@@ -177,9 +213,9 @@ async function runSilentLabelPrint(webContents, options = {}) {
         { acceptCallbackTimeout: true }
       );
       if (result.callbackTimeout) {
-        throw new Error('Принтер не подтвердил печать этикетки');
+        console.warn('[Aurent print] label: callback timeout — считаем печать отправленной');
       }
-      return { deviceName: name || deviceName };
+      return { deviceName: name || deviceName, callbackTimeout: Boolean(result.callbackTimeout) };
     } catch (err) {
       lastErr = err;
       console.warn('[Aurent print] label attempt failed:', name || '(default)', err?.message);
@@ -201,5 +237,6 @@ module.exports = {
   runSilentLabelPrint,
   winPrintAttempts,
   MEASURE_LABEL_DIMS_JS,
+  LOCK_SINGLE_LABEL_PAGE_JS,
   buildLabelSilentPrintOpts,
 };

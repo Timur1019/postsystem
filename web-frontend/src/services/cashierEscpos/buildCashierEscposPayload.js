@@ -79,6 +79,10 @@ export function buildEscposLabels(t) {
     footer: t('fiscalReceipt.footer'),
     qrHint: t('fiscalReceipt.qrHint'),
     receiptType: t('fiscalReceipt.receiptType'),
+    receiptTypeSale: t('fiscalReceipt.receiptTypeSale'),
+    receiptTypeReturn: t('fiscalReceipt.receiptTypeReturn'),
+    receiptTypeAdvance: t('pos.receiptType.ADVANCE'),
+    receiptTypeCredit: t('pos.receiptType.CREDIT'),
     originalReceiptNo: t('fiscalReceipt.originalReceiptNo'),
   };
 }

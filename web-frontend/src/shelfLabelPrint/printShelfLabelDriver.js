@@ -1,6 +1,7 @@
 import { ELECTRON_PRINT_CAPTURING_CLASS } from '../utils/printWithHtmlClass';
 import { isDesktopCashier } from '../utils/printReceipt';
 import { cancelScheduledLabelPrintUnmount } from './labelPrintMount';
+import { prepareSingleLabelPrintPage, removeSingleLabelPrintPageLock } from './prepareSingleLabelPrintPage';
 
 export const ELECTRON_SILENT_LABEL_CLASS = 'electron-silent-label';
 export const SHELF_LABEL_PRINT_ACTIVE_CLASS = 'shelflabel-printing-active';
@@ -24,6 +25,7 @@ export function cleanupLabelPrintState() {
   LABEL_PRINT_HTML_CLASSES.forEach((c) => document.documentElement.classList.remove(c));
   document.body.classList.remove(SHELF_LABEL_PRINT_ACTIVE_CLASS);
   document.getElementById(LABEL_JOB_PAGE_STYLE_ID)?.remove();
+  removeSingleLabelPrintPageLock();
 }
 
 function injectLabelPageRuleFromCssVars() {
@@ -119,6 +121,7 @@ async function invokeDesktopLabelPrint(requireBarcode = true) {
   for (let attempt = 1; attempt <= SILENT_LABEL_MAX_ATTEMPTS; attempt += 1) {
     try {
       assertLabelLayerReady(requireBarcode);
+      prepareSingleLabelPrintPage();
       cancelScheduledLabelPrintUnmount();
       const result = await withLabelPrintCapture(() => window.desktopCashier.printLabelPage(), {
         settleMs: 450,
@@ -144,6 +147,7 @@ export async function printShelfLabelSilent({ requireBarcode = true } = {}) {
   if (!isDesktopLabelPrintAvailable()) {
     document.body.classList.add(SHELF_LABEL_PRINT_ACTIVE_CLASS);
     return new Promise((resolve, reject) => {
+      prepareSingleLabelPrintPage();
       injectLabelPageRuleFromCssVars();
       const done = () => {
         cleanupLabelPrintState();

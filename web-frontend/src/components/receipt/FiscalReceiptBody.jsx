@@ -197,6 +197,12 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
         </section>
       ) : null}
 
+      {isOn('receiptType') ? (
+        <section className="receipt-section mt-1">
+          <Row label={t('fiscalReceipt.receiptType')} value={receiptTypeLabel} bold />
+        </section>
+      ) : null}
+
       {isOn('items') ? (
         <>
           <ReceiptDivider />
@@ -271,9 +277,6 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
                 value={`${fmtMoney(sale.totalAmount)} ${t('fiscalReceipt.currency')}`}
                 bold
               />
-            ) : null}
-            {isOn('grandTotal') ? (
-              <Row label={t('fiscalReceipt.receiptType')} value={receiptTypeLabel} bold />
             ) : null}
             {isOn('vatTotal') ? (
               <Row

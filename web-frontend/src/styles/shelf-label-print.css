@@ -162,11 +162,13 @@ html.electron-silent-label.shelflabel-printing-active #shelf-label-print-layer {
   top: 0 !important;
   width: calc(var(--label-paper-w-mm, 58) * 1mm) !important;
   max-width: calc(var(--label-paper-w-mm, 58) * 1mm) !important;
+  height: calc(var(--label-paper-h-mm, 40) * 1mm) !important;
+  max-height: calc(var(--label-paper-h-mm, 40) * 1mm) !important;
   margin: 0 !important;
   padding: 0 !important;
   opacity: 1 !important;
   pointer-events: none !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   z-index: 0 !important;
   background: #fff !important;
 }
@@ -197,7 +199,9 @@ html.electron-silent-label.shelflabel-printing-active.electron-print-capturing #
   left: 0 !important;
   top: 0 !important;
   width: calc(var(--label-paper-w-mm, 58) * 1mm) !important;
-  min-height: calc(var(--label-paper-h-mm, 40) * 1mm) !important;
+  height: calc(var(--label-paper-h-mm, 40) * 1mm) !important;
+  max-height: calc(var(--label-paper-h-mm, 40) * 1mm) !important;
+  overflow: hidden !important;
   opacity: 1 !important;
 }
 
@@ -211,11 +215,24 @@ html.electron-silent-label.shelflabel-printing-active.electron-print-capturing #
     visibility: visible !important;
   }
 
+  html,
+  body {
+    width: calc(var(--label-paper-w-mm, 58) * 1mm) !important;
+    height: calc(var(--label-paper-h-mm, 40) * 1mm) !important;
+    max-height: calc(var(--label-paper-h-mm, 40) * 1mm) !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   body.shelflabel-printing-active #shelf-label-print-layer {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
-    width: 100% !important;
+    width: calc(var(--label-paper-w-mm, 58) * 1mm) !important;
+    height: calc(var(--label-paper-h-mm, 40) * 1mm) !important;
+    max-height: calc(var(--label-paper-h-mm, 40) * 1mm) !important;
+    overflow: hidden !important;
     opacity: 1 !important;
   }
 
@@ -231,8 +248,7 @@ html.electron-silent-label.shelflabel-printing-active.electron-print-capturing #
   }
 
   .shelflabel-print-page + .shelflabel-print-page {
-    page-break-before: always;
-    break-before: page;
+    display: none !important;
   }
 
   .shelflabel-name {

@@ -1208,6 +1208,7 @@
       "stir": "STIR",
       "dateTime": "Sana va vaqt",
       "receiptNo": "Chek raqami",
+      "receiptType": "Chek turi",
       "employee": "Xodim",
       "shift": "Smena",
       "items": "Mahsulotlar ro‘yxati",

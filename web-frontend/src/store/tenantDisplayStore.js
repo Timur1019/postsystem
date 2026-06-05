@@ -35,6 +35,7 @@ export const RECEIPT_FIELD_DEFS = [
   { key: 'stir', labelKey: 'tenantSettings.receiptFields.stir' },
   { key: 'dateTime', labelKey: 'tenantSettings.receiptFields.dateTime' },
   { key: 'receiptNo', labelKey: 'tenantSettings.receiptFields.receiptNo' },
+  { key: 'receiptType', labelKey: 'tenantSettings.receiptFields.receiptType' },
   { key: 'employee', labelKey: 'tenantSettings.receiptFields.employee' },
   { key: 'shift', labelKey: 'tenantSettings.receiptFields.shift' },
   { key: 'items', labelKey: 'tenantSettings.receiptFields.items' },

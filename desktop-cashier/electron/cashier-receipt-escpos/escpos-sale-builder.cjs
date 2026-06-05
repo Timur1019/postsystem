@@ -24,6 +24,29 @@ function isOn(fields, key) {
 }
 
 /**
+ * Подпись типа чека: Продажа / Возврат / Аванс / Кредит.
+ * @param {object} sale
+ * @param {Record<string, string>|undefined} L
+ */
+function resolveReceiptTypeDisplay(sale, L) {
+  const labels = L || {};
+  if (sale?.receiptTypeDisplay) {
+    return String(sale.receiptTypeDisplay);
+  }
+  if (sale?.receiptDocumentType === 'RETURN') {
+    return labels.receiptTypeReturn || 'Return';
+  }
+  const rt = String(sale?.receiptType || 'SALE').toUpperCase();
+  const byType = {
+    SALE: labels.receiptTypeSale,
+    RETURN: labels.receiptTypeReturn,
+    ADVANCE: labels.receiptTypeAdvance,
+    CREDIT: labels.receiptTypeCredit,
+  };
+  return byType[rt] || labels.receiptTypeSale || 'Sale';
+}
+
+/**
  * Строка «метка | значение» в две колонки.
  * @param {import('node-thermal-printer').printer} printer
  * @param {string} label
@@ -169,7 +192,25 @@ function appendMeta(printer, payload) {
       '001';
     appendRow(printer, L.shift || 'Shift', shiftNo);
   }
-  appendDivider(printer);
+}
+
+/**
+ * Тип чека — после смены, перед списком товаров.
+ * @param {import('node-thermal-printer').printer} printer
+ * @param {object} payload
+ */
+function appendReceiptType(printer, payload) {
+  const { sale, receiptFields, labels } = payload;
+  const fields = receiptFields || {};
+  const L = labels || {};
+  if (!isOn(fields, 'receiptType')) return;
+
+  const typeValue = resolveReceiptTypeDisplay(sale, L);
+  if (!typeValue) return;
+
+  printer.bold(true);
+  appendRow(printer, L.receiptType || 'Type', typeValue);
+  printer.bold(false);
 }
 
 /** @param {object} payload */
@@ -251,10 +292,6 @@ function appendTotals(printer, payload) {
   }
   if (isOn(fields, 'grandTotal')) {
     appendRow(printer, L.grandTotal || 'TOTAL', `${fmtMoney(sale.totalAmount)} ${cur}`, true);
-    const typeValue = sale.receiptTypeDisplay || '';
-    if (typeValue) {
-      appendRow(printer, L.receiptType || 'Type', typeValue, true);
-    }
   }
   if (isOn(fields, 'vatTotal')) {
     const vatLabel = interpolateLabel(L.vatTotalLine || 'VAT {{rate}}%', {
@@ -375,6 +412,10 @@ async function buildReceiptOnPrinter(printer, payload, jobId) {
   preparePrinterEncoding(printer);
   await appendHeader(printer, safePayload, jobId);
   appendMeta(printer, safePayload);
+  appendReceiptType(printer, safePayload);
+  if (isOn(safePayload.receiptFields, 'items')) {
+    appendDivider(printer);
+  }
   appendItems(printer, safePayload);
   appendTotals(printer, safePayload);
   appendPayment(printer, safePayload);
@@ -403,6 +444,7 @@ function validatePayload(payload) {
 module.exports = {
   appendHeader,
   appendMeta,
+  appendReceiptType,
   appendItems,
   appendTotals,
   appendPayment,
