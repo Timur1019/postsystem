@@ -258,4 +258,24 @@ html.electron-silent-label.shelflabel-printing-active.electron-print-capturing #
   .shelflabel-price {
     color: #000 !important;
   }
+
+  /* Печать в мм — стабильнее на XP-365B, чем rem/px */
+  .shelflabel-card--pricetag {
+    gap: calc(0.8mm * var(--label-font-scale, 1)) !important;
+  }
+
+  .shelflabel-card--pricetag .shelflabel-price--large {
+    font-size: calc(3.2mm * var(--label-font-scale, 1)) !important;
+    line-height: 1.1 !important;
+  }
+
+  .shelflabel-card--pricetag .shelflabel-name {
+    font-size: calc(2mm * var(--label-font-scale, 1)) !important;
+    line-height: 1.15 !important;
+    max-height: calc(5mm * var(--label-font-scale, 1)) !important;
+  }
+
+  .shelflabel-card--pricetag .shelflabel-barcode-svg {
+    max-height: calc(12mm * var(--label-font-scale, 1)) !important;
+  }
 }

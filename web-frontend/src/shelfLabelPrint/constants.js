@@ -15,6 +15,7 @@
  * @property {string} i18nKey
  * @property {number} [offsetXmm] — калибровка вправо (+)
  * @property {number} [offsetYmm] — калибровка вверх (+)
+ * @property {boolean} [rotate180] — поворот для термопринтера при отрыве
  * @property {boolean} [widePrinterOnly] — шире 82 мм (XP-365B не поддерживает)
  */
 
@@ -37,7 +38,7 @@ export const LABEL_PRINTER_STANDARD_MAX_WIDTH_MM = 82;
 
 export const DEFAULT_PRESET_ID = 'standard_58_40';
 
-export const LABEL_PRINT_SETTINGS_KEY = 'aurent_label_print_settings_v2';
+export const LABEL_PRINT_SETTINGS_KEY = 'aurent_label_print_settings_v3';
 
 export const LABEL_SIZE_CATEGORIES = [
   { id: 'micro', i18nKey: 'usersBarcodePrint.sizeCategory.micro' },
@@ -124,11 +125,12 @@ export const LABEL_SIZE_PRESETS = [
     paperWmm: 58,
     paperHmm: 40,
     profileId: '58x40',
-    padXmm: 3,
+    padXmm: 2.5,
     padYmm: 2.5,
     fontScale: 1,
-    offsetXmm: 1,
-    offsetYmm: 0.8,
+    offsetXmm: 2.5,
+    offsetYmm: 1.5,
+    rotate180: true,
     i18nKey: 'usersBarcodePrint.sizePreset.standard_58_40',
   },
   {
@@ -181,9 +183,12 @@ export const LABEL_SIZE_PRESETS = [
     paperWmm: 58,
     paperHmm: 40,
     profileId: '58x40',
-    padXmm: 3,
-    padYmm: 3,
+    padXmm: 2.5,
+    padYmm: 2.5,
     fontScale: 1,
+    offsetXmm: 2.5,
+    offsetYmm: 1.5,
+    rotate180: true,
     i18nKey: 'usersBarcodePrint.sizePreset.mp_wb_58_40',
   },
   {
@@ -239,7 +244,7 @@ export function layoutFromPreset(presetId, overrides = {}) {
     offsetXmm: preset.offsetXmm ?? 0,
     offsetYmm: preset.offsetYmm ?? 0,
     fontScale: preset.fontScale,
-    rotate180: false,
+    rotate180: Boolean(preset.rotate180),
     pageMarginMm: 0,
     layoutMode: 'manual',
     ...overrides,

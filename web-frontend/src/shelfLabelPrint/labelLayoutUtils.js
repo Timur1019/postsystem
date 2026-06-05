@@ -7,7 +7,10 @@ import {
   layoutFromPreset,
 } from './constants';
 
-const LEGACY_LABEL_PRINT_SETTINGS_KEY = 'aurent_label_print_settings_v1';
+const LEGACY_LABEL_PRINT_SETTINGS_KEYS = [
+  'aurent_label_print_settings_v1',
+  'aurent_label_print_settings_v2',
+];
 
 export const clampNum = (v, min, max) => {
   const raw = String(v ?? '').trim().replace(',', '.');
@@ -45,25 +48,41 @@ export function applyLabelPrintCssVars(settings) {
   root.style.setProperty('--label-offset-y-mm', String(settings.offsetYmm ?? 0));
 }
 
-/** @param {Record<string, unknown>} parsed */
-function normalizeSavedLayout(parsed) {
+/** @param {Record<string, unknown>} parsed @param {{ applyPresetDefaults?: boolean }} [opts] */
+function normalizeSavedLayout(parsed, opts = {}) {
+  const applyPresetDefaults = opts.applyPresetDefaults !== false;
   const preset =
     (typeof parsed.presetId === 'string' && getLabelPresetById(parsed.presetId)) ||
-    findLabelPresetBySize(parsed.paperWmm, parsed.paperHmm);
+    findLabelPresetBySize(parsed.paperWmm, parsed.paperHmm) ||
+    getLabelPresetById(DEFAULT_PRESET_ID);
 
   const base = preset ? layoutFromPreset(preset.id) : { ...DEFAULT_LABEL_LAYOUT };
+  const use58x40 =
+    preset?.id === 'standard_58_40' ||
+    preset?.id === 'mp_wb_58_40' ||
+    (Number(parsed.paperWmm) === 58 && Number(parsed.paperHmm) === 40);
+
+  const fresh58 = use58x40 ? layoutFromPreset('standard_58_40') : null;
 
   return {
     presetId: preset?.id || base.presetId || DEFAULT_PRESET_ID,
-    rotate180: Boolean(parsed.rotate180),
-    fontScale: clampNum(parsed.fontScale, 0.8, 1.6),
-    padXmm: clampNum(parsed.padXmm, 0, 50),
-    padYmm: clampNum(parsed.padYmm, 0, 70),
-    offsetXmm: clampNum(parsed.offsetXmm ?? base.offsetXmm ?? 0, -5, 5),
-    offsetYmm: clampNum(parsed.offsetYmm ?? base.offsetYmm ?? 0, -5, 5),
-    paperWmm: preset?.paperWmm ?? clampNum(parsed.paperWmm, 30, 120),
-    paperHmm: preset?.paperHmm ?? clampNum(parsed.paperHmm, 20, 150),
-    pageMarginMm: clampNum(parsed.pageMarginMm, 0, 10),
+    rotate180: applyPresetDefaults && fresh58 ? fresh58.rotate180 : Boolean(parsed.rotate180 ?? base.rotate180),
+    fontScale: clampNum(parsed.fontScale ?? base.fontScale, 0.8, 1.6),
+    padXmm: clampNum(applyPresetDefaults && fresh58 ? fresh58.padXmm : parsed.padXmm ?? base.padXmm, 0, 50),
+    padYmm: clampNum(applyPresetDefaults && fresh58 ? fresh58.padYmm : parsed.padYmm ?? base.padYmm, 0, 70),
+    offsetXmm: clampNum(
+      applyPresetDefaults && fresh58 ? fresh58.offsetXmm : parsed.offsetXmm ?? base.offsetXmm ?? 0,
+      -5,
+      5
+    ),
+    offsetYmm: clampNum(
+      applyPresetDefaults && fresh58 ? fresh58.offsetYmm : parsed.offsetYmm ?? base.offsetYmm ?? 0,
+      -5,
+      5
+    ),
+    paperWmm: preset?.paperWmm ?? 58,
+    paperHmm: preset?.paperHmm ?? 40,
+    pageMarginMm: clampNum(parsed.pageMarginMm ?? 0, 0, 10),
     layoutMode: 'manual',
   };
 }
@@ -71,21 +90,23 @@ function normalizeSavedLayout(parsed) {
 /** @returns {import('./constants').ShelfLabelLayoutSettings | null} */
 export function loadSavedLabelLayout() {
   try {
-    const rawV2 = localStorage.getItem(LABEL_PRINT_SETTINGS_KEY);
-    if (rawV2) {
-      const parsed = JSON.parse(rawV2);
-      if (parsed) return normalizeSavedLayout(parsed);
+    const rawCurrent = localStorage.getItem(LABEL_PRINT_SETTINGS_KEY);
+    if (rawCurrent) {
+      const parsed = JSON.parse(rawCurrent);
+      if (parsed) return normalizeSavedLayout(parsed, { applyPresetDefaults: false });
     }
 
-    const rawV1 = localStorage.getItem(LEGACY_LABEL_PRINT_SETTINGS_KEY);
-    if (!rawV1) return null;
+    for (const legacyKey of LEGACY_LABEL_PRINT_SETTINGS_KEYS) {
+      const rawLegacy = localStorage.getItem(legacyKey);
+      if (!rawLegacy) continue;
+      const parsed = JSON.parse(rawLegacy);
+      if (!parsed) continue;
+      const migrated = normalizeSavedLayout(parsed, { applyPresetDefaults: true });
+      saveLabelLayout(migrated);
+      return migrated;
+    }
 
-    const parsed = JSON.parse(rawV1);
-    if (!parsed) return null;
-
-    const migrated = normalizeSavedLayout(parsed);
-    saveLabelLayout(migrated);
-    return migrated;
+    return null;
   } catch {
     return null;
   }

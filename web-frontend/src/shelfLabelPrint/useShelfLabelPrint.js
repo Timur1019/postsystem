@@ -67,10 +67,7 @@ export function useShelfLabelPrint({
     (preset) => {
       patchLayout(
         layoutFromPreset(preset.id, {
-          rotate180: layout.rotate180,
           pageMarginMm: layout.pageMarginMm,
-          offsetXmm: preset.offsetXmm ?? 0,
-          offsetYmm: preset.offsetYmm ?? 0,
         })
       );
     },
