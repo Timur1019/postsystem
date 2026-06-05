@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import {
   LABEL_SIZE_CATEGORIES,
@@ -9,7 +9,41 @@ import {
 import { clampNum, snapStep } from './labelLayoutUtils';
 import { ToggleSwitch } from './ShelfLabelPrintControls';
 
+function formatNumValue(value, step) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '';
+  const s = Number(step) || 1;
+  if (s < 1) {
+    const decimals = (String(s).split('.')[1] || '').length || 1;
+    return String(Number(n.toFixed(decimals)));
+  }
+  return String(n);
+}
+
+function isPartialNumberInput(raw) {
+  const s = String(raw ?? '').trim().replace(',', '.');
+  return s === '' || s === '-' || s === '.' || s === '-.' || /^-?\d+\.$/.test(s);
+}
+
 function NumField({ label, value, onChange, min, max, step = 1, className = 'w-20' }) {
+  const [draft, setDraft] = useState(null);
+  const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    if (!focused) setDraft(null);
+  }, [value, focused]);
+
+  const commit = (raw) => {
+    const trimmed = String(raw ?? '').trim().replace(',', '.');
+    if (isPartialNumberInput(trimmed)) {
+      onChange(snapStep(clampNum(value, min, max), step));
+      return;
+    }
+    onChange(snapStep(clampNum(trimmed, min, max), step));
+  };
+
+  const displayValue = focused && draft !== null ? draft : formatNumValue(value, step);
+
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-sm text-slate-700 dark:text-slate-200">{label}</span>
@@ -17,8 +51,20 @@ function NumField({ label, value, onChange, min, max, step = 1, className = 'w-2
         type="text"
         inputMode="decimal"
         className={`rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white ${className}`}
-        value={value}
-        onChange={(e) => onChange(snapStep(clampNum(e.target.value, min, max), step))}
+        value={displayValue}
+        onFocus={() => {
+          setFocused(true);
+          setDraft(formatNumValue(value, step));
+        }}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          commit(draft);
+          setFocused(false);
+          setDraft(null);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur();
+        }}
       />
     </div>
   );
@@ -43,7 +89,13 @@ export default function ShelfLabelPrintSettingsPanel({
   sidebar = false,
 }) {
   const [fineOpen, setFineOpen] = useState(false);
+  const fineSectionRef = useRef(null);
   const activePreset = findLabelPresetByLayout(layout);
+
+  useEffect(() => {
+    if (!fineOpen || !fineSectionRef.current) return;
+    fineSectionRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [fineOpen]);
   const activeId = activePreset?.id || layout.presetId;
   const rootCls = [
     'shelflabel-settings rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900',
@@ -239,7 +291,10 @@ export default function ShelfLabelPrintSettingsPanel({
       </button>
 
       {fineOpen ? (
-        <div className="mt-3 space-y-3 border-t border-slate-100 pt-3 dark:border-slate-700">
+        <div
+          ref={fineSectionRef}
+          className="mt-3 space-y-3 border-t border-slate-100 pt-3 dark:border-slate-700"
+        >
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-slate-700 dark:text-slate-200">
               {t('usersBarcodePrint.textScale', { defaultValue: 'Размер текста' })}
