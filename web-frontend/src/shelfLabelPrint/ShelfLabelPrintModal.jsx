@@ -75,13 +75,18 @@ export default function ShelfLabelPrintModal({
           </div>
 
           {state.autoLabelPrint ? (
-            <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-center text-sm text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
-              {t('usersBarcodePrint.autoPaperSize', {
-                defaultValue: 'Размер бумаги подобран автоматически: {{w}} × {{h}} мм',
-                w: formatMm(state.layout.paperWmm),
-                h: formatMm(state.layout.paperHmm),
-              })}
-            </p>
+            <div className="mb-4 rounded-lg bg-emerald-50 px-3 py-2.5 text-center text-sm text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+              <p>
+                {t('usersBarcodePrint.autoPaperSize', {
+                  defaultValue: 'Размер бумаги подобран автоматически: {{w}} × {{h}} мм',
+                  w: formatMm(state.layout.paperWmm),
+                  h: formatMm(state.layout.paperHmm),
+                })}
+              </p>
+              {state.activePreset ? (
+                <p className="mt-1 text-xs opacity-90">{t(state.activePreset.i18nKey)}</p>
+              ) : null}
+            </div>
           ) : (
             <div className="mb-4">
               <ShelfLabelPrintSettingsPanel

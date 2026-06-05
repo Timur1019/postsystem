@@ -1305,7 +1305,42 @@
     "labelPrinterNotSet": "tanlanmagan",
     "chooseLabelPrinter": "Printerni tanlash",
     "printerSaved": "Yorliq printeri saqlandi",
-    "autoPaperSize": "Qog‘oz o‘lchami avtomatik: {{w}} × {{h}} mm"
+    "autoPaperSize": "Qog‘oz o‘lchami avtomatik: {{w}} × {{h}} mm",
+    "printSettings": "Chop etish sozlamalari",
+    "sizePickHint": "Rulon o‘lchamini tanlang — fizik lenta va Windows profili bilan mos bo‘lishi kerak.",
+    "sizeCategory": {
+      "micro": "Mikro",
+      "standard": "Standart (kassa / javon)",
+      "large": "Katta",
+      "marketplace": "Marketpleyslar"
+    },
+    "sizePreset": {
+      "micro_30_20": "Mikro / shtrix kod",
+      "micro_43_25": "Dorixona / mayda chakana",
+      "micro_47_25": "Kabel / aksessuar",
+      "ean_nominal": "EAN nominal 37×26",
+      "standard_58_30": "Tejamkor (58×30)",
+      "standard_58_40": "Standart narx yorlig‘i — XP-365B",
+      "standard_58_60": "Uzun nom",
+      "large_74_45": "Tovar / ombor",
+      "large_80_80": "Kvadrat",
+      "mp_ozon_75_120": "Ozon — 75×120",
+      "mp_wb_58_40": "Wildberries — 58×40",
+      "mp_wide_100_150": "Quti 100×150 (keng printer)"
+    },
+    "windowsProfileTitle": "Windows profili",
+    "windowsProfileHint": "«{{profile}}» nomli maxsus qog‘oz formatini yarating — aniq {{w}} × {{h}} mm.",
+    "widePrinterOnly": "82 mm dan keng printer kerak (XP-420B va analoglar)",
+    "widePrinterWarning": "Bu o‘lcham XP-365B da sig‘maydi (maks. 82 mm). Keng printer kerak.",
+    "advancedSettings": "Qo‘shimcha",
+    "rotate180": "180° burish",
+    "textScale": "Matn o‘lchami",
+    "padX": "Chap/o‘ng chet (mm)",
+    "padY": "Yuqori/pastki chet (mm)",
+    "paperW": "Kenglik (mm)",
+    "paperH": "Balandlik (mm)",
+    "pageMargin": "@page maydonlari (mm)",
+    "sizePresets": "Standart o‘lchamlar"
   },
   "receipt": {
     "loading": "Chek yuklanmoqda…",

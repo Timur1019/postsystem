@@ -14,4 +14,12 @@ export { useShelfLabelPrint } from './useShelfLabelPrint';
 export { buildLabelPrintJob } from './buildLabelPrintJob';
 export { resolveAutoLabelLayout } from './resolveAutoLabelLayout';
 export { applyLabelPrintCssVars, loadSavedLabelLayout } from './labelLayoutUtils';
-export { LABEL_SIZE_PRESETS, DEFAULT_LABEL_LAYOUT } from './constants';
+export {
+  LABEL_SIZE_PRESETS,
+  LABEL_SIZE_CATEGORIES,
+  DEFAULT_LABEL_LAYOUT,
+  DEFAULT_PRESET_ID,
+  getLabelPresetById,
+  findLabelPresetByLayout,
+  layoutFromPreset,
+} from './constants';

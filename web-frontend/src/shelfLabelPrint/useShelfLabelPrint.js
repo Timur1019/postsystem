@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { DEFAULT_LABEL_LAYOUT } from './constants';
+import { DEFAULT_LABEL_LAYOUT, findLabelPresetByLayout, layoutFromPreset } from './constants';
 import { buildLabelPrintJob } from './buildLabelPrintJob';
 import {
   applyLabelPrintCssVars,
@@ -62,9 +62,19 @@ export function useShelfLabelPrint({
     setLayout((prev) => mergeLabelLayout(prev, patch));
   }, []);
 
-  const applyPreset = useCallback((preset) => {
-    patchLayout({ paperWmm: preset.paperWmm, paperHmm: preset.paperHmm });
-  }, [patchLayout]);
+  const applyPreset = useCallback(
+    (preset) => {
+      patchLayout(
+        layoutFromPreset(preset.id, {
+          rotate180: layout.rotate180,
+          pageMarginMm: layout.pageMarginMm,
+        })
+      );
+    },
+    [patchLayout, layout.rotate180, layout.pageMarginMm]
+  );
+
+  const activePreset = useMemo(() => findLabelPresetByLayout(layout), [layout]);
 
   useEffect(() => {
     if (!open) return;
@@ -177,6 +187,7 @@ export function useShelfLabelPrint({
     layout,
     patchLayout,
     applyPreset,
+    activePreset,
     maxPadXmm,
     maxPadYmm,
     autoLabelPrint,
