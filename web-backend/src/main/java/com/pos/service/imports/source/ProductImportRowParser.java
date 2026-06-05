@@ -1,7 +1,9 @@
 package com.pos.service.imports.source;
 
+import com.pos.domain.SaleType;
 import com.pos.dto.product.ProductImportPreviewRow;
 import com.pos.service.imports.ProductImportParseOptions;
+import com.pos.service.imports.ProductImportSupport;
 import com.pos.service.imports.ProductImportSource;
 import com.pos.service.imports.ProductImportSupport;
 import com.pos.spreadsheet.parser.UzInvoiceDocumentIdExtractor;
@@ -45,6 +47,10 @@ public final class ProductImportRowParser {
         BigDecimal qty = ProductImportParseUtil.parseDecimalOpt(ProductImportParseUtil.cell(row, "stock_quantity"))
             .orElse(BigDecimal.ZERO);
         String unit = ProductImportParseUtil.cell(row, "unit_of_measure");
+        SaleType saleType = parseImportSaleType(
+            ProductImportParseUtil.cell(row, "sale_type"),
+            ProductImportParseUtil.cell(row, "saleType")
+        );
 
         return Result.ok(new ProductImportRowFields(
             ikpu,
@@ -53,8 +59,19 @@ public final class ProductImportRowParser {
             sellingOpt.get(),
             taxRate,
             qty,
-            unit
+            unit,
+            saleType
         ));
+    }
+
+    private static SaleType parseImportSaleType(String... cells) {
+        for (String cell : cells) {
+            SaleType parsed = ProductImportSupport.parseImportSaleType(cell);
+            if (parsed != null) {
+                return parsed;
+            }
+        }
+        return null;
     }
 
     public record Result(ProductImportRowFields fields, ProductImportPreviewRow invalid) {

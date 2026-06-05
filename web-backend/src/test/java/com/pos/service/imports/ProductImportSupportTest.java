@@ -113,7 +113,8 @@ class ProductImportSupportTest {
     @Test
     void rowDedupeKey_usesRowNumberOnly() {
         ProductImportPreviewRow row = new ProductImportPreviewRow(
-            7, "IS-001-L-7", "Name", "123", "A-1", "IS-001", "dona", java.math.BigDecimal.ZERO,
+            7, "IS-001-L-7", "Name", "123", "A-1", "IS-001", "dona", null, "PIECE",
+            java.math.BigDecimal.ZERO,
             null, null, null,
             ProductImportPreviewRow.STATUS_NEW,
             null, null, null
@@ -161,6 +162,33 @@ class ProductImportSupportTest {
             anyInt(),
             anyString()
         );
+    }
+
+    @Test
+    void catalog_infersWeightSaleTypeFromKgUnit() {
+        Map<String, String> row = new LinkedHashMap<>();
+        row.put("sku", "MEAT-1");
+        row.put("name", "Говядина");
+        row.put("unit_of_measure", "кг");
+        row.put("selling_price", "120000");
+
+        ProductImportPreviewRow preview = catalog.toPreviewRow(2, row, DEFAULT_OPTS);
+
+        assertEquals(ProductImportPreviewRow.STATUS_NEW, preview.status());
+        assertEquals("WEIGHT", preview.saleType());
+    }
+
+    @Test
+    void catalog_pieceFromDona() {
+        Map<String, String> row = new LinkedHashMap<>();
+        row.put("sku", "COLA-1");
+        row.put("name", "Кола 0.5");
+        row.put("unit_of_measure", "dona");
+        row.put("selling_price", "8000");
+
+        ProductImportPreviewRow preview = catalog.toPreviewRow(2, row, DEFAULT_OPTS);
+
+        assertEquals("PIECE", preview.saleType());
     }
 
     @Test

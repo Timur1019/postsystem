@@ -12,6 +12,10 @@ public record ProductImportPreviewRow(
     /** Номер e-счёт-фактуры (напр. IS-00008429), только для источника UZ_INVOICE. */
     String uzInvoiceDocumentId,
     String unitOfMeasure,
+    /** Тип продажи из файла (sale_type), если колонка задана. */
+    String importSaleType,
+    /** Вычисленный тип: PIECE / WEIGHT / SERVICE (для предпросмотра). */
+    String saleType,
     BigDecimal quantity,
     BigDecimal fileSellingPrice,
     BigDecimal existingSellingPrice,

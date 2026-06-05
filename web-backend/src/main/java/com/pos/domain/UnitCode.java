@@ -33,11 +33,22 @@ public enum UnitCode {
         if (u.equals("g") || u.equals("г") || u.equals("gram")) {
             return G;
         }
-        if (u.equals("l") || u.equals("л") || u.contains("litre") || u.contains("liter")) {
+        if (u.equals("l") || u.equals("л") || u.contains("litre") || u.contains("liter") || u.contains("литр")) {
             return L;
         }
-        if (u.equals("m") || u.equals("м") || u.contains("metre") || u.contains("meter")) {
+        if (u.equals("m") || u.equals("м") || u.contains("metre") || u.contains("meter") || u.contains("метр")) {
             return M;
+        }
+        if (u.equals("dona")
+            || u.equals("шт")
+            || u.equals("sh")
+            || u.equals("pcs")
+            || u.equals("pc")
+            || u.equals("piece")
+            || u.contains("упак")
+            || u.contains("pachka")
+            || u.contains("pack")) {
+            return PCS;
         }
         return PCS;
     }

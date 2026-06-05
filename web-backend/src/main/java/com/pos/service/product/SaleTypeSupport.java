@@ -1,6 +1,7 @@
 package com.pos.service.product;
 
 import com.pos.domain.SaleType;
+import com.pos.domain.UnitCode;
 import org.springframework.util.StringUtils;
 
 public final class SaleTypeSupport {
@@ -14,7 +15,11 @@ public final class SaleTypeSupport {
         }
         if (StringUtils.hasText(unitOfMeasure)) {
             String u = unitOfMeasure.trim().toLowerCase();
-            if (u.equals("kg") || u.equals("кг") || u.contains("kilogram")) {
+            if (u.equals("service") || u.equals("услуга") || u.equals("xizmat")) {
+                return SaleType.SERVICE;
+            }
+            UnitCode unitCode = UnitCode.fromUnitOfMeasure(unitOfMeasure);
+            if (unitCode != null && unitCode != UnitCode.PCS) {
                 return SaleType.WEIGHT;
             }
         }

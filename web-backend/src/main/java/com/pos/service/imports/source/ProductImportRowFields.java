@@ -1,5 +1,7 @@
 package com.pos.service.imports.source;
 
+import com.pos.domain.SaleType;
+
 import java.math.BigDecimal;
 
 /**
@@ -13,6 +15,7 @@ public record ProductImportRowFields(
     BigDecimal sellingPrice,
     BigDecimal taxRatePercent,
     BigDecimal quantity,
-    String unitOfMeasure
+    String unitOfMeasure,
+    SaleType saleType
 ) {
 }

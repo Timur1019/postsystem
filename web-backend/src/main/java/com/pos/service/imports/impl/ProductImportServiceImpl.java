@@ -22,8 +22,8 @@ import com.pos.service.imports.source.ProductImportSourceHandlers;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.parser.HtmlExcelTableParser;
 import com.pos.spreadsheet.parser.UzInvoiceJsonParser;
-import com.pos.domain.SaleType;
-import com.pos.service.product.SaleTypeSupport;
+import com.pos.domain.ProductQuantityRules;
+import com.pos.service.product.ProductQuantityRulesResolver;
 import com.pos.util.ProductImportParseUtil;
 import com.pos.util.QuantityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -247,7 +247,13 @@ public class ProductImportServiceImpl implements ProductImportService {
         BigDecimal costPrice = BigDecimal.ZERO;
         BigDecimal taxRate = ProductImportParseUtil.normalizeTaxRatePercent(row.taxRatePercent());
         String unit = StringUtils.hasText(row.unitOfMeasure()) ? row.unitOfMeasure().trim() : "dona";
-        SaleType saleType = SaleTypeSupport.resolve(null, unit);
+        ProductQuantityRules quantityRules = ProductQuantityRulesResolver.resolve(
+            ProductImportSupport.parseImportSaleType(row.importSaleType()),
+            null,
+            null,
+            null,
+            unit
+        );
         BigDecimal initialStock = QuantityUtil.normalize(row.quantity());
         if (initialStock.signum() < 0) {
             initialStock = BigDecimal.ZERO;
@@ -283,10 +289,10 @@ public class ProductImportServiceImpl implements ProductImportService {
             sellingPrice,
             BigDecimal.ZERO,
             taxRate,
-            saleType,
-            null,
-            null,
-            null,
+            quantityRules.saleType(),
+            quantityRules.unitCode(),
+            quantityRules.quantityScale(),
+            quantityRules.allowFraction(),
             initialStock,
             10,
             null,

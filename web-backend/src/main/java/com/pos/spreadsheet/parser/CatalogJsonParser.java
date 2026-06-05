@@ -101,6 +101,7 @@ public class CatalogJsonParser {
         ));
         put(map, "ikpu", firstText(node, "ikpu", "ikpu_code", "ikpuCode"));
         put(map, "unit_of_measure", firstText(node, "unit_of_measure", "unitOfMeasure", "unit", "uom"));
+        put(map, "sale_type", firstText(node, "sale_type", "saleType"));
         put(map, "barcode", firstText(node, "barcode", "bar_code", "ean"));
         put(map, "storage_location", firstText(
             node, "storage_location", "storageLocation", "location", "расположение"
