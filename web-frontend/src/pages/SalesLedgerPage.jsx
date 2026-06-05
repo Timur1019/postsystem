@@ -3,7 +3,7 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, Download, Filter, MoreVertical, Banknote, CreditCard, Smartphone, Wallet, RotateCcw } from 'lucide-react';
+import { Search, Download, Filter, MoreVertical, Banknote, CreditCard, Smartphone, Wallet, RotateCcw, Coins } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
@@ -30,7 +30,17 @@ const defaultFilters = {
 
 function PaymentIcon({ method }) {
   const Icon =
-    method === 'CARD' ? CreditCard : method === 'MPESA' ? Smartphone : method === 'MIXED' ? Wallet : Banknote;
+    method === 'ADVANCE'
+      ? Coins
+      : method === 'CREDIT'
+        ? Wallet
+        : method === 'CARD'
+          ? CreditCard
+          : method === 'MPESA'
+            ? Smartphone
+            : method === 'MIXED'
+              ? Wallet
+              : Banknote;
   return <Icon size={14} className="text-slate-600 dark:text-slate-400" />;
 }
 
@@ -164,12 +174,19 @@ export default function SalesLedgerPage() {
     }
   };
 
-  const paymentLabel = (m) => {
+  const paymentLabel = (row) => {
+    if (row.receiptType === 'CREDIT' || row.receiptType === 'ADVANCE') {
+      return t(`pos.receiptType.${row.receiptType}`);
+    }
+    const m = row.paymentMethod;
     if (m === 'CARD') return t('sales.paymentCard');
     if (m === 'MPESA') return t('sales.paymentMpesa');
     if (m === 'MIXED') return t('salesLedger.filters.mixed');
     return t('sales.paymentCash');
   };
+
+  const paymentIconMethod = (row) =>
+    row.receiptType === 'CREDIT' || row.receiptType === 'ADVANCE' ? row.receiptType : row.paymentMethod;
 
   const creditAdvanceCell = (row) => {
     const type = row.receiptType;
@@ -327,9 +344,11 @@ export default function SalesLedgerPage() {
                     <td className="px-3 py-2 text-right">{creditAdvanceCell(row)}</td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                        <PaymentIcon method={row.paymentMethod} />
-                        <span className="text-xs">{paymentLabel(row.paymentMethod)}</span>
-                        <span className="text-xs text-slate-500">{fmtMoney(row.amountTendered)}</span>
+                        <PaymentIcon method={paymentIconMethod(row)} />
+                        <span className="text-xs">{paymentLabel(row)}</span>
+                        {row.receiptType !== 'CREDIT' && row.receiptType !== 'ADVANCE' ? (
+                          <span className="text-xs text-slate-500">{fmtMoney(row.amountTendered)}</span>
+                        ) : null}
                       </div>
                     </td>
                     <td className="px-3 py-2 text-right font-semibold text-slate-900 dark:text-white">

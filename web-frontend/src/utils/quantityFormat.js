@@ -1,6 +1,9 @@
 /** Количество с точностью 3 знака (кг / шт). */
 
+import { round2 } from './taxAmounts';
+
 export const QTY_SCALE = 3;
+export const MIN_WEIGHT_KG = 0.001;
 
 export function roundQty(value) {
   const n = Number(value);
@@ -66,10 +69,41 @@ export function isPieceLikeProduct(product) {
 }
 
 export function qtyFromAmount(amount, unitPrice) {
-  const price = Number(unitPrice);
-  const sum = Number(amount);
-  if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(sum) || sum <= 0) {
-    return 0;
+  return weightLineFromAmount(amount, unitPrice).qty;
+}
+
+/**
+ * Ввод по сумме: подбирает кг (3 знака) и цену за кг так, чтобы итог строки = введённой сумме.
+ */
+export function weightLineFromAmount(amount, catalogUnitPrice) {
+  const targetSum = round2(amount);
+  const catalogPrice = Number(catalogUnitPrice);
+  if (!Number.isFinite(targetSum) || targetSum <= 0 || !Number.isFinite(catalogPrice) || catalogPrice <= 0) {
+    return { qty: 0, unitPrice: catalogPrice, lineSum: 0 };
   }
-  return roundQty(sum / price);
+
+  const idealQty = targetSum / catalogPrice;
+  const baseQty = roundQty(idealQty);
+  let best = null;
+
+  for (let step = -25; step <= 25; step += 1) {
+    const qty = roundQty(baseQty + step * 0.001);
+    if (qty < MIN_WEIGHT_KG) continue;
+    const unitPrice = round2(targetSum / qty);
+    const lineSum = round2(qty * unitPrice);
+    if (lineSum !== targetSum) continue;
+    const candidate = { qty, unitPrice, lineSum };
+    if (
+      !best ||
+      Math.abs(candidate.qty - idealQty) < Math.abs(best.qty - idealQty)
+    ) {
+      best = candidate;
+    }
+  }
+
+  if (best) return best;
+
+  const qty = baseQty >= MIN_WEIGHT_KG ? baseQty : 0;
+  const unitPrice = qty > 0 ? round2(targetSum / qty) : catalogPrice;
+  return { qty, unitPrice, lineSum: round2(qty * unitPrice) };
 }

@@ -132,12 +132,24 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
         Sale.ReceiptType receiptType = SaleEnumParser.receiptType(req.receiptType());
         Sale.CardType cardType = SaleEnumParser.cardType(req.cardType());
         Sale.PaymentMethod paymentMethod = Sale.PaymentMethod.valueOf(req.paymentMethod());
-        SalePaymentResolver.PaymentAmounts amounts = paymentResolver.resolve(paymentMethod, total, req);
-        if (paymentMethod == Sale.PaymentMethod.CARD && cardType == null) {
-            cardType = Sale.CardType.PERSONAL;
-        }
-        if (amounts.card().signum() > 0 && cardType == null) {
-            cardType = Sale.CardType.PERSONAL;
+        SalePaymentResolver.PaymentAmounts amounts;
+        if (receiptType == Sale.ReceiptType.ADVANCE || receiptType == Sale.ReceiptType.CREDIT) {
+            // Аванс / кредит — долг или предоплата, без наличных и карты в смене.
+            amounts = new SalePaymentResolver.PaymentAmounts(
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+            );
+            cardType = null;
+        } else {
+            amounts = paymentResolver.resolve(paymentMethod, total, req);
+            if (paymentMethod == Sale.PaymentMethod.CARD && cardType == null) {
+                cardType = Sale.CardType.PERSONAL;
+            }
+            if (amounts.card().signum() > 0 && cardType == null) {
+                cardType = Sale.CardType.PERSONAL;
+            }
         }
 
         Sale sale = Sale.builder()

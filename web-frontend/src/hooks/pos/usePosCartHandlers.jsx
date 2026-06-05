@@ -24,6 +24,7 @@ export function usePosCartHandlers({
   addPieceItem,
   addWeightLine,
   updateQuantity,
+  updateUnitPrice,
   removeItem,
   selectedLineId,
   setSelectedLineId,
@@ -113,14 +114,21 @@ export function usePosCartHandlers({
   );
 
   const handleWeightConfirm = useCallback(
-    (kg) => {
+    (kg, options = {}) => {
       const payload = weightModalProduct;
       if (!payload) return;
+      const lineUnitPrice =
+        options.unitPrice != null && Number(options.unitPrice) > 0
+          ? Number(options.unitPrice)
+          : payload.sellingPrice;
       let lineId = weightEditLineId;
       if (weightEditLineId) {
         updateQuantity(weightEditLineId, kg);
+        if (options.unitPrice != null) {
+          updateUnitPrice(weightEditLineId, lineUnitPrice);
+        }
       } else {
-        lineId = addWeightLine(payload, kg);
+        lineId = addWeightLine({ ...payload, sellingPrice: lineUnitPrice }, kg);
         const line = useCartStore.getState().items.find((i) => i.lineId === lineId);
         if (line) showLineAddedToast(line, payload.name);
       }
@@ -128,7 +136,15 @@ export function usePosCartHandlers({
       setWeightEditLineId(null);
       if (lineId) setSelectedLineId(lineId);
     },
-    [addWeightLine, showLineAddedToast, updateQuantity, weightEditLineId, weightModalProduct, setSelectedLineId]
+    [
+      addWeightLine,
+      showLineAddedToast,
+      updateQuantity,
+      updateUnitPrice,
+      weightEditLineId,
+      weightModalProduct,
+      setSelectedLineId,
+    ]
   );
 
   const tryAddByBarcode = useCallback(

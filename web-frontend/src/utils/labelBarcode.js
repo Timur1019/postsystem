@@ -22,6 +22,9 @@ export function resolveLabelBarcodeFromProduct(data, searchQuery = '') {
   const q = digitsOnly(searchQuery);
   if (q.length >= 8) return q;
 
+  const id = data?.id && String(data.id).replace(/-/g, '');
+  if (id) return `20${id.slice(0, 11)}`;
+
   return '';
 }
 

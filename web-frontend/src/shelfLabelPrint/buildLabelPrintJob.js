@@ -31,6 +31,7 @@ export function buildLabelPrintJob(input) {
           showBarcode,
           showPrice,
           productName: input.productName,
+          barcode: input.barcode,
           price: input.price,
         })
       : { layoutMode: 'manual', ...input.layout };

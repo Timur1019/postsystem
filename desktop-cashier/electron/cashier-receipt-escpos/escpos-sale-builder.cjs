@@ -149,6 +149,13 @@ function appendMeta(printer, payload) {
   if (hasReceiptNo) {
     appendRow(printer, L.receiptNoShort || 'Receipt', String(sale.receiptNumber));
   }
+  if (sale.originalReceiptNumber) {
+    appendRow(
+      printer,
+      L.originalReceiptNo || 'Original receipt',
+      String(sale.originalReceiptNumber),
+    );
+  }
   if (isOn(fields, 'employee') && sale.cashierName) {
     appendRow(printer, L.employee || 'Cashier', sale.cashierName);
   }
@@ -244,6 +251,10 @@ function appendTotals(printer, payload) {
   }
   if (isOn(fields, 'grandTotal')) {
     appendRow(printer, L.grandTotal || 'TOTAL', `${fmtMoney(sale.totalAmount)} ${cur}`, true);
+    const typeValue = sale.receiptTypeDisplay || '';
+    if (typeValue) {
+      appendRow(printer, L.receiptType || 'Type', typeValue, true);
+    }
   }
   if (isOn(fields, 'vatTotal')) {
     const vatLabel = interpolateLabel(L.vatTotalLine || 'VAT {{rate}}%', {

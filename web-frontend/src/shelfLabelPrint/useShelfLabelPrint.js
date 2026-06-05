@@ -41,8 +41,16 @@ export function useShelfLabelPrint({
   const [printing, setPrinting] = useState(false);
 
   const contentInput = useMemo(
-    () => ({ variant, showName, showBarcode, showPrice, productName, price }),
-    [variant, showName, showBarcode, showPrice, productName, price]
+    () => ({
+      variant,
+      showName,
+      showBarcode,
+      showPrice,
+      productName,
+      barcode,
+      price,
+    }),
+    [variant, showName, showBarcode, showPrice, productName, barcode, price]
   );
 
   const autoLayout = useMemo(() => resolveAutoLabelLayout(contentInput), [contentInput]);
@@ -72,12 +80,13 @@ export function useShelfLabelPrint({
           showBarcode: true,
           showPrice: true,
           productName,
+          barcode,
           price,
         })
       : loadSavedLabelLayout() || DEFAULT_LABEL_LAYOUT;
     setLayout(initial);
     applyLabelPrintCssVars(initial);
-  }, [open, defaultVar, autoLabelPrint, productName, price]);
+  }, [open, defaultVar, autoLabelPrint, productName, barcode, price]);
 
   useEffect(() => {
     if (!open || !autoLabelPrint) return;
@@ -118,8 +127,9 @@ export function useShelfLabelPrint({
       showBarcode: printJob.showBarcode,
       showPrice: printJob.showPrice,
       currency: printJob.currency,
+      layoutKey: `${layout.paperWmm}x${layout.paperHmm}@${layout.fontScale}`,
     }),
-    [printJob]
+    [printJob, layout.paperWmm, layout.paperHmm, layout.fontScale]
   );
 
   const setCopiesSafe = useCallback((value) => {

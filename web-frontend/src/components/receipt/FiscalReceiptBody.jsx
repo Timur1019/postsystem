@@ -7,6 +7,7 @@ import {
   buildQrPayload,
   fmtMoney,
   fmtQty,
+  resolveFiscalReceiptTypeLabel,
   splitDateTime,
 } from '../../utils/fiscalReceiptFormat';
 import { extractVatFromInclusive } from '../../utils/taxAmounts';
@@ -113,6 +114,7 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
       .filter((r) => r > 0)
   );
   const vatRateLabel = vatRates.size === 1 ? `${[...vatRates][0].toFixed(0)}` : '—';
+  const receiptTypeLabel = resolveFiscalReceiptTypeLabel(sale, t);
 
   const showHeader =
     isOn('logo') ||
@@ -171,6 +173,12 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
               <div className="min-w-0 col-span-2">
                 <span className="receipt-meta-label">{t('fiscalReceipt.receiptNoShort')}: </span>
                 <span className="break-all">№{sale.receiptNumber}</span>
+              </div>
+            ) : null}
+            {sale.originalReceiptNumber ? (
+              <div className="min-w-0 col-span-2">
+                <span className="receipt-meta-label">{t('fiscalReceipt.originalReceiptNo')}: </span>
+                <span className="break-all">№{sale.originalReceiptNumber}</span>
               </div>
             ) : null}
             {isOn('employee') ? (
@@ -263,6 +271,9 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
                 value={`${fmtMoney(sale.totalAmount)} ${t('fiscalReceipt.currency')}`}
                 bold
               />
+            ) : null}
+            {isOn('grandTotal') ? (
+              <Row label={t('fiscalReceipt.receiptType')} value={receiptTypeLabel} bold />
             ) : null}
             {isOn('vatTotal') ? (
               <Row

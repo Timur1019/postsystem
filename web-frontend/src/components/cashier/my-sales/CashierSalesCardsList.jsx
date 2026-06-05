@@ -37,8 +37,10 @@ export default function CashierSalesCardsList({ rows, isPending, selectedId, onR
             <span>
               {row.createdAt ? format(new Date(row.createdAt), 'dd.MM.yyyy HH:mm') : '—'}
             </span>
-            <span className={`cashier-sales-pill ${cashierSalesPaymentPillClass(row.paymentMethod)}`}>
-              {cashierSalesPaymentLabel(row.paymentMethod, t)}
+            <span
+              className={`cashier-sales-pill ${cashierSalesPaymentPillClass(row.paymentMethod, row.receiptType)}`}
+            >
+              {cashierSalesPaymentLabel(row.paymentMethod, t, row.receiptType)}
             </span>
             <CashierSalesStatusBadge status={row.status} t={t} />
           </div>

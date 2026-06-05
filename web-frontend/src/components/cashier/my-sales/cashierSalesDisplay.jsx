@@ -1,4 +1,11 @@
-export function cashierSalesPaymentLabel(method, t) {
+export function isDeferredReceiptType(receiptType) {
+  return receiptType === 'ADVANCE' || receiptType === 'CREDIT';
+}
+
+export function cashierSalesPaymentLabel(method, t, receiptType) {
+  if (isDeferredReceiptType(receiptType)) {
+    return t(`pos.receiptType.${receiptType}`);
+  }
   switch (method) {
     case 'CASH':
       return t('pos.payCash');
@@ -13,7 +20,9 @@ export function cashierSalesPaymentLabel(method, t) {
   }
 }
 
-export function cashierSalesPaymentPillClass(method) {
+export function cashierSalesPaymentPillClass(method, receiptType) {
+  if (receiptType === 'ADVANCE') return 'cashier-sales-pill--advance';
+  if (receiptType === 'CREDIT') return 'cashier-sales-pill--credit';
   switch (method) {
     case 'CASH':
       return 'cashier-sales-pill--cash';

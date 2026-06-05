@@ -2115,6 +2115,53 @@
   box-shadow: 0 0 0 1px rgb(0 104 71 / 0.08);
 }
 
+.pos-pay-deferred-summary {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--pos-border, #2a3548);
+  border-radius: 12px;
+  background: var(--pos-surface-elevated, #1c2433);
+}
+
+.pos-pay-deferred-summary__hint {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--pos-muted, #94a3b8);
+}
+
+.pos-pay-deferred-summary__amount {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pos-pay-deferred-summary__label {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pos-muted, #94a3b8);
+}
+
+.pos-pay-deferred-summary__value {
+  font-size: clamp(1.35rem, 3.5vw, 1.75rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--pos-money, #f5c842);
+  line-height: 1.1;
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-deferred-summary {
+  border-color: rgb(61 255 168 / 0.25);
+  background: rgb(61 255 168 / 0.06);
+}
+
+.cashier-app.cashier-app--light .pos-pay-deferred-summary {
+  background: #f8faf9;
+  border-color: var(--pos-border, #e5e7eb);
+}
+
 .cashier-app .pos-pay-method-cards--footer-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3072,6 +3119,16 @@
 .cashier-sales-pill--mpesa {
   background: #fef3c7;
   color: #b45309;
+}
+
+.cashier-sales-pill--advance {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.cashier-sales-pill--credit {
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 .cashier-sales-badge--completed {

@@ -49,7 +49,9 @@ const PAY_METHODS = [
   { id: 'mixed', icon: Split, labelKey: 'pos.payMixed', action: 'mixed' },
 ];
 
-const STEPS_WITH_PRINT_TOGGLE = new Set(['cash', 'mixedCash', 'mixedCard', 'cardType']);
+const STEPS_WITH_PRINT_TOGGLE = new Set(['cash', 'mixedCash', 'mixedCard', 'cardType', 'receipt']);
+
+const isDeferredReceiptType = (type) => type === 'ADVANCE' || type === 'CREDIT';
 
 function PrintReceiptToggle({ checked, onChange, t }) {
   const fullLabel = t('pos.printReceiptAfterSale');
@@ -216,6 +218,19 @@ export default function PosPaymentFlow({
     });
   };
 
+  const submitDeferred = () => {
+    if (isPending) return;
+    onConfirm({
+      paymentMethod: 'CASH',
+      receiptType,
+      cardType: null,
+      cashAmount: 0,
+      cardAmount: 0,
+      amountTendered: 0,
+      printReceipt: printReceiptEnabled,
+    });
+  };
+
   const handlePrintReceiptChange = (e) => {
     const next = Boolean(e.target.checked);
     setPrintReceiptEnabled(next);
@@ -224,11 +239,13 @@ export default function PosPaymentFlow({
 
   const selectReceiptType = (id) => {
     setReceiptType(id);
-    setStep('method');
   };
 
+  const deferredReceipt = isDeferredReceiptType(receiptType);
+
   let stepTitle = t('pos.receiptTypeTitle');
-  if (step === 'method') stepTitle = t('pos.choosePaymentMethod');
+  if (step === 'receipt' && deferredReceipt) stepTitle = t(`pos.receiptType.${receiptType}`);
+  else if (step === 'method') stepTitle = t('pos.choosePaymentMethod');
   else if (step === 'cash') stepTitle = t('pos.payCash');
   else if (step === 'mixedCash') stepTitle = t('pos.mixedPayTitle');
   else if (step === 'mixedCard') stepTitle = t('pos.mixedStepCardTitle');
@@ -252,10 +269,22 @@ export default function PosPaymentFlow({
 
   const footerPrimary =
     step === 'receipt' ? (
-      <button type="button" className="pos-pay-panel__primary" onClick={() => setStep('method')}>
-        {t('pos.continuePay')}
-        <ArrowRight size={18} />
-      </button>
+      deferredReceipt ? (
+        <button
+          type="button"
+          className="pos-pay-panel__primary"
+          disabled={isPending}
+          onClick={submitDeferred}
+        >
+          {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
+          <span>{t('pos.completeSale')}</span>
+        </button>
+      ) : (
+        <button type="button" className="pos-pay-panel__primary" onClick={() => setStep('method')}>
+          {t('pos.continuePay')}
+          <ArrowRight size={18} />
+        </button>
+      )
     ) : step === 'mixedCash' ? (
       <button
         type="button"
@@ -290,6 +319,7 @@ export default function PosPaymentFlow({
       ? cardRemainder
       : toPay;
   const showHeaderAmount =
+    (step === 'receipt' && deferredReceipt) ||
     step === 'method' ||
     step === 'cash' ||
     step === 'mixedCash' ||
@@ -298,7 +328,8 @@ export default function PosPaymentFlow({
 
   const registerBack = step === 'receipt' ? handleClose : stepBack;
   const showRegisterBackToCheck = step === 'method' || step === 'cash';
-  const showPrintToggle = STEPS_WITH_PRINT_TOGGLE.has(step);
+  const showPrintToggle =
+    STEPS_WITH_PRINT_TOGGLE.has(step) && (step !== 'receipt' || deferredReceipt);
 
   const printToggle = showPrintToggle ? (
     <PrintReceiptToggle checked={printReceiptEnabled} onChange={handlePrintReceiptChange} t={t} />
@@ -372,6 +403,19 @@ export default function PosPaymentFlow({
                     );
                   })}
                 </div>
+                {deferredReceipt ? (
+                  <div className="pos-pay-deferred-summary">
+                    <p className="pos-pay-deferred-summary__hint">
+                      {receiptType === 'ADVANCE'
+                        ? t('pos.deferredSaleHintAdvance')
+                        : t('pos.deferredSaleHintCredit')}
+                    </p>
+                    <div className="pos-pay-deferred-summary__amount">
+                      <span className="pos-pay-deferred-summary__label">{t('pos.amountToPay')}</span>
+                      <strong className="pos-pay-deferred-summary__value">{fmt(toPay)}</strong>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             )}
 

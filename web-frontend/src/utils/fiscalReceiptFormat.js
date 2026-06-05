@@ -25,6 +25,26 @@ export function buildQrPayload(sale) {
   return `https://ofd.soliq.uz/check?r=${r}&s=${total}&t=${t}&f=${sign}`;
 }
 
+/** Отдельный документ возврата (печатается при оформлении возврата на кассе). */
+export function isReturnReceipt(sale) {
+  return sale?.receiptDocumentType === 'RETURN';
+}
+
+/**
+ * Тип конкретного чека: что было оформлено в этой операции.
+ * Не зависит от статуса продажи (REFUNDED) — при перепечати продажи остаётся «Продажа».
+ */
+export function resolveFiscalReceiptTypeLabel(sale, t) {
+  if (isReturnReceipt(sale)) {
+    return t('fiscalReceipt.receiptTypeReturn');
+  }
+  const rt = String(sale?.receiptType || 'SALE').toUpperCase();
+  const key = `pos.receiptType.${rt}`;
+  const translated = t(key);
+  if (translated !== key) return translated;
+  return t('fiscalReceipt.receiptTypeSale');
+}
+
 export function splitDateTime(iso) {
   try {
     const d = new Date(iso);

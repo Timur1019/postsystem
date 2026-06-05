@@ -11,6 +11,7 @@ export default function ShelfLabelSheet({
   showBarcode,
   showPrice,
   currency,
+  layoutKey,
 }) {
   const isPriceTag = variant === 'priceTag';
   const hasPrice = price != null && !Number.isNaN(Number(price));
@@ -25,7 +26,7 @@ export default function ShelfLabelSheet({
         </div>
       )}
       {showName && productName && <div className="shelflabel-name">{productName}</div>}
-      {showBarcode && <ShelfLabelBarcode value={barcode || ''} />}
+      {showBarcode && <ShelfLabelBarcode value={barcode || ''} layoutKey={layoutKey} />}
       {!isPriceTag && showPrice && hasPrice && (
         <div className="shelflabel-price shelflabel-price--footer">
           {fmtMoney(price)} {currency}

@@ -101,6 +101,7 @@ export default function PosPage() {
     addPieceItem,
     addWeightLine,
     updateQuantity,
+    updateUnitPrice,
     removeItem,
     selectedLineId,
     setSelectedLineId,

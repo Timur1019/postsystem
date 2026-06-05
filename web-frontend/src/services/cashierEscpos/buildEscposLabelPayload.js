@@ -16,6 +16,7 @@ export function buildEscposLabelPayload(printJob, t) {
           showBarcode: printJob.showBarcode,
           showPrice: printJob.showPrice,
           productName: printJob.productName,
+          barcode: printJob.barcode,
           price: printJob.price,
         })
       : null;

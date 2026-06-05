@@ -4,7 +4,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { X, Loader, Search, RotateCcw, Receipt, CheckCircle2 } from 'lucide-react';
+import { CASHIER_ESCPOS_TOAST } from '../../config/cashierEscposConfig';
+import { resolveEscposPrintErrorMessage } from '../../services/cashierEscpos';
 import { saleApi } from '../../services/api';
+import { printReturnReceipt } from '../../utils/printReturnReceipt';
 import PosModalPortal from './PosModalPortal';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import SaleReturnLinesEditor, {
@@ -113,12 +116,34 @@ export default function PosReturnModal({ open, onClose, onSuccess, terminal = fa
       }
       return saleApi.returnItems(sale.id, payload).then((r) => r.data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      const returnReason = reason.trim() || t('pos.returnDefaultReason');
       toast.success(t('pos.returnSuccess'));
       qc.invalidateQueries({ queryKey: ['my-sales'] });
       qc.invalidateQueries({ queryKey: ['sales-ledger'] });
       qc.invalidateQueries({ queryKey: ['returns'] });
       qc.invalidateQueries({ queryKey: ['cashier-shift'] });
+
+      if (sale) {
+        try {
+          await printReturnReceipt({
+            originalSale: sale,
+            qtyByItemId,
+            reason: returnReason,
+            t,
+          });
+          toast.success(t('receipt.printSent'), {
+            id: CASHIER_ESCPOS_TOAST.toastId,
+            duration: CASHIER_ESCPOS_TOAST.successDurationMs,
+          });
+        } catch (err) {
+          toast.error(resolveEscposPrintErrorMessage(err, t) ?? t('receipt.printFailed'), {
+            id: CASHIER_ESCPOS_TOAST.toastId,
+            duration: CASHIER_ESCPOS_TOAST.errorDurationMs,
+          });
+        }
+      }
+
       reset();
       onClose();
       onSuccess?.();
