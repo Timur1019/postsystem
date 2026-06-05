@@ -1,16 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { DEFAULT_LABEL_LAYOUT, findLabelPresetByLayout, layoutFromPreset } from './constants';
+import { DEFAULT_LABEL_LAYOUT } from './constants';
 import { buildLabelPrintJob } from './buildLabelPrintJob';
-import {
-  applyLabelPrintCssVars,
-  constrainLabelPads,
-  getSafePadMaxMm,
-  loadSavedLabelLayout,
-  mergeLabelLayout,
-  saveLabelLayout,
-} from './labelLayoutUtils';
+import { applyLabelPrintCssVars } from './labelLayoutUtils';
 import { resolveAutoLabelLayout } from './resolveAutoLabelLayout';
 import { printShelfLabel } from './printShelfLabel';
 
@@ -28,18 +21,34 @@ export function useShelfLabelPrint({
   price,
   autoLabelPrint = false,
   defaultVariant = 'label',
+  layoutSettings,
 }) {
   const { t } = useTranslation();
   const defaultVar = toVariant(defaultVariant);
+
+  if (!layoutSettings) {
+    throw new Error('useShelfLabelPrint: layoutSettings is required (use useLabelPrintLayoutSettings on the page)');
+  }
 
   const [variant, setVariant] = useState(defaultVar);
   const [showName, setShowName] = useState(true);
   const [showBarcode, setShowBarcode] = useState(true);
   const [showPrice, setShowPrice] = useState(true);
   const [copies, setCopies] = useState(1);
-  const [layout, setLayout] = useState(DEFAULT_LABEL_LAYOUT);
   const [autoSizeEnabled, setAutoSizeEnabled] = useState(autoLabelPrint);
   const [printing, setPrinting] = useState(false);
+
+  const {
+    layout,
+    patchLayout,
+    applyPreset,
+    resetPresetDefaults,
+    activePreset,
+    maxPadXmm,
+    maxPadYmm,
+  } = layoutSettings;
+
+  const [autoLayout, setAutoLayout] = useState(DEFAULT_LABEL_LAYOUT);
 
   const contentInput = useMemo(
     () => ({
@@ -54,27 +63,7 @@ export function useShelfLabelPrint({
     [variant, showName, showBarcode, showPrice, productName, barcode, price]
   );
 
-  const autoLayout = useMemo(() => resolveAutoLabelLayout(contentInput), [contentInput]);
-
-  const maxPadXmm = useMemo(() => getSafePadMaxMm(layout.paperWmm, 14, 50), [layout.paperWmm]);
-  const maxPadYmm = useMemo(() => getSafePadMaxMm(layout.paperHmm, 14, 70), [layout.paperHmm]);
-
-  const patchLayout = useCallback((patch) => {
-    setLayout((prev) => mergeLabelLayout(prev, patch));
-  }, []);
-
-  const applyPreset = useCallback(
-    (preset) => {
-      patchLayout(
-        layoutFromPreset(preset.id, {
-          pageMarginMm: layout.pageMarginMm,
-        })
-      );
-    },
-    [patchLayout, layout.rotate180, layout.pageMarginMm]
-  );
-
-  const activePreset = useMemo(() => findLabelPresetByLayout(layout), [layout]);
+  const effectiveLayout = autoSizeEnabled ? autoLayout : layout;
 
   useEffect(() => {
     if (!open) return;
@@ -84,45 +73,35 @@ export function useShelfLabelPrint({
     setShowPrice(true);
     setCopies(1);
     setAutoSizeEnabled(autoLabelPrint);
-    const initial = autoLabelPrint
-      ? resolveAutoLabelLayout({
-          variant: defaultVar,
-          showName: true,
-          showBarcode: true,
-          showPrice: true,
-          productName,
-          barcode,
-          price,
-        })
-      : loadSavedLabelLayout() || DEFAULT_LABEL_LAYOUT;
-    setLayout(initial);
-    applyLabelPrintCssVars(initial);
+    setAutoLayout(
+      resolveAutoLabelLayout({
+        variant: defaultVar,
+        showName: true,
+        showBarcode: true,
+        showPrice: true,
+        productName,
+        barcode,
+        price,
+      })
+    );
   }, [open, defaultVar, autoLabelPrint, productName, barcode, price]);
 
   useEffect(() => {
     if (!open || !autoSizeEnabled) return;
-    setLayout(autoLayout);
-  }, [open, autoSizeEnabled, autoLayout]);
+    setAutoLayout(resolveAutoLabelLayout(contentInput));
+  }, [open, autoSizeEnabled, contentInput]);
+
+  useEffect(() => {
+    if (!open) return;
+    applyLabelPrintCssVars(effectiveLayout);
+  }, [open, effectiveLayout]);
 
   const setAutoSizeEnabledSafe = useCallback((next) => {
     setAutoSizeEnabled(next);
     if (next) {
-      setLayout(autoLayout);
-    } else {
-      const saved = loadSavedLabelLayout() || DEFAULT_LABEL_LAYOUT;
-      setLayout(saved);
+      setAutoLayout(resolveAutoLabelLayout(contentInput));
     }
-  }, [autoLayout]);
-
-  useEffect(() => {
-    setLayout((s) => constrainLabelPads(s));
-  }, [maxPadXmm, maxPadYmm]);
-
-  useEffect(() => {
-    if (!open) return;
-    applyLabelPrintCssVars(layout);
-    if (!autoSizeEnabled) saveLabelLayout(layout);
-  }, [open, layout, autoSizeEnabled]);
+  }, [contentInput]);
 
   const currency = t('fiscalReceipt.currency');
 
@@ -131,11 +110,11 @@ export function useShelfLabelPrint({
       buildLabelPrintJob({
         ...contentInput,
         copies,
-        layout,
+        layout: effectiveLayout,
         layoutMode: autoSizeEnabled ? 'auto' : 'manual',
         currency,
       }),
-    [contentInput, copies, layout, autoSizeEnabled, currency]
+    [contentInput, copies, effectiveLayout, autoSizeEnabled, currency]
   );
 
   const sheetProps = useMemo(
@@ -148,9 +127,9 @@ export function useShelfLabelPrint({
       showBarcode: printJob.showBarcode,
       showPrice: printJob.showPrice,
       currency: printJob.currency,
-      layoutKey: `${layout.paperWmm}x${layout.paperHmm}@${layout.fontScale}`,
+      layoutKey: `${effectiveLayout.paperWmm}x${effectiveLayout.paperHmm}@${effectiveLayout.fontScale}`,
     }),
-    [printJob, layout.paperWmm, layout.paperHmm, layout.fontScale]
+    [printJob, effectiveLayout.paperWmm, effectiveLayout.paperHmm, effectiveLayout.fontScale]
   );
 
   const setCopiesSafe = useCallback((value) => {
@@ -195,9 +174,10 @@ export function useShelfLabelPrint({
     copies,
     setCopies: setCopiesSafe,
     bumpCopies: (delta) => setCopies((c) => Math.min(999, Math.max(1, c + delta))),
-    layout,
+    layout: effectiveLayout,
     patchLayout,
     applyPreset,
+    resetPresetDefaults,
     activePreset,
     maxPadXmm,
     maxPadYmm,

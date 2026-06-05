@@ -5,7 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { productApi, tasnifApi } from '../services/api';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import TasnifPackagePickerModal from '../components/products/TasnifPackagePickerModal';
-import { ShelfLabelPrintModal } from '../shelfLabelPrint';
+import {
+  LabelPrintLayoutProvider,
+  ShelfLabelPrintModal,
+  ShelfLabelPrintSettingsPanel,
+  useLabelPrintLayoutSettings,
+} from '../shelfLabelPrint';
 import {
   digitsOnly,
   resolveLabelBarcodeFromProduct,
@@ -28,9 +33,10 @@ async function loadCatalogProductDetails(data) {
   }
 }
 
-export default function UsersBarcodePrintPage() {
+function UsersBarcodePrintPageContent() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith('ru') ? 'ru' : 'uz';
+  const layoutSettings = useLabelPrintLayoutSettings();
 
   const searchRef = useRef(null);
 
@@ -273,11 +279,21 @@ export default function UsersBarcodePrintPage() {
   };
 
   return (
-    <div className="max-w-xl space-y-5">
+    <div className="max-w-2xl space-y-5">
       <div>
         <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t('usersBarcodePrint.title')}</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t('usersBarcodePrint.intro')}</p>
       </div>
+
+      <ShelfLabelPrintSettingsPanel
+        t={t}
+        layout={layoutSettings.layout}
+        patchLayout={layoutSettings.patchLayout}
+        maxPadXmm={layoutSettings.maxPadXmm}
+        maxPadYmm={layoutSettings.maxPadYmm}
+        applyPreset={layoutSettings.applyPreset}
+        resetPresetDefaults={layoutSettings.resetPresetDefaults}
+      />
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -437,7 +453,16 @@ export default function UsersBarcodePrintPage() {
         barcode={draft?.barcode ?? ''}
         price={previewPrice}
         defaultVariant="priceTag"
+        showInlineSettings
       />
     </div>
+  );
+}
+
+export default function UsersBarcodePrintPage() {
+  return (
+    <LabelPrintLayoutProvider>
+      <UsersBarcodePrintPageContent />
+    </LabelPrintLayoutProvider>
   );
 }

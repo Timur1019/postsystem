@@ -11,6 +11,8 @@ export { default as ShelfLabelPrintModal } from './ShelfLabelPrintModal';
 export { printShelfLabel } from './printShelfLabel';
 export { default as ShelfLabelSheet } from './ShelfLabelSheet';
 export { useShelfLabelPrint } from './useShelfLabelPrint';
+export { LabelPrintLayoutProvider, useLabelPrintLayoutSettings } from './useLabelPrintLayoutSettings';
+export { default as ShelfLabelPrintSettingsPanel } from './ShelfLabelPrintSettingsPanel';
 export { buildLabelPrintJob } from './buildLabelPrintJob';
 export { resolveAutoLabelLayout } from './resolveAutoLabelLayout';
 export { applyLabelPrintCssVars, loadSavedLabelLayout } from './labelLayoutUtils';

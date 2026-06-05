@@ -1345,7 +1345,13 @@
     "pageMargin": "Поля @page (мм)",
     "offsetX": "Сдвиг вправо (мм)",
     "offsetY": "Сдвиг вверх (мм)",
-    "sizePresets": "Типовые размеры"
+    "sizePresets": "Типовые размеры",
+    "settingsPersistHint": "Настройки сохраняются автоматически — подкрутите один раз под ваш принтер.",
+    "calibrationTitle": "Калибровка печати",
+    "calibrationHint": "Подстройка под ваш принтер. Эталон 58×40 уже задан по умолчанию.",
+    "resetPresetDefaults": "Сбросить эталон",
+    "presetDefaultsRestored": "Эталонные значения восстановлены",
+    "fineSettings": "Тонкая настройка"
   },
   "receipt": {
     "loading": "Загрузка чека…",

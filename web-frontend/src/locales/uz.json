@@ -1345,7 +1345,13 @@
     "pageMargin": "@page maydonlari (mm)",
     "offsetX": "O‘ngga siljish (mm)",
     "offsetY": "Yuqoriga siljish (mm)",
-    "sizePresets": "Standart o‘lchamlar"
+    "sizePresets": "Standart o‘lchamlar",
+    "settingsPersistHint": "Sozlamalar avtomatik saqlanadi — printerni bir marta sozlang.",
+    "calibrationTitle": "Chop etish kalibrlash",
+    "calibrationHint": "Printerni sozlash. 58×40 etalon allaqachon o‘rnatilgan.",
+    "resetPresetDefaults": "Etalonni tiklash",
+    "presetDefaultsRestored": "Etalon qiymatlari tiklandi",
+    "fineSettings": "Nozik sozlash"
   },
   "receipt": {
     "loading": "Chek yuklanmoqda…",

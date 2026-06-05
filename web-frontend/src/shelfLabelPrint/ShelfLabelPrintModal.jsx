@@ -4,6 +4,7 @@ import ShelfLabelPrintSettingsPanel from './ShelfLabelPrintSettingsPanel';
 import { CopiesStepper, ToggleSwitch, VariantTabs } from './ShelfLabelPrintControls';
 import ShelfLabelSheet from './ShelfLabelSheet';
 import { useShelfLabelPrint } from './useShelfLabelPrint';
+import { useLabelPrintLayoutSettings } from './useLabelPrintLayoutSettings';
 
 /**
  * Модалка этикетки / ценника. Печать — ESC/POS как чек / Z / X (printShelfLabel).
@@ -16,8 +17,10 @@ export default function ShelfLabelPrintModal({
   price,
   autoLabelPrint = false,
   defaultVariant = 'label',
+  showInlineSettings = false,
 }) {
   const { t } = useTranslation();
+  const layoutSettings = useLabelPrintLayoutSettings();
   const state = useShelfLabelPrint({
     open,
     productName,
@@ -25,6 +28,7 @@ export default function ShelfLabelPrintModal({
     price,
     autoLabelPrint,
     defaultVariant,
+    layoutSettings,
   });
 
   if (!open) return null;
@@ -95,15 +99,17 @@ export default function ShelfLabelPrintModal({
                 <p className="mt-1 text-xs opacity-90">{t(state.activePreset.i18nKey)}</p>
               ) : null}
             </div>
-          ) : (
+          ) : showInlineSettings ? null : (
             <div className="mb-4 mt-3">
               <ShelfLabelPrintSettingsPanel
                 t={t}
-                layout={state.layout}
+                layout={layoutSettings.layout}
                 patchLayout={state.patchLayout}
                 maxPadXmm={state.maxPadXmm}
                 maxPadYmm={state.maxPadYmm}
                 applyPreset={state.applyPreset}
+                resetPresetDefaults={state.resetPresetDefaults}
+                compact
               />
             </div>
           )}
