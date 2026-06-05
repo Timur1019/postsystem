@@ -86,9 +86,9 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"))
             : null;
 
-        assertBarcodeUniqueness(req.barcode(), null);
+        assertBarcodeUniqueness(companyId, req.barcode(), null);
         assertNoDuplicateBarcodesInRequest(req.additionalBarcodes(), req.barcode());
-        assertAdditionalBarcodesUnique(req.additionalBarcodes(), req.barcode(), null);
+        assertAdditionalBarcodesUnique(companyId, req.additionalBarcodes(), req.barcode(), null);
 
         Product product = Product.builder()
             .company(tenantAccess.requireCompany(companyId))
@@ -274,13 +274,15 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
             product.setCommissionPinfl(req.commissionPinfl());
         }
         if (req.barcode() != null) {
-            assertBarcodeUniqueness(req.barcode(), product.getId());
+            assertBarcodeUniqueness(product.getCompany().getId(), req.barcode(), product.getId());
             product.setBarcode(req.barcode());
         }
         if (req.additionalBarcodes() != null) {
             String primary = product.getBarcode();
             assertNoDuplicateBarcodesInRequest(req.additionalBarcodes(), primary);
-            assertAdditionalBarcodesUnique(req.additionalBarcodes(), primary, product.getId());
+            assertAdditionalBarcodesUnique(
+                product.getCompany().getId(), req.additionalBarcodes(), primary, product.getId()
+            );
             applyExtraBarcodes(product, req.additionalBarcodes(), primary);
         }
         if (req.storePrices() != null && !req.storePrices().isEmpty()) {
@@ -321,9 +323,11 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"))
             : null;
 
-        assertBarcodeUniqueness(req.barcode(), product.getId());
+        assertBarcodeUniqueness(product.getCompany().getId(), req.barcode(), product.getId());
         assertNoDuplicateBarcodesInRequest(req.additionalBarcodes(), req.barcode());
-        assertAdditionalBarcodesUnique(req.additionalBarcodes(), req.barcode(), product.getId());
+        assertAdditionalBarcodesUnique(
+            product.getCompany().getId(), req.additionalBarcodes(), req.barcode(), product.getId()
+        );
 
         product.setName(req.name());
         product.setDescription(req.description());

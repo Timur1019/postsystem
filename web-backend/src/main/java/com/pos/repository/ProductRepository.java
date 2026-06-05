@@ -75,6 +75,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     Optional<Product> findByBarcode(String barcode);
 
+    Optional<Product> findByCompany_IdAndBarcode(Integer companyId, String barcode);
+
     @Query("SELECT p FROM Product p WHERE p.stockQuantity <= p.lowStockAlert AND p.isActive = true")
     List<Product> findLowStockProducts();
 

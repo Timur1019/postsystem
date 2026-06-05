@@ -108,23 +108,29 @@ public abstract class AbstractProductCatalogSupport {
         }
     }
 
-    protected void assertBarcodeUniqueness(String barcode, UUID ignoreProductId) {
-        if (!StringUtils.hasText(barcode)) {
+    protected void assertBarcodeUniqueness(Integer companyId, String barcode, UUID ignoreProductId) {
+        if (!StringUtils.hasText(barcode) || companyId == null) {
             return;
         }
-        productRepository.findByBarcode(barcode)
+        String normalized = barcode.trim();
+        productRepository.findByCompany_IdAndBarcode(companyId, normalized)
             .filter(pr -> ignoreProductId == null || !pr.getId().equals(ignoreProductId))
             .ifPresent(pr -> {
-                throw new BadRequestException("Barcode already in use: " + barcode);
+                throw new BadRequestException("Barcode already in use: " + normalized);
             });
-        productBarcodeRepository.findByBarcode(barcode)
+        productBarcodeRepository.findByBarcodeAndProductCompanyId(normalized, companyId)
             .filter(pb -> ignoreProductId == null || !pb.getProduct().getId().equals(ignoreProductId))
             .ifPresent(pb -> {
-                throw new BadRequestException("Barcode already in use: " + barcode);
+                throw new BadRequestException("Barcode already in use: " + normalized);
             });
     }
 
-    protected void assertAdditionalBarcodesUnique(List<String> extras, String primaryBarcode, UUID ignoreProductId) {
+    protected void assertAdditionalBarcodesUnique(
+        Integer companyId,
+        List<String> extras,
+        String primaryBarcode,
+        UUID ignoreProductId
+    ) {
         if (extras == null) {
             return;
         }
@@ -136,7 +142,7 @@ public abstract class AbstractProductCatalogSupport {
             if (StringUtils.hasText(primaryBarcode) && primaryBarcode.trim().equals(b)) {
                 continue;
             }
-            assertBarcodeUniqueness(b, ignoreProductId);
+            assertBarcodeUniqueness(companyId, b, ignoreProductId);
         }
     }
 

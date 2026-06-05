@@ -387,7 +387,7 @@
       "failed": "Import xatosi",
       "notImplemented": "Import hali ishlab chiqilmoqda (API 501)",
       "templateSoon": "Shablon keyinroq bo‘ladi",
-      "duplicateHint": "Hisob-faktura: shu hujjat raqami bo‘yicha qayta yuklash — barcha qatorlar dublikat. Katalog: SKU, IKPU yoki nom bo‘yicha.",
+      "duplicateHint": "Hisob-faktura: faqat kompaniyangizdagi hujjat raqami bo‘yicha dublikat (IKPU va nom takrorlanishi mumkin). Katalog: faqat SKU bo‘yicha.",
       "invoiceDocLabel": "Fayldagi hisob-faktura raqami",
       "invoiceAlreadyImported": "Hisob-faktura {{id}} allaqachon yuklangan — yangi qatorlar qo‘shilmaydi.",
       "invoiceAllDuplicates": "Barcha qatorlar bu faktura bo‘yicha bazada. Qayta import shart emas.",

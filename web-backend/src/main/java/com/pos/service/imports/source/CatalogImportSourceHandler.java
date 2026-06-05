@@ -73,23 +73,18 @@ public class CatalogImportSourceHandler implements ProductImportSourceHandler {
         name = name.trim();
 
         ProductImportRowFields fields = parsed.fields();
-        Optional<Product> existing = findDuplicate(sku, name, fields.ikpu());
+        Optional<Product> existing = findDuplicateBySku(sku);
         return ProductImportSupport.buildPreviewRow(
             rowNum, sku, name, fields, existing.orElse(null),
             existing.map(p -> "Товар уже есть в базе: " + p.getSku() + " — " + p.getName()).orElse(null)
         );
     }
 
-    private Optional<Product> findDuplicate(String sku, String name, String ikpu) {
+    /** Только SKU в рамках компании; ИКПУ и название могут повторяться. */
+    private Optional<Product> findDuplicateBySku(String sku) {
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
         if (productRepository.existsByCompany_IdAndSkuAndIsActiveTrue(companyId, sku)) {
             return productRepository.findByCompany_IdAndSkuAndIsActiveTrue(companyId, sku);
-        }
-        if (StringUtils.hasText(ikpu) && productRepository.existsByCompany_IdAndIkpuAndIsActiveTrue(companyId, ikpu)) {
-            return productRepository.findByCompany_IdAndIkpuAndIsActiveTrue(companyId, ikpu);
-        }
-        if (productRepository.existsByCompany_IdAndNameIgnoreCaseAndIsActiveTrue(companyId, name)) {
-            return productRepository.findByCompany_IdAndNameIgnoreCaseAndIsActiveTrue(companyId, name);
         }
         return Optional.empty();
     }

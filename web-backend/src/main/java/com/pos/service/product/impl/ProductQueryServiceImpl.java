@@ -3,6 +3,7 @@ package com.pos.service.product.impl;
 import com.pos.dto.product.ProductResponse;
 import com.pos.dto.shared.PageResponse;
 import com.pos.entity.Product;
+import com.pos.entity.ProductBarcode;
 import com.pos.exception.BadRequestException;
 import com.pos.exception.ResourceNotFoundException;
 import com.pos.repository.CategoryRepository;
@@ -167,12 +168,13 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
     }
 
     private Product resolveByBarcode(String barcode) {
-        Optional<Product> primary = productRepository.findByBarcode(barcode);
+        Integer companyId = tenantAccess.requireEffectiveCompanyId();
+        Optional<Product> primary = productRepository.findByCompany_IdAndBarcode(companyId, barcode);
         if (primary.isPresent()) {
             return primary.get();
         }
-        return productBarcodeRepository.findByBarcode(barcode)
-            .map(pb -> pb.getProduct())
+        return productBarcodeRepository.findByBarcodeAndProductCompanyId(barcode, companyId)
+            .map(ProductBarcode::getProduct)
             .orElseThrow(() -> new ResourceNotFoundException("Product not found for barcode: " + barcode));
     }
 }

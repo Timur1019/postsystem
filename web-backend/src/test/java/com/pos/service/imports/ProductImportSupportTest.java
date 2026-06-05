@@ -99,6 +99,39 @@ class ProductImportSupportTest {
     }
 
     @Test
+    void catalog_sameIkpuOtherCompany_isNew() {
+        when(tenantAccess.requireEffectiveCompanyId()).thenReturn(2);
+        when(productRepository.existsByCompany_IdAndSkuAndIsActiveTrue(2, "COLA-2")).thenReturn(false);
+
+        Map<String, String> row = new LinkedHashMap<>();
+        row.put("sku", "COLA-2");
+        row.put("name", "Кола 0.5");
+        row.put("ikpu", "08470001002000000");
+        row.put("selling_price", "8000");
+
+        ProductImportPreviewRow preview = catalog.toPreviewRow(2, row, DEFAULT_OPTS);
+
+        assertEquals(ProductImportPreviewRow.STATUS_NEW, preview.status());
+        verify(productRepository, never()).existsByCompany_IdAndIkpuAndIsActiveTrue(anyInt(), anyString());
+        verify(productRepository, never()).existsByCompany_IdAndNameIgnoreCaseAndIsActiveTrue(anyInt(), anyString());
+    }
+
+    @Test
+    void uzInvoice_sameDocIdOtherCompany_isNew() {
+        when(tenantAccess.requireEffectiveCompanyId()).thenReturn(2);
+        when(productRepository.findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(2, "IS-00008429"))
+            .thenReturn(Optional.empty());
+        when(productRepository.existsByCompany_IdAndSkuStartingWithAndIsActiveTrue(2, "IS-00008429-L-"))
+            .thenReturn(false);
+
+        Map<String, String> row = invoiceRow("Кола 0.5", "08470001002000000", "8000");
+
+        ProductImportPreviewRow preview = uzInvoice.toPreviewRow(2, row, DEFAULT_OPTS);
+
+        assertEquals(ProductImportPreviewRow.STATUS_NEW, preview.status());
+    }
+
+    @Test
     void catalog_stillRequiresSku() {
         Map<String, String> row = new LinkedHashMap<>();
         row.put("name", "Товар без SKU");
