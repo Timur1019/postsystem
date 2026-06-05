@@ -34,5 +34,5 @@ XP-365B и многие термопринтеры этикеток на Windows
 
 ## Режимы
 
-- `autoLabelPrint={true}` — авторазмер из справочника (страница `/users/barcode-print`).
-- `autoLabelPrint={false}` — выбор пресета в модалке, настройки в `localStorage` (`aurent_label_print_settings_v2`).
+- По умолчанию — **ручной выбор пресета** в модалке (настройки в `localStorage`, `aurent_label_print_settings_v2`).
+- Переключатель «Подобрать размер автоматически» — авторазмер из справочника по содержимому этикетки.

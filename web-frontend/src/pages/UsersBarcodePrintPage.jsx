@@ -436,7 +436,6 @@ export default function UsersBarcodePrintPage() {
         productName={draft?.name ?? ''}
         barcode={draft?.barcode ?? ''}
         price={previewPrice}
-        autoLabelPrint
         defaultVariant="priceTag"
       />
     </div>

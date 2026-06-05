@@ -1306,6 +1306,7 @@
     "chooseLabelPrinter": "Выбрать принтер",
     "printerSaved": "Принтер этикеток сохранён",
     "autoPaperSize": "Размер бумаги подобран автоматически: {{w}} × {{h}} мм",
+    "autoPaperSizeToggle": "Подобрать размер автоматически",
     "printSettings": "Настройки печати",
     "sizePickHint": "Выберите размер рулона — он должен совпадать с физической лентой и профилем в Windows.",
     "sizeCategory": {

@@ -38,6 +38,7 @@ export function useShelfLabelPrint({
   const [showPrice, setShowPrice] = useState(true);
   const [copies, setCopies] = useState(1);
   const [layout, setLayout] = useState(DEFAULT_LABEL_LAYOUT);
+  const [autoSizeEnabled, setAutoSizeEnabled] = useState(autoLabelPrint);
   const [printing, setPrinting] = useState(false);
 
   const contentInput = useMemo(
@@ -83,6 +84,7 @@ export function useShelfLabelPrint({
     setShowBarcode(true);
     setShowPrice(true);
     setCopies(1);
+    setAutoSizeEnabled(autoLabelPrint);
     const initial = autoLabelPrint
       ? resolveAutoLabelLayout({
           variant: defaultVar,
@@ -99,9 +101,19 @@ export function useShelfLabelPrint({
   }, [open, defaultVar, autoLabelPrint, productName, barcode, price]);
 
   useEffect(() => {
-    if (!open || !autoLabelPrint) return;
+    if (!open || !autoSizeEnabled) return;
     setLayout(autoLayout);
-  }, [open, autoLabelPrint, autoLayout]);
+  }, [open, autoSizeEnabled, autoLayout]);
+
+  const setAutoSizeEnabledSafe = useCallback((next) => {
+    setAutoSizeEnabled(next);
+    if (next) {
+      setLayout(autoLayout);
+    } else {
+      const saved = loadSavedLabelLayout() || DEFAULT_LABEL_LAYOUT;
+      setLayout(saved);
+    }
+  }, [autoLayout]);
 
   useEffect(() => {
     setLayout((s) => constrainLabelPads(s));
@@ -110,8 +122,8 @@ export function useShelfLabelPrint({
   useEffect(() => {
     if (!open) return;
     applyLabelPrintCssVars(layout);
-    if (!autoLabelPrint) saveLabelLayout(layout);
-  }, [open, layout, autoLabelPrint]);
+    if (!autoSizeEnabled) saveLabelLayout(layout);
+  }, [open, layout, autoSizeEnabled]);
 
   const currency = t('fiscalReceipt.currency');
 
@@ -121,10 +133,10 @@ export function useShelfLabelPrint({
         ...contentInput,
         copies,
         layout,
-        layoutMode: autoLabelPrint ? 'auto' : 'manual',
+        layoutMode: autoSizeEnabled ? 'auto' : 'manual',
         currency,
       }),
-    [contentInput, copies, layout, autoLabelPrint, currency]
+    [contentInput, copies, layout, autoSizeEnabled, currency]
   );
 
   const sheetProps = useMemo(
@@ -190,7 +202,8 @@ export function useShelfLabelPrint({
     activePreset,
     maxPadXmm,
     maxPadYmm,
-    autoLabelPrint,
+    autoSizeEnabled,
+    setAutoSizeEnabled: setAutoSizeEnabledSafe,
     sheetProps,
     printJob,
     printing,

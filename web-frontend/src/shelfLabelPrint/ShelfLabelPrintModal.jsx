@@ -37,7 +37,7 @@ export default function ShelfLabelPrintModal({
         role="dialog"
         aria-modal
         aria-labelledby="shelf-label-title"
-        className="relative flex max-h-[95vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl dark:bg-slate-900 sm:rounded-2xl"
+        className="relative flex max-h-[95vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl dark:bg-slate-900 sm:rounded-2xl"
       >
         <header className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
           <h2 id="shelf-label-title" className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -74,8 +74,16 @@ export default function ShelfLabelPrintModal({
             <ShelfLabelSheet {...state.sheetProps} />
           </div>
 
-          {state.autoLabelPrint ? (
-            <div className="mb-4 rounded-lg bg-emerald-50 px-3 py-2.5 text-center text-sm text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+          <ToggleSwitch
+            label={t('usersBarcodePrint.autoPaperSizeToggle', {
+              defaultValue: 'Подобрать размер автоматически',
+            })}
+            checked={state.autoSizeEnabled}
+            onChange={state.setAutoSizeEnabled}
+          />
+
+          {state.autoSizeEnabled ? (
+            <div className="mb-4 mt-3 rounded-lg bg-emerald-50 px-3 py-2.5 text-center text-sm text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
               <p>
                 {t('usersBarcodePrint.autoPaperSize', {
                   defaultValue: 'Размер бумаги подобран автоматически: {{w}} × {{h}} мм',
@@ -88,7 +96,7 @@ export default function ShelfLabelPrintModal({
               ) : null}
             </div>
           ) : (
-            <div className="mb-4">
+            <div className="mb-4 mt-3">
               <ShelfLabelPrintSettingsPanel
                 t={t}
                 layout={state.layout}
