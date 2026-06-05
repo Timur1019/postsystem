@@ -1407,6 +1407,11 @@
 .pos-cart-table__col--qty {
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+.pos-cart-table__col--qty .pos-qty-control {
+  max-width: 100%;
 }
 
 .pos-cart-table__head .pos-cart-table__col--cost,
