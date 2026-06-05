@@ -6,6 +6,11 @@ import { productApi, tasnifApi } from '../services/api';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import TasnifPackagePickerModal from '../components/products/TasnifPackagePickerModal';
 import { ShelfLabelPrintModal } from '../shelfLabelPrint';
+import {
+  digitsOnly,
+  resolveLabelBarcodeFromProduct,
+  resolveLabelBarcodeFromTasnif,
+} from '../utils/labelBarcode';
 import '../styles/tasnif-search.css';
 
 const inputCls =
@@ -13,29 +18,14 @@ const inputCls =
 
 const CATALOG_SEARCH_SIZE = 25;
 
-const digitsOnly = (v) => String(v || '').replace(/\D/g, '');
-
-function resolveBarcodeFromProduct(data, fallback = '') {
-  const main = data?.barcode && String(data.barcode).trim();
-  if (main) return main;
-  const extra = Array.isArray(data?.barcodes)
-    ? data.barcodes.find((b) => String(b || '').trim())
-    : null;
-  if (extra) return String(extra).trim();
-  const fb = String(fallback || '').replace(/\s/g, '').trim();
-  return fb;
-}
-
-function resolveBarcodeFromItem(item, searchQuery) {
-  const fromApi = item?.barcode || item?.internalCode;
-  if (fromApi && String(fromApi).trim()) {
-    return String(fromApi).trim();
+async function loadCatalogProductDetails(data) {
+  if (!data?.id) return data;
+  try {
+    const { data: full } = await productApi.getById(data.id);
+    return full ?? data;
+  } catch {
+    return data;
   }
-  const q = digitsOnly(searchQuery);
-  if (q.length >= 8) {
-    return q;
-  }
-  return '';
 }
 
 export default function UsersBarcodePrintPage() {
@@ -65,18 +55,19 @@ export default function UsersBarcodePrintPage() {
   }, []);
 
   const applyCatalogProduct = useCallback(
-    (data, searchQuerySaved = '') => {
-      if (!data?.name) return false;
-      const barcode = resolveBarcodeFromProduct(data, searchQuerySaved);
+    async (data, searchQuerySaved = '') => {
+      const full = await loadCatalogProductDetails(data);
+      if (!full?.name) return false;
+      const barcode = resolveLabelBarcodeFromProduct(full, searchQuerySaved);
       setDraftItem({
-        name: data.name,
+        name: full.name,
         barcode,
         price:
-          typeof data.sellingPrice === 'number'
-            ? data.sellingPrice
-            : parseFloat(data.sellingPrice) || 0,
+          typeof full.sellingPrice === 'number'
+            ? full.sellingPrice
+            : parseFloat(full.sellingPrice) || 0,
         source: 'catalog',
-        mxik: data.ikpu ?? null,
+        mxik: full.ikpu ?? null,
       });
       toast.success(t('usersBarcodePrint.foundInCatalog'));
       setCatalogResults([]);
@@ -102,11 +93,11 @@ export default function UsersBarcodePrintPage() {
             ? pkg.nameRu || pkg.nameUz || pkg.nameLat
             : pkg.nameUz || pkg.nameRu || pkg.nameLat;
       }
-      const barcode = resolveBarcodeFromItem(item, searchQuerySaved);
+      const barcode = resolveLabelBarcodeFromTasnif(item, searchQuerySaved, pkg);
       const nameSuffix = unitLabel ? ` (${String(unitLabel).trim()})` : '';
       setDraftItem({
         name: `${item.name.trim()}${nameSuffix}`,
-        barcode: barcode || searchQuerySaved.replace(/\s/g, ''),
+        barcode,
         price: 0,
         source: 'tasnif',
         mxik: item.mxik ?? null,
@@ -155,7 +146,7 @@ export default function UsersBarcodePrintPage() {
       });
       const items = data?.content ?? [];
       if (items.length === 1) {
-        applyCatalogProduct(items[0], raw);
+        await applyCatalogProduct(items[0], raw);
         return 'done';
       }
       if (items.length > 1) {
@@ -183,7 +174,7 @@ export default function UsersBarcodePrintPage() {
       try {
         try {
           const { data } = await productApi.getByBarcode(raw);
-          if (applyCatalogProduct(data, raw)) {
+          if (await applyCatalogProduct(data, raw)) {
             return;
           }
         } catch {
@@ -276,7 +267,7 @@ export default function UsersBarcodePrintPage() {
     const parts = [];
     if (p.ikpu) parts.push(`${t('productCatalog.ikpu')}: ${p.ikpu}`);
     if (p.sku) parts.push(`${t('products.colSku')}: ${p.sku}`);
-    const bc = resolveBarcodeFromProduct(p);
+    const bc = resolveLabelBarcodeFromProduct(p);
     if (bc) parts.push(`${t('productModal.barcode')}: ${bc}`);
     return parts.join(' · ');
   };
@@ -328,7 +319,9 @@ export default function UsersBarcodePrintPage() {
                   key={p.id}
                   type="button"
                   className="tasnif-search__item flex w-full flex-col border-b border-slate-100 text-left dark:border-slate-700"
-                  onClick={() => applyCatalogProduct(p, query.trim() || pendingQuery.trim())}
+                  onClick={() => {
+                    void applyCatalogProduct(p, query.trim() || pendingQuery.trim());
+                  }}
                 >
                   <div className="tasnif-search__item-name font-medium">{p.name}</div>
                   <div className="tasnif-search__item-meta text-xs opacity-90">{renderCatalogMeta(p)}</div>

@@ -175,6 +175,7 @@ export default function PosPage() {
               selectedLineId,
               setSelectedLineId,
               handleQtyDelta: cartHandlers.handleQtyDelta,
+              updateQuantity,
               updateUnitPrice,
               updateDiscountPercent,
               removeItem,

@@ -5,7 +5,10 @@ import { productApi } from '../../services/api';
 import { useBarcodeScanner } from '../useBarcodeScanner';
 import { lineSubtotal, useCartStore } from '../../store/cartStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
-import { isWeightProduct } from '../../utils/quantityFormat';
+import { isWeightProduct, roundQty } from '../../utils/quantityFormat';
+
+const WEIGHT_QTY_STEP = 0.1;
+const MIN_WEIGHT_KG = 0.001;
 import { resolveProductUnitPrice } from '../../utils/productPrice';
 
 export function usePosCartHandlers({
@@ -179,17 +182,18 @@ export function usePosCartHandlers({
       const item = items.find((i) => i.lineId === lineId);
       if (!item) return;
       if (item.saleType === 'WEIGHT') {
-        if (delta < 0) {
+        const next = roundQty(item.quantity + delta * WEIGHT_QTY_STEP);
+        if (next < MIN_WEIGHT_KG) {
           removeItem(lineId);
           if (selectedLineId === lineId) setSelectedLineId(null);
           return;
         }
-        openWeightModalForLine(item);
+        updateQuantity(lineId, next);
         return;
       }
       updateQuantity(lineId, item.quantity + delta);
     },
-    [removeItem, selectedLineId, setSelectedLineId, openWeightModalForLine, updateQuantity]
+    [removeItem, selectedLineId, setSelectedLineId, updateQuantity]
   );
 
   const closeWeightModal = useCallback(() => {

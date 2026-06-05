@@ -40,18 +40,32 @@ public final class ProductSpecifications {
 
             String q = search != null ? search.trim() : "";
             if (StringUtils.hasText(q)) {
+                query.distinct(true);
                 String like = "%" + q.toLowerCase() + "%";
+                Join<Product, ProductBarcode> extras = root.join("extraBarcodes", JoinType.LEFT);
                 var name = cb.like(cb.lower(root.get("name")), like);
                 var sku = cb.like(cb.lower(root.get("sku")), like);
+                var description = cb.and(
+                    cb.isNotNull(root.get("description")),
+                    cb.like(cb.lower(root.get("description")), like)
+                );
+                var unitOfMeasure = cb.and(
+                    cb.isNotNull(root.get("unitOfMeasure")),
+                    cb.like(cb.lower(root.get("unitOfMeasure")), like)
+                );
                 var bc = cb.and(
                     cb.isNotNull(root.get("barcode")),
                     cb.like(cb.lower(root.get("barcode")), like)
+                );
+                var extraBc = cb.and(
+                    cb.isNotNull(extras.get("barcode")),
+                    cb.like(cb.lower(extras.get("barcode")), like)
                 );
                 var ikpu = cb.and(
                     cb.isNotNull(root.get("ikpu")),
                     cb.like(cb.lower(root.get("ikpu")), like)
                 );
-                parts.add(cb.or(name, sku, bc, ikpu));
+                parts.add(cb.or(name, sku, description, unitOfMeasure, bc, extraBc, ikpu));
             }
 
             if (categoryId != null) {

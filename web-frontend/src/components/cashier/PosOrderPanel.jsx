@@ -4,13 +4,18 @@ import { Minus, Plus, Trash2, Percent } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { lineDiscountAmount, lineSubtotal, useCartStore } from '../../store/cartStore';
 import { fmtMoney as fmt, fmtMoneyCompact as fmtCompact } from '../../utils/formatMoney';
-import { formatQty } from '../../utils/quantityFormat';
+import {
+  formatQtyParts,
+  parseQtyInput,
+  qtyToEditString,
+} from '../../utils/quantityFormat';
 
 export default function PosOrderPanel({
   items,
   selectedLineId,
   onSelectLine,
   onQtyDelta,
+  onUpdateQuantity,
   onUpdatePrice,
   onUpdateDiscountPercent,
   onRemove,
@@ -32,6 +37,8 @@ export default function PosOrderPanel({
   const selected = items.find((i) => i.lineId === selectedLineId);
   const [editingPriceLineId, setEditingPriceLineId] = useState(null);
   const [priceDraft, setPriceDraft] = useState('');
+  const [editingQtyLineId, setEditingQtyLineId] = useState(null);
+  const [qtyDraft, setQtyDraft] = useState('');
 
   useEffect(() => {
     if (!selectedLineId) return;
@@ -42,6 +49,17 @@ export default function PosOrderPanel({
     const num = Number(String(priceDraft).replace(',', '.'));
     if (!Number.isNaN(num)) onUpdatePrice(lineId, num);
     setEditingPriceLineId(null);
+  };
+
+  const startQtyEdit = (item) => {
+    setEditingQtyLineId(item.lineId);
+    setQtyDraft(qtyToEditString(item.quantity, item.saleType));
+  };
+
+  const commitQty = (item) => {
+    const parsed = parseQtyInput(qtyDraft, item.saleType);
+    if (parsed != null) onUpdateQuantity(item.lineId, parsed);
+    setEditingQtyLineId(null);
   };
 
   return (
@@ -84,6 +102,8 @@ export default function PosOrderPanel({
                 const active = selectedLineId === item.lineId;
                 const lineSum = lineSubtotal(item);
                 const isWeight = item.saleType === 'WEIGHT';
+                const qtyParts = formatQtyParts(item.quantity, item.saleType, item.unitCode);
+                const isEditingQty = editingQtyLineId === item.lineId;
                 return (
                   <li
                     key={item.lineId}
@@ -143,23 +163,50 @@ export default function PosOrderPanel({
                           type="button"
                           className="pos-qty-control__btn"
                           onClick={() => onQtyDelta(item.lineId, -1)}
+                          aria-label={t('pos.qtyDecrease')}
                         >
-                          <Minus size={14} strokeWidth={2} />
+                          <Minus size={18} strokeWidth={2.25} />
                         </button>
-                        <button
-                          type="button"
-                          className="pos-qty-control__val pos-qty-control__val--weight"
-                          onClick={() => isWeight && onQtyDelta(item.lineId, 1)}
-                          title={isWeight ? t('pos.weightEditQty') : undefined}
-                        >
-                          {formatQty(item.quantity, item.saleType, item.unitCode)}
-                        </button>
+                        {isEditingQty ? (
+                          <input
+                            type="text"
+                            inputMode={isWeight ? 'decimal' : 'numeric'}
+                            className="pos-qty-control__input"
+                            value={qtyDraft}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => setQtyDraft(e.target.value)}
+                            onBlur={() => commitQty(item)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') commitQty(item);
+                              if (e.key === 'Escape') setEditingQtyLineId(null);
+                            }}
+                            autoFocus
+                            aria-label={t('pos.colQty')}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            className={`pos-qty-control__val pos-qty-control__val--editable${
+                              isWeight ? ' pos-qty-control__val--weight' : ''
+                            }`}
+                            onClick={() => startQtyEdit(item)}
+                            title={t('pos.qtyEditHint')}
+                          >
+                            <span className="pos-qty-control__val-inner">
+                              <span className="pos-qty-control__num">{qtyParts.number}</span>
+                              {qtyParts.unit ? (
+                                <span className="pos-qty-control__unit">{qtyParts.unit}</span>
+                              ) : null}
+                            </span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           className="pos-qty-control__btn"
                           onClick={() => onQtyDelta(item.lineId, 1)}
+                          aria-label={t('pos.qtyIncrease')}
                         >
-                          <Plus size={14} strokeWidth={2} />
+                          <Plus size={18} strokeWidth={2.25} />
                         </button>
                       </div>
                     </div>

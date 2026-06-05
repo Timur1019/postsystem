@@ -8,18 +8,47 @@ export function roundQty(value) {
   return Math.round(n * 1000) / 1000;
 }
 
+export function qtyUnitLabel(unitCode) {
+  if (unitCode === 'G') return 'г';
+  if (unitCode === 'L') return 'л';
+  if (unitCode === 'M') return 'м';
+  return 'кг';
+}
+
 export function formatQty(value, saleType, unitCode) {
+  const parts = formatQtyParts(value, saleType, unitCode);
+  return parts.unit ? `${parts.number} ${parts.unit}` : parts.number;
+}
+
+/** Число и единица отдельно — для компактного отображения в чеке. */
+export function formatQtyParts(value, saleType, unitCode) {
   const q = roundQty(value);
   const scale = productQuantityScale({ saleType, quantityScale: saleType === 'WEIGHT' ? 3 : 0 });
   const formatted = q.toFixed(scale).replace(/\.?0+$/, '') || '0';
   if (saleType === 'WEIGHT' || unitCode === 'KG' || unitCode === 'G' || unitCode === 'L' || unitCode === 'M') {
-    const label = unitCode === 'G' ? 'г' : unitCode === 'L' ? 'л' : unitCode === 'M' ? 'м' : 'кг';
-    return `${formatted} ${label}`;
+    return { number: formatted, unit: qtyUnitLabel(unitCode) };
   }
   if (Number.isInteger(q) || Math.abs(q - Math.round(q)) < 0.0005) {
-    return String(Math.round(q));
+    return { number: String(Math.round(q)), unit: null };
   }
-  return q.toFixed(3).replace(/\.?0+$/, '');
+  return { number: q.toFixed(3).replace(/\.?0+$/, ''), unit: null };
+}
+
+export function qtyToEditString(value, saleType) {
+  const q = roundQty(value);
+  if (saleType === 'WEIGHT') {
+    return q.toFixed(3).replace(/\.?0+$/, '') || '0';
+  }
+  return String(Math.max(1, Math.round(q)));
+}
+
+export function parseQtyInput(raw, saleType) {
+  const s = String(raw ?? '').trim().replace(',', '.');
+  if (!s) return null;
+  const n = Number(s);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (saleType === 'WEIGHT') return roundQty(n);
+  return Math.max(1, Math.round(n));
 }
 
 export function productQuantityScale(product) {

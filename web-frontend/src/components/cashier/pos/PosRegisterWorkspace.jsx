@@ -43,6 +43,7 @@ export default function PosRegisterWorkspace({
     selectedLineId,
     setSelectedLineId,
     handleQtyDelta,
+    updateQuantity,
     updateUnitPrice,
     updateDiscountPercent,
     removeItem,
@@ -91,6 +92,7 @@ export default function PosRegisterWorkspace({
               selectedLineId={selectedLineId}
               onSelectLine={setSelectedLineId}
               onQtyDelta={handleQtyDelta}
+              onUpdateQuantity={updateQuantity}
               onUpdatePrice={updateUnitPrice}
               onUpdateDiscountPercent={updateDiscountPercent}
               onRemove={removeItem}

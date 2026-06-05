@@ -10,9 +10,9 @@
   --cashier-pad: clamp(8px, 1.2vw, 16px);
   /* Правая колонка оплаты */
   --cashier-pay-w: clamp(280px, 26vw, 400px);
-  --cashier-cart-cols: minmax(0, 1.65fr) minmax(0, 0.85fr) minmax(6.25rem, 0.72fr) minmax(0, 0.95fr) minmax(2.75rem, 3.25rem);
+  --cashier-cart-cols: minmax(0, 1.65fr) minmax(0, 0.85fr) minmax(7rem, 0.72fr) minmax(0, 0.95fr) minmax(2.75rem, 3.25rem);
   /* Текущий чек (register): фиксированная ширина qty/remove, чтобы +/- не наезжали на цену */
-  --cashier-cart-cols-register: minmax(0, 1.45fr) minmax(4rem, 0.78fr) 6.25rem minmax(4rem, 0.88fr) 2.75rem;
+  --cashier-cart-cols-register: minmax(0, 1.35fr) minmax(4rem, 0.78fr) 9.5rem minmax(4rem, 0.88fr) 2.75rem;
   --cashier-sidebar-w: clamp(212px, 15vw, 248px);
   --cashier-sidebar-w-collapsed: 64px;
 
@@ -49,11 +49,11 @@
 
 @container order-panel (max-width: 520px) {
   .pos-cart-table {
-    --pos-cart-cols: minmax(0, 1fr) minmax(3.5rem, 0.72fr) 5.75rem minmax(3.75rem, 0.85fr) 2.5rem;
+    --pos-cart-cols: minmax(0, 1fr) minmax(3.5rem, 0.72fr) 8.5rem minmax(3.75rem, 0.85fr) 2.5rem;
   }
 
   .pos-order-panel--register .pos-cart-table {
-    --pos-cart-cols: minmax(0, 1fr) minmax(3.25rem, 0.68fr) 5.75rem minmax(3.5rem, 0.82fr) 2.5rem;
+    --pos-cart-cols: minmax(0, 1fr) minmax(3.25rem, 0.68fr) 8.5rem minmax(3.5rem, 0.82fr) 2.5rem;
   }
 }
 
@@ -64,11 +64,11 @@
 
   .pos-cart-table {
     width: 100%;
-    --pos-cart-cols: minmax(0, 1fr) minmax(3rem, 0.65fr) 5.5rem minmax(3.25rem, 0.8fr) 2.375rem;
+    --pos-cart-cols: minmax(0, 1fr) minmax(3rem, 0.65fr) 8rem minmax(3.25rem, 0.8fr) 2.375rem;
   }
 
   .pos-order-panel--register .pos-cart-table {
-    --pos-cart-cols: minmax(0, 1fr) minmax(3rem, 0.62fr) 5.5rem minmax(3rem, 0.78fr) 2.375rem;
+    --pos-cart-cols: minmax(0, 1fr) minmax(3rem, 0.62fr) 8rem minmax(3rem, 0.78fr) 2.375rem;
   }
 }
 
@@ -368,7 +368,7 @@
   .cashier-app {
     --cashier-pay-w: clamp(300px, 22vw, 420px);
     --cashier-cart-cols: minmax(0, 2.2fr) minmax(0, 1fr) minmax(6.25rem, 0.85fr) minmax(0, 1.1fr) minmax(2.75rem, 3.25rem);
-    --cashier-cart-cols-register: minmax(0, 1.55fr) minmax(4.25rem, 0.85fr) 6.5rem minmax(4.25rem, 0.95fr) 2.75rem;
+    --cashier-cart-cols-register: minmax(0, 1.5fr) minmax(4.25rem, 0.85fr) 10rem minmax(4.25rem, 0.95fr) 2.75rem;
   }
 }
 
@@ -376,7 +376,7 @@
   .cashier-app {
     --cashier-pay-w: 420px;
     --cashier-cart-cols: minmax(0, 2.3fr) minmax(0, 1.05fr) minmax(6.5rem, 0.85fr) minmax(0, 1.15fr) minmax(2.75rem, 3.25rem);
-    --cashier-cart-cols-register: minmax(0, 1.65fr) minmax(4.5rem, 0.9fr) 6.75rem minmax(4.5rem, 1fr) 2.75rem;
+    --cashier-cart-cols-register: minmax(0, 1.6fr) minmax(4.5rem, 0.9fr) 10.5rem minmax(4.5rem, 1fr) 2.75rem;
   }
 }
 
@@ -388,7 +388,7 @@
     --cashier-pad: 8px;
     --cashier-pay-w: clamp(260px, 28vw, 340px);
     --cashier-cart-cols: minmax(0, 2.5fr) minmax(3.5rem, 0.72fr) minmax(5.75rem, 0.68fr) minmax(4.25rem, 0.92fr) minmax(2.5rem, 3rem);
-    --cashier-cart-cols-register: minmax(0, 1.35fr) minmax(3.5rem, 0.72fr) 5.75rem minmax(3.75rem, 0.88fr) 2.5rem;
+    --cashier-cart-cols-register: minmax(0, 1.3fr) minmax(3.5rem, 0.72fr) 8.75rem minmax(3.75rem, 0.88fr) 2.5rem;
   }
 
   .cashier-app.cashier-app--pos-screen .cashier-register__split--register .cashier-register__stage {
@@ -984,12 +984,16 @@
   min-height: 44px;
 }
 
-/* В текущем чеке — компактные +/- даже на touch/POS */
+/* В текущем чеке — крупные +/- для удобного нажатия */
+.cashier-app.cashier-app--touch .pos-order-panel--register .pos-qty-control {
+  min-height: 52px;
+}
+
 .cashier-app.cashier-app--touch .pos-order-panel--register .pos-qty-control__btn {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
 }
 
 .cashier-app.cashier-app--touch .pos-cart-table__remove-btn,

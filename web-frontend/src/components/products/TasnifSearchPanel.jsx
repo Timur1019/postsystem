@@ -3,6 +3,7 @@ import { Loader, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { tasnifApi } from '../../services/api';
+import { resolveLabelBarcodeFromTasnif } from '../../utils/labelBarcode';
 import TasnifPackagePickerModal from './TasnifPackagePickerModal';
 import '../../styles/tasnif-search.css';
 
@@ -20,27 +21,13 @@ export default function TasnifSearchPanel({ setValue, getValues, isEdit }) {
   const [packageItem, setPackageItem] = useState(null);
   const [pendingSearchQuery, setPendingSearchQuery] = useState('');
 
-  const digitsOnly = (v) => String(v || '').replace(/\D/g, '');
-
-  const resolveBarcode = (item, searchQuery) => {
-    const fromApi = item?.barcode || item?.internalCode;
-    if (fromApi && String(fromApi).trim()) {
-      return String(fromApi).trim();
-    }
-    const q = digitsOnly(searchQuery);
-    if (q.length >= 8) {
-      return q;
-    }
-    return '';
-  };
-
   const applyToForm = (item, pkg, searchQuery = '') => {
     if (!item?.name) return;
     setValue('name', item.name, { shouldDirty: true, shouldValidate: true });
     if (item.mxik) {
       setValue('ikpu', item.mxik, { shouldDirty: true });
     }
-    const barcode = resolveBarcode(item, searchQuery);
+    const barcode = resolveLabelBarcodeFromTasnif(item, searchQuery, pkg);
     if (barcode) {
       setValue('barcode', barcode, { shouldDirty: true });
     }
