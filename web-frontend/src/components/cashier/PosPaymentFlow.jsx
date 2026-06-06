@@ -1,78 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import {
-  Loader,
-  CreditCard,
-  Coins,
-  Wallet,
-  Banknote,
-  Split,
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Building2,
-  Heart,
-  Printer,
-} from 'lucide-react';
-import NumericKeypad, { formatKeypadAmount } from './NumericKeypad';
+import { Loader, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import { clampPayAmount, exceedsPayAmount, round2 } from '../../utils/taxAmounts';
+import { setPosReceiptPrintEnabled, isPosReceiptPrintEnabled } from '../../utils/receiptPrintPreference';
+import PrintReceiptToggle from './payment/PrintReceiptToggle';
+import PosPaymentReceiptStep from './payment/PosPaymentReceiptStep';
+import PosPaymentMethodStep from './payment/PosPaymentMethodStep';
+import PosPaymentCashStep from './payment/PosPaymentCashStep';
+import PosPaymentMixedCashStep from './payment/PosPaymentMixedCashStep';
+import PosPaymentMixedCardStep from './payment/PosPaymentMixedCardStep';
+import PosPaymentCardTypeStep from './payment/PosPaymentCardTypeStep';
 import {
-  isPosReceiptPrintEnabled,
-  setPosReceiptPrintEnabled,
-} from '../../utils/receiptPrintPreference';
-
-const amountStr = (n) => {
-  const v = round2(n);
-  return Number.isInteger(v) ? String(v) : v.toFixed(2);
-};
-
-const parseTenderedInput = (raw) =>
-  round2(Number(String(raw ?? '').replace(/\s/g, '').replace(',', '.')) || 0);
-
-const RECEIPT_TYPES = [
-  { id: 'SALE', icon: CreditCard },
-  { id: 'ADVANCE', icon: Coins },
-  { id: 'CREDIT', icon: Wallet },
-];
-
-const CARD_TYPES = [
-  { id: 'PERSONAL', labelKey: 'pos.cardPersonal', icon: CreditCard },
-  { id: 'CORPORATE', labelKey: 'pos.cardCorporate', icon: Building2 },
-  { id: 'SOCIAL', labelKey: 'pos.cardSocial', icon: Heart },
-];
-
-const PAY_METHODS = [
-  { id: 'cash', icon: Banknote, labelKey: 'pos.payCash', action: 'cash' },
-  { id: 'card', icon: CreditCard, labelKey: 'pos.payCard', action: 'card' },
-  { id: 'mixed', icon: Split, labelKey: 'pos.payMixed', action: 'mixed' },
-];
-
-const STEPS_WITH_PRINT_TOGGLE = new Set(['cash', 'mixedCash', 'mixedCard', 'cardType', 'receipt']);
-
-const isDeferredReceiptType = (type) => type === 'ADVANCE' || type === 'CREDIT';
-
-function PrintReceiptToggle({ checked, onChange, t }) {
-  const fullLabel = t('pos.printReceiptAfterSale');
-  return (
-    <label
-      className="pos-pay-print-toggle pos-pay-print-toggle--footer"
-      title={fullLabel}
-    >
-      <input
-        type="checkbox"
-        className="pos-pay-print-toggle__input"
-        checked={checked}
-        onChange={onChange}
-        aria-label={fullLabel}
-      />
-      <span className="pos-pay-print-toggle__box" aria-hidden />
-      <Printer size={18} strokeWidth={1.75} className="pos-pay-print-toggle__icon" aria-hidden />
-      <span className="pos-pay-print-toggle__text">{t('pos.printReceiptShort')}</span>
-    </label>
-  );
-}
+  STEPS_WITH_PRINT_TOGGLE,
+  amountStr,
+  isDeferredReceiptType,
+  parseTenderedInput,
+} from './payment/posPaymentConstants';
 
 export default function PosPaymentFlow({
   open,
@@ -112,8 +57,6 @@ export default function PosPaymentFlow({
 
   const goToCash = () => {
     setPayMethod('cash');
-    // UX: по умолчанию "без сдачи" — получено = к оплате.
-    // Кассиру чаще всего не нужно вводить сумму, если сдачи нет.
     setTendered(toPay > 0 ? amountStr(toPay) : '');
     setStep('cash');
   };
@@ -375,201 +318,51 @@ export default function PosPaymentFlow({
         {step === 'method' || step === 'receipt' ? (
           <div className="pos-pay-panel__scroll">
             {step === 'receipt' && (
-              <div className="pos-pay-panel__step">
-                <div className="pos-pay-receipt-types pos-pay-receipt-types--register-stack">
-                  {RECEIPT_TYPES.map(({ id, icon: Icon }) => {
-                    const active = receiptType === id;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        className={`pos-pay-receipt-type pos-pay-receipt-type--register${
-                          active ? ' is-active' : ''
-                        }`}
-                        onClick={() => selectReceiptType(id)}
-                      >
-                        <span className="pos-pay-receipt-type__icon-wrap">
-                          <Icon size={22} strokeWidth={1.5} />
-                        </span>
-                        <span className="pos-pay-receipt-type__label">{t(`pos.receiptType.${id}`)}</span>
-                        {active ? (
-                          <Check size={20} strokeWidth={2.5} className="pos-pay-receipt-type__check" />
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </div>
-                {deferredReceipt ? (
-                  <div className="pos-pay-deferred-summary">
-                    <p className="pos-pay-deferred-summary__hint">
-                      {receiptType === 'ADVANCE'
-                        ? t('pos.deferredSaleHintAdvance')
-                        : t('pos.deferredSaleHintCredit')}
-                    </p>
-                    <div className="pos-pay-deferred-summary__amount">
-                      <span className="pos-pay-deferred-summary__label">{t('pos.amountToPay')}</span>
-                      <strong className="pos-pay-deferred-summary__value">{fmt(toPay)}</strong>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
+              <PosPaymentReceiptStep
+                t={t}
+                receiptType={receiptType}
+                selectReceiptType={selectReceiptType}
+                toPay={toPay}
+              />
             )}
-
             {step === 'method' && (
-              <div className="pos-pay-panel__step">
-                <div className="pos-pay-method-step__hero">
-                  <h3 className="pos-pay-method-step__title">{t('pos.choosePaymentMethod')}</h3>
-                  <div className="pos-pay-method-step__due">
-                    <span className="pos-pay-method-step__due-label">{t('pos.amountToPay')}</span>
-                    <span className="pos-pay-method-step__due-value">{fmt(toPay)}</span>
-                  </div>
-                </div>
-                <div className="pos-pay-method-cards pos-pay-method-cards--register-stack pos-pay-method-cards--terminal">
-                  {PAY_METHODS.map(({ id, icon: Icon, labelKey, action }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      className="pos-pay-method-card pos-pay-method-card--register"
-                      onClick={() => handleMethod(action)}
-                    >
-                      <span className="pos-pay-method-card__icon">
-                        <Icon size={22} strokeWidth={1.5} />
-                      </span>
-                      <span className="pos-pay-method-card__label">{t(labelKey)}</span>
-                      <ArrowRight size={18} className="pos-pay-method-card__arrow" aria-hidden />
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <PosPaymentMethodStep t={t} toPay={toPay} handleMethod={handleMethod} />
             )}
           </div>
         ) : (
           <>
             {step === 'mixedCash' && (
-              <div className="pos-pay-panel__step">
-                <div className="pos-pay-mixed-cards pos-pay-mixed-cards--stack">
-                  <div className="pos-pay-amount-box pos-pay-amount-box--active">
-                    <div className="pos-pay-amount-box__head">
-                      <span className="pos-pay-amount-box__label">{t('pos.payCash')}</span>
-                      <button type="button" className="pos-pay-amount-box__action" onClick={() => setCashPortion('')}>
-                        {t('pos.keypadClear')}
-                      </button>
-                    </div>
-                    <p className="pos-pay-amount-box__value">
-                      {formatKeypadAmount(cashPortion)}
-                      <span className="pos-pay-amount-box__currency">сум</span>
-                    </p>
-                  </div>
-                  <div className={`pos-pay-amount-box${cardRemainder > 0 ? '' : ' is-dimmed'}`}>
-                    <div className="pos-pay-amount-box__head">
-                      <span className="pos-pay-amount-box__label">{t('pos.payCard')}</span>
-                      <button type="button" className="pos-pay-amount-box__action" onClick={() => setCashPortion('0')}>
-                        {t('pos.mixedCardRemainder')}
-                      </button>
-                    </div>
-                    <p className="pos-pay-amount-box__value">
-                      {fmt(cardRemainder)}
-                      <span className="pos-pay-amount-box__currency">сум</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="pos-pay-mixed-progress">
-                  <div className="pos-pay-mixed-progress__meta">
-                    <span>
-                      {t('pos.mixedDistributed')}: {fmt(mixedDistributed)} / {fmt(toPay)}
-                    </span>
-                    <span>{mixedPercent}%</span>
-                  </div>
-                  <div className="pos-pay-mixed-progress__bar">
-                    <div className="pos-pay-mixed-progress__fill" style={{ width: `${mixedPercent}%` }} />
-                  </div>
-                </div>
-                {cashExceeds && <p className="pos-pay-panel__error">{t('pos.mixedCashExceeds')}</p>}
-                <NumericKeypad
-                  value={cashPortion}
-                  onChange={handleCashPortionChange}
-                  quickActions={mixedQuickActions}
-                  disabled={isPending}
-                />
-              </div>
+              <PosPaymentMixedCashStep
+                t={t}
+                toPay={toPay}
+                cashPortion={cashPortion}
+                setCashPortion={setCashPortion}
+                cardRemainder={cardRemainder}
+                mixedDistributed={mixedDistributed}
+                mixedPercent={mixedPercent}
+                cashExceeds={cashExceeds}
+                mixedQuickActions={mixedQuickActions}
+                handleCashPortionChange={handleCashPortionChange}
+                isPending={isPending}
+              />
             )}
-
             {step === 'mixedCard' && (
-              <div className="pos-pay-panel__step">
-                <div className="pos-pay-mixed-summary">
-                  <div className="pos-pay-mixed-summary__row">
-                    <span>{t('pos.mixedPaidCash')}</span>
-                    <strong>{fmt(cashPartNum)}</strong>
-                  </div>
-                  <div className="pos-pay-mixed-summary__row pos-pay-mixed-summary__row--total">
-                    <span>{t('pos.mixedCardPart')}</span>
-                    <strong>{fmt(cardRemainder)}</strong>
-                  </div>
-                </div>
-              </div>
+              <PosPaymentMixedCardStep t={t} cashPartNum={cashPartNum} cardRemainder={cardRemainder} />
             )}
-
             {step === 'cardType' && (
-              <div className="pos-pay-panel__step pos-pay-panel__step--card-type">
-                <p className="pos-pay-card-type-step__lead">{t('pos.cardTypeLead')}</p>
-                <div className="pos-pay-card-types pos-pay-card-types--register-stack">
-                  {CARD_TYPES.map((c) => {
-                    const Icon = c.icon;
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className="pos-pay-card-type pos-pay-card-type--register"
-                        disabled={isPending}
-                        onClick={() => submitCard(c.id)}
-                      >
-                        <span className="pos-pay-card-type__icon">
-                          <Icon size={22} strokeWidth={1.5} aria-hidden />
-                        </span>
-                        <span className="pos-pay-card-type__label">{t(c.labelKey)}</span>
-                        <ArrowRight size={18} className="pos-pay-card-type__arrow" aria-hidden />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <PosPaymentCardTypeStep t={t} isPending={isPending} submitCard={submitCard} />
             )}
-
             {step === 'cash' && (
-              <div className="pos-pay-panel__step">
-                <div className="pos-pay-cash-panel pos-pay-cash-panel--terminal">
-                  <div className="pos-pay-cash__summary-row">
-                    <span>{t('pos.amountToPay')}</span>
-                    <strong>{fmt(toPay)}</strong>
-                  </div>
-                  <p className="pos-pay-cash__hint">{t('pos.cashTenderHint')}</p>
-                  <div className="pos-pay-cash__received-box" aria-live="polite">
-                    <span className="pos-pay-cash__received-label">{t('pos.receivedLabel')}</span>
-                    <span className="pos-pay-cash__received-value">{formatKeypadAmount(tendered)}</span>
-                  </div>
-                  <div
-                    className={`pos-pay-cash__change-row${cashPaidEnough ? ' pos-pay-cash__change-row--ready' : ''}`}
-                    aria-live="polite"
-                  >
-                    <span>{t('pos.change')}</span>
-                    <strong>{fmt(changeDue)}</strong>
-                  </div>
-                  {cashShortfall > 0 ? (
-                    <p className="pos-pay-cash__shortfall" role="status">
-                      {t('pos.cashShortfall', { amount: fmt(cashShortfall) })}
-                    </p>
-                  ) : null}
-                </div>
-                <NumericKeypad
-                  value={tendered}
-                  onChange={setTendered}
-                  // "Без сдачи" не нужен: мы уже автозаполняем получено = к оплате.
-                  hideActionKey
-                  hideBottomClear
-                  exactAmount={toPay}
-                  disabled={isPending}
-                />
-              </div>
+              <PosPaymentCashStep
+                t={t}
+                toPay={toPay}
+                tendered={tendered}
+                setTendered={setTendered}
+                changeDue={changeDue}
+                cashPaidEnough={cashPaidEnough}
+                cashShortfall={cashShortfall}
+                isPending={isPending}
+              />
             )}
           </>
         )}
