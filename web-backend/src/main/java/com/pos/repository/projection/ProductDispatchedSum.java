@@ -2,9 +2,4 @@ package com.pos.repository.projection;
 
 import java.util.UUID;
 
-public interface ProductDispatchedSum {
-
-    UUID getProductId();
-
-    Long getDispatched();
-}
+public record ProductDispatchedSum(UUID productId, long dispatched) {}

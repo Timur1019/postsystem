@@ -5,7 +5,7 @@ SELECT COUNT(*) FROM (
   INNER JOIN products p ON p.id = si.product_id
   WHERE s.status = 'COMPLETED'
     AND CAST(s.created_at AS date) BETWEEN :fromDate AND :toDate
-    AND (:storeId IS NULL OR s.store_id = :storeId)
+    AND s.store_id = COALESCE(:storeId, s.store_id)
     AND p.company_id = :companyId
     AND (:categoryId IS NULL OR p.category_id = :categoryId)
     AND (

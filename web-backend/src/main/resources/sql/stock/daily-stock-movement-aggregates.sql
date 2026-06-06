@@ -4,6 +4,6 @@ SELECT CAST(sm.created_at AS date) AS day,
 FROM stock_movements sm
 INNER JOIN products p ON p.id = sm.product_id AND p.company_id = :companyId
 WHERE sm.created_at >= :start AND sm.created_at < :end
-  AND (:storeId IS NULL OR sm.store_id = :storeId)
+  AND sm.store_id = COALESCE(:storeId, sm.store_id)
 GROUP BY CAST(sm.created_at AS date)
 ORDER BY day

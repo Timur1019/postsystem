@@ -4,7 +4,7 @@ INNER JOIN sales s ON s.id = si.sale_id
 INNER JOIN products p ON p.id = si.product_id
 WHERE s.created_at >= :start AND s.created_at < :end
   AND s.status = 'COMPLETED'
-  AND (:storeId IS NULL OR s.store_id = :storeId)
+  AND s.store_id = COALESCE(:storeId, s.store_id)
   AND (
     s.company_id = :companyId
     OR (

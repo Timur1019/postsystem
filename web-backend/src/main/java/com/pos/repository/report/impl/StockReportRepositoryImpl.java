@@ -5,6 +5,7 @@ import com.pos.entity.StockMovement;
 import com.pos.repository.report.ReportQueryExecutor;
 import com.pos.repository.report.StockReportRepository;
 import com.pos.repository.stock.impl.StockMovementJpaQueryExecutor;
+import com.pos.util.NativeQueryParams;
 import com.pos.util.SqlLoader;
 import jakarta.persistence.EntityGraph;
 import jakarta.persistence.EntityManager;
@@ -182,6 +183,7 @@ public class StockReportRepositoryImpl implements StockReportRepository {
         return reportQueryExecutor.fetchPage(
             DEAD_STOCK_SQL,
             DEAD_STOCK_COUNT_SQL,
+            query -> bindDeadStockCountParams(query, cutoffDate, categoryId, search, companyId),
             query -> bindDeadStockParams(query, asOfDate, cutoffDate, daysNoSale, categoryId, search, companyId),
             pageable
         );
@@ -262,14 +264,14 @@ public class StockReportRepositoryImpl implements StockReportRepository {
         Integer storeId,
         Integer companyId
     ) {
-        Long sum = entityManager.createQuery(SUM_QUANTITY_BY_TYPE_JPQL, Long.class)
+        BigDecimal sum = entityManager.createQuery(SUM_QUANTITY_BY_TYPE_JPQL, BigDecimal.class)
             .setParameter("type", type)
             .setParameter("start", start)
             .setParameter("end", end)
             .setParameter("storeId", storeId)
             .setParameter("companyId", companyId)
             .getSingleResult();
-        return sum != null ? sum : 0L;
+        return sum != null ? sum.longValue() : 0L;
     }
 
     @Override
@@ -282,29 +284,29 @@ public class StockReportRepositoryImpl implements StockReportRepository {
         return reportQueryExecutor.fetchList(DAILY_STOCK_MOVEMENT_SQL, query -> {
             query.setParameter("start", start);
             query.setParameter("end", end);
-            query.setParameter("storeId", storeId);
+            NativeQueryParams.setNullableInteger(query, "storeId", storeId);
             query.setParameter("companyId", companyId);
         });
     }
 
     @Override
     public BigDecimal sumRestockCostBetween(Instant start, Instant end, Integer storeId, Integer companyId) {
-        return toBigDecimal(entityManager.createNativeQuery(sqlLoader.load(SUM_RESTOCK_COST_SQL))
-            .setParameter("start", start)
-            .setParameter("end", end)
-            .setParameter("storeId", storeId)
-            .setParameter("companyId", companyId)
-            .getSingleResult());
+        Query restockQuery = entityManager.createNativeQuery(sqlLoader.load(SUM_RESTOCK_COST_SQL));
+        restockQuery.setParameter("start", start);
+        restockQuery.setParameter("end", end);
+        NativeQueryParams.setNullableInteger(restockQuery, "storeId", storeId);
+        restockQuery.setParameter("companyId", companyId);
+        return toBigDecimal(restockQuery.getSingleResult());
     }
 
     @Override
     public BigDecimal sumWriteOffCostBetween(Instant start, Instant end, Integer storeId, Integer companyId) {
-        return toBigDecimal(entityManager.createNativeQuery(sqlLoader.load(SUM_WRITE_OFF_COST_SQL))
-            .setParameter("start", start)
-            .setParameter("end", end)
-            .setParameter("storeId", storeId)
-            .setParameter("companyId", companyId)
-            .getSingleResult());
+        Query writeOffQuery = entityManager.createNativeQuery(sqlLoader.load(SUM_WRITE_OFF_COST_SQL));
+        writeOffQuery.setParameter("start", start);
+        writeOffQuery.setParameter("end", end);
+        NativeQueryParams.setNullableInteger(writeOffQuery, "storeId", storeId);
+        writeOffQuery.setParameter("companyId", companyId);
+        return toBigDecimal(writeOffQuery.getSingleResult());
     }
 
     @Override
@@ -373,7 +375,20 @@ public class StockReportRepositoryImpl implements StockReportRepository {
     ) {
         query.setParameter("start", start);
         query.setParameter("end", end);
-        query.setParameter("categoryId", categoryId);
+        NativeQueryParams.setNullableInteger(query, "categoryId", categoryId);
+        query.setParameter("search", search);
+        query.setParameter("companyId", companyId);
+    }
+
+    private static void bindDeadStockCountParams(
+        Query query,
+        LocalDate cutoffDate,
+        Integer categoryId,
+        String search,
+        Integer companyId
+    ) {
+        query.setParameter("cutoffDate", cutoffDate);
+        NativeQueryParams.setNullableInteger(query, "categoryId", categoryId);
         query.setParameter("search", search);
         query.setParameter("companyId", companyId);
     }
@@ -387,12 +402,9 @@ public class StockReportRepositoryImpl implements StockReportRepository {
         String search,
         Integer companyId
     ) {
+        bindDeadStockCountParams(query, cutoffDate, categoryId, search, companyId);
         query.setParameter("asOfDate", asOfDate);
-        query.setParameter("cutoffDate", cutoffDate);
         query.setParameter("daysNoSale", daysNoSale);
-        query.setParameter("categoryId", categoryId);
-        query.setParameter("search", search);
-        query.setParameter("companyId", companyId);
     }
 
     private static BigDecimal toBigDecimal(Object result) {

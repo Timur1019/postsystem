@@ -2,6 +2,7 @@ package com.pos.repository.report.impl;
 
 import com.pos.repository.report.ReportQueryExecutor;
 import com.pos.repository.report.SalesReportRepository;
+import com.pos.util.NativeQueryParams;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -83,8 +84,8 @@ public class SalesReportRepositoryImpl implements SalesReportRepository {
     ) {
         query.setParameter("fromDate", fromDate);
         query.setParameter("toDate", toDate);
-        query.setParameter("storeId", storeId);
-        query.setParameter("categoryId", categoryId);
+        NativeQueryParams.setNullableInteger(query, "storeId", storeId);
+        NativeQueryParams.setNullableInteger(query, "categoryId", categoryId);
         query.setParameter("search", search);
         query.setParameter("companyId", companyId);
     }
@@ -98,7 +99,7 @@ public class SalesReportRepositoryImpl implements SalesReportRepository {
     ) {
         query.setParameter("fromDate", fromDate);
         query.setParameter("toDate", toDate);
-        query.setParameter("storeId", storeId);
+        NativeQueryParams.setNullableInteger(query, "storeId", storeId);
         query.setParameter("companyId", companyId);
     }
 

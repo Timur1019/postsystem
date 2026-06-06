@@ -165,14 +165,14 @@ public class SaleAggregateRepositoryImpl implements SaleAggregateRepository {
         Integer storeId,
         Integer companyId
     ) {
-        Long sum = entityManager.createQuery(SUM_QUANTITY_SOLD_JPQL, Long.class)
+        BigDecimal sum = entityManager.createQuery(SUM_QUANTITY_SOLD_JPQL, BigDecimal.class)
             .setParameter("start", start)
             .setParameter("end", end)
             .setParameter("status", status)
             .setParameter("storeId", storeId)
             .setParameter("companyId", companyId)
             .getSingleResult();
-        return sum != null ? sum : 0L;
+        return sum != null ? sum.longValue() : 0L;
     }
 
     @Override
@@ -183,14 +183,14 @@ public class SaleAggregateRepositoryImpl implements SaleAggregateRepository {
         Integer storeId,
         Integer companyId
     ) {
-        Long sum = entityManager.createQuery(SUM_NET_QUANTITY_SOLD_JPQL, Long.class)
+        BigDecimal sum = entityManager.createQuery(SUM_NET_QUANTITY_SOLD_JPQL, BigDecimal.class)
             .setParameter("start", start)
             .setParameter("end", end)
             .setParameter("status", status)
             .setParameter("storeId", storeId)
             .setParameter("companyId", companyId)
             .getSingleResult();
-        return sum != null ? sum : 0L;
+        return sum != null ? sum.longValue() : 0L;
     }
 
     @Override

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -20,8 +21,8 @@ import java.util.UUID;
 public class StockMovementQueryRepositoryImpl implements StockMovementQueryRepository {
 
     private static final String SUM_DISPATCHED_BY_IDS_JPQL = """
-        SELECT sm.product.id AS productId,
-               COALESCE(SUM(CASE WHEN sm.quantity < 0 THEN -sm.quantity ELSE 0 END), 0) AS dispatched
+        SELECT sm.product.id,
+               COALESCE(SUM(CASE WHEN sm.quantity < 0 THEN -sm.quantity ELSE 0 END), 0)
         FROM StockMovement sm
         WHERE sm.product.id IN :productIds
         GROUP BY sm.product.id
@@ -74,17 +75,33 @@ public class StockMovementQueryRepositoryImpl implements StockMovementQueryRepos
         if (productIds == null || productIds.isEmpty()) {
             return List.of();
         }
-        return entityManager.createQuery(SUM_DISPATCHED_BY_IDS_JPQL, ProductDispatchedSum.class)
+        return entityManager.createQuery(SUM_DISPATCHED_BY_IDS_JPQL, Object[].class)
             .setParameter("productIds", productIds)
-            .getResultList();
+            .getResultList()
+            .stream()
+            .map(row -> new ProductDispatchedSum((UUID) row[0], toLong(row[1])))
+            .toList();
     }
 
     @Override
     public long sumDispatchedByProductId(UUID productId) {
-        Long sum = entityManager.createQuery(SUM_DISPATCHED_BY_ID_JPQL, Long.class)
+        BigDecimal sum = entityManager.createQuery(SUM_DISPATCHED_BY_ID_JPQL, BigDecimal.class)
             .setParameter("productId", productId)
             .getSingleResult();
-        return sum != null ? sum : 0L;
+        return toLong(sum);
+    }
+
+    private static long toLong(Object value) {
+        if (value == null) {
+            return 0L;
+        }
+        if (value instanceof BigDecimal bd) {
+            return bd.longValue();
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return 0L;
     }
 
     @Override

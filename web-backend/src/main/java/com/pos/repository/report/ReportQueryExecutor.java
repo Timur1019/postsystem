@@ -25,15 +25,25 @@ public class ReportQueryExecutor {
         Consumer<Query> parameterBinder,
         Pageable pageable
     ) {
+        return fetchPage(sqlPath, countSqlPath, parameterBinder, parameterBinder, pageable);
+    }
+
+    public Page<Object[]> fetchPage(
+        String sqlPath,
+        String countSqlPath,
+        Consumer<Query> countParameterBinder,
+        Consumer<Query> dataParameterBinder,
+        Pageable pageable
+    ) {
         Query countQuery = entityManager.createNativeQuery(sqlLoader.load(countSqlPath));
-        parameterBinder.accept(countQuery);
+        countParameterBinder.accept(countQuery);
         long total = ((Number) countQuery.getSingleResult()).longValue();
         if (total == 0) {
             return new PageImpl<>(List.of(), pageable, 0);
         }
 
         Query query = entityManager.createNativeQuery(sqlLoader.load(sqlPath));
-        parameterBinder.accept(query);
+        dataParameterBinder.accept(query);
         query.setFirstResult((int) pageable.getOffset());
         query.setMaxResults(pageable.getPageSize());
 

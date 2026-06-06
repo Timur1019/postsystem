@@ -15,7 +15,7 @@ INNER JOIN products p ON p.id = si.product_id
 LEFT JOIN categories c ON c.id = p.category_id
 WHERE s.status = 'COMPLETED'
   AND CAST(s.created_at AS date) BETWEEN :fromDate AND :toDate
-  AND (:storeId IS NULL OR s.store_id = :storeId)
+  AND s.store_id = COALESCE(:storeId, s.store_id)
   AND p.company_id = :companyId
 GROUP BY c.id, c.name
 HAVING COALESCE(SUM(si.quantity - si.returned_quantity), 0) > 0

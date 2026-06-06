@@ -123,8 +123,8 @@ public class ProductResponseAssembler {
         List<UUID> ids = products.stream().map(Product::getId).distinct().toList();
         return stockMovementQueryRepository.sumDispatchedByProductIds(ids).stream()
             .collect(Collectors.toMap(
-                ProductDispatchedSum::getProductId,
-                row -> row.getDispatched() != null ? row.getDispatched().intValue() : 0
+                ProductDispatchedSum::productId,
+                row -> (int) row.dispatched()
             ));
     }
 
