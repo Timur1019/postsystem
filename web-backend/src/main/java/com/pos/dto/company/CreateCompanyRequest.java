@@ -9,5 +9,6 @@ public record CreateCompanyRequest(
     String tin,
     String address,
     String phone,
+    String businessType,
     Boolean active
 ) {}

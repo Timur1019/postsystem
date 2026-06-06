@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { getStockUnits } from '../utils/unitConfig';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -6,8 +7,14 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { productApi } from '../services/api';
+import {
+  applyTemplateDefaults,
+  getProductTemplate,
+  resolveProductTemplateCode,
+  templateHasSection,
+} from '../config/productCatalogTemplateRegistry';
 import { buildStorePrices, syncStoreRowPrices } from '../utils/productCatalogPrices';
-import { MEASURED_UNIT_CODES, UNIT_DEFAULTS } from '../utils/unitConfig';
+import { UNIT_DEFAULTS } from '../utils/unitConfig';
 
 const defaultFormValues = {
   taxRate: 0,
@@ -25,11 +32,21 @@ const defaultFormValues = {
   unitCode: 'PCS',
   quantityScale: 0,
   allowFraction: false,
+  clothingSizeRange: '',
+  clothingColor: '',
+  clothingGender: '',
+  pharmacyExpiryRequired: false,
+  pharmacyPrescriptionRequired: false,
+  pharmacyDosageForm: '',
 };
 
-export function useProductCatalogForm(product, stores, onSaved) {
+export function useProductCatalogForm(product, stores, onSaved, options = {}) {
   const { t } = useTranslation();
   const isEdit = !!product;
+  const createTemplateCode = options.templateCode ?? null;
+  const createAdvancedMode = options.advancedMode ?? false;
+  const [editAdvancedMode, setEditAdvancedMode] = useState(false);
+  const advancedMode = isEdit ? editAdvancedMode : createAdvancedMode;
 
   const { data: detail } = useQuery({
     queryKey: ['product', product?.id],
@@ -37,6 +54,13 @@ export function useProductCatalogForm(product, stores, onSaved) {
     enabled: isEdit && !!product?.id,
   });
   const full = detail ?? product;
+
+  const resolvedTemplateCode = isEdit
+    ? resolveProductTemplateCode(full)
+    : createTemplateCode;
+  const templateCode = advancedMode ? null : resolvedTemplateCode;
+  const template = getProductTemplate(templateCode);
+  const templateLocked = Boolean(template && !advancedMode);
 
   const [storeRows, setStoreRows] = useState([{ storeId: '', price: '' }]);
   const [extraBarcodes, setExtraBarcodes] = useState(['']);
@@ -64,7 +88,7 @@ export function useProductCatalogForm(product, stores, onSaved) {
         ikpu: z.string().optional(),
         productType: z.enum(['RETAIL', 'MATERIAL', 'DISH', 'SERVICE']),
         saleType: z.enum(['PIECE', 'WEIGHT', 'SERVICE']),
-        unitCode: z.enum(['PCS', 'KG', 'G', 'L', 'M', 'MM']),
+        unitCode: z.string().min(1, t('productCatalog.unitRequired')),
         quantityScale: z.coerce.number().min(0).max(3),
         allowFraction: z.boolean(),
         unitOfMeasure: z.string().min(1, t('productCatalog.unitRequired')),
@@ -86,6 +110,12 @@ export function useProductCatalogForm(product, stores, onSaved) {
         constructionWidth: z.coerce.number().min(0).optional(),
         constructionThickness: z.coerce.number().min(0).optional(),
         constructionAllowCutting: z.boolean().optional(),
+        clothingSizeRange: z.string().optional(),
+        clothingColor: z.string().optional(),
+        clothingGender: z.string().optional(),
+        pharmacyExpiryRequired: z.boolean().optional(),
+        pharmacyPrescriptionRequired: z.boolean().optional(),
+        pharmacyDosageForm: z.string().optional(),
       }),
     [t]
   );
@@ -96,6 +126,18 @@ export function useProductCatalogForm(product, stores, onSaved) {
   });
 
   const { register, handleSubmit, reset, setValue, getValues, watch, formState: { errors } } = form;
+
+  useEffect(() => {
+    if (!isEdit) setEditAdvancedMode(false);
+  }, [isEdit, product?.id]);
+
+  useEffect(() => {
+    if (isEdit || !templateLocked || !template) return;
+    reset({
+      ...defaultFormValues,
+      ...applyTemplateDefaults(template),
+    });
+  }, [isEdit, templateLocked, template, reset]);
 
   useEffect(() => {
     if (!full) return;
@@ -132,6 +174,12 @@ export function useProductCatalogForm(product, stores, onSaved) {
       constructionWidth: full.constructionDetails?.width ?? '',
       constructionThickness: full.constructionDetails?.thickness ?? '',
       constructionAllowCutting: full.constructionDetails?.allowCutting ?? false,
+      clothingSizeRange: full.retailExtras?.clothingSizeRange ?? '',
+      clothingColor: full.retailExtras?.clothingColor ?? '',
+      clothingGender: full.retailExtras?.clothingGender ?? '',
+      pharmacyExpiryRequired: full.retailExtras?.pharmacyExpiryRequired ?? false,
+      pharmacyPrescriptionRequired: full.retailExtras?.pharmacyPrescriptionRequired ?? false,
+      pharmacyDosageForm: full.retailExtras?.pharmacyDosageForm ?? '',
     });
     const prices = (full.storePrices && full.storePrices.length > 0
       ? full.storePrices
@@ -152,15 +200,20 @@ export function useProductCatalogForm(product, stores, onSaved) {
   const unitCodeWatch = watch('unitCode');
 
   useEffect(() => {
+    if (templateLocked) return;
     if (saleTypeWatch === 'SERVICE') {
       setValue('productType', 'SERVICE');
     }
-  }, [saleTypeWatch, setValue]);
+  }, [saleTypeWatch, setValue, templateLocked]);
 
   useEffect(() => {
+    if (templateLocked) return;
     if (saleTypeWatch === 'WEIGHT') {
       const currentUnit = getValues('unitCode');
-      if (!MEASURED_UNIT_CODES.includes(currentUnit)) {
+      const measuredCodes = getStockUnits()
+        .filter((u) => ['MASS', 'VOLUME', 'LENGTH', 'AREA'].includes(u.category))
+        .map((u) => u.code);
+      if (!measuredCodes.includes(currentUnit)) {
         setValue('unitCode', 'KG');
         const defaults = UNIT_DEFAULTS.KG;
         setValue('unitOfMeasure', defaults.unitOfMeasure);
@@ -182,16 +235,17 @@ export function useProductCatalogForm(product, stores, onSaved) {
       setValue('quantityScale', defaults.quantityScale);
       setValue('allowFraction', defaults.allowFraction);
     }
-  }, [saleTypeWatch, getValues, setValue]);
+  }, [saleTypeWatch, getValues, setValue, templateLocked]);
 
   useEffect(() => {
+    if (templateLocked) return;
     if (saleTypeWatch !== 'WEIGHT') return;
     const defaults = UNIT_DEFAULTS[unitCodeWatch];
     if (!defaults) return;
     setValue('unitOfMeasure', defaults.unitOfMeasure);
     setValue('quantityScale', defaults.quantityScale);
     setValue('allowFraction', defaults.allowFraction);
-  }, [unitCodeWatch, saleTypeWatch, setValue]);
+  }, [unitCodeWatch, saleTypeWatch, setValue, templateLocked]);
 
   useEffect(() => {
     if (sellingPriceWatch == null || sellingPriceWatch === '') return;
@@ -241,6 +295,28 @@ export function useProductCatalogForm(product, stores, onSaved) {
     onError: (err) => toast.error(err.response?.data?.message ?? t('productModal.saveFailed')),
   });
 
+  const buildRetailExtrasPayload = (values) => {
+    if (values.productType !== 'RETAIL') return undefined;
+    const showClothing = showSection('clothing');
+    const showPharmacy = showSection('pharmacy');
+    const hasValues =
+      values.clothingSizeRange?.trim()
+      || values.clothingColor?.trim()
+      || values.clothingGender
+      || values.pharmacyDosageForm?.trim()
+      || values.pharmacyExpiryRequired
+      || values.pharmacyPrescriptionRequired;
+    if (!showClothing && !showPharmacy && !hasValues) return undefined;
+    return {
+      clothingSizeRange: values.clothingSizeRange?.trim() || null,
+      clothingColor: values.clothingColor?.trim() || null,
+      clothingGender: values.clothingGender || null,
+      pharmacyExpiryRequired: values.pharmacyExpiryRequired ?? false,
+      pharmacyPrescriptionRequired: values.pharmacyPrescriptionRequired ?? false,
+      pharmacyDosageForm: values.pharmacyDosageForm?.trim() || null,
+    };
+  };
+
   const onSubmit = (values) => {
     const storePrices = buildStorePrices(storeRows, values.sellingPrice);
     const additionalBarcodes = extraBarcodes.map((b) => b.trim()).filter(Boolean);
@@ -280,8 +356,10 @@ export function useProductCatalogForm(product, stores, onSaved) {
       ownerType: values.ownerType,
       commissionTin: values.commissionTin || undefined,
       commissionPinfl: values.commissionPinfl || undefined,
+      retailExtras: buildRetailExtrasPayload(values),
       storePrices,
       additionalBarcodes,
+      templateCode: advancedMode ? null : (resolvedTemplateCode || null),
     };
 
     const stockQty = values.initialStock ?? 0;
@@ -301,9 +379,22 @@ export function useProductCatalogForm(product, stores, onSaved) {
     }
   };
 
+  const showSection = (section) => {
+    if (advancedMode) return true;
+    if (!template) return true;
+    return templateHasSection(template, section);
+  };
+
   return {
     t,
     isEdit,
+    template,
+    templateCode: resolvedTemplateCode,
+    templateLocked,
+    advancedMode,
+    canToggleAdvanced: Boolean(resolvedTemplateCode),
+    setAdvancedMode: setEditAdvancedMode,
+    showSection,
     register,
     handleSubmit,
     setValue,

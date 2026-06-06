@@ -17,6 +17,7 @@ public record UpdateProductRequest(
     BigDecimal costPrice,
     BigDecimal taxRate,
     ProductType productType,
+    String templateCode,
     SaleType saleType,
     UnitCode unitCode,
     Integer quantityScale,
@@ -42,5 +43,6 @@ public record UpdateProductRequest(
     List<String> additionalBarcodes,
     ConstructionProductDetailsRequest constructionDetails,
     RestaurantProductDetailsRequest restaurantDetails,
-    ServiceProductDetailsRequest serviceDetails
+    ServiceProductDetailsRequest serviceDetails,
+    RetailExtrasRequest retailExtras
 ) {}

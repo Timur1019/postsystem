@@ -26,7 +26,9 @@ import com.pos.service.support.ProductValueNormalizer;
 import com.pos.service.support.ProductLookupSupport;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.repository.spec.ProductSpecifications;
+import com.pos.service.UnitCatalogService;
 import com.pos.service.stock.StoreStockService;
+import com.pos.util.ProductTemplateCodeValidator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -47,6 +49,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
     private final ProductExtensionService extensionService;
     private final TenantAccessSupport tenantAccess;
     private final StoreStockService storeStockService;
+    private final UnitCatalogService unitCatalogService;
 
     public ProductCommandServiceImpl(
         ProductRepository productRepository,
@@ -59,7 +62,8 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         ProductResponseAssembler assembler,
         ProductExtensionService extensionService,
         TenantAccessSupport tenantAccess,
-        StoreStockService storeStockService
+        StoreStockService storeStockService,
+        UnitCatalogService unitCatalogService
     ) {
         super(productRepository, productLookup, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
         this.stockMovementRepository = stockMovementRepository;
@@ -67,6 +71,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         this.extensionService = extensionService;
         this.tenantAccess = tenantAccess;
         this.storeStockService = storeStockService;
+        this.unitCatalogService = unitCatalogService;
     }
 
     @Override
@@ -143,10 +148,12 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
             req.allowFraction(),
             req.unitOfMeasure()
         );
+        unitCatalogService.requireStockUnit(product.getUnitCode());
         if (!org.springframework.util.StringUtils.hasText(product.getUnitOfMeasure())) {
             product.setUnitOfMeasure(SaleTypeSupport.defaultUnitOfMeasure(product.getSaleType(), req.unitOfMeasure()));
         }
         extensionService.applyOnCreate(product, req);
+        product.setTemplateCode(ProductTemplateCodeValidator.normalizeOrNull(req.templateCode()));
 
         Product saved = productRepository.save(product);
         applyStorePrices(saved, req.storePrices());
@@ -220,6 +227,9 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         if (req.taxRate() != null) {
             product.setTaxRate(ProductValueNormalizer.taxRatePercent(req.taxRate()));
         }
+        if (req.templateCode() != null) {
+            product.setTemplateCode(ProductTemplateCodeValidator.normalizeOrNull(req.templateCode()));
+        }
         if (req.saleType() != null || req.unitCode() != null || req.quantityScale() != null || req.allowFraction() != null) {
             ProductQuantityRulesResolver.applyTo(
                 product,
@@ -232,6 +242,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
             if (req.unitOfMeasure() == null) {
                 product.setUnitOfMeasure(SaleTypeSupport.defaultUnitOfMeasure(product.getSaleType(), null));
             }
+            unitCatalogService.requireStockUnit(product.getUnitCode());
         }
         if (req.lowStockAlert() != null) {
             product.setLowStockAlert(req.lowStockAlert());
@@ -372,6 +383,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         );
         product.setStockQuantity(BigDecimal.ZERO);
         extensionService.applyOnCreate(product, req);
+        product.setTemplateCode(ProductTemplateCodeValidator.normalizeOrNull(req.templateCode()));
 
         Product saved = productRepository.save(product);
         applyStorePrices(saved, req.storePrices());

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { productApi } from '../../services/api';
 import { fmtMoney } from '../../utils/formatMoney';
 import ProductLifecycleSection from './ProductLifecycleSection';
+import { getProductTemplateTitle } from '../../config/productCatalogTemplateRegistry';
 
 const rowCls = 'flex items-center justify-between gap-4 border-b border-slate-200 py-2 text-sm dark:border-slate-800';
 const labelCls = 'text-slate-500 dark:text-slate-400';
@@ -162,11 +163,27 @@ function ProductDetailsBody({ p, t }) {
           <span className={valueCls}>{p.categoryName ?? '—'}</span>
         </div>
         <div className={rowCls}>
-          <span className={labelCls}>{t('productCatalog.productType')}:</span>
-          <span className={valueCls}>
-            {p.productType ? t(`productCatalog.productType${p.productType.charAt(0)}${p.productType.slice(1).toLowerCase()}`) : '—'}
-          </span>
+          <span className={labelCls}>{t('products.colTemplate')}:</span>
+          <span className={valueCls}>{getProductTemplateTitle(t, p) ?? '—'}</span>
         </div>
+        {p.retailExtras?.clothingSizeRange || p.retailExtras?.clothingColor ? (
+          <>
+            <div className={rowCls}>
+              <span className={labelCls}>{t('productCatalog.clothingSizeRange')}:</span>
+              <span className={valueCls}>{p.retailExtras.clothingSizeRange ?? '—'}</span>
+            </div>
+            <div className={rowCls}>
+              <span className={labelCls}>{t('productCatalog.clothingColor')}:</span>
+              <span className={valueCls}>{p.retailExtras.clothingColor ?? '—'}</span>
+            </div>
+          </>
+        ) : null}
+        {p.retailExtras?.pharmacyDosageForm ? (
+          <div className={rowCls}>
+            <span className={labelCls}>{t('productCatalog.pharmacyDosageForm')}:</span>
+            <span className={valueCls}>{p.retailExtras.pharmacyDosageForm}</span>
+          </div>
+        ) : null}
         <div className={rowCls}>
           <span className={labelCls}>{t('productCatalog.unit')}:</span>
           <span className={valueCls}>{p.unitOfMeasure ?? '—'}</span>

@@ -4,6 +4,7 @@ import com.pos.domain.ProductType;
 import com.pos.dto.product.ConstructionProductDetailsRequest;
 import com.pos.dto.product.CreateProductRequest;
 import com.pos.dto.product.RestaurantProductDetailsRequest;
+import com.pos.dto.product.RetailExtrasRequest;
 import com.pos.dto.product.ServiceProductDetailsRequest;
 import com.pos.dto.product.UpdateProductRequest;
 import com.pos.entity.ConstructionProductDetails;
@@ -24,7 +25,10 @@ public class ProductExtensionServiceImpl implements ProductExtensionService {
         product.setProductType(type);
         clearExtensions(product);
         switch (type) {
-            case RETAIL -> applyRetailFlags(product, req.soldIndividually(), req.markedProduct());
+            case RETAIL -> {
+                applyRetailFlags(product, req.soldIndividually(), req.markedProduct());
+                applyRetailExtras(product, req.retailExtras());
+            }
             case MATERIAL -> applyConstruction(product, req.constructionDetails());
             case DISH -> applyRestaurant(product, req.restaurantDetails());
             case SERVICE -> applyService(product, req.serviceDetails());
@@ -44,6 +48,9 @@ public class ProductExtensionServiceImpl implements ProductExtensionService {
             case RETAIL -> {
                 if (req.soldIndividually() != null || req.markedProduct() != null) {
                     applyRetailFlags(product, req.soldIndividually(), req.markedProduct());
+                }
+                if (req.retailExtras() != null) {
+                    applyRetailExtras(product, req.retailExtras());
                 }
             }
             case MATERIAL -> {
@@ -140,6 +147,44 @@ public class ProductExtensionServiceImpl implements ProductExtensionService {
         if (req.requiresAppointment() != null) {
             details.setRequiresAppointment(req.requiresAppointment());
         }
+    }
+
+    @Override
+    public void applyRetailExtras(Product product, RetailExtrasRequest req) {
+        if (req == null) {
+            return;
+        }
+        RetailProductDetails details = product.getRetailDetails();
+        if (details == null) {
+            details = RetailProductDetails.builder().product(product).build();
+            product.setRetailDetails(details);
+        }
+        if (req.clothingSizeRange() != null) {
+            details.setClothingSizeRange(trimOrNull(req.clothingSizeRange()));
+        }
+        if (req.clothingColor() != null) {
+            details.setClothingColor(trimOrNull(req.clothingColor()));
+        }
+        if (req.clothingGender() != null) {
+            details.setClothingGender(trimOrNull(req.clothingGender()));
+        }
+        if (req.pharmacyExpiryRequired() != null) {
+            details.setPharmacyExpiryRequired(req.pharmacyExpiryRequired());
+        }
+        if (req.pharmacyPrescriptionRequired() != null) {
+            details.setPharmacyPrescriptionRequired(req.pharmacyPrescriptionRequired());
+        }
+        if (req.pharmacyDosageForm() != null) {
+            details.setPharmacyDosageForm(trimOrNull(req.pharmacyDosageForm()));
+        }
+    }
+
+    private static String trimOrNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private void clearExtensions(Product product) {

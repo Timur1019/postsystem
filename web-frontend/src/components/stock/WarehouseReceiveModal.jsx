@@ -7,6 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { productApi, warehouseApi } from '../../services/api';
 import { invalidateProductCaches } from '../../utils/productCache';
 import { useCompanyStores } from '../../hooks/useCompanyStores';
+import { formatQty, parseQtyInput, roundQty } from '../../utils/quantityFormat';
+import { getUnitConfig } from '../../utils/unitConfig';
+import UnitConversionHelper from '../shared/UnitConversionHelper';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm
                   focus:outline-none focus:ring-2 focus:ring-emerald-500
@@ -75,12 +78,16 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
     }
   }, [open, selectedProduct?.id, selectedProduct?.sellingPrice, selectedProduct?.costPrice]);
 
+  const unitCode = selectedProduct?.unitCode || 'PCS';
+  const saleType = selectedProduct?.saleType || 'PIECE';
+  const unitConfig = getUnitConfig(unitCode);
   const currentStock = selectedProduct?.stockQuantity ?? 0;
-  const receiveQty = Number(quantity);
+  const parsedReceiveQty = parseQtyInput(quantity, saleType, unitCode);
   const afterStock = useMemo(() => {
-    if (!Number.isFinite(receiveQty) || receiveQty < 1) return null;
-    return currentStock + Math.floor(receiveQty);
-  }, [currentStock, receiveQty]);
+    if (parsedReceiveQty == null) return null;
+    const sum = currentStock + parsedReceiveQty;
+    return unitConfig.scale === 0 ? Math.round(sum) : roundQty(sum);
+  }, [currentStock, parsedReceiveQty, unitConfig.scale]);
 
   const mutation = useMutation({
     mutationFn: (body) => warehouseApi.receipt(body),
@@ -103,8 +110,8 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
       toast.error(t('validation.fieldRequired', { field: t('stockModule.modal.product') }));
       return;
     }
-    const q = Number(quantity);
-    if (!Number.isFinite(q) || q < 1) {
+    const q = parseQtyInput(quantity, saleType, unitCode);
+    if (q == null) {
       toast.error(t('validation.fieldRequired', { field: t('stockModule.modal.qty') }));
       return;
     }
@@ -126,7 +133,7 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
     const body = {
       productId,
       storeId: sid,
-      quantity: Math.floor(q),
+      quantity: q,
       unitSellingPrice: sell,
       purchasePrice: buy,
       markedProduct: marked,
@@ -159,10 +166,14 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
           </p>
           {productId ? (
             <p className="text-xs text-emerald-700 dark:text-emerald-400">
-              {t('stockModule.modal.currentStock', { qty: currentStock })}
+              {t('stockModule.modal.currentStock', {
+                qty: formatQty(currentStock, saleType, unitCode),
+              })}
               {afterStock != null && (
                 <span className="ml-2 text-slate-600 dark:text-slate-400">
-                  {t('stockModule.modal.afterReceive', { qty: afterStock })}
+                  {t('stockModule.modal.afterReceive', {
+                    qty: formatQty(afterStock, saleType, unitCode),
+                  })}
                 </span>
               )}
             </p>
@@ -213,13 +224,28 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
             <label className={labelCls}>
               <span className="text-red-600">*</span> {t('stockModule.modal.qty')}
             </label>
-            <input
-              className={inputCls}
-              inputMode="numeric"
-              placeholder={t('stockModule.modal.qtyPh')}
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-            />
+            <div>
+              <input
+                className={inputCls}
+                inputMode="decimal"
+                placeholder={t('stockModule.modal.qtyPh')}
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+              />
+              {selectedProduct ? (
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  {t('stockModule.modal.qtyUnitHint', { unit: unitConfig.label })}
+                </p>
+              ) : null}
+              {selectedProduct ? (
+                <UnitConversionHelper
+                  t={t}
+                  stockUnitCode={unitCode}
+                  standardLength={selectedProduct.constructionDetails?.standardLength}
+                  onApplyStockQty={(qty) => setQuantity(String(qty))}
+                />
+              ) : null}
+            </div>
           </div>
 
           <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:items-center">

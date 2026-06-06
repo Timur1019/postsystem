@@ -6,6 +6,7 @@ import TableRowActionsMenu from '../../components/shared/TableRowActionsMenu';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { companyApi } from '../../services/api';
+import { BUSINESS_TYPES } from '../../config/productCatalogTemplateRegistry';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
   focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white`;
@@ -20,7 +21,7 @@ export default function PlatformCompaniesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
-    name: '', legalName: '', tin: '', address: '', phone: '', active: true,
+    name: '', legalName: '', tin: '', address: '', phone: '', active: true, businessType: 'UNIVERSAL',
   });
   const [menuId, setMenuId] = useState(null);
 
@@ -33,8 +34,8 @@ export default function PlatformCompaniesPage() {
 
   const saveMutation = useMutation({
     mutationFn: () => {
-      const { name, legalName, tin, address, phone, active } = form;
-      const payload = { name, legalName, tin, address, phone, active };
+      const { name, legalName, tin, address, phone, active, businessType } = form;
+      const payload = { name, legalName, tin, address, phone, active, businessType };
       return editing ? companyApi.update(editing.id, payload) : companyApi.create(payload);
     },
     onSuccess: () => {
@@ -64,7 +65,7 @@ export default function PlatformCompaniesPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', legalName: '', tin: '', address: '', phone: '', active: true });
+    setForm({ name: '', legalName: '', tin: '', address: '', phone: '', active: true, businessType: 'UNIVERSAL' });
     setModalOpen(true);
   };
 
@@ -77,6 +78,7 @@ export default function PlatformCompaniesPage() {
       address: row.address ?? '',
       phone: row.phone ?? '',
       active: row.active,
+      businessType: row.businessType ?? 'UNIVERSAL',
     });
     setModalOpen(true);
     setMenuId(null);
@@ -104,13 +106,14 @@ export default function PlatformCompaniesPage() {
               <th className="px-4 py-3">{t('platform.colName')}</th>
               <th className="px-4 py-3">{t('platform.colLoginCode')}</th>
               <th className="px-4 py-3">{t('platform.colStores')}</th>
+              <th className="px-4 py-3">{t('platform.colBusinessType')}</th>
               <th className="px-4 py-3">{t('common.status')}</th>
               <th className="w-12" />
             </tr>
           </thead>
           <tbody className="divide-y dark:divide-slate-800">
             {isPending ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center">{t('common.loading')}</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center">{t('common.loading')}</td></tr>
             ) : rows.map((row) => (
               <tr key={row.id}>
                 <td className="px-4 py-3 font-medium">{row.name}</td>
@@ -118,6 +121,9 @@ export default function PlatformCompaniesPage() {
                   {row.loginCode || '—'}
                 </td>
                 <td className="px-4 py-3">{row.storeCount}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                  {t(`productTemplates.businessTypes.${row.businessType ?? 'UNIVERSAL'}`)}
+                </td>
                 <td className="px-4 py-3">{row.active ? t('common.active') : t('common.inactive')}</td>
                 <td className="px-4 py-3">
                   <TableRowActionsMenu
@@ -181,6 +187,21 @@ export default function PlatformCompaniesPage() {
             <div className="mb-3">
               <label className="mb-1 block text-xs text-slate-500">{t('platform.field_address')}</label>
               <textarea className={inputCls} rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            </div>
+            <div className="mb-3">
+              <label className="mb-1 block text-xs text-slate-500">{t('platform.field_businessType')}</label>
+              <select
+                className={inputCls}
+                value={form.businessType}
+                onChange={(e) => setForm({ ...form, businessType: e.target.value })}
+              >
+                {BUSINESS_TYPES.map((bt) => (
+                  <option key={bt.code} value={bt.code}>
+                    {t(`productTemplates.businessTypes.${bt.code}`)}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-500">{t('platform.field_businessTypeHint')}</p>
             </div>
             <div className="flex gap-3">
               <button type="button" onClick={() => setModalOpen(false)} className="flex-1 rounded-lg border py-2">{t('common.cancel')}</button>

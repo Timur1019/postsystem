@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { productApi } from '../../services/api';
 import { invalidateProductCaches } from '../../utils/productCache';
 import { useCompanyStores } from '../../hooks/useCompanyStores';
+import { getUnitConfig } from '../../utils/unitConfig';
+import UnitConversionHelper from '../shared/UnitConversionHelper';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm
                   placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500
@@ -34,6 +36,11 @@ export default function StockAdjustModal({ product, onClose, onSaved }) {
   });
 
   const displayQty = productAtStore?.stockQuantity ?? product.stockQuantity;
+  const unitCode = productAtStore?.unitCode ?? product.unitCode ?? 'PCS';
+  const saleType = productAtStore?.saleType ?? product.saleType ?? 'PIECE';
+  const unitConfig = getUnitConfig(unitCode);
+  const constructionLength = productAtStore?.constructionDetails?.standardLength
+    ?? product.constructionDetails?.standardLength;
 
   const schema = useMemo(
     () =>
@@ -45,7 +52,7 @@ export default function StockAdjustModal({ product, onClose, onSaved }) {
     [t]
   );
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       quantity: 0,
@@ -115,9 +122,23 @@ export default function StockAdjustModal({ product, onClose, onSaved }) {
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
               {t('stockModal.qtyChange')}
             </label>
-            <input type="number" step="1" className={inputCls} placeholder={t('stockModal.qtyPh')} {...register('quantity')} />
+            <input
+              type="number"
+              step={unitConfig.step}
+              className={inputCls}
+              placeholder={t('stockModal.qtyPh')}
+              {...register('quantity')}
+            />
             {errors.quantity && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.quantity.message}</p>}
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">{t('stockModal.qtyHint')}</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">
+              {t('stockModal.qtyHint')} ({unitConfig.label})
+            </p>
+            <UnitConversionHelper
+              t={t}
+              stockUnitCode={unitCode}
+              standardLength={constructionLength}
+              onApplyStockQty={(qty) => setValue('quantity', qty, { shouldValidate: true })}
+            />
           </div>
 
           <div>

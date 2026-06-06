@@ -53,11 +53,11 @@ export default function PosOrderPanel({
 
   const startQtyEdit = (item) => {
     setEditingQtyLineId(item.lineId);
-    setQtyDraft(qtyToEditString(item.quantity, item.saleType));
+    setQtyDraft(qtyToEditString(item.quantity, item.saleType, item.unitCode));
   };
 
   const commitQty = (item) => {
-    const parsed = parseQtyInput(qtyDraft, item.saleType);
+    const parsed = parseQtyInput(qtyDraft, item.saleType, item.unitCode);
     if (parsed != null) onUpdateQuantity(item.lineId, parsed);
     setEditingQtyLineId(null);
   };

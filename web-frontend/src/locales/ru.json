@@ -270,6 +270,7 @@
     "colStores": "Магазины",
     "colStock": "Остаток",
     "colDispatched": "Списано",
+    "colTemplate": "Шаблон",
     "markingYes": "Да",
     "none": "Товары не найдены",
     "stockBtn": "Склад",
@@ -1016,6 +1017,9 @@
     "field_tin": "ИНН",
     "field_phone": "Телефон",
     "field_address": "Адрес",
+    "colBusinessType": "Тип бизнеса",
+    "field_businessType": "Тип бизнеса",
+    "field_businessTypeHint": "Шаблоны при добавлении товаров для этой компании.",
     "moduleAccess": {
       "nav": "Доступы",
       "title": "Управление доступами",
@@ -1179,6 +1183,10 @@
     "saved": "Настройки сохранены",
     "saveFailed": "Не удалось сохранить настройки",
     "saveHint": "Настройки общие для всех компьютеров и кассы. Нажмите «Сохранить», чтобы применить изменения.",
+    "businessTypeTitle": "Тип бизнеса компании",
+    "businessTypeHint": "Определяет шаблоны при добавлении товаров. Сохраняется сразу при выборе.",
+    "businessTypeSaved": "Тип бизнеса сохранён",
+    "businessTypeSaveFailed": "Не удалось сохранить тип бизнеса",
     "discard": "Отменить изменения",
     "receiptStirPh": "СТИР / ИНН",
     "receiptFieldsTitle": "Поля чека",
@@ -1494,6 +1502,19 @@
     "constructionWidth": "Ширина",
     "constructionThickness": "Толщина",
     "constructionAllowCutting": "Разрешена резка / распил",
+    "sectionClothing": "Одежда",
+    "sectionPharmacy": "Аптека",
+    "clothingSizeRange": "Размерный ряд",
+    "clothingColor": "Цвет",
+    "clothingGender": "Пол / категория",
+    "clothingGender.UNISEX": "Унисекс",
+    "clothingGender.MALE": "Мужское",
+    "clothingGender.FEMALE": "Женское",
+    "clothingGender.KIDS": "Детское",
+    "pharmacyDosageForm": "Форма выпуска",
+    "pharmacyDosageFormPh": "Таблетки, сироп, мазь…",
+    "pharmacyExpiryRequired": "Контроль срока годности",
+    "pharmacyPrescriptionRequired": "По рецепту",
     "saleType": "Тип продажи",
     "saleTypePiece": "Штучный",
     "saleTypeWeight": "На меру",
@@ -1538,6 +1559,112 @@
     "requiredHint": "Поля, отмеченные *, обязательны для заполнения.",
     "stockEditNote": "Изменение остатка при редактировании товара",
     "submitAdd": "Добавить"
+  },
+  "productTemplates": {
+    "pickerTitle": "Новый товар",
+    "pickerSubtitle": "Выберите шаблон — форма подставит тип, единицу и нужные поля",
+    "businessTypeLabel": "Тип бизнеса",
+    "businessTypeHint": "Сохраняется для вашей компании. Можно сменить перед каждым добавлением.",
+    "advancedForm": "Все поля (расширенный режим)",
+    "advancedBadge": "Расширенный режим — все поля каталога",
+    "showAllFields": "Все поля",
+    "showTemplateFields": "Поля шаблона",
+    "formBadge": "Шаблон: {{template}}",
+    "backToPicker": "К шаблонам",
+    "businessTypes": {
+      "CONSTRUCTION": "Стройматериалы",
+      "GROCERY": "Продукты",
+      "CLOTHING": "Одежда",
+      "PHARMACY": "Аптека",
+      "CANTEEN": "Столовая",
+      "RESTAURANT": "Ресторан",
+      "AUTO_PARTS": "Автозапчасти",
+      "UNIVERSAL": "Универсальный"
+    },
+    "pricePerKg": "Цена за 1 кг",
+    "pricePerMeter": "Цена за 1 м",
+    "pricePerMm": "Цена за 1 мм",
+    "pricePerLiter": "Цена за 1 л",
+    "pricePerM2": "Цена за 1 м²",
+    "pricePerPiece": "Цена за 1 шт",
+    "pricePerPortion": "Цена за порцию",
+    "pricePerService": "Цена услуги",
+    "stockQty": "Остаток",
+    "stockMeters": "Остаток, м",
+    "stockMm": "Остаток, мм",
+    "stockLiters": "Остаток, л",
+    "stockM2": "Остаток, м²",
+    "stockPieces": "Остаток, шт",
+    "bulkStockHint": "При приходе: 1 тонна = 1000 кг. Вводите остаток в килограммах.",
+    "lengthStockHint": "Например: 10 бухт по 100 м → введите 1000 м на склад.",
+    "mmLengthStockHint": "Для тонкого метража: 100 м = 100 000 мм.",
+    "liquidStockHint": "Остаток в литрах. Краска, масло, растворители.",
+    "tileStockHint": "Плитка — учёт в м². Укажите длину и ширину плитки в характеристиках.",
+    "pharmacyStockHint": "Лекарства и БАДы — поштучный учёт, при необходимости контроль срока годности.",
+    "pieceConstructionHint": "Штучный товар: дверь, кирпич, труба целиком. Длину можно указать в характеристиках.",
+    "weightGroceryHint": "Весовой товар для кассы: продажа на вес (кг).",
+    "frozenHint": "Заморозка — учёт и продажа в килограммах.",
+    "dishStockHint": "Для блюд остаток обычно не ведётся — оставьте 0.",
+    "BULK": {
+      "title": "Сыпучее",
+      "hint": "Песок, щебень, цемент — цена и остаток в кг"
+    },
+    "LENGTH": {
+      "title": "Метраж",
+      "hint": "Кабель, труба, ткань — цена за метр, можно резать"
+    },
+    "MM_LENGTH": {
+      "title": "Метраж (мм)",
+      "hint": "Точный отрезок в миллиметрах"
+    },
+    "LIQUID": {
+      "title": "Жидкость",
+      "hint": "Краска, масло — литры"
+    },
+    "TILE": {
+      "title": "Плитка (м²)",
+      "hint": "Керамика, керамогранит — цена и остаток в квадратных метрах"
+    },
+    "PIECE_CONSTRUCTION": {
+      "title": "Поштучный (строй)",
+      "hint": "Кирпич, дверь, труба целиком"
+    },
+    "WEIGHT_GROCERY": {
+      "title": "Весовой",
+      "hint": "Конфеты, колбаса, овощи на вес"
+    },
+    "PIECE_GROCERY": {
+      "title": "Штучный",
+      "hint": "Упакованные продукты, бакалея"
+    },
+    "PIECE_CLOTHING": {
+      "title": "Одежда",
+      "hint": "Размер, цвет, пол — поштучный учёт"
+    },
+    "PIECE_PHARMACY": {
+      "title": "Лекарство / БАД",
+      "hint": "Аптека — форма выпуска, срок годности, рецепт"
+    },
+    "BEVERAGE": {
+      "title": "Напиток",
+      "hint": "Вода, сок, напитки в бутылках"
+    },
+    "FROZEN": {
+      "title": "Заморозка",
+      "hint": "Мороженое, полуфабрикаты на вес"
+    },
+    "PIECE_RETAIL": {
+      "title": "Штучный (розница)",
+      "hint": "Товары с штрихкодом, поштучно"
+    },
+    "DISH": {
+      "title": "Блюдо",
+      "hint": "Столовая / ресторан — порция"
+    },
+    "SERVICE": {
+      "title": "Услуга",
+      "hint": "Доставка, резка, монтаж — без склада"
+    }
   },
   "productModal": {
     "newTitle": "Новый товар",
@@ -1603,8 +1730,9 @@
     "modal": {
       "title": "Добавление товара",
       "sharedHint": "Один остаток на весь магазин: после приёмки число обновится и в «Товарах», и в «Склад → Товары», и на кассе.",
-      "currentStock": "Сейчас на складе: {{qty}} шт.",
-      "afterReceive": "→ станет {{qty}} шт.",
+      "currentStock": "Сейчас на складе: {{qty}}",
+      "afterReceive": "→ станет {{qty}}",
+      "qtyUnitHint": "Учёт в {{unit}}",
       "submit": "Добавить",
       "product": "Товар",
       "productPh": "Выбрать товар из справочника",
@@ -2351,6 +2479,16 @@
         ]
       }
     }
+  },
+  "unitConversion": {
+    "helperTitle": "Ввести в другой единице → {{unit}}",
+    "altUnit": "Единица",
+    "pickUnit": "Выберите…",
+    "qty": "Кол-во",
+    "apply": "Подставить",
+    "coilCount": "Бухт",
+    "coilLength": "× {{length}} м/бухта",
+    "applyCoil": "Подставить метры"
   },
   "roles": {
     "ADMIN": "Админ",

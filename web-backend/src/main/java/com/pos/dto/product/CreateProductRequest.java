@@ -22,6 +22,7 @@ public record CreateProductRequest(
     @DecimalMin("0") BigDecimal defaultDiscountPercent,
     @NotNull BigDecimal taxRate,
     ProductType productType,
+    String templateCode,
     SaleType saleType,
     UnitCode unitCode,
     Integer quantityScale,
@@ -47,5 +48,6 @@ public record CreateProductRequest(
     List<String> additionalBarcodes,
     ConstructionProductDetailsRequest constructionDetails,
     RestaurantProductDetailsRequest restaurantDetails,
-    ServiceProductDetailsRequest serviceDetails
+    ServiceProductDetailsRequest serviceDetails,
+    RetailExtrasRequest retailExtras
 ) {}

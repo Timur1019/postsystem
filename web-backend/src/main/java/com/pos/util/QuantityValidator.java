@@ -64,11 +64,7 @@ public final class QuantityValidator {
 
     private static void validateWeightMinimum(UnitCode unitCode, BigDecimal q) {
         UnitCode unit = unitCode != null ? unitCode : UnitCode.KG;
-        BigDecimal min = switch (unit) {
-            case G, MM -> BigDecimal.ONE;
-            case L, M -> new BigDecimal("0.001");
-            default -> MIN_WEIGHT_KG;
-        };
+        BigDecimal min = UnitCode.fallbackMinQuantity(unit);
         if (q.compareTo(min) < 0) {
             throw new BadRequestException("Минимальное количество: " + min + " " + unit.displayLabel());
         }

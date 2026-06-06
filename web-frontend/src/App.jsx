@@ -61,6 +61,7 @@ import { useModuleAccess } from './hooks/useModuleAccess';
 import HtmlLangSync      from './components/shared/HtmlLangSync';
 import AuthBootstrap     from './components/shared/AuthBootstrap';
 import TenantDisplayBootstrap from './components/shared/TenantDisplayBootstrap';
+import UnitsCatalogBootstrap from './components/shared/UnitsCatalogBootstrap';
 import CashierLayout     from './components/layout/CashierLayout';
 import PosPage           from './pages/cashier/PosPage';
 import CashierMySalesPage from './pages/cashier/CashierMySalesPage';
@@ -116,6 +117,7 @@ export default function App() {
       <BrowserRouter>
         <AuthBootstrap>
           <TenantDisplayBootstrap>
+          <UnitsCatalogBootstrap>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cashier/login" element={<CashierPinLoginPage />} />
@@ -286,6 +288,7 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+          </UnitsCatalogBootstrap>
           </TenantDisplayBootstrap>
         </AuthBootstrap>
       </BrowserRouter>

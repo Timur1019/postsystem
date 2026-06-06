@@ -30,6 +30,7 @@ public interface ProductMapper {
     @Mapping(target = "constructionDetails", ignore = true)
     @Mapping(target = "restaurantDetails", ignore = true)
     @Mapping(target = "serviceDetails", ignore = true)
+    @Mapping(target = "retailExtras", ignore = true)
     ProductResponse toResponse(
         Product product,
         int storesCount,

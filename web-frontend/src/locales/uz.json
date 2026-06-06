@@ -270,6 +270,7 @@
     "colStores": "Do‘konlar",
     "colStock": "Qoldiq",
     "colDispatched": "Hisobdan chiqarilgan",
+    "colTemplate": "Shablon",
     "markingYes": "Ha",
     "none": "Mahsulot topilmadi",
     "stockBtn": "Ombor",
@@ -1016,6 +1017,9 @@
     "field_tin": "STIR",
     "field_phone": "Telefon",
     "field_address": "Manzil",
+    "colBusinessType": "Biznes turi",
+    "field_businessType": "Biznes turi",
+    "field_businessTypeHint": "Ushbu kompaniya uchun mahsulot shablonlari.",
     "moduleAccess": {
       "nav": "Kirish huquqlari",
       "title": "Kirishlarni boshqarish",
@@ -1179,6 +1183,10 @@
     "saved": "Sozlamalar saqlandi",
     "saveFailed": "Sozlamalarni saqlab bo'lmadi",
     "saveHint": "Sozlamalar barcha kompyuter va kassada umumiy. O'zgarishlar uchun «Saqlash» ni bosing.",
+    "businessTypeTitle": "Kompaniya biznes turi",
+    "businessTypeHint": "Mahsulot qo‘shishda shablonlarni belgilaydi. Tanlanganda darhol saqlanadi.",
+    "businessTypeSaved": "Biznes turi saqlandi",
+    "businessTypeSaveFailed": "Biznes turini saqlab bo‘lmadi",
     "discard": "O'zgarishlarni bekor qilish",
     "receiptStirPh": "STIR / INN",
     "receiptFieldsTitle": "Chek maydonlari",
@@ -1494,6 +1502,19 @@
     "constructionWidth": "Kenglik",
     "constructionThickness": "Qalinlik",
     "constructionAllowCutting": "Kesish / arrash ruxsat etilgan",
+    "sectionClothing": "Kiyim-kechak",
+    "sectionPharmacy": "Dorixona",
+    "clothingSizeRange": "O‘lcham qatori",
+    "clothingColor": "Rang",
+    "clothingGender": "Jins / toifa",
+    "clothingGender.UNISEX": "Uniseks",
+    "clothingGender.MALE": "Erkaklar",
+    "clothingGender.FEMALE": "Ayollar",
+    "clothingGender.KIDS": "Bolalar",
+    "pharmacyDosageForm": "Chiqarilish shakli",
+    "pharmacyDosageFormPh": "Tabletkalar, sirop, malham…",
+    "pharmacyExpiryRequired": "Yaroqlilik muddati nazorati",
+    "pharmacyPrescriptionRequired": "Retsept bo‘yicha",
     "saleType": "Sotish turi",
     "saleTypePiece": "Dona",
     "saleTypeWeight": "O'lchov bo'yicha",
@@ -1538,6 +1559,112 @@
     "requiredHint": "* bilan belgilangan maydonlar majburiy.",
     "stockEditNote": "Mahsulotni tahrirlashda qoldiq o‘zgartirildi",
     "submitAdd": "Qo‘shish"
+  },
+  "productTemplates": {
+    "pickerTitle": "Yangi mahsulot",
+    "pickerSubtitle": "Shablonni tanlang — tur, birlik va kerakli maydonlar avtomatik to‘ldiriladi",
+    "businessTypeLabel": "Biznes turi",
+    "businessTypeHint": "Kompaniyangiz uchun saqlanadi. Har safar qo‘shishdan oldin o‘zgartirish mumkin.",
+    "advancedForm": "Barcha maydonlar (kengaytirilgan)",
+    "advancedBadge": "Kengaytirilgan rejim — katalogning barcha maydonlari",
+    "showAllFields": "Barcha maydonlar",
+    "showTemplateFields": "Shablon maydonlari",
+    "formBadge": "Shablon: {{template}}",
+    "backToPicker": "Shablonlarga",
+    "businessTypes": {
+      "CONSTRUCTION": "Qurilish materiallari",
+      "GROCERY": "Oziq-ovqat",
+      "CLOTHING": "Kiyim-kechak",
+      "PHARMACY": "Dorixona",
+      "CANTEEN": "Oshxona / bufet",
+      "RESTAURANT": "Restoran",
+      "AUTO_PARTS": "Avto ehtiyot qismlari",
+      "UNIVERSAL": "Universal"
+    },
+    "pricePerKg": "1 kg narxi",
+    "pricePerMeter": "1 m narxi",
+    "pricePerMm": "1 mm narxi",
+    "pricePerLiter": "1 l narxi",
+    "pricePerM2": "1 m² narxi",
+    "pricePerPiece": "1 dona narxi",
+    "pricePerPortion": "Porsiya narxi",
+    "pricePerService": "Xizmat narxi",
+    "stockQty": "Qoldiq",
+    "stockMeters": "Qoldiq, m",
+    "stockMm": "Qoldiq, mm",
+    "stockLiters": "Qoldiq, l",
+    "stockM2": "Qoldiq, m²",
+    "stockPieces": "Qoldiq, dona",
+    "bulkStockHint": "Kirimda: 1 tonna = 1000 kg. Qoldiqni kilogrammda kiriting.",
+    "lengthStockHint": "Masalan: 10 ta 100 m → omborga 1000 m kiriting.",
+    "mmLengthStockHint": "Aniq metraj: 100 m = 100 000 mm.",
+    "liquidStockHint": "Qoldiq litrlarda. Bo‘yoq, yog‘, erituvchilar.",
+    "tileStockHint": "Plitka — m² hisobida. Plitka uzunligi va kengligini xususiyatlarda ko‘rsating.",
+    "pharmacyStockHint": "Dori va BAD — dona hisobida, kerak bo‘lsa yaroqlilik muddati nazorati.",
+    "pieceConstructionHint": "Dona mahsulot: eshik, g‘isht, butun truba.",
+    "weightGroceryHint": "Kassada og‘irlik bo‘yicha sotiladi (kg).",
+    "frozenHint": "Muzlatilgan — kg hisobida.",
+    "dishStockHint": "Taomlar uchun odatda qoldiq 0 qoldiriladi.",
+    "BULK": {
+      "title": "Quyma",
+      "hint": "Qum, shag‘al, sement — narx va qoldiq kg da"
+    },
+    "LENGTH": {
+      "title": "Metraj",
+      "hint": "Kabel, truba, mato — metr narxi, kesish mumkin"
+    },
+    "MM_LENGTH": {
+      "title": "Metraj (mm)",
+      "hint": "Millimetr bo‘yicha aniq kesim"
+    },
+    "LIQUID": {
+      "title": "Suyuqlik",
+      "hint": "Bo‘yoq, yog‘ — litr"
+    },
+    "TILE": {
+      "title": "Plitka (m²)",
+      "hint": "Keramika, kafel — narx va qoldiq kvadrat metrda"
+    },
+    "PIECE_CONSTRUCTION": {
+      "title": "Dona (qurilish)",
+      "hint": "G‘isht, eshik, butun truba"
+    },
+    "WEIGHT_GROCERY": {
+      "title": "Og‘irlik bo‘yicha",
+      "hint": "Konfet, kolbasa, sabzavot"
+    },
+    "PIECE_GROCERY": {
+      "title": "Dona",
+      "hint": "Qadoqlangan oziq-ovqat"
+    },
+    "PIECE_CLOTHING": {
+      "title": "Kiyim-kechak",
+      "hint": "O‘lcham, rang, jins — dona hisobida"
+    },
+    "PIECE_PHARMACY": {
+      "title": "Dori / BAD",
+      "hint": "Dorixona — chiqarilish shakli, muddat, retsept"
+    },
+    "BEVERAGE": {
+      "title": "Ichimlik",
+      "hint": "Suv, sharbat, butilka"
+    },
+    "FROZEN": {
+      "title": "Muzlatilgan",
+      "hint": "Muzqaymoq, yarim tayyor mahsulot"
+    },
+    "PIECE_RETAIL": {
+      "title": "Dona (chakana)",
+      "hint": "Shtrixkodli mahsulot"
+    },
+    "DISH": {
+      "title": "Taom",
+      "hint": "Oshxona / restoran — porsiya"
+    },
+    "SERVICE": {
+      "title": "Xizmat",
+      "hint": "Yetkazib berish, kesish — omborsiz"
+    }
   },
   "productModal": {
     "newTitle": "Yangi mahsulot",
@@ -1603,8 +1730,9 @@
     "modal": {
       "title": "Mahsulot qo‘shish",
       "sharedHint": "Bitta qoldiq butun tizim uchun: qabul qilgandan keyin «Tovarlar», «Ombor» va kassada bir xil raqam ko‘rinadi.",
-      "currentStock": "Hozir omborda: {{qty}} dona",
-      "afterReceive": "→ {{qty}} dona bo‘ladi",
+      "currentStock": "Hozir omborda: {{qty}}",
+      "afterReceive": "→ {{qty}} bo‘ladi",
+      "qtyUnitHint": "Hisob {{unit}} da",
       "submit": "Qo‘shish",
       "product": "Mahsulot",
       "productPh": "Maʼlumotnomadan tanlang",
@@ -2351,6 +2479,16 @@
         ]
       }
     }
+  },
+  "unitConversion": {
+    "helperTitle": "Boshqa birlikda kiriting → {{unit}}",
+    "altUnit": "Birlik",
+    "pickUnit": "Tanlang…",
+    "qty": "Miqdor",
+    "apply": "Qo‘yish",
+    "coilCount": "Bobina",
+    "coilLength": "× {{length}} m/bobina",
+    "applyCoil": "Metrlarni qo‘yish"
   },
   "roles": {
     "ADMIN": "Admin",

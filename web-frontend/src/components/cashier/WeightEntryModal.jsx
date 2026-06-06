@@ -4,6 +4,7 @@ import { fmtMoney } from '../../utils/formatMoney';
 import { round2 } from '../../utils/taxAmounts';
 import { measuredLineFromAmount, minQtyForUnit, roundQty } from '../../utils/quantityFormat';
 import { getUnitConfig } from '../../utils/unitConfig';
+import UnitConversionHelper from '../shared/UnitConversionHelper';
 import { useScaleWeight } from '../../scales/useScaleWeight';
 import { isDesktopScaleBridge, openScalePicker } from '../../scales/scaleBridge';
 import '../../styles/weight-entry-modal.css';
@@ -173,6 +174,12 @@ export default function WeightEntryModal({ open, product, unitPrice, maxStock, o
               onChange={(e) => setQtyDraft(e.target.value)}
               placeholder={unitConfig.scale === 0 ? '500' : '0.350'}
               autoFocus
+            />
+            <UnitConversionHelper
+              t={t}
+              stockUnitCode={unitCode}
+              standardLength={product.constructionDetails?.standardLength}
+              onApplyStockQty={(qty) => setQtyDraft(String(qty))}
             />
           </label>
         ) : null}

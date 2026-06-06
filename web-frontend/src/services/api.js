@@ -323,3 +323,13 @@ export const tenantDisplayApi = {
   get: () => api.get('/tenant-display-settings'),
   save: (data) => api.put('/tenant-display-settings', data),
 };
+
+export const companyBusinessTypeApi = {
+  get: () => api.get('/company-business-type'),
+  save: (businessType) => api.put('/company-business-type', { businessType }),
+};
+
+export const unitsApi = {
+  list: (params) => api.get('/units', { params }),
+  conversions: () => api.get('/units/conversions'),
+};

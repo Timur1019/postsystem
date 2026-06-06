@@ -13,6 +13,7 @@ import ReceiptLogoSizeControl from './ReceiptLogoSizeControl';
 import SettingsFieldToggles from './SettingsFieldToggles';
 import BrandMark from '../shared/BrandMark';
 import TenantSettingsSaveBar from './TenantSettingsSaveBar';
+import CompanyBusinessTypeSettingsPanel from './CompanyBusinessTypeSettingsPanel';
 
 const inputCls =
   'mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
@@ -153,6 +154,8 @@ export default function UserBrandingSettingsPanel() {
             labelFor={(key) => t(key)}
           />
         </div>
+
+        <CompanyBusinessTypeSettingsPanel />
 
         <TenantSettingsSaveBar />
       </div>

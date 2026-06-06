@@ -21,6 +21,7 @@ public record ProductResponse(
     BigDecimal defaultDiscountPercent,
     BigDecimal taxRate,
     ProductType productType,
+    String templateCode,
     SaleType saleType,
     UnitCode unitCode,
     int quantityScale,
@@ -51,5 +52,6 @@ public record ProductResponse(
     List<ProductStorePriceRow> storePrices,
     ConstructionProductDetailsDto constructionDetails,
     RestaurantProductDetailsDto restaurantDetails,
-    ServiceProductDetailsDto serviceDetails
+    ServiceProductDetailsDto serviceDetails,
+    RetailExtrasDto retailExtras
 ) {}

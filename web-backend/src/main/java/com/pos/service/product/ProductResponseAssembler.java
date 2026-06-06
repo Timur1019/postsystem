@@ -73,6 +73,7 @@ public class ProductResponseAssembler {
             base.defaultDiscountPercent(),
             base.taxRate(),
             base.productType(),
+            base.templateCode(),
             base.saleType(),
             base.unitCode(),
             base.quantityScale(),
@@ -102,7 +103,8 @@ public class ProductResponseAssembler {
             base.storePrices(),
             extensionMapper.toDto(product.getConstructionDetails()),
             extensionMapper.toDto(product.getRestaurantDetails()),
-            extensionMapper.toDto(product.getServiceDetails())
+            extensionMapper.toDto(product.getServiceDetails()),
+            extensionMapper.toDto(product.getRetailDetails())
         );
     }
 
@@ -151,6 +153,7 @@ public class ProductResponseAssembler {
             r.defaultDiscountPercent(),
             r.taxRate(),
             r.productType(),
+            r.templateCode(),
             r.saleType(),
             r.unitCode(),
             r.quantityScale(),
@@ -180,7 +183,8 @@ public class ProductResponseAssembler {
             r.storePrices(),
             r.constructionDetails(),
             r.restaurantDetails(),
-            r.serviceDetails()
+            r.serviceDetails(),
+            r.retailExtras()
         );
     }
 }

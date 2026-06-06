@@ -40,6 +40,11 @@ services:
       - ./web-backend/src/main/resources/db/migration_manual_fix_all_quantity_numeric.sql:/docker-entrypoint-initdb.d/28-fix_all_quantity_numeric.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_product_barcodes_tenant.sql:/docker-entrypoint-initdb.d/29-product_barcodes_tenant.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_product_type_extensions.sql:/docker-entrypoint-initdb.d/30-product_type_extensions.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_company_business_type.sql:/docker-entrypoint-initdb.d/31-company_business_type.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_company_business_type_extend.sql:/docker-entrypoint-initdb.d/32-company_business_type_extend.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_units_catalog.sql:/docker-entrypoint-initdb.d/33-units_catalog.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_product_template_code.sql:/docker-entrypoint-initdb.d/34-product_template_code.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_retail_vertical_fields.sql:/docker-entrypoint-initdb.d/35-retail_vertical_fields.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pos_user -d pos_db"]
       interval: 5s

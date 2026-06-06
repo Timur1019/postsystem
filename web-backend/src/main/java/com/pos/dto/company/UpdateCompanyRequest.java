@@ -7,5 +7,6 @@ public record UpdateCompanyRequest(
     String tin,
     String address,
     String phone,
+    String businessType,
     Boolean active
 ) {}

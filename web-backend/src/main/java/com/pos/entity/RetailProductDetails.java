@@ -40,4 +40,24 @@ public class RetailProductDetails {
     @Column(name = "sold_individually", nullable = false)
     @Builder.Default
     private boolean soldIndividually = true;
+
+    @Column(name = "clothing_size_range", length = 80)
+    private String clothingSizeRange;
+
+    @Column(name = "clothing_color", length = 50)
+    private String clothingColor;
+
+    @Column(name = "clothing_gender", length = 20)
+    private String clothingGender;
+
+    @Column(name = "pharmacy_expiry_required", nullable = false)
+    @Builder.Default
+    private boolean pharmacyExpiryRequired = false;
+
+    @Column(name = "pharmacy_prescription_required", nullable = false)
+    @Builder.Default
+    private boolean pharmacyPrescriptionRequired = false;
+
+    @Column(name = "pharmacy_dosage_form", length = 100)
+    private String pharmacyDosageForm;
 }

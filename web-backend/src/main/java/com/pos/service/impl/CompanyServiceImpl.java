@@ -1,10 +1,12 @@
 package com.pos.service.impl;
 
+import com.pos.domain.BusinessType;
 import com.pos.dto.company.CompanyResponse;
 import com.pos.dto.company.CreateCompanyRequest;
 import com.pos.dto.company.UpdateCompanyRequest;
 import com.pos.dto.shared.PageResponse;
 import com.pos.entity.Company;
+import com.pos.util.BusinessTypeParser;
 import com.pos.exception.BadRequestException;
 import com.pos.exception.ResourceNotFoundException;
 import com.pos.mapper.CompanyMapper;
@@ -68,6 +70,7 @@ public class CompanyServiceImpl implements CompanyService {
             .tin(trimOrNull(request.tin()))
             .address(trimOrNull(request.address()))
             .phone(trimOrNull(request.phone()))
+            .businessType(BusinessTypeParser.parseOrDefault(request.businessType(), BusinessType.UNIVERSAL))
             .active(request.active() == null || request.active())
             .build();
         Company saved = companyRepository.save(company);
@@ -90,6 +93,9 @@ public class CompanyServiceImpl implements CompanyService {
         if (request.tin() != null) company.setTin(trimOrNull(request.tin()));
         if (request.address() != null) company.setAddress(trimOrNull(request.address()));
         if (request.phone() != null) company.setPhone(trimOrNull(request.phone()));
+        if (request.businessType() != null) {
+            company.setBusinessType(BusinessTypeParser.parseRequired(request.businessType()));
+        }
         if (request.active() != null) company.setActive(request.active());
         LogUtil.info(CompanyServiceImpl.class, "Company updated: id={}", id);
         return toResponse(companyRepository.save(company));

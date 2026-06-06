@@ -17,16 +17,17 @@ CREATE TABLE roles (
 );
 
 CREATE TABLE companies (
-    id           SERIAL PRIMARY KEY,
-    name         VARCHAR(200) NOT NULL,
-    login_code   VARCHAR(32) NOT NULL,
-    legal_name   VARCHAR(255),
-    tin          VARCHAR(20),
-    address      TEXT,
-    phone        VARCHAR(50),
-    is_active    BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at   TIMESTAMPTZ DEFAULT NOW(),
-    updated_at   TIMESTAMPTZ DEFAULT NOW()
+    id             SERIAL PRIMARY KEY,
+    name           VARCHAR(200) NOT NULL,
+    login_code     VARCHAR(32) NOT NULL,
+    legal_name     VARCHAR(255),
+    tin            VARCHAR(20),
+    address        TEXT,
+    phone          VARCHAR(50),
+    business_type  VARCHAR(32) NOT NULL DEFAULT 'UNIVERSAL',
+    is_active      BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at     TIMESTAMPTZ DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE UNIQUE INDEX uq_companies_login_code ON companies (LOWER(login_code));
@@ -66,6 +67,29 @@ CREATE TABLE categories (
     created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE units (
+    code              VARCHAR(16) PRIMARY KEY,
+    category          VARCHAR(20) NOT NULL,
+    label_ru          VARCHAR(64) NOT NULL,
+    label_uz          VARCHAR(64),
+    label_short_ru    VARCHAR(16) NOT NULL,
+    quantity_scale    INT NOT NULL DEFAULT 0,
+    allow_fraction    BOOLEAN NOT NULL DEFAULT FALSE,
+    pos_min_qty       NUMERIC(18, 6) NOT NULL DEFAULT 1,
+    pos_step          NUMERIC(18, 6) NOT NULL DEFAULT 1,
+    sort_order        INT NOT NULL DEFAULT 100,
+    enabled           BOOLEAN NOT NULL DEFAULT TRUE,
+    stock_allowed     BOOLEAN NOT NULL DEFAULT TRUE,
+    receipt_only      BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE unit_conversions (
+    from_code   VARCHAR(16) NOT NULL REFERENCES units (code),
+    to_code     VARCHAR(16) NOT NULL REFERENCES units (code),
+    factor      NUMERIC(24, 12) NOT NULL,
+    PRIMARY KEY (from_code, to_code)
+);
+
 CREATE TABLE products (
     id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sku                 VARCHAR(100) UNIQUE NOT NULL,
@@ -77,8 +101,9 @@ CREATE TABLE products (
     default_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0,
     tax_rate            NUMERIC(5, 2) DEFAULT 0,
     product_type        VARCHAR(30) NOT NULL DEFAULT 'RETAIL',
+    template_code       VARCHAR(32),
     sale_type           VARCHAR(20) NOT NULL DEFAULT 'PIECE',
-    unit_code           VARCHAR(10) NOT NULL DEFAULT 'PCS',
+    unit_code           VARCHAR(16) NOT NULL DEFAULT 'PCS',
     quantity_scale      INT NOT NULL DEFAULT 0,
     allow_fraction      BOOLEAN NOT NULL DEFAULT FALSE,
     stock_quantity      NUMERIC(18, 3) NOT NULL DEFAULT 0,
@@ -104,9 +129,15 @@ CREATE TABLE products (
 );
 
 CREATE TABLE retail_product_details (
-    product_id          UUID PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
-    marked_product      BOOLEAN NOT NULL DEFAULT FALSE,
-    sold_individually   BOOLEAN NOT NULL DEFAULT TRUE
+    product_id                      UUID PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
+    marked_product                  BOOLEAN NOT NULL DEFAULT FALSE,
+    sold_individually               BOOLEAN NOT NULL DEFAULT TRUE,
+    clothing_size_range             VARCHAR(80),
+    clothing_color                  VARCHAR(50),
+    clothing_gender                 VARCHAR(20),
+    pharmacy_expiry_required        BOOLEAN NOT NULL DEFAULT FALSE,
+    pharmacy_prescription_required  BOOLEAN NOT NULL DEFAULT FALSE,
+    pharmacy_dosage_form            VARCHAR(100)
 );
 
 CREATE TABLE construction_product_details (

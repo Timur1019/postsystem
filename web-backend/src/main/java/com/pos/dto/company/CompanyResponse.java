@@ -8,6 +8,7 @@ public record CompanyResponse(
     String tin,
     String address,
     String phone,
+    String businessType,
     boolean active,
     int storeCount
 ) {}

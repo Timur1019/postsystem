@@ -50,6 +50,9 @@ public class Product {
     @Builder.Default
     private ProductType productType = ProductType.RETAIL;
 
+    @Column(name = "template_code", length = 32)
+    private String templateCode;
+
     @Column(name = "cost_price", nullable = false, precision = 18, scale = 2)
     private BigDecimal costPrice = BigDecimal.ZERO;
 
@@ -70,7 +73,7 @@ public class Product {
     private SaleType saleType = SaleType.PIECE;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "unit_code", nullable = false, length = 10)
+    @Column(name = "unit_code", nullable = false, length = 16)
     @Builder.Default
     private UnitCode unitCode = UnitCode.PCS;
 

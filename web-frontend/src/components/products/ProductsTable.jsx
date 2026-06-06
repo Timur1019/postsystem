@@ -1,6 +1,7 @@
 import { AlertTriangle, MoreVertical } from 'lucide-react';
 import { fmtMoney as fmtNum } from '../../utils/formatMoney';
 import TablePagination from '../shared/TablePagination';
+import { getProductTemplateTitle } from '../../config/productCatalogTemplateRegistry';
 
 export default function ProductsTable({
   t,
@@ -77,7 +78,14 @@ export default function ProductsTable({
                       <div className="max-w-[140px] break-all text-[11px] text-slate-500 dark:text-slate-500">{p.id}</div>
                     </div>
                   </td>
-                  <td className="px-3 py-3 font-medium text-slate-900 dark:text-white">{p.name}</td>
+                  <td className="px-3 py-3">
+                    <div className="font-medium text-slate-900 dark:text-white">{p.name}</div>
+                    {getProductTemplateTitle(t, p) ? (
+                      <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-500">
+                        {getProductTemplateTitle(t, p)}
+                      </div>
+                    ) : null}
+                  </td>
                   <td className="px-3 py-3 text-slate-600 dark:text-slate-400">{p.categoryName ?? '—'}</td>
                   <td className="px-3 py-3 text-right font-semibold whitespace-nowrap text-emerald-600 dark:text-emerald-400">
                     {fmtNum(p.sellingPrice)}

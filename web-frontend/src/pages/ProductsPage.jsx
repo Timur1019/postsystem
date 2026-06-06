@@ -9,6 +9,7 @@ import { productApi, categoryApi, storeApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { useTenantScope } from '../hooks/useTenantScope';
 import ProductCatalogModal from '../components/products/ProductCatalogModal';
+import ProductTemplatePickerModal from '../components/products/ProductTemplatePickerModal';
 import StockAdjustModal from '../components/products/StockAdjustModal';
 import ProductsToolbar from '../components/products/ProductsToolbar';
 import ProductFiltersDrawer from '../components/products/ProductFiltersDrawer';
@@ -48,6 +49,9 @@ export default function ProductsPage() {
   const [pageSize, setPageSize] = useState(14);
   const [editProduct, setEditProduct] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [createTemplateCode, setCreateTemplateCode] = useState(null);
+  const [createAdvancedMode, setCreateAdvancedMode] = useState(false);
   const [stockProduct, setStockProduct] = useState(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
@@ -157,7 +161,7 @@ export default function ProductsPage() {
         </div>
         <ProductsToolbar
           canManage={manage}
-          onAdd={() => setShowCreate(true)}
+          onAdd={() => setTemplatePickerOpen(true)}
           onImport={() => setImportOpen(true)}
           onExport={() => setExportOpen(true)}
           onBulkVat={() => {
@@ -214,20 +218,54 @@ export default function ProductsPage() {
         }
       />
 
+      {templatePickerOpen && (
+        <ProductTemplatePickerModal
+          onClose={() => setTemplatePickerOpen(false)}
+          onSelectTemplate={(code) => {
+            setCreateTemplateCode(code);
+            setCreateAdvancedMode(false);
+            setTemplatePickerOpen(false);
+            setShowCreate(true);
+          }}
+          onAdvanced={() => {
+            setCreateTemplateCode(null);
+            setCreateAdvancedMode(true);
+            setTemplatePickerOpen(false);
+            setShowCreate(true);
+          }}
+        />
+      )}
+
       {(showCreate || editProduct) && (
         <ProductCatalogModal
-          key={editProduct?.id ?? 'new'}
+          key={editProduct?.id ?? `new-${createTemplateCode ?? 'advanced'}`}
           product={editProduct}
           categories={categories}
           stores={stores}
+          templateCode={editProduct ? null : createTemplateCode}
+          advancedMode={!editProduct && createAdvancedMode}
+          onBackToPicker={
+            !editProduct
+              ? () => {
+                  setShowCreate(false);
+                  setCreateTemplateCode(null);
+                  setCreateAdvancedMode(false);
+                  setTemplatePickerOpen(true);
+                }
+              : undefined
+          }
           onClose={() => {
             setShowCreate(false);
             setEditProduct(null);
+            setCreateTemplateCode(null);
+            setCreateAdvancedMode(false);
           }}
           onSaved={() => {
             invalidateProductCaches(qc);
             setShowCreate(false);
             setEditProduct(null);
+            setCreateTemplateCode(null);
+            setCreateAdvancedMode(false);
           }}
         />
       )}
