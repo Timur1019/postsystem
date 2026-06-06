@@ -124,6 +124,55 @@
   align-items: stretch;
 }
 
+.pos-return-modal__receipt-field {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.pos-return-modal__receipt-prefix {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 0.8125rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.pos-return-modal__input-wrap--digits .pos-return-modal__input {
+  padding-right: 40px;
+}
+
+.pos-return-modal__input--digits {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+.pos-return-modal__input-spinner {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--pos-green, #006847);
+  pointer-events: none;
+}
+
+.pos-return-modal__receipt-hint {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #94a3b8;
+}
+
 .pos-return-modal__input-wrap {
   position: relative;
   flex: 1;

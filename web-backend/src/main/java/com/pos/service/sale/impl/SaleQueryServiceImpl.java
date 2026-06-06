@@ -10,12 +10,14 @@ import com.pos.repository.sale.SaleSearchRepository;
 import com.pos.repository.spec.SaleSpecifications;
 import com.pos.service.sale.SaleAccessPolicy;
 import com.pos.service.sale.SaleQueryService;
+import com.pos.service.sale.support.ReceiptLookupSupport;
 import com.pos.service.sale.support.SaleEnumParser;
 import com.pos.service.salesledger.SalesLedgerCacheService;
 import com.pos.service.support.SalesQuerySupport;
 import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,8 +50,30 @@ public class SaleQueryServiceImpl implements SaleQueryService {
 
     @Override
     public SaleResponse getByReceiptNumber(String receiptNumber) {
-        Sale sale = saleRepository.findByReceiptNumber(receiptNumber)
-            .orElseThrow(() -> new ResourceNotFoundException("Receipt not found"));
+        if (receiptNumber == null || receiptNumber.isBlank()) {
+            throw new ResourceNotFoundException("Receipt not found");
+        }
+
+        Sale sale;
+        Optional<String> exact = ReceiptLookupSupport.resolveExactReceiptNumber(receiptNumber);
+        if (exact.isPresent()) {
+            sale = saleRepository.findByReceiptNumber(exact.get())
+                .orElseThrow(() -> new ResourceNotFoundException("Receipt not found"));
+        } else {
+            String suffix = ReceiptLookupSupport.extractNumericSuffix(receiptNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Receipt not found"));
+            Integer companyId = tenantAccess.requireEffectiveCompanyId();
+            sale = saleRepository
+                .findByReceiptSuffixAndCompanyOrderByCreatedAtDesc(
+                    companyId,
+                    suffix,
+                    PageRequest.of(0, 1)
+                )
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Receipt not found"));
+        }
+
         accessPolicy.assertCanView(sale);
         return saleMapper.toResponse(sale);
     }

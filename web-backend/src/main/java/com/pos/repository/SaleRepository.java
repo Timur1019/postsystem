@@ -1,6 +1,7 @@
 package com.pos.repository;
 
 import com.pos.entity.Sale;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -15,6 +16,19 @@ import java.util.UUID;
 public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificationExecutor<Sale> {
 
     Optional<Sale> findByReceiptNumber(String receiptNumber);
+
+    @EntityGraph(attributePaths = {"cashier", "store", "items", "items.product", "cashierShift"})
+    @Query("""
+        SELECT s FROM Sale s
+        WHERE s.company.id = :companyId
+          AND s.receiptNumber LIKE CONCAT('%-', :suffix)
+        ORDER BY s.createdAt DESC
+        """)
+    List<Sale> findByReceiptSuffixAndCompanyOrderByCreatedAtDesc(
+        @Param("companyId") Integer companyId,
+        @Param("suffix") String suffix,
+        Pageable pageable
+    );
 
     long countByReceiptNumberStartingWith(String prefix);
 

@@ -1,11 +1,13 @@
 // src/components/cashier/PosReturnModal.jsx
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { X, Loader, Search, RotateCcw, Receipt, CheckCircle2 } from 'lucide-react';
+import { X, Loader, RotateCcw, Receipt, CheckCircle2, Hash } from 'lucide-react';
 import { saleApi } from '../../services/api';
 import { printReturnReceiptWithToast } from '../../utils/printReturnReceipt';
+import { isReadyReceiptLookup, parseReceiptLookupInput } from '../../utils/receiptLookup';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import PosModalPortal from './PosModalPortal';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
 import SaleReturnLinesEditor, {
@@ -14,12 +16,7 @@ import SaleReturnLinesEditor, {
   useReturnQtyState,
 } from '../sales/SaleReturnLinesEditor';
 
-function normalizeReceiptCode(raw) {
-  return String(raw ?? '')
-    .trim()
-    .replace(/\s+/g, '')
-    .toUpperCase();
-}
+const RECEIPT_LOOKUP_DEBOUNCE_MS = 450;
 
 function parseLookupError(err, t) {
   const status = err?.response?.status;
@@ -53,17 +50,22 @@ function paymentLabel(method, t) {
 export default function PosReturnModal({ open, onClose, onSuccess, terminal = false }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const [receipt, setReceipt] = useState('');
+  const [receiptQuery, setReceiptQuery] = useState('');
   const [reason, setReason] = useState('');
   const [sale, setSale] = useState(null);
   const [lookupPending, setLookupPending] = useState(false);
+  const lastLookupRef = useRef('');
+  const saleRef = useRef(null);
+  const debouncedQuery = useDebouncedValue(receiptQuery, RECEIPT_LOOKUP_DEBOUNCE_MS);
+  saleRef.current = sale;
   const { qtyByItemId, setQty, selectAllMax, totalSelected } = useReturnQtyState(sale, open && !!sale);
 
   const reset = () => {
-    setReceipt('');
+    setReceiptQuery('');
     setReason('');
     setSale(null);
     setLookupPending(false);
+    lastLookupRef.current = '';
   };
 
   const handleClose = () => {
@@ -75,34 +77,56 @@ export default function PosReturnModal({ open, onClose, onSuccess, terminal = fa
     if (!open) reset();
   }, [open]);
 
-  const lookup = async () => {
-    const code = normalizeReceiptCode(receipt);
-    if (!code) {
-      toast.error(t('pos.returnReceiptPh'));
+  const lookupReceipt = useCallback(
+    async (query) => {
+      const code = String(query ?? '').trim();
+      if (!code) {
+        setSale(null);
+        return;
+      }
+      if (lastLookupRef.current === code && saleRef.current) {
+        return;
+      }
+
+      setLookupPending(true);
+      setSale(null);
+      lastLookupRef.current = code;
+
+      try {
+        const res = await saleApi.getReceipt(code);
+        if (res.data.status === 'VOIDED') {
+          toast.error(t('pos.returnAlreadyVoided'));
+          return;
+        }
+        if (getReturnableLines(res.data).length === 0) {
+          toast.error(t('pos.returnNoItems'));
+          return;
+        }
+        setSale(res.data);
+        toast.success(t('pos.returnFound', { receipt: res.data.receiptNumber }));
+      } catch (e) {
+        if (lastLookupRef.current === code) {
+          setSale(null);
+        }
+        toast.error(parseLookupError(e, t));
+      } finally {
+        setLookupPending(false);
+      }
+    },
+    [t]
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    if (!debouncedQuery || !isReadyReceiptLookup(debouncedQuery)) {
+      if (!debouncedQuery) {
+        setSale(null);
+        lastLookupRef.current = '';
+      }
       return;
     }
-    if (code !== receipt) setReceipt(code);
-
-    setLookupPending(true);
-    setSale(null);
-    try {
-      const res = await saleApi.getReceipt(code);
-      if (res.data.status === 'VOIDED') {
-        toast.error(t('pos.returnAlreadyVoided'));
-        return;
-      }
-      if (getReturnableLines(res.data).length === 0) {
-        toast.error(t('pos.returnNoItems'));
-        return;
-      }
-      setSale(res.data);
-      toast.success(t('pos.returnFound', { receipt: res.data.receiptNumber }));
-    } catch (e) {
-      toast.error(parseLookupError(e, t));
-    } finally {
-      setLookupPending(false);
-    }
-  };
+    lookupReceipt(debouncedQuery);
+  }, [debouncedQuery, open, lookupReceipt]);
 
   const returnMutation = useMutation({
     mutationFn: () => {
@@ -140,6 +164,10 @@ export default function PosReturnModal({ open, onClose, onSuccess, terminal = fa
     onError: (e) => toast.error(e.response?.data?.message ?? e?.message ?? t('pos.returnFailed')),
   });
 
+  const handleReceiptChange = (e) => {
+    setReceiptQuery(parseReceiptLookupInput(e.target.value));
+  };
+
   return (
     <PosModalPortal open={open} onClose={handleClose}>
       <div
@@ -173,35 +201,32 @@ export default function PosReturnModal({ open, onClose, onSuccess, terminal = fa
             <label className="pos-return-modal__label" htmlFor="pos-return-receipt">
               {t('pos.returnReceipt')}
             </label>
-            <div className="pos-return-modal__search">
-              <div className="pos-return-modal__input-wrap">
-                <Receipt size={18} className="pos-return-modal__input-icon" aria-hidden />
+            <div className="pos-return-modal__receipt-field">
+              <span className="pos-return-modal__receipt-prefix" aria-hidden>
+                {t('pos.returnReceiptPrefix')}
+              </span>
+              <div className="pos-return-modal__input-wrap pos-return-modal__input-wrap--digits">
+                <Hash size={18} className="pos-return-modal__input-icon" aria-hidden />
                 <input
                   id="pos-return-receipt"
-                  value={receipt}
-                  onChange={(e) => setReceipt(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && lookup()}
+                  value={receiptQuery}
+                  onChange={handleReceiptChange}
                   placeholder={t('pos.returnReceiptPh')}
-                  className="pos-return-modal__input"
+                  className="pos-return-modal__input pos-return-modal__input--digits"
                   autoFocus
                   spellCheck={false}
                   autoComplete="off"
+                  inputMode="text"
+                  aria-describedby="pos-return-receipt-hint"
                 />
-              </div>
-              <button
-                type="button"
-                className="pos-return-modal__find"
-                onClick={lookup}
-                disabled={lookupPending || !receipt.trim()}
-              >
                 {lookupPending ? (
-                  <Loader size={18} className="pos-return-modal__spin" />
-                ) : (
-                  <Search size={18} />
-                )}
-                <span>{t('pos.returnFind')}</span>
-              </button>
+                  <Loader size={18} className="pos-return-modal__input-spinner pos-return-modal__spin" aria-hidden />
+                ) : null}
+              </div>
             </div>
+            <p id="pos-return-receipt-hint" className="pos-return-modal__receipt-hint">
+              {t('pos.returnReceiptDigitsHint')}
+            </p>
           </section>
 
           {sale ? (
@@ -237,7 +262,7 @@ export default function PosReturnModal({ open, onClose, onSuccess, terminal = fa
           ) : (
             <div className="pos-return-modal__placeholder">
               <Receipt size={28} strokeWidth={1.5} aria-hidden />
-              <p>{t('pos.returnSearchPrompt')}</p>
+              <p>{lookupPending ? t('pos.returnSearching') : t('pos.returnSearchPrompt')}</p>
             </div>
           )}
 
