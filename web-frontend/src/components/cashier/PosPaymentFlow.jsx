@@ -72,7 +72,8 @@ export default function PosPaymentFlow({
     else if (action === 'card') {
       setPayMethod('card');
       setStep('cardType');
-    } else goToMixed();
+    } else if (action === 'cashless') submitCashless();
+    else goToMixed();
   };
 
   const cashPartNum = round2(cashPortion);
@@ -157,6 +158,17 @@ export default function PosPaymentFlow({
       receiptType,
       cardType: null,
       amountTendered: amount,
+      printReceipt: printReceiptEnabled,
+    });
+  };
+
+  const submitCashless = () => {
+    if (isPending) return;
+    onConfirm({
+      paymentMethod: 'CASHLESS',
+      receiptType,
+      cardType: null,
+      amountTendered: toPay,
       printReceipt: printReceiptEnabled,
     });
   };

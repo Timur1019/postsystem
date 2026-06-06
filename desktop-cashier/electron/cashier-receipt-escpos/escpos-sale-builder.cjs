@@ -324,7 +324,7 @@ function appendPayment(printer, payload) {
         ? Number(sale.cashAmount) || 0
         : 0;
   const cardAmt =
-    method === 'CARD'
+    method === 'CARD' || method === 'CASHLESS' || method === 'MPESA'
       ? Number(sale.amountTendered) || total
       : method === 'MIXED'
         ? Number(sale.cardAmount) || 0

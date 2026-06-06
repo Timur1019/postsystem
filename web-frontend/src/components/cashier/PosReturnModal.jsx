@@ -39,6 +39,8 @@ function paymentLabel(method, t) {
       return t('pos.payCash');
     case 'CARD':
       return t('pos.payCard');
+    case 'CASHLESS':
+      return t('pos.payCashless');
     case 'MIXED':
       return t('pos.payMixed');
     case 'MPESA':

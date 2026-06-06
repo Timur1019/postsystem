@@ -102,8 +102,15 @@ const ALL_SECTIONS = [
   'barcodes',
 ];
 
-const WITH_STORES = ['accounting', 'storePrices'];
-const RETAIL_PACK = ['accounting', 'storePrices', 'barcodes', 'retailFlags'];
+/** Продукты / фискальная розница — tasnif + НДС + маркировка */
+const FISCAL_RETAIL = ['tasnif', 'ownerVat', 'retailFlags', 'accounting', 'storePrices', 'barcodes'];
+/** Одежда и др. — те же поля, без tasnif */
+const SIMPLE_RETAIL = ['ownerVat', 'retailFlags', 'accounting', 'storePrices', 'barcodes'];
+/** Стройка / склад — без tasnif */
+const MATERIAL_BASE = ['ownerVat', 'accounting', 'storePrices'];
+const MATERIAL_BUILD = ['ownerVat', 'construction', 'accounting', 'storePrices'];
+const MATERIAL_PIECE = ['ownerVat', 'construction', 'accounting', 'storePrices', 'barcodes'];
+const SERVICE_PACK = ['ownerVat', 'accounting', 'storePrices'];
 
 /** @type {Array<object>} */
 export const PRODUCT_TEMPLATES = [
@@ -122,7 +129,8 @@ export const PRODUCT_TEMPLATES = [
       unitOfMeasure: 'kg',
       lowStockAlert: 10,
     },
-    sections: WITH_STORES,
+    sections: MATERIAL_BASE,
+    fiscalMode: 'none',
     constructionFields: [],
     priceLabelKey: 'productTemplates.pricePerKg',
     stockLabelKey: 'productTemplates.stockQty',
@@ -144,7 +152,8 @@ export const PRODUCT_TEMPLATES = [
       lowStockAlert: 10,
       constructionAllowCutting: true,
     },
-    sections: ['construction', ...WITH_STORES],
+    sections: MATERIAL_BUILD,
+    fiscalMode: 'none',
     constructionFields: ['standardLength', 'width', 'thickness', 'allowCutting'],
     priceLabelKey: 'productTemplates.pricePerMeter',
     stockLabelKey: 'productTemplates.stockMeters',
@@ -166,7 +175,8 @@ export const PRODUCT_TEMPLATES = [
       lowStockAlert: 100,
       constructionAllowCutting: true,
     },
-    sections: ['construction', ...WITH_STORES],
+    sections: MATERIAL_BUILD,
+    fiscalMode: 'none',
     constructionFields: ['standardLength', 'allowCutting'],
     priceLabelKey: 'productTemplates.pricePerMm',
     stockLabelKey: 'productTemplates.stockMm',
@@ -187,7 +197,8 @@ export const PRODUCT_TEMPLATES = [
       unitOfMeasure: 'l',
       lowStockAlert: 5,
     },
-    sections: WITH_STORES,
+    sections: MATERIAL_BASE,
+    fiscalMode: 'none',
     constructionFields: [],
     priceLabelKey: 'productTemplates.pricePerLiter',
     stockLabelKey: 'productTemplates.stockLiters',
@@ -208,7 +219,8 @@ export const PRODUCT_TEMPLATES = [
       unitOfMeasure: 'm2',
       lowStockAlert: 10,
     },
-    sections: ['construction', ...WITH_STORES],
+    sections: MATERIAL_BUILD,
+    fiscalMode: 'none',
     constructionFields: ['standardLength', 'width'],
     priceLabelKey: 'productTemplates.pricePerM2',
     stockLabelKey: 'productTemplates.stockM2',
@@ -230,7 +242,8 @@ export const PRODUCT_TEMPLATES = [
       soldIndividually: true,
       lowStockAlert: 5,
     },
-    sections: ['construction', ...WITH_STORES, 'barcodes'],
+    sections: MATERIAL_PIECE,
+    fiscalMode: 'none',
     constructionFields: ['standardLength'],
     priceLabelKey: 'productTemplates.pricePerPiece',
     stockLabelKey: 'productTemplates.stockPieces',
@@ -252,7 +265,8 @@ export const PRODUCT_TEMPLATES = [
       soldIndividually: true,
       lowStockAlert: 10,
     },
-    sections: WITH_STORES,
+    sections: FISCAL_RETAIL.filter((s) => s !== 'barcodes'),
+    fiscalMode: 'full',
     constructionFields: [],
     priceLabelKey: 'productTemplates.pricePerKg',
     stockLabelKey: 'productTemplates.stockQty',
@@ -275,7 +289,8 @@ export const PRODUCT_TEMPLATES = [
       markedProduct: false,
       lowStockAlert: 10,
     },
-    sections: RETAIL_PACK,
+    sections: FISCAL_RETAIL,
+    fiscalMode: 'full',
     constructionFields: [],
     priceLabelKey: 'productTemplates.pricePerPiece',
     stockLabelKey: 'productTemplates.stockPieces',
@@ -298,7 +313,8 @@ export const PRODUCT_TEMPLATES = [
       lowStockAlert: 10,
       pharmacyExpiryRequired: true,
     },
-    sections: [...RETAIL_PACK, 'pharmacy'],
+    sections: [...FISCAL_RETAIL, 'pharmacy'],
+    fiscalMode: 'full',
     pharmacyFields: ['expiryRequired', 'prescriptionRequired', 'dosageForm'],
     constructionFields: [],
     priceLabelKey: 'productTemplates.pricePerPiece',
@@ -321,7 +337,8 @@ export const PRODUCT_TEMPLATES = [
       soldIndividually: true,
       lowStockAlert: 12,
     },
-    sections: RETAIL_PACK,
+    sections: FISCAL_RETAIL,
+    fiscalMode: 'full',
     constructionFields: [],
     priceLabelKey: 'productTemplates.pricePerPiece',
     stockLabelKey: 'productTemplates.stockPieces',
@@ -342,7 +359,8 @@ export const PRODUCT_TEMPLATES = [
       soldIndividually: true,
       lowStockAlert: 5,
     },
-    sections: WITH_STORES,
+    sections: FISCAL_RETAIL.filter((s) => s !== 'barcodes'),
+    fiscalMode: 'full',
     constructionFields: [],
     priceLabelKey: 'productTemplates.pricePerKg',
     stockLabelKey: 'productTemplates.stockQty',
@@ -365,7 +383,8 @@ export const PRODUCT_TEMPLATES = [
       markedProduct: false,
       lowStockAlert: 5,
     },
-    sections: RETAIL_PACK,
+    sections: FISCAL_RETAIL,
+    fiscalMode: 'full',
     constructionFields: [],
     priceLabelKey: 'productTemplates.pricePerPiece',
     stockLabelKey: 'productTemplates.stockPieces',
@@ -387,7 +406,8 @@ export const PRODUCT_TEMPLATES = [
       markedProduct: false,
       lowStockAlert: 5,
     },
-    sections: [...RETAIL_PACK, 'clothing'],
+    sections: [...SIMPLE_RETAIL, 'clothing'],
+    fiscalMode: 'none',
     clothingFields: ['sizeRange', 'color', 'gender'],
     constructionFields: [],
     priceLabelKey: 'productTemplates.pricePerPiece',
@@ -410,7 +430,8 @@ export const PRODUCT_TEMPLATES = [
       lowStockAlert: 0,
       initialStock: 0,
     },
-    sections: ['accounting', 'storePrices'],
+    sections: SERVICE_PACK,
+    fiscalMode: 'none',
     constructionFields: [],
     priceLabelKey: 'productTemplates.pricePerPortion',
     stockLabelKey: 'productTemplates.stockPieces',
@@ -443,7 +464,8 @@ export const PRODUCT_TEMPLATES = [
       lowStockAlert: 0,
       initialStock: 0,
     },
-    sections: ['accounting', 'storePrices'],
+    sections: SERVICE_PACK,
+    fiscalMode: 'none',
     constructionFields: [],
     priceLabelKey: 'productTemplates.pricePerService',
     hideStock: true,
@@ -481,8 +503,39 @@ export function listTemplatesForBusinessType(businessTypeCode) {
 }
 
 export function templateHasSection(template, section) {
-  if (!template) return true;
-  return (template.sections ?? ALL_SECTIONS).includes(section);
+  if (!template) return false;
+  return (template.sections ?? []).includes(section);
+}
+
+/**
+ * Видимость секций формы.
+ * classicMode — старая полная форма с tasnif (без блоков одежда/аптека/стройка разом).
+ * Шаблон — базовые поля как в классике, но без tasnif если fiscalMode !== 'full'.
+ */
+export function resolveCatalogSectionVisible(section, { classicMode, template, productType }) {
+  if (classicMode) {
+    if (section === 'clothing' || section === 'pharmacy') return false;
+    if (section === 'construction') return productType === 'MATERIAL';
+    if (section === 'retailFlags') return productType === 'RETAIL';
+    return (
+      section === 'tasnif'
+      || section === 'typeSelectors'
+      || section === 'advancedUnits'
+      || section === 'ownerVat'
+      || section === 'accounting'
+      || section === 'storePrices'
+      || section === 'barcodes'
+    );
+  }
+  if (section === 'typeSelectors' || section === 'advancedUnits') return false;
+  if (!template) return false;
+  if (section === 'retailFlags') {
+    return templateHasSection(template, 'retailFlags') && productType === 'RETAIL';
+  }
+  if (section === 'construction') {
+    return templateHasSection(template, 'construction');
+  }
+  return templateHasSection(template, section);
 }
 
 export function templateShowsConstructionField(template, field) {

@@ -67,6 +67,7 @@ export default function SalesLedgerFiltersDrawer({
               <option value="">{t('products.filters.any')}</option>
               <option value="CASH">{t('sales.paymentCash')}</option>
               <option value="CARD">{t('sales.paymentCard')}</option>
+              <option value="CASHLESS">{t('sales.paymentCashless')}</option>
               <option value="MPESA">{t('sales.paymentMpesa')}</option>
               <option value="MIXED">{t('salesLedger.filters.mixed')}</option>
             </select>

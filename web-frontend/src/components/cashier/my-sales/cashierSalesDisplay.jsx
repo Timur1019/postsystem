@@ -11,6 +11,8 @@ export function cashierSalesPaymentLabel(method, t, receiptType) {
       return t('pos.payCash');
     case 'CARD':
       return t('pos.payCard');
+    case 'CASHLESS':
+      return t('pos.payCashless');
     case 'MIXED':
       return t('pos.payMixed');
     case 'MPESA':
@@ -28,6 +30,8 @@ export function cashierSalesPaymentPillClass(method, receiptType) {
       return 'cashier-sales-pill--cash';
     case 'CARD':
       return 'cashier-sales-pill--card';
+    case 'CASHLESS':
+      return 'cashier-sales-pill--cashless';
     case 'MIXED':
       return 'cashier-sales-pill--mixed';
     case 'MPESA':

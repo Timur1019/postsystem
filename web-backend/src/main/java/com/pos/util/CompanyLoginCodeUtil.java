@@ -3,6 +3,8 @@ package com.pos.util;
 import com.pos.exception.BadRequestException;
 import org.springframework.util.StringUtils;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /**
  * Код компании для входа кассира: ровно 5 цифр, диапазон 10000–99999.
  */
@@ -52,6 +54,12 @@ public final class CompanyLoginCodeUtil {
 
     public static boolean isValidValue(int code) {
         return code >= MIN_CODE && code <= MAX_CODE;
+    }
+
+    /** Случайное значение в диапазоне 10000–99999 (включительно). */
+    public static int randomValue() {
+        int span = MAX_CODE - MIN_CODE + 1;
+        return MIN_CODE + ThreadLocalRandom.current().nextInt(span);
     }
 
     public static BadRequestException invalidFormat() {

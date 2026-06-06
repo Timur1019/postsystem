@@ -382,7 +382,7 @@ CREATE TABLE sales (
     order_discount_amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
     order_discount_percent NUMERIC(5, 2),
     total_amount    NUMERIC(18, 2) NOT NULL,
-    payment_method  VARCHAR(20) NOT NULL,  -- CASH, CARD, MPESA, MIXED
+    payment_method  VARCHAR(20) NOT NULL,  -- CASH, CARD, CASHLESS, MPESA, MIXED
     receipt_type    VARCHAR(20) DEFAULT 'SALE',
     card_type       VARCHAR(20),
     cashier_shift_id UUID REFERENCES cashier_shifts(id),

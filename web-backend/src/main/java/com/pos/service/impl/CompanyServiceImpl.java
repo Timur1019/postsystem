@@ -127,18 +127,20 @@ public class CompanyServiceImpl implements CompanyService {
         return companyMapper.toResponse(company, storeCount);
     }
 
+    private static final int LOGIN_CODE_RANDOM_ATTEMPTS = 100;
+
     private String allocateNextLoginCode(Integer excludeId) {
-        Integer max = companyRepository.findMaxNumericLoginCode(
-            CompanyLoginCodeUtil.MIN_CODE,
-            CompanyLoginCodeUtil.MAX_CODE
-        );
-        int candidate = max == null ? CompanyLoginCodeUtil.MIN_CODE : max + 1;
-        while (candidate <= CompanyLoginCodeUtil.MAX_CODE) {
+        for (int attempt = 0; attempt < LOGIN_CODE_RANDOM_ATTEMPTS; attempt++) {
+            String code = CompanyLoginCodeUtil.format(CompanyLoginCodeUtil.randomValue());
+            if (!isLoginCodeTaken(code, excludeId)) {
+                return code;
+            }
+        }
+        for (int candidate = CompanyLoginCodeUtil.MIN_CODE; candidate <= CompanyLoginCodeUtil.MAX_CODE; candidate++) {
             String code = CompanyLoginCodeUtil.format(candidate);
             if (!isLoginCodeTaken(code, excludeId)) {
                 return code;
             }
-            candidate++;
         }
         throw new BadRequestException("Нет свободных кодов входа (диапазон исчерпан)");
     }

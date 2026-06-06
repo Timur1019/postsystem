@@ -11,7 +11,7 @@ import {
   applyTemplateDefaults,
   getProductTemplate,
   resolveProductTemplateCode,
-  templateHasSection,
+  resolveCatalogSectionVisible,
 } from '../config/productCatalogTemplateRegistry';
 import { buildStorePrices, syncStoreRowPrices } from '../utils/productCatalogPrices';
 import { UNIT_DEFAULTS } from '../utils/unitConfig';
@@ -379,11 +379,12 @@ export function useProductCatalogForm(product, stores, onSaved, options = {}) {
     }
   };
 
-  const showSection = (section) => {
-    if (advancedMode) return true;
-    if (!template) return true;
-    return templateHasSection(template, section);
-  };
+  const showSection = (section) =>
+    resolveCatalogSectionVisible(section, {
+      classicMode: advancedMode,
+      template,
+      productType: productTypeWatch,
+    });
 
   return {
     t,

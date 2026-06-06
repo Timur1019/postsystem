@@ -36,11 +36,13 @@ function PaymentIcon({ method }) {
         ? Wallet
         : method === 'CARD'
           ? CreditCard
-          : method === 'MPESA'
+          : method === 'CASHLESS'
             ? Smartphone
-            : method === 'MIXED'
-              ? Wallet
-              : Banknote;
+            : method === 'MPESA'
+              ? Smartphone
+              : method === 'MIXED'
+                ? Wallet
+                : Banknote;
   return <Icon size={14} className="text-slate-600 dark:text-slate-400" />;
 }
 
@@ -180,6 +182,7 @@ export default function SalesLedgerPage() {
     }
     const m = row.paymentMethod;
     if (m === 'CARD') return t('sales.paymentCard');
+    if (m === 'CASHLESS') return t('sales.paymentCashless');
     if (m === 'MPESA') return t('sales.paymentMpesa');
     if (m === 'MIXED') return t('salesLedger.filters.mixed');
     return t('sales.paymentCash');

@@ -144,11 +144,12 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
             cardType = null;
         } else {
             amounts = paymentResolver.resolve(paymentMethod, total, req);
-            if (paymentMethod == Sale.PaymentMethod.CARD && cardType == null) {
-                cardType = Sale.CardType.PERSONAL;
-            }
-            if (amounts.card().signum() > 0 && cardType == null) {
-                cardType = Sale.CardType.PERSONAL;
+            if (paymentMethod == Sale.PaymentMethod.CASHLESS) {
+                cardType = null;
+            } else if (paymentMethod == Sale.PaymentMethod.CARD && cardType == null) {
+                cardType = Sale.CardType.HUMO;
+            } else if (amounts.card().signum() > 0 && cardType == null) {
+                cardType = Sale.CardType.HUMO;
             }
         }
 

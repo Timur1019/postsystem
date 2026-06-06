@@ -3111,6 +3111,11 @@
   color: #1d4ed8;
 }
 
+.cashier-sales-pill--cashless {
+  background: #ecfeff;
+  color: #0e7490;
+}
+
 .cashier-sales-pill--mixed {
   background: #f5f3ff;
   color: #6d28d9;

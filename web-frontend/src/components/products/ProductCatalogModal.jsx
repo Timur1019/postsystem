@@ -6,6 +6,7 @@ import ProductCatalogAccountingSection from './catalog/ProductCatalogAccountingS
 import ProductCatalogStorePricesSection from './catalog/ProductCatalogStorePricesSection';
 import ProductCatalogBarcodesSection from './catalog/ProductCatalogBarcodesSection';
 import ProductCatalogRetailExtrasSection from './catalog/ProductCatalogRetailExtrasSection';
+import ProductCatalogFiscalSection from './catalog/ProductCatalogFiscalSection';
 
 export default function ProductCatalogModal({
   product,
@@ -74,7 +75,14 @@ export default function ProductCatalogModal({
 
         <form onSubmit={form.handleSubmit(form.onSubmit)} className="p-5 space-y-8">
           {form.showSection('tasnif') ? (
-            <TasnifSearchPanel setValue={form.setValue} getValues={form.getValues} isEdit={form.isEdit} />
+            <div className="space-y-4">
+              <TasnifSearchPanel setValue={form.setValue} getValues={form.getValues} isEdit={form.isEdit} />
+              <ProductCatalogFiscalSection
+                t={form.t}
+                register={form.register}
+                errors={form.errors}
+              />
+            </div>
           ) : null}
 
           <ProductCatalogGeneralSection
@@ -108,13 +116,15 @@ export default function ProductCatalogModal({
             />
           ) : null}
 
-          <ProductCatalogRetailExtrasSection
-            t={form.t}
-            register={form.register}
-            errors={form.errors}
-            template={form.template}
-            showSection={form.showSection}
-          />
+          {form.showSection('clothing') || form.showSection('pharmacy') ? (
+            <ProductCatalogRetailExtrasSection
+              t={form.t}
+              register={form.register}
+              errors={form.errors}
+              template={form.template}
+              showSection={form.showSection}
+            />
+          ) : null}
 
           {form.showSection('barcodes') ? (
             <ProductCatalogBarcodesSection

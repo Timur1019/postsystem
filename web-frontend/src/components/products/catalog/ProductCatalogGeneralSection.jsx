@@ -35,16 +35,6 @@ export default function ProductCatalogGeneralSection({
         {t('productCatalog.sectionGeneral')}
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {showSection('tasnif') ? (
-          <>
-            <ProductCatalogField label={t('productCatalog.externalId')} error={errors.externalProductId?.message}>
-              <input {...register('externalProductId')} className={inputCls} />
-            </ProductCatalogField>
-            <ProductCatalogField label={t('productCatalog.ikpu')} error={errors.ikpu?.message}>
-              <input {...register('ikpu')} className={inputCls} />
-            </ProductCatalogField>
-          </>
-        ) : null}
         <ProductCatalogField label={t('productModal.sku')} required error={errors.sku?.message}>
           <input {...register('sku')} disabled={isEdit} className={inputCls} />
         </ProductCatalogField>
@@ -106,12 +96,16 @@ export default function ProductCatalogGeneralSection({
             <ProductCatalogField label={t('productCatalog.unit')} required error={errors.unitOfMeasure?.message}>
               <input {...register('unitOfMeasure')} className={inputCls} />
             </ProductCatalogField>
-            <ProductCatalogField label={t('productCatalog.unitCode')} error={errors.unitMeasureCode?.message}>
-              <input {...register('unitMeasureCode')} placeholder="1–999" className={inputCls} />
-            </ProductCatalogField>
-            <ProductCatalogField label={t('productCatalog.packageCode')} error={errors.packageCode?.message}>
-              <input {...register('packageCode')} placeholder="1–9999999" className={inputCls} />
-            </ProductCatalogField>
+            {!showSection('tasnif') ? (
+              <>
+                <ProductCatalogField label={t('productCatalog.unitCode')} error={errors.unitMeasureCode?.message}>
+                  <input {...register('unitMeasureCode')} placeholder="1–999" className={inputCls} />
+                </ProductCatalogField>
+                <ProductCatalogField label={t('productCatalog.packageCode')} error={errors.packageCode?.message}>
+                  <input {...register('packageCode')} placeholder="1–9999999" className={inputCls} />
+                </ProductCatalogField>
+              </>
+            ) : null}
           </>
         ) : null}
       </div>

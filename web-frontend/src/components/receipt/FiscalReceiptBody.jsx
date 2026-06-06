@@ -29,6 +29,7 @@ function lineVatAmount(item) {
 const PAYMENT_I18N = {
   CASH: 'sales.paymentCash',
   CARD: 'sales.paymentCard',
+  CASHLESS: 'sales.paymentCashless',
   MPESA: 'sales.paymentMpesa',
   MIXED: 'salesLedger.filters.mixed',
 };

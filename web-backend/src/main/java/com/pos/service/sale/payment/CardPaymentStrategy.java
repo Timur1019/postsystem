@@ -12,7 +12,7 @@ import java.util.Set;
 import static com.pos.service.sale.payment.PaymentAmountScale.scale;
 
 /**
- * Безналичная оплата на полную сумму. Покрывает CARD и MPESA с одинаковой логикой.
+ * Безналичная оплата на полную сумму. Покрывает CARD, CASHLESS (QR) и MPESA с одинаковой логикой.
  * Для отдельного процессора достаточно добавить новый {@link SalePaymentStrategy}.
  */
 @Component
@@ -20,7 +20,7 @@ class CardPaymentStrategy implements SalePaymentStrategy {
 
     @Override
     public Set<Sale.PaymentMethod> supports() {
-        return EnumSet.of(Sale.PaymentMethod.CARD, Sale.PaymentMethod.MPESA);
+        return EnumSet.of(Sale.PaymentMethod.CARD, Sale.PaymentMethod.CASHLESS, Sale.PaymentMethod.MPESA);
     }
 
     @Override

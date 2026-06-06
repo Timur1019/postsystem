@@ -75,6 +75,7 @@ export default function CashierSalesFilters({ filters, onPatch, onReset, filteri
               <option value="">{t('pos.salesFilterAll')}</option>
               <option value="CASH">{t('pos.payCash')}</option>
               <option value="CARD">{t('pos.payCard')}</option>
+              <option value="CASHLESS">{t('pos.payCashless')}</option>
               <option value="MIXED">{t('pos.payMixed')}</option>
               <option value="MPESA">M-Pesa</option>
             </select>

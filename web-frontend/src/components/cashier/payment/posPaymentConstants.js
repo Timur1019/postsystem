@@ -4,8 +4,7 @@ import {
   Wallet,
   Banknote,
   Split,
-  Building2,
-  Heart,
+  QrCode,
 } from 'lucide-react';
 import { round2 } from '../../../utils/taxAmounts';
 
@@ -16,14 +15,14 @@ export const RECEIPT_TYPES = [
 ];
 
 export const CARD_TYPES = [
-  { id: 'PERSONAL', labelKey: 'pos.cardPersonal', icon: CreditCard },
-  { id: 'CORPORATE', labelKey: 'pos.cardCorporate', icon: Building2 },
-  { id: 'SOCIAL', labelKey: 'pos.cardSocial', icon: Heart },
+  { id: 'HUMO', labelKey: 'pos.cardHumo', icon: CreditCard },
+  { id: 'UZCARD', labelKey: 'pos.cardUzcard', icon: CreditCard },
 ];
 
 export const PAY_METHODS = [
   { id: 'cash', icon: Banknote, labelKey: 'pos.payCash', action: 'cash' },
   { id: 'card', icon: CreditCard, labelKey: 'pos.payCard', action: 'card' },
+  { id: 'cashless', icon: QrCode, labelKey: 'pos.payCashless', action: 'cashless' },
   { id: 'mixed', icon: Split, labelKey: 'pos.payMixed', action: 'mixed' },
 ];
 
