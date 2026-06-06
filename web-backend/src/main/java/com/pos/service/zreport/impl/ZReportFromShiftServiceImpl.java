@@ -88,8 +88,14 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
             .appletVersion(appletVersion)
             .cashTotal(report.cashAmount())
             .cardTotal(report.cardAmount())
+            .humoTotal(report.humoAmount())
+            .uzcardTotal(report.uzcardAmount())
+            .cashlessTotal(report.cashlessAmount())
             .returnsCash(returnsCash)
             .returnsCard(returnsCard)
+            .returnsHumo(report.returnsHumo())
+            .returnsUzcard(report.returnsUzcard())
+            .returnsCashless(report.returnsCashless())
             .vatReturn(vatReturn)
             .salesCount(report.saleCount())
             .returnsCount(bounds.returnsCount())
@@ -166,8 +172,14 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
             .appletVersion(appletVersion)
             .cashTotal(report.cashAmount())
             .cardTotal(report.cardAmount())
+            .humoTotal(report.humoAmount())
+            .uzcardTotal(report.uzcardAmount())
+            .cashlessTotal(report.cashlessAmount())
             .returnsCash(returnsCash)
             .returnsCard(returnsCard)
+            .returnsHumo(report.returnsHumo())
+            .returnsUzcard(report.returnsUzcard())
+            .returnsCashless(report.returnsCashless())
             .vatReturn(vatReturn)
             .salesCount(report.saleCount())
             .returnsCount(bounds.returnsCount())
@@ -216,11 +228,17 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
                 shift.getTotalAmount(),
                 shift.getCashAmount(),
                 shift.getCardAmount(),
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 shift.getVatAmount(),
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
                 0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO

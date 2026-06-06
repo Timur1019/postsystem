@@ -28,7 +28,10 @@ SELECT CAST(COUNT(*) AS INTEGER),
        COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.cash_amount ELSE 0 END), 0),
        COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.card_amount ELSE 0 END), 0),
        COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.line_discount_total ELSE 0 END), 0),
-       COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.order_discount_amount ELSE 0 END), 0)
+       COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.order_discount_amount ELSE 0 END), 0),
+       COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' AND s.card_type = 'HUMO' THEN s.card_amount ELSE 0 END), 0),
+       COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' AND s.card_type = 'UZCARD' THEN s.card_amount ELSE 0 END), 0),
+       COALESCE(SUM(CASE WHEN s.status = 'COMPLETED' AND s.payment_method = 'CASHLESS' THEN s.total_amount ELSE 0 END), 0)
 FROM sales s
 WHERE s.cashier_id = :cashierId
   AND s.store_id = :storeId

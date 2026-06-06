@@ -16,6 +16,9 @@ public record ShiftReportResponse(
     BigDecimal totalAmount,
     BigDecimal cashAmount,
     BigDecimal cardAmount,
+    BigDecimal humoAmount,
+    BigDecimal uzcardAmount,
+    BigDecimal cashlessAmount,
     BigDecimal vatAmount,
     BigDecimal discountTotal,
     BigDecimal lineDiscountTotal,
@@ -23,5 +26,8 @@ public record ShiftReportResponse(
     int returnsCount,
     BigDecimal returnsCash,
     BigDecimal returnsCard,
+    BigDecimal returnsHumo,
+    BigDecimal returnsUzcard,
+    BigDecimal returnsCashless,
     BigDecimal returnsVat
 ) {}

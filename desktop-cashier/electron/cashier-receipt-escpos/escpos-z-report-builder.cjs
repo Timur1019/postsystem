@@ -55,6 +55,9 @@ function buildZReportOnPrinter(printer, payload) {
   printer.bold(false);
   appendRow(printer, L.saleCash || 'Cash', `${fmtMoney(z.cashTotal)} ${cur}`);
   appendRow(printer, L.saleCard || 'Card', `${fmtMoney(z.cardTotal)} ${cur}`);
+  appendRow(printer, L.saleHumo || 'Humo', `${fmtMoney(z.humoTotal)} ${cur}`);
+  appendRow(printer, L.saleUzcard || 'Uzcard', `${fmtMoney(z.uzcardTotal)} ${cur}`);
+  appendRow(printer, L.saleCashless || 'Cashless', `${fmtMoney(z.cashlessTotal)} ${cur}`);
   appendRow(printer, L.saleVat || 'VAT', `${fmtMoney(z.vatAmount)} ${cur}`);
   appendRow(printer, L.saleCount || 'Count', String(z.salesCount ?? 0));
   if (Number(z.lineDiscountTotal ?? 0) > 0) {
@@ -73,6 +76,9 @@ function buildZReportOnPrinter(printer, payload) {
   printer.bold(false);
   appendRow(printer, L.returnCash || 'Cash', `${fmtMoney(z.returnsCash)} ${cur}`);
   appendRow(printer, L.returnCard || 'Card', `${fmtMoney(z.returnsCard)} ${cur}`);
+  appendRow(printer, L.returnHumo || 'Humo', `${fmtMoney(z.returnsHumo)} ${cur}`);
+  appendRow(printer, L.returnUzcard || 'Uzcard', `${fmtMoney(z.returnsUzcard)} ${cur}`);
+  appendRow(printer, L.returnCashless || 'Cashless', `${fmtMoney(z.returnsCashless)} ${cur}`);
   appendRow(printer, L.returnVat || 'VAT', `${fmtMoney(z.vatReturn)} ${cur}`);
   appendRow(printer, L.returnCount || 'Count', String(z.returnsCount ?? 0));
   appendDivider(printer);

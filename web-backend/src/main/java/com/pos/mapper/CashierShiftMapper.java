@@ -38,7 +38,7 @@ public interface CashierShiftMapper {
 
     default Object[] unwrapAggregateRow(Object[] raw) {
         if (raw == null) {
-            return new Object[8];
+            return new Object[11];
         }
         if (raw.length == 1 && raw[0] instanceof Object[] nested) {
             return nested;
@@ -61,7 +61,10 @@ public interface CashierShiftMapper {
             toBigDecimal(row[4]),
             toBigDecimal(row[5]),
             row.length > 6 ? toBigDecimal(row[6]) : BigDecimal.ZERO,
-            row.length > 7 ? toBigDecimal(row[7]) : BigDecimal.ZERO
+            row.length > 7 ? toBigDecimal(row[7]) : BigDecimal.ZERO,
+            row.length > 8 ? toBigDecimal(row[8]) : BigDecimal.ZERO,
+            row.length > 9 ? toBigDecimal(row[9]) : BigDecimal.ZERO,
+            row.length > 10 ? toBigDecimal(row[10]) : BigDecimal.ZERO
         );
     }
 
@@ -79,7 +82,10 @@ public interface CashierShiftMapper {
             toInt(row[0]),
             toBigDecimal(row[1]),
             toBigDecimal(row[2]),
-            toBigDecimal(row[3])
+            toBigDecimal(row[3]),
+            row.length > 4 ? toBigDecimal(row[4]) : BigDecimal.ZERO,
+            row.length > 5 ? toBigDecimal(row[5]) : BigDecimal.ZERO,
+            row.length > 6 ? toBigDecimal(row[6]) : BigDecimal.ZERO
         );
     }
 
@@ -104,6 +110,9 @@ public interface CashierShiftMapper {
             aggregate.totalAmount(),
             aggregate.cashAmount(),
             aggregate.cardAmount(),
+            aggregate.humoAmount(),
+            aggregate.uzcardAmount(),
+            aggregate.cashlessAmount(),
             aggregate.vatAmount(),
             aggregate.discountTotal(),
             aggregate.lineDiscountTotal(),
@@ -111,6 +120,9 @@ public interface CashierShiftMapper {
             ret.returnsCount(),
             ret.returnsCash(),
             ret.returnsCard(),
+            ret.returnsHumo(),
+            ret.returnsUzcard(),
+            ret.returnsCashless(),
             ret.returnsVat()
         );
     }

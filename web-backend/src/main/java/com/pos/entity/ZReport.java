@@ -71,11 +71,29 @@ public class ZReport {
     @Column(name = "card_total", precision = 18, scale = 2)
     private BigDecimal cardTotal = BigDecimal.ZERO;
 
+    @Column(name = "humo_total", precision = 18, scale = 2)
+    private BigDecimal humoTotal = BigDecimal.ZERO;
+
+    @Column(name = "uzcard_total", precision = 18, scale = 2)
+    private BigDecimal uzcardTotal = BigDecimal.ZERO;
+
+    @Column(name = "cashless_total", precision = 18, scale = 2)
+    private BigDecimal cashlessTotal = BigDecimal.ZERO;
+
     @Column(name = "returns_cash", precision = 18, scale = 2)
     private BigDecimal returnsCash = BigDecimal.ZERO;
 
     @Column(name = "returns_card", precision = 18, scale = 2)
     private BigDecimal returnsCard = BigDecimal.ZERO;
+
+    @Column(name = "returns_humo", precision = 18, scale = 2)
+    private BigDecimal returnsHumo = BigDecimal.ZERO;
+
+    @Column(name = "returns_uzcard", precision = 18, scale = 2)
+    private BigDecimal returnsUzcard = BigDecimal.ZERO;
+
+    @Column(name = "returns_cashless", precision = 18, scale = 2)
+    private BigDecimal returnsCashless = BigDecimal.ZERO;
 
     @Column(name = "vat_return", precision = 18, scale = 2)
     private BigDecimal vatReturn = BigDecimal.ZERO;

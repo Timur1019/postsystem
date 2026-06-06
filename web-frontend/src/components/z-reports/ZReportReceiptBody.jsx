@@ -57,6 +57,9 @@ export default function ZReportReceiptBody({ z }) {
         <p className="receipt-section-title mb-1">{t('zReports.sectionSale')}</p>
         <Row label={t('zReports.saleCash')} value={`${fmtMoney(z.cashTotal)} ${currency}`} />
         <Row label={t('zReports.saleCard')} value={`${fmtMoney(z.cardTotal)} ${currency}`} />
+        <Row label={t('zReports.saleHumo')} value={`${fmtMoney(z.humoTotal)} ${currency}`} />
+        <Row label={t('zReports.saleUzcard')} value={`${fmtMoney(z.uzcardTotal)} ${currency}`} />
+        <Row label={t('zReports.saleCashless')} value={`${fmtMoney(z.cashlessTotal)} ${currency}`} />
         <Row label={t('zReports.saleVat')} value={`${fmtMoney(z.vatAmount)} ${currency}`} />
         <Row label={t('zReports.saleCount')} value={String(z.salesCount ?? 0)} />
         {Number(z.lineDiscountTotal ?? 0) > 0 ? (
@@ -86,6 +89,9 @@ export default function ZReportReceiptBody({ z }) {
         <p className="receipt-section-title mb-1">{t('zReports.sectionReturn')}</p>
         <Row label={t('zReports.returnCash')} value={`${fmtMoney(z.returnsCash)} ${currency}`} />
         <Row label={t('zReports.returnCard')} value={`${fmtMoney(z.returnsCard)} ${currency}`} />
+        <Row label={t('zReports.returnHumo')} value={`${fmtMoney(z.returnsHumo)} ${currency}`} />
+        <Row label={t('zReports.returnUzcard')} value={`${fmtMoney(z.returnsUzcard)} ${currency}`} />
+        <Row label={t('zReports.returnCashless')} value={`${fmtMoney(z.returnsCashless)} ${currency}`} />
         <Row label={t('zReports.returnVat')} value={`${fmtMoney(z.vatReturn)} ${currency}`} />
         <Row label={t('zReports.returnCount')} value={String(z.returnsCount ?? 0)} />
       </section>

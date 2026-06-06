@@ -49,6 +49,7 @@ services:
       - ./web-backend/src/main/resources/db/migration_manual_units_catalog.sql:/docker-entrypoint-initdb.d/33-units_catalog.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_product_template_code.sql:/docker-entrypoint-initdb.d/34-product_template_code.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_retail_vertical_fields.sql:/docker-entrypoint-initdb.d/35-retail_vertical_fields.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_z_report_payment_breakdown.sql:/docker-entrypoint-initdb.d/36-z_report_payment_breakdown.sql:ro
     ports:
       # Только localhost сервера — для DBeaver/DataGrip через SSH (не в интернет)
       - '127.0.0.1:5432:5432'

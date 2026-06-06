@@ -52,6 +52,9 @@ export default function ShiftReportPrintBody({ report }) {
         <Row label={t('pos.shiftTotal')} value={`${fmtMoney(report.totalAmount)} ${currency}`} bold />
         <Row label={t('pos.shiftCash')} value={`${fmtMoney(report.cashAmount)} ${currency}`} />
         <Row label={t('pos.shiftCard')} value={`${fmtMoney(report.cardAmount)} ${currency}`} />
+        <Row label={t('pos.shiftHumo')} value={`${fmtMoney(report.humoAmount)} ${currency}`} />
+        <Row label={t('pos.shiftUzcard')} value={`${fmtMoney(report.uzcardAmount)} ${currency}`} />
+        <Row label={t('pos.shiftCashless')} value={`${fmtMoney(report.cashlessAmount)} ${currency}`} />
         <Row label={t('pos.shiftVat')} value={`${fmtMoney(report.vatAmount)} ${currency}`} />
         {Number(report.lineDiscountTotal ?? 0) > 0 ? (
           <Row
@@ -80,6 +83,9 @@ export default function ShiftReportPrintBody({ report }) {
         <p className="receipt-section-title mb-1">{t('zReports.sectionReturn')}</p>
         <Row label={t('zReports.returnCash')} value={`${fmtMoney(report.returnsCash)} ${currency}`} />
         <Row label={t('zReports.returnCard')} value={`${fmtMoney(report.returnsCard)} ${currency}`} />
+        <Row label={t('zReports.returnHumo')} value={`${fmtMoney(report.returnsHumo)} ${currency}`} />
+        <Row label={t('zReports.returnUzcard')} value={`${fmtMoney(report.returnsUzcard)} ${currency}`} />
+        <Row label={t('zReports.returnCashless')} value={`${fmtMoney(report.returnsCashless)} ${currency}`} />
         <Row label={t('zReports.returnVat')} value={`${fmtMoney(report.returnsVat)} ${currency}`} />
         <Row label={t('zReports.returnCount')} value={String(report.returnsCount ?? 0)} />
       </section>

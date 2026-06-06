@@ -50,6 +50,9 @@ function buildShiftReportOnPrinter(printer, payload) {
   appendRow(printer, L.shiftTotal || 'Total', `${fmtMoney(report.totalAmount)} ${cur}`, true);
   appendRow(printer, L.shiftCash || 'Cash', `${fmtMoney(report.cashAmount)} ${cur}`);
   appendRow(printer, L.shiftCard || 'Card', `${fmtMoney(report.cardAmount)} ${cur}`);
+  appendRow(printer, L.shiftHumo || 'Humo', `${fmtMoney(report.humoAmount)} ${cur}`);
+  appendRow(printer, L.shiftUzcard || 'Uzcard', `${fmtMoney(report.uzcardAmount)} ${cur}`);
+  appendRow(printer, L.shiftCashless || 'Cashless', `${fmtMoney(report.cashlessAmount)} ${cur}`);
   appendRow(printer, L.shiftVat || 'VAT', `${fmtMoney(report.vatAmount)} ${cur}`);
   if (Number(report.lineDiscountTotal ?? 0) > 0) {
     appendRow(printer, L.lineDiscountsSum || 'Line disc.', `${fmtMoney(report.lineDiscountTotal)} ${cur}`);
@@ -67,6 +70,9 @@ function buildShiftReportOnPrinter(printer, payload) {
   printer.bold(false);
   appendRow(printer, L.returnCash || 'Cash', `${fmtMoney(report.returnsCash)} ${cur}`);
   appendRow(printer, L.returnCard || 'Card', `${fmtMoney(report.returnsCard)} ${cur}`);
+  appendRow(printer, L.returnHumo || 'Humo', `${fmtMoney(report.returnsHumo)} ${cur}`);
+  appendRow(printer, L.returnUzcard || 'Uzcard', `${fmtMoney(report.returnsUzcard)} ${cur}`);
+  appendRow(printer, L.returnCashless || 'Cashless', `${fmtMoney(report.returnsCashless)} ${cur}`);
   appendRow(printer, L.returnVat || 'VAT', `${fmtMoney(report.returnsVat)} ${cur}`);
   appendRow(printer, L.returnCount || 'Count', String(report.returnsCount ?? 0));
 

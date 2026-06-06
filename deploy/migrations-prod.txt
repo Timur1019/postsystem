@@ -34,3 +34,4 @@ migration_manual_company_business_type_extend.sql
 migration_manual_units_catalog.sql
 migration_manual_product_template_code.sql
 migration_manual_retail_vertical_fields.sql
+migration_manual_z_report_payment_breakdown.sql
