@@ -24,6 +24,7 @@ public record SaleResponse(
     /** Сумма возврата (для VOIDED / REFUNDED — равна сумме чека). */
     BigDecimal returnAmount,
     String paymentMethod,
+    String cardType,
     BigDecimal cashAmount,
     BigDecimal cardAmount,
     String receiptType,

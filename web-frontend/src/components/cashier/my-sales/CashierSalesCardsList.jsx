@@ -40,7 +40,7 @@ export default function CashierSalesCardsList({ rows, isPending, selectedId, onR
             <span
               className={`cashier-sales-pill ${cashierSalesPaymentPillClass(row.paymentMethod, row.receiptType)}`}
             >
-              {cashierSalesPaymentLabel(row.paymentMethod, t, row.receiptType)}
+              {cashierSalesPaymentLabel(row.paymentMethod, t, row.receiptType, row.cardType)}
             </span>
             <CashierSalesStatusBadge status={row.status} t={t} />
           </div>

@@ -11,6 +11,7 @@ import {
   splitDateTime,
 } from '../../utils/fiscalReceiptFormat';
 import { extractVatFromInclusive } from '../../utils/taxAmounts';
+import { cardTypeLabel } from '../../utils/salePaymentLabel';
 import { unitCodeFromLabel } from '../../utils/unitConfig';
 
 function lineVatRatePercent(item) {
@@ -97,11 +98,12 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
         ? Number(sale.cashAmount) || 0
         : 0;
   const cardAmt =
-    method === 'CARD'
+    method === 'CARD' || method === 'CASHLESS' || method === 'MPESA'
       ? Number(sale.amountTendered) || total
       : method === 'MIXED'
         ? Number(sale.cardAmount) || 0
         : 0;
+  const cardTypeText = cardTypeLabel(sale.cardType, t);
   const paidTotal =
     method === 'MIXED'
       ? cashAmt + cardAmt
@@ -303,7 +305,10 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
               <Row label={t('fiscalReceipt.cash')} value={`${fmtMoney(cashAmt)} ${t('fiscalReceipt.currency')}`} />
             ) : null}
             {cardAmt > 0 ? (
-              <Row label={t('fiscalReceipt.plastic')} value={`${fmtMoney(cardAmt)} ${t('fiscalReceipt.currency')}`} />
+              <Row
+                label={cardTypeText ? `${t('fiscalReceipt.plastic')} · ${cardTypeText}` : t('fiscalReceipt.plastic')}
+                value={`${fmtMoney(cardAmt)} ${t('fiscalReceipt.currency')}`}
+              />
             ) : null}
             {method !== 'CASH' && method !== 'MIXED' && cardAmt === 0 && cashAmt === 0 ? (
               <Row label={payLabel(method)} value={`${fmtMoney(total)} ${t('fiscalReceipt.currency')}`} />

@@ -15,6 +15,7 @@ import SalePartialReturnModal from '../components/sales/SalePartialReturnModal';
 import PosReturnModal from '../components/cashier/PosReturnModal';
 
 import { fmtMoney } from '../utils/formatMoney';
+import { salePaymentLabel } from '../utils/salePaymentLabel';
 import TablePagination from '../components/shared/TablePagination';
 
 const defaultFilters = {
@@ -176,17 +177,7 @@ export default function SalesLedgerPage() {
     }
   };
 
-  const paymentLabel = (row) => {
-    if (row.receiptType === 'CREDIT' || row.receiptType === 'ADVANCE') {
-      return t(`pos.receiptType.${row.receiptType}`);
-    }
-    const m = row.paymentMethod;
-    if (m === 'CARD') return t('sales.paymentCard');
-    if (m === 'CASHLESS') return t('sales.paymentCashless');
-    if (m === 'MPESA') return t('sales.paymentMpesa');
-    if (m === 'MIXED') return t('salesLedger.filters.mixed');
-    return t('sales.paymentCash');
-  };
+  const paymentLabel = (row) => salePaymentLabel(row, t);
 
   const paymentIconMethod = (row) =>
     row.receiptType === 'CREDIT' || row.receiptType === 'ADVANCE' ? row.receiptType : row.paymentMethod;

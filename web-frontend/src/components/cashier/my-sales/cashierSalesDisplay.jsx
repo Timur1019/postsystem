@@ -2,7 +2,7 @@ export function isDeferredReceiptType(receiptType) {
   return receiptType === 'ADVANCE' || receiptType === 'CREDIT';
 }
 
-export function cashierSalesPaymentLabel(method, t, receiptType) {
+export function cashierSalesPaymentLabel(method, t, receiptType, cardType) {
   if (isDeferredReceiptType(receiptType)) {
     return t(`pos.receiptType.${receiptType}`);
   }
@@ -10,10 +10,14 @@ export function cashierSalesPaymentLabel(method, t, receiptType) {
     case 'CASH':
       return t('pos.payCash');
     case 'CARD':
+      if (cardType === 'HUMO') return `${t('pos.payCard')} · ${t('pos.cardHumo')}`;
+      if (cardType === 'UZCARD') return `${t('pos.payCard')} · ${t('pos.cardUzcard')}`;
       return t('pos.payCard');
     case 'CASHLESS':
       return t('pos.payCashless');
     case 'MIXED':
+      if (cardType === 'HUMO') return `${t('pos.payMixed')} · ${t('pos.cardHumo')}`;
+      if (cardType === 'UZCARD') return `${t('pos.payMixed')} · ${t('pos.cardUzcard')}`;
       return t('pos.payMixed');
     case 'MPESA':
       return 'M-Pesa';

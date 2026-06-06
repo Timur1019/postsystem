@@ -72,7 +72,8 @@ public class SaleExportServiceImpl implements SaleExportService {
             String created = sale.getCreatedAt() != null ? DT.format(sale.getCreatedAt()) : "";
             String cashier = sale.getCashier() != null ? sale.getCashier().getFullName() : "";
             String store = sale.getStore() != null ? sale.getStore().getName() : "";
-            String pay = sale.getPaymentMethod() != null ? sale.getPaymentMethod().name() : "";
+            String pay = formatPaymentForExport(sale);
+            String cardType = sale.getCardType() != null ? sale.getCardType().name() : "";
             var shift = sale.getCashierShift();
             String shiftId = shift != null && shift.getId() != null ? shift.getId().toString() : "";
             String shiftOpened = shift != null && shift.getOpenedAt() != null ? DT.format(shift.getOpenedAt()) : "";
@@ -97,6 +98,7 @@ public class SaleExportServiceImpl implements SaleExportService {
                 row.put("shift_status", shiftStatus);
                 row.put("shift_z_report_id", shiftZReportId);
                 row.put("payment_method", pay);
+                row.put("card_type", cardType);
                 row.put("product_sku", p != null && p.getSku() != null ? p.getSku() : "");
                 row.put("product_name", line.getProductName());
                 row.put("ikpu", p != null && p.getIkpu() != null ? p.getIkpu() : "");
@@ -110,5 +112,16 @@ public class SaleExportServiceImpl implements SaleExportService {
             }
         }
         return excelWriter.write(ExcelTemplate.SALES_LEDGER_LINES, rows);
+    }
+
+    private static String formatPaymentForExport(Sale sale) {
+        if (sale.getPaymentMethod() == null) {
+            return "";
+        }
+        String pay = sale.getPaymentMethod().name();
+        if (sale.getCardType() != null) {
+            return pay + " (" + sale.getCardType().name() + ")";
+        }
+        return pay;
     }
 }

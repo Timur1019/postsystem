@@ -58,11 +58,8 @@ export default function CashierShiftModal({
     mutationFn: () => cashierShiftApi.finalizeZReport(shiftId).then((r) => r.data),
     onSuccess: (data) => {
       applyNewShift(data.newShift);
-      toast.success(
-        t('pos.zReportFinalized', {
-          defaultValue: 'Z-отчёт сформирован, счётчики обнулены. Смена продолжается.',
-        })
-      );
+      qc.invalidateQueries({ queryKey: ['z-reports'] });
+      toast.success(t('pos.zReportFinalized'));
       if (printAfterLoadRef.current === 'Z') {
         printAfterLoadRef.current = null;
         queuePrint(data.report);
@@ -79,7 +76,8 @@ export default function CashierShiftModal({
   const closeMutation = useMutation({
     mutationFn: () => cashierShiftApi.close(shiftId).then((r) => r.data),
     onSuccess: (closedShift) => {
-      toast.success(t('pos.shiftClosed'));
+      qc.invalidateQueries({ queryKey: ['z-reports'] });
+      toast.success(t('pos.shiftClosedWithZReport'));
       qc.setQueryData(['cashier-shift', storeId, userId], null);
       qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
       onShiftUpdated?.(closedShift);
@@ -143,6 +141,9 @@ export default function CashierShiftModal({
               {isOpen ? t('pos.shiftOpen') : t('pos.shiftClosedLabel')}
             </span>
           </p>
+          {isOpen ? (
+            <p className="cashier-shift-modal__hint">{t('pos.shiftReportsHint')}</p>
+          ) : null}
 
           <div className="cashier-shift-modal__actions">
             {isOpen ? (

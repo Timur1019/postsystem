@@ -222,6 +222,7 @@ export default function ZReportsPage() {
                 <th className="px-3 py-3">{t('zReports.colDate')}</th>
                 <th className="px-3 py-3">{t('zReports.colZNumber')}</th>
                 <th className="px-3 py-3 text-right">{t('zReports.colTotal')}</th>
+                <th className="px-3 py-3">{t('zReports.colPayments')}</th>
                 <th className="px-3 py-3 text-right">{t('zReports.colVat')}</th>
                 <th className="px-3 py-3">{t('zReports.colStore')}</th>
                 <th className="px-3 py-3">{t('zReports.colTerminalSerial')}</th>
@@ -231,13 +232,13 @@ export default function ZReportsPage() {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-3 py-10 text-center text-slate-500">
+                  <td colSpan={10} className="px-3 py-10 text-center text-slate-500">
                     {t('common.loading')}
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-3 py-10 text-center text-slate-500">
+                  <td colSpan={10} className="px-3 py-10 text-center text-slate-500">
                     {t('zReports.empty')}
                   </td>
                 </tr>
@@ -264,6 +265,15 @@ export default function ZReportsPage() {
                     <td className="px-3 py-2 font-medium text-slate-900 dark:text-white">{row.zNumber}</td>
                     <td className="px-3 py-2 text-right text-base font-bold text-slate-900 dark:text-white">
                       {fmtMoney(row.totalAmount)}
+                    </td>
+                    <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-300">
+                      <div className="space-y-0.5">
+                        <div>{t('zReports.saleCash')}: {fmtMoney(row.cashTotal)}</div>
+                        <div>{t('zReports.saleCard')}: {fmtMoney(row.cardTotal)}</div>
+                        <div>{t('zReports.saleHumo')}: {fmtMoney(row.humoTotal)}</div>
+                        <div>{t('zReports.saleUzcard')}: {fmtMoney(row.uzcardTotal)}</div>
+                        <div>{t('zReports.saleCashless')}: {fmtMoney(row.cashlessTotal)}</div>
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-right text-slate-800 dark:text-slate-200">{fmtMoney(row.vatAmount)}</td>
                     <td className="px-3 py-2 text-slate-800 dark:text-slate-200">{row.storeName}</td>

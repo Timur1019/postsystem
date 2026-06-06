@@ -64,6 +64,11 @@ public class ZReportExportServiceImpl implements ZReportExportService {
             row.put("z_number", z.getZNumber() != null ? z.getZNumber() : 0);
             row.put("total_amount", z.getTotalAmount());
             row.put("vat_amount", z.getVatAmount());
+            row.put("cash_total", z.getCashTotal());
+            row.put("card_total", z.getCardTotal());
+            row.put("humo_total", z.getHumoTotal());
+            row.put("uzcard_total", z.getUzcardTotal());
+            row.put("cashless_total", z.getCashlessTotal());
             row.put("store_name", z.getStore() != null ? z.getStore().getName() : "");
             row.put("terminal_serial", z.getTerminalSerial());
             row.put("employee_name", z.getEmployeeName());
@@ -86,6 +91,9 @@ public class ZReportExportServiceImpl implements ZReportExportService {
             String created = sale.getCreatedAt() != null ? DT.format(sale.getCreatedAt()) : "";
             String cashier = sale.getCashier() != null ? sale.getCashier().getFullName() : "";
             String pay = sale.getPaymentMethod() != null ? sale.getPaymentMethod().name() : "";
+            if (sale.getCardType() != null) {
+                pay = pay + " (" + sale.getCardType().name() + ")";
+            }
             for (SaleItem line : sale.getItems()) {
                 var p = line.getProduct();
                 BigDecimal rate = p != null && p.getTaxRate() != null ? p.getTaxRate() : new BigDecimal("12");

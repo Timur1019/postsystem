@@ -942,6 +942,17 @@
   font-weight: 600;
 }
 
+.cashier-shift-modal__hint {
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: rgb(100 116 139);
+  background: rgb(241 245 249);
+  border-radius: 0.625rem;
+}
+
 .cashier-shift-modal__actions {
   display: flex;
   flex-wrap: wrap;

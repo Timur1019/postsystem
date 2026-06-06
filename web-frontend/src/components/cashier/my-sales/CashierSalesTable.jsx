@@ -48,7 +48,7 @@ export default function CashierSalesTable({ rows, isPending, selectedId, onRowCl
                   <span
                     className={`cashier-sales-pill ${cashierSalesPaymentPillClass(row.paymentMethod, row.receiptType)}`}
                   >
-                    {cashierSalesPaymentLabel(row.paymentMethod, t, row.receiptType)}
+                    {cashierSalesPaymentLabel(row.paymentMethod, t, row.receiptType, row.cardType)}
                   </span>
                 </td>
                 <td>
