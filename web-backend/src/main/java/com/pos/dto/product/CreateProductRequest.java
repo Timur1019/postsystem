@@ -5,6 +5,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import com.pos.domain.ProductType;
 import com.pos.domain.SaleType;
 import com.pos.domain.UnitCode;
 
@@ -20,6 +21,7 @@ public record CreateProductRequest(
     @NotNull @DecimalMin("0.01") BigDecimal sellingPrice,
     @DecimalMin("0") BigDecimal defaultDiscountPercent,
     @NotNull BigDecimal taxRate,
+    ProductType productType,
     SaleType saleType,
     UnitCode unitCode,
     Integer quantityScale,
@@ -42,5 +44,8 @@ public record CreateProductRequest(
     String commissionPinfl,
     String uzInvoiceDocumentId,
     @Valid List<ProductStorePriceRequest> storePrices,
-    List<String> additionalBarcodes
+    List<String> additionalBarcodes,
+    ConstructionProductDetailsRequest constructionDetails,
+    RestaurantProductDetailsRequest restaurantDetails,
+    ServiceProductDetailsRequest serviceDetails
 ) {}

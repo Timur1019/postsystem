@@ -11,6 +11,7 @@ import com.pos.exception.ResourceNotFoundException;
 import com.pos.repository.CategoryRepository;
 import com.pos.repository.ProductBarcodeRepository;
 import com.pos.repository.ProductRepository;
+import com.pos.repository.spec.ProductSpecifications;
 import com.pos.repository.ProductStorePriceRepository;
 import com.pos.repository.StoreRepository;
 import org.springframework.util.StringUtils;
@@ -30,6 +31,7 @@ import java.util.UUID;
 public abstract class AbstractProductCatalogSupport {
 
     protected final ProductRepository productRepository;
+    protected final ProductLookupSupport productLookup;
     protected final CategoryRepository categoryRepository;
     protected final ProductBarcodeRepository productBarcodeRepository;
     protected final ProductStorePriceRepository productStorePriceRepository;
@@ -37,12 +39,14 @@ public abstract class AbstractProductCatalogSupport {
 
     protected AbstractProductCatalogSupport(
         ProductRepository productRepository,
+        ProductLookupSupport productLookup,
         CategoryRepository categoryRepository,
         ProductBarcodeRepository productBarcodeRepository,
         ProductStorePriceRepository productStorePriceRepository,
         StoreRepository storeRepository
     ) {
         this.productRepository = productRepository;
+        this.productLookup = productLookup;
         this.categoryRepository = categoryRepository;
         this.productBarcodeRepository = productBarcodeRepository;
         this.productStorePriceRepository = productStorePriceRepository;
@@ -113,7 +117,7 @@ public abstract class AbstractProductCatalogSupport {
             return;
         }
         String normalized = barcode.trim();
-        productRepository.findByCompany_IdAndBarcode(companyId, normalized)
+        productLookup.findOne(ProductSpecifications.lookup(companyId).barcode(normalized).anyActiveState())
             .filter(pr -> ignoreProductId == null || !pr.getId().equals(ignoreProductId))
             .ifPresent(pr -> {
                 throw new BadRequestException("Barcode already in use: " + normalized);

@@ -2,8 +2,9 @@ package com.pos.service.imports.source;
 
 import com.pos.dto.product.ProductImportPreviewRow;
 import com.pos.entity.Product;
-import com.pos.repository.ProductRepository;
+import com.pos.repository.spec.ProductSpecifications;
 import com.pos.service.imports.ProductImportParseOptions;
+import com.pos.service.support.ProductLookupSupport;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.service.imports.ProductImportSource;
 import com.pos.service.imports.ProductImportSupport;
@@ -27,7 +28,7 @@ public class CatalogImportSourceHandler implements ProductImportSourceHandler {
 
     private final ExcelSpreadsheetReader excelSpreadsheetReader;
     private final CatalogJsonParser catalogJsonParser;
-    private final ProductRepository productRepository;
+    private final ProductLookupSupport productLookup;
     private final TenantAccessSupport tenantAccess;
 
     @Override
@@ -83,9 +84,6 @@ public class CatalogImportSourceHandler implements ProductImportSourceHandler {
     /** Только SKU в рамках компании; ИКПУ и название могут повторяться. */
     private Optional<Product> findDuplicateBySku(String sku) {
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
-        if (productRepository.existsByCompany_IdAndSkuAndIsActiveTrue(companyId, sku)) {
-            return productRepository.findByCompany_IdAndSkuAndIsActiveTrue(companyId, sku);
-        }
-        return Optional.empty();
+        return productLookup.findOne(ProductSpecifications.lookup(companyId).sku(sku));
     }
 }

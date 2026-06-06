@@ -3,7 +3,7 @@ package com.pos.service.analytics.support;
 import com.pos.dto.report.CashierStat;
 import com.pos.dto.report.TopProductRow;
 import com.pos.mapper.ReportMapper;
-import com.pos.repository.SaleItemRepository;
+import com.pos.repository.sale.SaleAggregateRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,16 +17,16 @@ import java.util.concurrent.Executor;
 @Transactional(readOnly = true)
 public class ReportAnalyticsRankingsLoader {
 
-    private final SaleItemRepository saleItemRepository;
+    private final SaleAggregateRepository saleAggregateRepository;
     private final ReportMapper reportMapper;
     private final Executor reportCacheExecutor;
 
     public ReportAnalyticsRankingsLoader(
-        SaleItemRepository saleItemRepository,
+        SaleAggregateRepository saleAggregateRepository,
         ReportMapper reportMapper,
         @Qualifier("reportCacheExecutor") Executor reportCacheExecutor
     ) {
-        this.saleItemRepository = saleItemRepository;
+        this.saleAggregateRepository = saleAggregateRepository;
         this.reportMapper = reportMapper;
         this.reportCacheExecutor = reportCacheExecutor;
     }
@@ -42,7 +42,7 @@ public class ReportAnalyticsRankingsLoader {
         CompletableFuture<List<TopProductRow>> topWindowFuture =
             CompletableFuture.supplyAsync(
                 () -> reportMapper.toTopProductRowList(
-                    saleItemRepository.topProductsRaw(windowStart, windowEnd, topLimit, companyId)
+                    saleAggregateRepository.topProductsRaw(windowStart, windowEnd, topLimit, companyId)
                 ),
                 reportCacheExecutor
             );
@@ -50,7 +50,7 @@ public class ReportAnalyticsRankingsLoader {
         CompletableFuture<List<TopProductRow>> top7Future =
             CompletableFuture.supplyAsync(
                 () -> reportMapper.toTopProductRowList(
-                    saleItemRepository.topProductsRaw(last7Start, windowEnd, topLimit, companyId)
+                    saleAggregateRepository.topProductsRaw(last7Start, windowEnd, topLimit, companyId)
                 ),
                 reportCacheExecutor
             );
@@ -58,7 +58,7 @@ public class ReportAnalyticsRankingsLoader {
         CompletableFuture<List<TopProductRow>> top30Future =
             CompletableFuture.supplyAsync(
                 () -> reportMapper.toTopProductRowList(
-                    saleItemRepository.topProductsRaw(last30Start, windowEnd, topLimit, companyId)
+                    saleAggregateRepository.topProductsRaw(last30Start, windowEnd, topLimit, companyId)
                 ),
                 reportCacheExecutor
             );
@@ -66,7 +66,7 @@ public class ReportAnalyticsRankingsLoader {
         CompletableFuture<List<CashierStat>> cashierWindowFuture =
             CompletableFuture.supplyAsync(
                 () -> reportMapper.toCashierStatList(
-                    saleItemRepository.cashierPerformanceRaw(windowStart, windowEnd, companyId)
+                    saleAggregateRepository.cashierPerformanceRaw(windowStart, windowEnd, companyId)
                 ),
                 reportCacheExecutor
             );
@@ -74,7 +74,7 @@ public class ReportAnalyticsRankingsLoader {
         CompletableFuture<List<CashierStat>> cashier30Future =
             CompletableFuture.supplyAsync(
                 () -> reportMapper.toCashierStatList(
-                    saleItemRepository.cashierPerformanceRaw(last30Start, windowEnd, companyId)
+                    saleAggregateRepository.cashierPerformanceRaw(last30Start, windowEnd, companyId)
                 ),
                 reportCacheExecutor
             );

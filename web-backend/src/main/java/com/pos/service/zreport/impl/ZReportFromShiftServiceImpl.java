@@ -9,7 +9,7 @@ import com.pos.entity.ZReport;
 import com.pos.exception.BadRequestException;
 import com.pos.repository.CashRegisterRepository;
 import com.pos.repository.CashierShiftRepository;
-import com.pos.repository.SaleRepository;
+import com.pos.repository.sale.ShiftReportRepository;
 import com.pos.repository.ZReportRepository;
 import com.pos.service.zreport.ZReportFromShiftService;
 import com.pos.util.LogUtil;
@@ -33,7 +33,7 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
 
     private final ZReportRepository zReportRepository;
     private final CashRegisterRepository cashRegisterRepository;
-    private final SaleRepository saleRepository;
+    private final ShiftReportRepository shiftReportRepository;
     private final CashierShiftRepository cashierShiftRepository;
 
     @Override
@@ -234,10 +234,10 @@ public class ZReportFromShiftServiceImpl implements ZReportFromShiftService {
     }
 
     private ShiftSaleBounds loadShiftBounds(UUID shiftId, Instant periodFrom, Instant reportAt) {
-        List<Object[]> completed = saleRepository.aggregateByShiftId(shiftId, periodFrom, reportAt);
+        List<Object[]> completed = shiftReportRepository.aggregateByShiftId(shiftId, periodFrom, reportAt);
         Object[] row = completed.isEmpty() ? new Object[8] : unwrapRow(completed.get(0));
 
-        List<Object[]> returns = saleRepository.aggregateReturnsByShiftId(shiftId, periodFrom, reportAt);
+        List<Object[]> returns = shiftReportRepository.aggregateReturnsByShiftId(shiftId, periodFrom, reportAt);
         Object[] ret = returns.isEmpty() ? new Object[4] : unwrapRow(returns.get(0));
 
         return new ShiftSaleBounds(

@@ -157,6 +157,103 @@ public final class ProductSpecifications {
         };
     }
 
+    /** Точный поиск одного товара: SKU, штрихкод, ИКПУ e-фактуры и т.д. */
+    public static LookupBuilder lookup(Integer companyId) {
+        return new LookupBuilder(companyId);
+    }
+
+    public static final class LookupBuilder {
+
+        private final Integer companyId;
+        private String sku;
+        private String nameIgnoreCase;
+        private String barcode;
+        private String uzInvoiceDocumentId;
+        private String skuStartsWith;
+        private Boolean activeOnly = true;
+
+        private LookupBuilder(Integer companyId) {
+            if (companyId == null) {
+                throw new IllegalArgumentException("companyId is required");
+            }
+            this.companyId = companyId;
+        }
+
+        public LookupBuilder sku(String value) {
+            this.sku = value;
+            return this;
+        }
+
+        public LookupBuilder nameIgnoreCase(String value) {
+            this.nameIgnoreCase = value;
+            return this;
+        }
+
+        public LookupBuilder barcode(String value) {
+            this.barcode = value;
+            return this;
+        }
+
+        public LookupBuilder uzInvoiceDocumentId(String value) {
+            this.uzInvoiceDocumentId = value;
+            return this;
+        }
+
+        public LookupBuilder skuStartsWith(String prefix) {
+            this.skuStartsWith = prefix;
+            return this;
+        }
+
+        public LookupBuilder activeOnly(boolean value) {
+            this.activeOnly = value;
+            return this;
+        }
+
+        /** Без фильтра isActive — для reactivate и проверки штрихкода. */
+        public LookupBuilder anyActiveState() {
+            this.activeOnly = null;
+            return this;
+        }
+
+        public Specification<Product> build() {
+            if (!StringUtils.hasText(sku)
+                && !StringUtils.hasText(nameIgnoreCase)
+                && !StringUtils.hasText(barcode)
+                && !StringUtils.hasText(uzInvoiceDocumentId)
+                && !StringUtils.hasText(skuStartsWith)) {
+                throw new IllegalStateException("At least one lookup field is required");
+            }
+            return (root, query, cb) -> {
+                List<Predicate> parts = new ArrayList<>();
+                parts.add(cb.equal(root.get("company").get("id"), companyId));
+
+                if (Boolean.TRUE.equals(activeOnly)) {
+                    parts.add(cb.isTrue(root.get("isActive")));
+                } else if (Boolean.FALSE.equals(activeOnly)) {
+                    parts.add(cb.isFalse(root.get("isActive")));
+                }
+
+                if (StringUtils.hasText(sku)) {
+                    parts.add(cb.equal(root.get("sku"), sku.trim()));
+                }
+                if (StringUtils.hasText(nameIgnoreCase)) {
+                    parts.add(cb.equal(cb.lower(root.get("name")), nameIgnoreCase.trim().toLowerCase()));
+                }
+                if (StringUtils.hasText(barcode)) {
+                    parts.add(cb.equal(root.get("barcode"), barcode.trim()));
+                }
+                if (StringUtils.hasText(uzInvoiceDocumentId)) {
+                    parts.add(cb.equal(root.get("uzInvoiceDocumentId"), uzInvoiceDocumentId.trim()));
+                }
+                if (StringUtils.hasText(skuStartsWith)) {
+                    parts.add(cb.like(root.get("sku"), skuStartsWith.trim() + "%"));
+                }
+
+                return cb.and(parts.toArray(new Predicate[0]));
+            };
+        }
+    }
+
     /** Товар имеет цену хотя бы в одном из указанных магазинов. */
     public static Specification<Product> storePriceInOneOf(List<Integer> storeIds) {
         if (storeIds == null || storeIds.isEmpty()) {

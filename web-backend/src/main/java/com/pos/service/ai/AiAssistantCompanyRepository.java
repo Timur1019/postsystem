@@ -1,7 +1,8 @@
 package com.pos.service.ai;
 
 import com.pos.entity.Product;
-import com.pos.repository.ProductRepository;
+import com.pos.repository.spec.ProductSpecifications;
+import com.pos.service.support.ProductLookupSupport;
 import com.pos.service.product.ProductLifecycleService;
 import com.pos.service.stock.StockReportService;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class AiAssistantCompanyRepository {
     private final AnalyticsToolFacade toolFacade;
     private final StockReportService stockReportService;
     private final ProductLifecycleService productLifecycleService;
-    private final ProductRepository productRepository;
+    private final ProductLookupSupport productLookup;
 
     private final ConcurrentHashMap<String, CachedOverview> overviewCache = new ConcurrentHashMap<>();
 
@@ -195,12 +196,16 @@ public class AiAssistantCompanyRepository {
         } catch (Exception ignored) {
         }
 
-        Optional<Product> bySku = productRepository.findByCompany_IdAndSkuAndIsActiveTrue(companyId, query);
+        Optional<Product> bySku = productLookup.findOne(
+            ProductSpecifications.lookup(companyId).sku(query)
+        );
         if (bySku.isPresent()) {
             return bySku.map(Product::getId);
         }
 
-        return productRepository.findByCompany_IdAndNameIgnoreCaseAndIsActiveTrue(companyId, query).map(Product::getId);
+        return productLookup.findOne(
+            ProductSpecifications.lookup(companyId).nameIgnoreCase(query)
+        ).map(Product::getId);
     }
 
     private Map<String, Object> cached(String key, java.util.function.Supplier<Map<String, Object>> loader) {

@@ -6,24 +6,24 @@ import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-final class AiAnalyticsMaps {
+public final class AiAnalyticsMaps {
 
     private AiAnalyticsMaps() {
     }
 
-    static Map<String, Object> create() {
+    public static Map<String, Object> create() {
         return new LinkedHashMap<>();
     }
 
-    static BigDecimal money(BigDecimal value) {
+    public static BigDecimal money(BigDecimal value) {
         return value != null ? value : BigDecimal.ZERO;
     }
 
-    static Object safe(Object value) {
+    public static Object safe(Object value) {
         return value != null ? value : BigDecimal.ZERO;
     }
 
-    static Map<String, Object> salesBlock(SalesReportResponse sales) {
+    public static Map<String, Object> salesBlock(SalesReportResponse sales) {
         Map<String, Object> block = create();
         block.put("revenue", money(sales.totalRevenue()));
         block.put("transactions", sales.transactionCount());

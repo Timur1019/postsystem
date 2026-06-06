@@ -11,8 +11,7 @@ import com.pos.dto.report.TopProductRow;
 import com.pos.dto.report.sales.PeriodCompareResponse;
 import com.pos.entity.Sale;
 import com.pos.mapper.ReportMapper;
-import com.pos.repository.SaleItemRepository;
-import com.pos.repository.SaleRepository;
+import com.pos.repository.sale.SaleAggregateRepository;
 import com.pos.service.ReportService;
 import com.pos.service.analytics.ReportAnalyticsReadSupport;
 import com.pos.service.cache.support.PosCacheWindowSupport;
@@ -35,8 +34,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ReportServiceImpl implements ReportService {
 
-    private final SaleRepository saleRepository;
-    private final SaleItemRepository saleItemRepository;
+    private final SaleAggregateRepository saleAggregateRepository;
     private final ReportMapper reportMapper;
     private final ReportAnalyticsCache analyticsCache;
     private final PosCacheProperties cacheProperties;
@@ -152,9 +150,9 @@ public class ReportServiceImpl implements ReportService {
         var rangeEnd = to.plusDays(1).atStartOfDay(z).toInstant();
         var status = Sale.SaleStatus.COMPLETED;
 
-        BigDecimal revenue = nz(saleRepository.sumTotalBetween(rangeStart, rangeEnd, status, storeId, companyId()));
-        long receipts = saleRepository.countSalesBetween(rangeStart, rangeEnd, status, storeId, companyId());
-        long items = saleItemRepository.sumNetQuantitySoldBetween(rangeStart, rangeEnd, status, storeId, companyId());
+        BigDecimal revenue = nz(saleAggregateRepository.sumTotalBetween(rangeStart, rangeEnd, status, storeId, companyId()));
+        long receipts = saleAggregateRepository.countSalesBetween(rangeStart, rangeEnd, status, storeId, companyId());
+        long items = saleAggregateRepository.sumNetQuantitySoldBetween(rangeStart, rangeEnd, status, storeId, companyId());
         return new PeriodCompareResponse.PeriodMetrics(revenue, receipts, items);
     }
 
@@ -256,10 +254,10 @@ public class ReportServiceImpl implements ReportService {
         var end = date.plusDays(1).atStartOfDay(z).toInstant();
         var status = Sale.SaleStatus.COMPLETED;
 
-        BigDecimal revenue = saleRepository.sumTotalBetween(start, end, status, null, companyId());
-        long transactions = saleRepository.countSalesBetween(start, end, status, null, companyId());
-        long itemsSold = saleItemRepository.sumQuantitySoldBetween(start, end, status, null, companyId());
-        BigDecimal cost = saleItemRepository.sumCostEstimateBetween(start, end, null, companyId());
+        BigDecimal revenue = saleAggregateRepository.sumTotalBetween(start, end, status, null, companyId());
+        long transactions = saleAggregateRepository.countSalesBetween(start, end, status, null, companyId());
+        long itemsSold = saleAggregateRepository.sumQuantitySoldBetween(start, end, status, null, companyId());
+        BigDecimal cost = saleAggregateRepository.sumCostEstimateBetween(start, end, null, companyId());
 
         return ReportAnalyticsReadSupport.toDailySummary(
             revenue != null ? revenue : BigDecimal.ZERO,
@@ -281,7 +279,7 @@ public class ReportServiceImpl implements ReportService {
         for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
             var start = d.atStartOfDay(z).toInstant();
             var end = d.plusDays(1).atStartOfDay(z).toInstant();
-            BigDecimal rev = saleRepository.sumTotalBetween(start, end, status, null, companyId());
+            BigDecimal rev = saleAggregateRepository.sumTotalBetween(start, end, status, null, companyId());
             if (rev == null) {
                 rev = BigDecimal.ZERO;
             }
@@ -289,9 +287,9 @@ public class ReportServiceImpl implements ReportService {
             breakdown.add(new DailyPoint(d.toString(), rev));
         }
 
-        long transactions = saleRepository.countSalesBetween(rangeStart, rangeEnd, status, null, companyId());
-        long itemsSold = saleItemRepository.sumQuantitySoldBetween(rangeStart, rangeEnd, status, null, companyId());
-        BigDecimal cost = saleItemRepository.sumCostEstimateBetween(rangeStart, rangeEnd, null, companyId());
+        long transactions = saleAggregateRepository.countSalesBetween(rangeStart, rangeEnd, status, null, companyId());
+        long itemsSold = saleAggregateRepository.sumQuantitySoldBetween(rangeStart, rangeEnd, status, null, companyId());
+        BigDecimal cost = saleAggregateRepository.sumCostEstimateBetween(rangeStart, rangeEnd, null, companyId());
         BigDecimal costSafe = cost != null ? cost : BigDecimal.ZERO;
         BigDecimal profit = totalRevenue.subtract(costSafe).setScale(2, RoundingMode.HALF_UP);
         BigDecimal avg = transactions > 0
@@ -306,7 +304,7 @@ public class ReportServiceImpl implements ReportService {
         LocalDate clampedFrom = clampFrom(from);
         LocalDate clampedTo = clampTo(to);
         return reportMapper.toTopProductRowList(
-            saleItemRepository.topProductsRaw(clampedFrom, clampedTo, Math.max(1, limit), companyId())
+            saleAggregateRepository.topProductsRaw(clampedFrom, clampedTo, Math.max(1, limit), companyId())
         );
     }
 
@@ -314,7 +312,7 @@ public class ReportServiceImpl implements ReportService {
         LocalDate clampedFrom = clampFrom(from);
         LocalDate clampedTo = clampTo(to);
         return reportMapper.toCashierStatList(
-            saleItemRepository.cashierPerformanceRaw(clampedFrom, clampedTo, companyId())
+            saleAggregateRepository.cashierPerformanceRaw(clampedFrom, clampedTo, companyId())
         );
     }
 

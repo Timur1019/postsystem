@@ -17,12 +17,15 @@ import com.pos.repository.ProductStorePriceRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.service.product.ProductCommandService;
+import com.pos.service.product.ProductExtensionService;
 import com.pos.service.product.ProductResponseAssembler;
 import com.pos.service.product.ProductQuantityRulesResolver;
 import com.pos.service.product.SaleTypeSupport;
 import com.pos.service.support.AbstractProductCatalogSupport;
 import com.pos.service.support.ProductValueNormalizer;
+import com.pos.service.support.ProductLookupSupport;
 import com.pos.service.support.TenantAccessSupport;
+import com.pos.repository.spec.ProductSpecifications;
 import com.pos.service.stock.StoreStockService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,23 +44,27 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
 
     private final StockMovementRepository stockMovementRepository;
     private final ProductResponseAssembler assembler;
+    private final ProductExtensionService extensionService;
     private final TenantAccessSupport tenantAccess;
     private final StoreStockService storeStockService;
 
     public ProductCommandServiceImpl(
         ProductRepository productRepository,
+        ProductLookupSupport productLookup,
         CategoryRepository categoryRepository,
         ProductBarcodeRepository productBarcodeRepository,
         ProductStorePriceRepository productStorePriceRepository,
         StoreRepository storeRepository,
         StockMovementRepository stockMovementRepository,
         ProductResponseAssembler assembler,
+        ProductExtensionService extensionService,
         TenantAccessSupport tenantAccess,
         StoreStockService storeStockService
     ) {
-        super(productRepository, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
+        super(productRepository, productLookup, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
         this.stockMovementRepository = stockMovementRepository;
         this.assembler = assembler;
+        this.extensionService = extensionService;
         this.tenantAccess = tenantAccess;
         this.storeStockService = storeStockService;
     }
@@ -66,7 +73,9 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
     public ProductResponse createProduct(CreateProductRequest req) {
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
         if (!StringUtils.hasText(req.uzInvoiceDocumentId())) {
-            Optional<Product> bySku = productRepository.findByCompanyIdAndSku(companyId, req.sku());
+            Optional<Product> bySku = productLookup.findOne(
+                ProductSpecifications.lookup(companyId).sku(req.sku()).anyActiveState()
+            );
             if (bySku.isPresent()) {
                 if (bySku.get().isActive()) {
                     throw new BadRequestException("SKU already exists: " + req.sku());
@@ -74,7 +83,9 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
                 return reactivateFromCreate(req, bySku.get());
             }
         } else {
-            Optional<Product> bySku = productRepository.findByCompanyIdAndSku(companyId, req.sku());
+            Optional<Product> bySku = productLookup.findOne(
+                ProductSpecifications.lookup(companyId).sku(req.sku()).anyActiveState()
+            );
             if (bySku.isPresent() && !bySku.get().isActive()) {
                 return reactivateFromCreate(req, bySku.get());
             }
@@ -116,8 +127,6 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
             )
             .unitMeasureCode(req.unitMeasureCode())
             .packageCode(req.packageCode())
-            .soldIndividually(req.soldIndividually() == null || req.soldIndividually())
-            .markedProduct(Boolean.TRUE.equals(req.markedProduct()))
             .storageLocation(StringUtils.hasText(req.storageLocation()) ? req.storageLocation().trim() : null)
             .ownerType(StringUtils.hasText(req.ownerType()) ? req.ownerType() : "OWN")
             .commissionTin(req.commissionTin())
@@ -137,6 +146,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         if (!org.springframework.util.StringUtils.hasText(product.getUnitOfMeasure())) {
             product.setUnitOfMeasure(SaleTypeSupport.defaultUnitOfMeasure(product.getSaleType(), req.unitOfMeasure()));
         }
+        extensionService.applyOnCreate(product, req);
 
         Product saved = productRepository.save(product);
         applyStorePrices(saved, req.storePrices());
@@ -252,12 +262,6 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         if (req.packageCode() != null) {
             product.setPackageCode(req.packageCode());
         }
-        if (req.soldIndividually() != null) {
-            product.setSoldIndividually(req.soldIndividually());
-        }
-        if (req.markedProduct() != null) {
-            product.setMarkedProduct(req.markedProduct());
-        }
         if (req.storageLocation() != null) {
             product.setStorageLocation(StringUtils.hasText(req.storageLocation()) ? req.storageLocation().trim() : null);
         }
@@ -290,6 +294,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         } else if (req.sellingPrice() != null) {
             syncStorePricesWithSelling(product, previousSelling, req.sellingPrice());
         }
+        extensionService.applyOnUpdate(product, req);
     }
 
     /**
@@ -346,8 +351,6 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         product.setUnitOfMeasure(StringUtils.hasText(req.unitOfMeasure()) ? req.unitOfMeasure() : "pcs");
         product.setUnitMeasureCode(req.unitMeasureCode());
         product.setPackageCode(req.packageCode());
-        product.setSoldIndividually(req.soldIndividually() == null || req.soldIndividually());
-        product.setMarkedProduct(Boolean.TRUE.equals(req.markedProduct()));
         product.setStorageLocation(StringUtils.hasText(req.storageLocation()) ? req.storageLocation().trim() : null);
         product.setOwnerType(StringUtils.hasText(req.ownerType()) ? req.ownerType() : "OWN");
         product.setCommissionTin(req.commissionTin());
@@ -368,6 +371,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
             req.unitOfMeasure()
         );
         product.setStockQuantity(BigDecimal.ZERO);
+        extensionService.applyOnCreate(product, req);
 
         Product saved = productRepository.save(product);
         applyStorePrices(saved, req.storePrices());

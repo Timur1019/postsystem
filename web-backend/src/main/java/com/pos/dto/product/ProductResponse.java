@@ -1,5 +1,6 @@
 package com.pos.dto.product;
 
+import com.pos.domain.ProductType;
 import com.pos.domain.SaleType;
 import com.pos.domain.UnitCode;
 
@@ -19,6 +20,7 @@ public record ProductResponse(
     BigDecimal sellingPrice,
     BigDecimal defaultDiscountPercent,
     BigDecimal taxRate,
+    ProductType productType,
     SaleType saleType,
     UnitCode unitCode,
     int quantityScale,
@@ -46,5 +48,8 @@ public record ProductResponse(
     String commissionTin,
     String commissionPinfl,
     int storesCount,
-    List<ProductStorePriceRow> storePrices
+    List<ProductStorePriceRow> storePrices,
+    ConstructionProductDetailsDto constructionDetails,
+    RestaurantProductDetailsDto restaurantDetails,
+    ServiceProductDetailsDto serviceDetails
 ) {}

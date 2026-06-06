@@ -9,6 +9,7 @@ import com.pos.exception.ResourceNotFoundException;
 import com.pos.repository.CategoryRepository;
 import com.pos.repository.ProductBarcodeRepository;
 import com.pos.repository.ProductRepository;
+import com.pos.repository.report.StockReportRepository;
 import com.pos.repository.ProductStorePriceRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.repository.spec.ProductSpecifications;
@@ -16,6 +17,7 @@ import com.pos.service.product.ProductQueryService;
 import com.pos.service.product.ProductResponseAssembler;
 import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.AbstractProductCatalogSupport;
+import com.pos.service.support.ProductLookupSupport;
 import com.pos.service.support.TenantAccessSupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,21 +40,25 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
 
     private final ProductResponseAssembler assembler;
     private final StoreStockService storeStockService;
+    private final StockReportRepository stockReportRepository;
     private final TenantAccessSupport tenantAccess;
 
     public ProductQueryServiceImpl(
         ProductRepository productRepository,
+        ProductLookupSupport productLookup,
         CategoryRepository categoryRepository,
         ProductBarcodeRepository productBarcodeRepository,
         ProductStorePriceRepository productStorePriceRepository,
         StoreRepository storeRepository,
         ProductResponseAssembler assembler,
         StoreStockService storeStockService,
+        StockReportRepository stockReportRepository,
         TenantAccessSupport tenantAccess
     ) {
-        super(productRepository, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
+        super(productRepository, productLookup, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
         this.assembler = assembler;
         this.storeStockService = storeStockService;
+        this.stockReportRepository = stockReportRepository;
         this.tenantAccess = tenantAccess;
     }
 
@@ -115,7 +121,7 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
     @Override
     public List<ProductResponse> getLowStockProducts() {
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
-        return productRepository.findLowStockProductsByCompanyId(companyId, PageRequest.of(0, 500)).stream()
+        return stockReportRepository.lowStockProducts(companyId, PageRequest.of(0, 500)).stream()
             .map(assembler::toResponse)
             .collect(Collectors.toList());
     }
@@ -169,7 +175,9 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
 
     private Product resolveByBarcode(String barcode) {
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
-        Optional<Product> primary = productRepository.findByCompany_IdAndBarcode(companyId, barcode);
+        Optional<Product> primary = productLookup.findOne(
+            ProductSpecifications.lookup(companyId).barcode(barcode).anyActiveState()
+        );
         if (primary.isPresent()) {
             return primary.get();
         }

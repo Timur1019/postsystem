@@ -4,7 +4,7 @@ import com.pos.entity.Sale;
 import com.pos.entity.SaleItem;
 import com.pos.entity.ZReport;
 import com.pos.exception.ResourceNotFoundException;
-import com.pos.repository.SaleRepository;
+import com.pos.repository.sale.ShiftReportRepository;
 import com.pos.repository.ZReportRepository;
 import com.pos.repository.spec.ZReportSpecifications;
 import com.pos.service.export.ZReportExportService;
@@ -34,7 +34,7 @@ public class ZReportExportServiceImpl implements ZReportExportService {
     private static final DateTimeFormatter DT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(TZ);
 
     private final ZReportRepository zReportRepository;
-    private final SaleRepository saleRepository;
+    private final ShiftReportRepository shiftReportRepository;
     private final ExcelSpreadsheetWriter excelWriter;
     private final TenantAccessSupport tenantAccess;
 
@@ -79,7 +79,7 @@ public class ZReportExportServiceImpl implements ZReportExportService {
         if (z.getStore() != null) {
             tenantAccess.assertCanAccessStore(z.getStore());
         }
-        List<Sale> sales = saleRepository.findCompletedForZReport(zReportId, Sale.SaleStatus.COMPLETED);
+        List<Sale> sales = shiftReportRepository.findCompletedForZReport(zReportId, Sale.SaleStatus.COMPLETED);
 
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Sale sale : sales) {

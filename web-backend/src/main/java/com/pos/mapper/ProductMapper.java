@@ -24,6 +24,12 @@ public interface ProductMapper {
     @Mapping(target = "storesCount", source = "storesCount")
     @Mapping(target = "barcodes", source = "barcodes")
     @Mapping(target = "storePrices", source = "storePrices")
+    @Mapping(target = "productType", source = "product.productType")
+    @Mapping(target = "markedProduct", expression = "java(com.pos.service.product.ProductRetailFields.markedProduct(product))")
+    @Mapping(target = "soldIndividually", expression = "java(com.pos.service.product.ProductRetailFields.soldIndividually(product))")
+    @Mapping(target = "constructionDetails", ignore = true)
+    @Mapping(target = "restaurantDetails", ignore = true)
+    @Mapping(target = "serviceDetails", ignore = true)
     ProductResponse toResponse(
         Product product,
         int storesCount,

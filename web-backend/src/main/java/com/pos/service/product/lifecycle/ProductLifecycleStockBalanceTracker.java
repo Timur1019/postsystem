@@ -1,6 +1,6 @@
 package com.pos.service.product.lifecycle;
 
-import com.pos.repository.StockMovementRepository;
+import com.pos.repository.stock.StockMovementQueryRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -14,14 +14,14 @@ import java.util.UUID;
 @Component
 public class ProductLifecycleStockBalanceTracker {
 
-    private final StockMovementRepository stockMovementRepository;
+    private final StockMovementQueryRepository stockMovementQueryRepository;
 
-    public ProductLifecycleStockBalanceTracker(StockMovementRepository stockMovementRepository) {
-        this.stockMovementRepository = stockMovementRepository;
+    public ProductLifecycleStockBalanceTracker(StockMovementQueryRepository stockMovementQueryRepository) {
+        this.stockMovementQueryRepository = stockMovementQueryRepository;
     }
 
     public Map<UUID, Integer> stockAfterByMovementId(UUID productId) {
-        List<Object[]> timeline = stockMovementRepository.findProductMovementTimeline(productId);
+        List<Object[]> timeline = stockMovementQueryRepository.findProductMovementTimeline(productId);
         int balance = 0;
         Map<UUID, Integer> after = new HashMap<>();
         for (Object[] row : timeline) {

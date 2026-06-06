@@ -12,6 +12,7 @@ import com.pos.entity.User;
 import com.pos.exception.BadRequestException;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.StockMovementRepository;
+import com.pos.repository.report.StockReportRepository;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.stock.StockWriteOffService;
 import com.pos.service.stock.StoreStockService;
@@ -38,6 +39,7 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
 
     private final ProductRepository productRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final StockReportRepository stockReportRepository;
     private final StoreStockService storeStockService;
     private final CurrentUserProvider currentUserProvider;
     private final TenantAccessSupport tenantAccess;
@@ -93,7 +95,7 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
         Instant start = from.atStartOfDay(ZONE).toInstant();
         Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
-        Page<StockMovement> page = stockMovementRepository.findWriteOffsBetween(
+        Page<StockMovement> page = stockReportRepository.findWriteOffsBetween(
             start, end, storeId, companyId, pageable
         );
         return PageResponse.from(page.map(m -> toRow(m, m.getProduct())));

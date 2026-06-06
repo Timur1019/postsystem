@@ -2,16 +2,18 @@ package com.pos.service.imports.source;
 
 import com.pos.dto.product.ProductImportPreviewRow;
 import com.pos.entity.Product;
-import com.pos.repository.ProductRepository;
+import com.pos.repository.spec.ProductSpecifications;
 import com.pos.service.imports.ProductImportParseOptions;
-import com.pos.service.support.TenantAccessSupport;
 import com.pos.service.imports.ProductImportSource;
 import com.pos.service.imports.ProductImportSupport;
+import com.pos.service.support.ProductLookupSupport;
+import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.parser.UzInvoiceDocumentIdExtractor;
 import com.pos.spreadsheet.parser.UzInvoiceJsonParser;
 import com.pos.spreadsheet.parser.UzInvoiceSpreadsheetParser;
 import com.pos.util.ProductImportParseUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -28,7 +30,7 @@ public class UzInvoiceImportSourceHandler implements ProductImportSourceHandler 
 
     private final UzInvoiceSpreadsheetParser uzInvoiceSpreadsheetParser;
     private final UzInvoiceJsonParser uzInvoiceJsonParser;
-    private final ProductRepository productRepository;
+    private final ProductLookupSupport productLookup;
     private final TenantAccessSupport tenantAccess;
 
     @Override
@@ -52,8 +54,13 @@ public class UzInvoiceImportSourceHandler implements ProductImportSourceHandler 
             return false;
         }
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
-        return productRepository.existsByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(companyId, fileInvoiceId)
-            || productRepository.existsByCompany_IdAndSkuStartingWithAndIsActiveTrue(companyId, fileInvoiceId + "-L-");
+        return productLookup.findOne(
+            ProductSpecifications.lookup(companyId).uzInvoiceDocumentId(fileInvoiceId)
+        ).isPresent()
+            || productLookup.findFirst(
+                ProductSpecifications.lookup(companyId).skuStartsWith(fileInvoiceId + "-L-"),
+                Sort.by(Sort.Direction.ASC, "sku")
+            ).isPresent();
     }
 
     @Override
@@ -110,20 +117,15 @@ public class UzInvoiceImportSourceHandler implements ProductImportSourceHandler 
             return Optional.empty();
         }
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
-        Optional<Product> byDoc = productRepository.findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(
-            companyId,
-            uzInvoiceDocumentId
+        Optional<Product> byDoc = productLookup.findOne(
+            ProductSpecifications.lookup(companyId).uzInvoiceDocumentId(uzInvoiceDocumentId)
         );
         if (byDoc.isPresent()) {
             return byDoc;
         }
-        String skuPrefix = uzInvoiceDocumentId + "-L-";
-        if (productRepository.existsByCompany_IdAndSkuStartingWithAndIsActiveTrue(companyId, skuPrefix)) {
-            return productRepository.findFirstByCompany_IdAndSkuStartingWithAndIsActiveTrueOrderBySkuAsc(
-                companyId,
-                skuPrefix
-            );
-        }
-        return Optional.empty();
+        return productLookup.findFirst(
+            ProductSpecifications.lookup(companyId).skuStartsWith(uzInvoiceDocumentId + "-L-"),
+            Sort.by(Sort.Direction.ASC, "sku")
+        );
     }
 }

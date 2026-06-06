@@ -6,6 +6,7 @@ import com.pos.entity.Sale;
 import com.pos.exception.ResourceNotFoundException;
 import com.pos.mapper.SaleMapper;
 import com.pos.repository.SaleRepository;
+import com.pos.repository.sale.SaleSearchRepository;
 import com.pos.repository.spec.SaleSpecifications;
 import com.pos.service.sale.SaleAccessPolicy;
 import com.pos.service.sale.SaleQueryService;
@@ -31,6 +32,7 @@ import java.util.UUID;
 public class SaleQueryServiceImpl implements SaleQueryService {
 
     private final SaleRepository saleRepository;
+    private final SaleSearchRepository saleSearchRepository;
     private final SaleMapper saleMapper;
     private final SalesLedgerCacheService salesLedgerCacheService;
     private final SaleAccessPolicy accessPolicy;
@@ -77,7 +79,7 @@ public class SaleQueryServiceImpl implements SaleQueryService {
         var f = filters.get();
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
 
-        Page<Sale> page = saleRepository.searchSales(
+        Page<Sale> page = saleSearchRepository.searchSales(
             f.start(), f.end(), f.cashierId(), f.receipt(), f.cashierName(), f.q(),
             f.paymentMethod(), f.status(), f.saleId(), f.paymentSettlement(), f.storeId(), companyId, pageable
         );

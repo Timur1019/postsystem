@@ -1,5 +1,7 @@
 /** Суммы и количества для POS / отчётов (ru-RU, 2 знака). */
 
+import { getUnitConfig } from './unitConfig';
+
 const moneyFormatter = new Intl.NumberFormat('ru-RU', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -21,10 +23,14 @@ export function fmtMoneyCompact(n) {
   return moneyFormatter.format(rounded);
 }
 
-export function fmtQty(q, saleType) {
+export function fmtQty(q, saleType, unitCode) {
   if (saleType === 'WEIGHT') {
+    const code = unitCode || 'KG';
+    const config = getUnitConfig(code);
     const n = Number(q) || 0;
-    return `${(Math.round(n * 1000) / 1000).toFixed(3).replace(/\.?0+$/, '') || '0'} кг`;
+    const rounded = config.scale === 0 ? Math.round(n) : Math.round(n * 1000) / 1000;
+    const formatted = rounded.toFixed(config.scale).replace(/\.?0+$/, '') || '0';
+    return `${formatted} ${config.label}`;
   }
   const n = Number(q) || 0;
   if (Number.isInteger(n) || Math.abs(n - Math.round(n)) < 0.0005) {

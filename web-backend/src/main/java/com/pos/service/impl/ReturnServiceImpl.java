@@ -15,6 +15,7 @@ import com.pos.mapper.SaleMapper;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.SaleItemRepository;
 import com.pos.repository.SaleRepository;
+import com.pos.repository.sale.SaleSearchRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.service.ReturnService;
 import com.pos.service.sale.SaleAccessPolicy;
@@ -40,6 +41,7 @@ import java.util.UUID;
 public class ReturnServiceImpl implements ReturnService {
 
     private final SaleRepository saleRepository;
+    private final SaleSearchRepository saleSearchRepository;
     private final SaleItemRepository saleItemRepository;
     private final StockMovementRepository stockMovementRepository;
     private final StoreStockService storeStockService;
@@ -63,7 +65,7 @@ public class ReturnServiceImpl implements ReturnService {
         Instant start = from != null ? from.atStartOfDay(z).toInstant() : Instant.EPOCH;
         Instant end = to != null ? to.plusDays(1).atStartOfDay(z).toInstant()
             : Instant.now().plus(3650, ChronoUnit.DAYS);
-        Page<Sale> page = saleRepository.searchReturns(
+        Page<Sale> page = saleSearchRepository.searchReturns(
             List.of(Sale.SaleStatus.VOIDED, Sale.SaleStatus.REFUNDED),
             start,
             end,

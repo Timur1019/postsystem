@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { extractVatFromInclusive, netFromInclusive, round2 } from '../utils/taxAmounts';
 import { isPieceLikeProduct, roundQty } from '../utils/quantityFormat';
+import { unitLabel } from '../utils/unitConfig';
 
 export const lineGross = (item) => round2(item.unitPrice * item.quantity);
 
@@ -34,16 +35,7 @@ const buildLine = (product, quantity) => {
     sku: product.sku,
     saleType,
     unitCode: product.unitCode || (saleType === 'WEIGHT' ? 'KG' : 'PCS'),
-    unitLabel:
-      product.unitCode === 'G'
-        ? 'g'
-        : product.unitCode === 'L'
-          ? 'l'
-          : product.unitCode === 'M'
-            ? 'm'
-            : saleType === 'WEIGHT'
-              ? 'kg'
-              : 'pcs',
+    unitLabel: saleType === 'WEIGHT' ? unitLabel(product.unitCode || 'KG') : 'pcs',
     costPrice: Number(product.costPrice ?? 0),
     unitPrice: Number(product.sellingPrice),
     taxRate: Number(product.taxRate ?? 12),

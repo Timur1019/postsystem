@@ -10,7 +10,8 @@ public enum UnitCode {
     KG,
     G,
     L,
-    M;
+    M,
+    MM;
 
     public String displayLabel() {
         return switch (this) {
@@ -19,6 +20,7 @@ public enum UnitCode {
             case G -> "g";
             case L -> "l";
             case M -> "m";
+            case MM -> "mm";
         };
     }
 
@@ -35,6 +37,9 @@ public enum UnitCode {
         }
         if (u.equals("l") || u.equals("л") || u.contains("litre") || u.contains("liter") || u.contains("литр")) {
             return L;
+        }
+        if (u.equals("mm") || u.equals("мм") || u.contains("millimet")) {
+            return MM;
         }
         if (u.equals("m") || u.equals("м") || u.contains("metre") || u.contains("meter") || u.contains("метр")) {
             return M;

@@ -162,9 +162,27 @@ function ProductDetailsBody({ p, t }) {
           <span className={valueCls}>{p.categoryName ?? '—'}</span>
         </div>
         <div className={rowCls}>
+          <span className={labelCls}>{t('productCatalog.productType')}:</span>
+          <span className={valueCls}>
+            {p.productType ? t(`productCatalog.productType${p.productType.charAt(0)}${p.productType.slice(1).toLowerCase()}`) : '—'}
+          </span>
+        </div>
+        <div className={rowCls}>
           <span className={labelCls}>{t('productCatalog.unit')}:</span>
           <span className={valueCls}>{p.unitOfMeasure ?? '—'}</span>
         </div>
+        {p.constructionDetails ? (
+          <>
+            <div className={rowCls}>
+              <span className={labelCls}>{t('productCatalog.constructionStandardLength')}:</span>
+              <span className={valueCls}>{p.constructionDetails.standardLength ?? '—'}</span>
+            </div>
+            <div className={rowCls}>
+              <span className={labelCls}>{t('productCatalog.constructionAllowCutting')}:</span>
+              <span className={valueCls}>{boolLabel(p.constructionDetails.allowCutting, t)}</span>
+            </div>
+          </>
+        ) : null}
         <div className={rowCls}>
           <span className={labelCls}>{t('productCatalog.unitCode')}:</span>
           <span className={valueCls}>{p.unitMeasureCode ?? '—'}</span>

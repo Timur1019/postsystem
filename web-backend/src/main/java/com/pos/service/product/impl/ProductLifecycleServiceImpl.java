@@ -7,7 +7,7 @@ import com.pos.entity.Sale;
 import com.pos.exception.PosExceptions;
 import com.pos.mapper.ProductLifecycleMapper;
 import com.pos.repository.ProductRepository;
-import com.pos.repository.StockMovementRepository;
+import com.pos.repository.stock.StockMovementQueryRepository;
 import com.pos.service.product.ProductLifecycleService;
 import com.pos.service.product.lifecycle.ProductLifecycleDateRange;
 import com.pos.service.product.lifecycle.ProductLifecycleMovementTypeFilter;
@@ -34,7 +34,7 @@ import java.util.UUID;
 public class ProductLifecycleServiceImpl implements ProductLifecycleService {
 
     private final ProductRepository productRepository;
-    private final StockMovementRepository stockMovementRepository;
+    private final StockMovementQueryRepository stockMovementQueryRepository;
     private final ProductLifecycleSummaryBuilder summaryBuilder;
     private final ProductLifecycleStockBalanceTracker stockBalanceTracker;
     private final ProductLifecycleReferenceResolver referenceResolver;
@@ -74,7 +74,7 @@ public class ProductLifecycleServiceImpl implements ProductLifecycleService {
         );
         Map<UUID, Integer> stockAfterByMovementId = stockBalanceTracker.stockAfterByMovementId(productId);
 
-        var movementPage = stockMovementRepository.findProductMovements(
+        var movementPage = stockMovementQueryRepository.findProductMovements(
             productId,
             range.startInclusive(),
             range.endExclusive(),

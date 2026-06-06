@@ -12,10 +12,12 @@ import com.pos.repository.ProductRepository;
 import com.pos.repository.ProductStorePriceRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.repository.StoreRepository;
+import com.pos.service.product.ProductExtensionService;
 import com.pos.service.product.ProductResponseAssembler;
 import com.pos.service.product.ProductStockService;
 import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.AbstractProductCatalogSupport;
+import com.pos.service.support.ProductLookupSupport;
 import com.pos.service.support.ProductValueNormalizer;
 import com.pos.util.QuantityUtil;
 import org.springframework.stereotype.Service;
@@ -32,21 +34,25 @@ public class ProductStockServiceImpl extends AbstractProductCatalogSupport imple
     private final StockMovementRepository stockMovementRepository;
     private final StoreStockService storeStockService;
     private final ProductResponseAssembler assembler;
+    private final ProductExtensionService extensionService;
 
     public ProductStockServiceImpl(
         ProductRepository productRepository,
+        ProductLookupSupport productLookup,
         CategoryRepository categoryRepository,
         ProductBarcodeRepository productBarcodeRepository,
         ProductStorePriceRepository productStorePriceRepository,
         StoreRepository storeRepository,
         StockMovementRepository stockMovementRepository,
         StoreStockService storeStockService,
-        ProductResponseAssembler assembler
+        ProductResponseAssembler assembler,
+        ProductExtensionService extensionService
     ) {
-        super(productRepository, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
+        super(productRepository, productLookup, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
         this.stockMovementRepository = stockMovementRepository;
         this.storeStockService = storeStockService;
         this.assembler = assembler;
+        this.extensionService = extensionService;
     }
 
     @Override
@@ -75,7 +81,7 @@ public class ProductStockServiceImpl extends AbstractProductCatalogSupport imple
         if (req.vatPercent() != null) {
             product.setTaxRate(ProductValueNormalizer.taxRatePercent(BigDecimal.valueOf(req.vatPercent())));
         }
-        product.setMarkedProduct(req.markedProduct());
+        extensionService.applyRetailFlags(product, null, req.markedProduct());
         if (StringUtils.hasText(req.storageLocation())) {
             product.setStorageLocation(req.storageLocation().trim());
         }

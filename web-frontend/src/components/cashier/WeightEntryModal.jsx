@@ -2,15 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fmtMoney } from '../../utils/formatMoney';
 import { round2 } from '../../utils/taxAmounts';
-import { MIN_WEIGHT_KG, roundQty, weightLineFromAmount } from '../../utils/quantityFormat';
+import { measuredLineFromAmount, minQtyForUnit, roundQty } from '../../utils/quantityFormat';
+import { getUnitConfig } from '../../utils/unitConfig';
 import { useScaleWeight } from '../../scales/useScaleWeight';
 import { isDesktopScaleBridge, openScalePicker } from '../../scales/scaleBridge';
 import '../../styles/weight-entry-modal.css';
 
-function displayKgValue(kg) {
-  if (kg == null || !Number.isFinite(Number(kg))) return '—';
-  const q = roundQty(kg);
-  return q.toFixed(3).replace(/\.?0+$/, '') || '0';
+function displayQtyValue(qty, scale) {
+  if (qty == null || !Number.isFinite(Number(qty))) return '—';
+  const q = scale === 0 ? Math.round(Number(qty)) : roundQty(qty);
+  return q.toFixed(scale).replace(/\.?0+$/, '') || '0';
 }
 
 function parseDecimalInput(raw) {
@@ -22,65 +23,71 @@ function parseDecimalInput(raw) {
 
 export default function WeightEntryModal({ open, product, unitPrice, maxStock, onConfirm, onClose }) {
   const { t } = useTranslation();
-  const [mode, setMode] = useState('weight');
-  const [weightDraft, setWeightDraft] = useState('');
+  const unitCode = product?.unitCode || 'KG';
+  const unitConfig = getUnitConfig(unitCode);
+  const minQty = minQtyForUnit(unitCode);
+  const [mode, setMode] = useState('qty');
+  const [qtyDraft, setQtyDraft] = useState('');
   const [amountDraft, setAmountDraft] = useState('');
-  const showScaleTab = isDesktopScaleBridge();
+  const showScaleTab = isDesktopScaleBridge() && unitConfig.hasScale;
   const scale = useScaleWeight(open && showScaleTab);
 
   useEffect(() => {
     if (!open) return;
-    setMode('weight');
-    setWeightDraft('');
+    setMode('qty');
+    setQtyDraft('');
     setAmountDraft('');
   }, [open, product?.id]);
 
   useEffect(() => {
     if (mode !== 'scale' || !scale.reading?.kg) return;
     if (scale.reading.stable) {
-      setWeightDraft(String(scale.reading.kg));
+      setQtyDraft(String(scale.reading.kg));
     }
   }, [mode, scale.reading]);
 
   const price = Number(unitPrice) || 0;
   const stock = Number(maxStock) || 0;
   const parsedAmount = parseDecimalInput(amountDraft);
+  const unit = unitConfig.label;
 
   const amountLine = useMemo(() => {
     if (mode !== 'amount' || parsedAmount == null || parsedAmount <= 0) return null;
-    return weightLineFromAmount(parsedAmount, price);
-  }, [mode, parsedAmount, price]);
+    return measuredLineFromAmount(parsedAmount, price, unitCode);
+  }, [mode, parsedAmount, price, unitCode]);
 
-  const weightKg = useMemo(() => {
+  const enteredQty = useMemo(() => {
     if (mode === 'amount') return amountLine?.qty ?? 0;
     if (mode === 'scale' && scale.reading?.stable && scale.reading.kg > 0) {
       return roundQty(scale.reading.kg);
     }
-    if (mode === 'weight') {
-      const w = parseDecimalInput(weightDraft);
-      return w != null ? roundQty(w) : 0;
+    if (mode === 'qty') {
+      const w = parseDecimalInput(qtyDraft);
+      if (w == null) return 0;
+      return unitConfig.scale === 0 ? Math.max(minQty, Math.round(w)) : roundQty(w);
     }
     return 0;
-  }, [mode, amountLine, weightDraft, scale.reading]);
+  }, [mode, amountLine, qtyDraft, scale.reading, unitConfig.scale, minQty]);
 
   const lineSum = useMemo(() => {
     if (mode === 'amount') return amountLine?.lineSum ?? 0;
-    return round2(roundQty(weightKg) * price);
-  }, [mode, amountLine, weightKg, price]);
+    return round2(enteredQty * price);
+  }, [mode, amountLine, enteredQty, price]);
 
   const confirmUnitPrice = mode === 'amount' ? amountLine?.unitPrice ?? price : price;
 
   const canConfirm =
-    weightKg >= MIN_WEIGHT_KG &&
+    enteredQty >= minQty &&
     lineSum > 0 &&
-    (stock <= 0 || weightKg <= stock + 0.0005) &&
+    (stock <= 0 || enteredQty <= stock + 0.0005) &&
     price > 0;
 
   if (!open || !product) return null;
 
   const handleConfirm = () => {
     if (!canConfirm) return;
-    onConfirm(roundQty(weightKg), { unitPrice: confirmUnitPrice });
+    const qty = unitConfig.scale === 0 ? Math.round(enteredQty) : roundQty(enteredQty);
+    onConfirm(qty, { unitPrice: confirmUnitPrice });
   };
 
   const handleOpenScaleSetup = async () => {
@@ -94,9 +101,9 @@ export default function WeightEntryModal({ open, product, unitPrice, maxStock, o
 
   const handleTakeFromScale = () => {
     const kg = scale.applyToDraft();
-    if (kg != null && kg >= MIN_WEIGHT_KG) {
-      setWeightDraft(String(kg));
-      setMode('weight');
+    if (kg != null && kg >= minQty) {
+      setQtyDraft(String(kg));
+      setMode('qty');
     }
   };
 
@@ -110,11 +117,14 @@ export default function WeightEntryModal({ open, product, unitPrice, maxStock, o
           </h2>
           <div className="weight-entry-modal__meta">
             <p className="weight-entry-modal__price">
-              {fmtMoney(price)} {t('pos.weightPricePerKg')}
+              {t('pos.measuredPricePerUnit', { price: fmtMoney(price), unit })}
             </p>
             {stock > 0 ? (
               <p className="weight-entry-modal__stock">
-                {t('pos.weightStockAvailable', { qty: roundQty(stock) })}
+                {t('pos.measuredStockAvailable', {
+                  qty: displayQtyValue(stock, unitConfig.scale),
+                  unit,
+                })}
               </p>
             ) : null}
           </div>
@@ -124,11 +134,11 @@ export default function WeightEntryModal({ open, product, unitPrice, maxStock, o
           <button
             type="button"
             role="tab"
-            aria-selected={mode === 'weight'}
-            className={`weight-entry-modal__tab${mode === 'weight' ? ' is-active' : ''}`}
-            onClick={() => setMode('weight')}
+            aria-selected={mode === 'qty'}
+            className={`weight-entry-modal__tab${mode === 'qty' ? ' is-active' : ''}`}
+            onClick={() => setMode('qty')}
           >
-            {t('pos.weightTabKg')}
+            {t('pos.measuredTabQty', { unit })}
           </button>
           <button
             type="button"
@@ -152,16 +162,16 @@ export default function WeightEntryModal({ open, product, unitPrice, maxStock, o
           ) : null}
         </div>
 
-        {mode === 'weight' ? (
+        {mode === 'qty' ? (
           <label className="weight-entry-modal__field">
-            <span>{t('pos.weightEnterKg')}</span>
+            <span>{t('pos.measuredEnterQty', { unit })}</span>
             <input
               type="text"
               inputMode="decimal"
               className="weight-entry-modal__input"
-              value={weightDraft}
-              onChange={(e) => setWeightDraft(e.target.value)}
-              placeholder="0.350"
+              value={qtyDraft}
+              onChange={(e) => setQtyDraft(e.target.value)}
+              placeholder={unitConfig.scale === 0 ? '500' : '0.350'}
               autoFocus
             />
           </label>
@@ -190,9 +200,9 @@ export default function WeightEntryModal({ open, product, unitPrice, maxStock, o
                   scale.reading && !scale.reading.stable ? ' is-unstable' : ''
                 }`}
               >
-                {displayKgValue(scale.reading?.kg)}
+                {displayQtyValue(scale.reading?.kg, 3)}
               </span>
-              <span className="weight-entry-modal__scale-unit">кг</span>
+              <span className="weight-entry-modal__scale-unit">{unit}</span>
               <p
                 className={`weight-entry-modal__scale-status${
                   scale.reading?.stable ? ' is-stable' : ''
@@ -220,7 +230,7 @@ export default function WeightEntryModal({ open, product, unitPrice, maxStock, o
             <button
               type="button"
               className="weight-entry-modal__btn weight-entry-modal__btn--scale"
-              disabled={!scale.reading?.stable || (scale.reading?.kg ?? 0) < MIN_WEIGHT_KG}
+              disabled={!scale.reading?.stable || (scale.reading?.kg ?? 0) < minQty}
               onClick={handleTakeFromScale}
             >
               {t('pos.weightScaleTake')}
@@ -229,13 +239,14 @@ export default function WeightEntryModal({ open, product, unitPrice, maxStock, o
         ) : null}
 
         <p className="weight-entry-modal__preview">
-          {t('pos.weightLinePreview', {
-            qty: roundQty(weightKg),
+          {t('pos.measuredLinePreview', {
+            qty: displayQtyValue(enteredQty, unitConfig.scale),
+            unit,
             sum: fmtMoney(lineSum),
           })}
         </p>
 
-        {weightKg > 0 && stock > 0 && weightKg > stock ? (
+        {enteredQty > 0 && stock > 0 && enteredQty > stock ? (
           <p className="weight-entry-modal__error">{t('pos.weightExceedsStock')}</p>
         ) : null}
 

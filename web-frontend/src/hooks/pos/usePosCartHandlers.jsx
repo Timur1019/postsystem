@@ -5,10 +5,8 @@ import { productApi } from '../../services/api';
 import { useBarcodeScanner } from '../useBarcodeScanner';
 import { lineSubtotal, useCartStore } from '../../store/cartStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
-import { isWeightProduct, roundQty } from '../../utils/quantityFormat';
-
-const WEIGHT_QTY_STEP = 0.1;
-const MIN_WEIGHT_KG = 0.001;
+import { isMeasuredProduct, minQtyForUnit, qtyStepForUnit, roundQty } from '../../utils/quantityFormat';
+import { getUnitConfig } from '../../utils/unitConfig';
 import { resolveProductUnitPrice } from '../../utils/productPrice';
 
 export function usePosCartHandlers({
@@ -79,6 +77,7 @@ export function usePosCartHandlers({
       name: item.name,
       sku: item.sku,
       saleType: 'WEIGHT',
+      unitCode: item.unitCode || 'KG',
       sellingPrice: item.unitPrice,
       stockQuantity: item.maxStock,
     });
@@ -100,7 +99,7 @@ export function usePosCartHandlers({
         return;
       }
       const payload = cartProductPayload(product);
-      if (isWeightProduct(product)) {
+      if (isMeasuredProduct(product)) {
         setWeightEditLineId(null);
         setWeightModalProduct(payload);
         return;
@@ -198,8 +197,14 @@ export function usePosCartHandlers({
       const item = items.find((i) => i.lineId === lineId);
       if (!item) return;
       if (item.saleType === 'WEIGHT') {
-        const next = roundQty(item.quantity + delta * WEIGHT_QTY_STEP);
-        if (next < MIN_WEIGHT_KG) {
+        const unitCode = item.unitCode || 'KG';
+        const step = qtyStepForUnit(unitCode);
+        const minQty = minQtyForUnit(unitCode);
+        const next =
+          getUnitConfig(unitCode).scale === 0
+            ? Math.max(0, Math.round(item.quantity + delta * step))
+            : roundQty(item.quantity + delta * step);
+        if (next < minQty) {
           removeItem(lineId);
           if (selectedLineId === lineId) setSelectedLineId(null);
           return;

@@ -2,9 +2,10 @@ package com.pos.service.imports;
 
 import com.pos.dto.product.ProductImportPreviewRow;
 import com.pos.entity.Product;
-import com.pos.repository.ProductRepository;
+import com.pos.repository.spec.ProductSpecifications;
 import com.pos.service.imports.source.CatalogImportSourceHandler;
 import com.pos.service.imports.source.UzInvoiceImportSourceHandler;
+import com.pos.service.support.ProductLookupSupport;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.ExcelSpreadsheetReader;
 import com.pos.spreadsheet.parser.CatalogJsonParser;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,8 +25,10 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -33,7 +37,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProductImportSupportTest {
 
-    @Mock ProductRepository productRepository;
+    @Mock ProductLookupSupport productLookup;
     @Mock ExcelSpreadsheetReader excelSpreadsheetReader;
     @Mock CatalogJsonParser catalogJsonParser;
     @Mock UzInvoiceSpreadsheetParser uzInvoiceSpreadsheetParser;
@@ -51,19 +55,18 @@ class ProductImportSupportTest {
     void setUp() {
         lenient().when(tenantAccess.requireEffectiveCompanyId()).thenReturn(COMPANY_ID);
         catalog = new CatalogImportSourceHandler(
-            excelSpreadsheetReader, catalogJsonParser, productRepository, tenantAccess
+            excelSpreadsheetReader, catalogJsonParser, productLookup, tenantAccess
         );
         uzInvoice = new UzInvoiceImportSourceHandler(
-            uzInvoiceSpreadsheetParser, uzInvoiceJsonParser, productRepository, tenantAccess
+            uzInvoiceSpreadsheetParser, uzInvoiceJsonParser, productLookup, tenantAccess
         );
     }
 
     @Test
     void uzInvoice_firstImport_allRowsNew_evenWithSameIkpu() {
-        when(productRepository.findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(COMPANY_ID, "IS-00008429"))
+        when(productLookup.findOne(any(ProductSpecifications.LookupBuilder.class))).thenReturn(Optional.empty());
+        when(productLookup.findFirst(any(ProductSpecifications.LookupBuilder.class), eq(Sort.by(Sort.Direction.ASC, "sku"))))
             .thenReturn(Optional.empty());
-        when(productRepository.existsByCompany_IdAndSkuStartingWithAndIsActiveTrue(COMPANY_ID, "IS-00008429-L-"))
-            .thenReturn(false);
 
         Map<String, String> row1 = invoiceRow("Товар 1", "08470001002000000", "10000");
         Map<String, String> row2 = invoiceRow("Товар 2", "08470001002000000", "20000");
@@ -87,21 +90,18 @@ class ProductImportSupportTest {
             .isActive(true)
             .build();
 
-        when(productRepository.findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(COMPANY_ID, "IS-00008429"))
-            .thenReturn(Optional.of(existing));
+        when(productLookup.findOne(any(ProductSpecifications.LookupBuilder.class))).thenReturn(Optional.of(existing));
 
         ProductImportPreviewRow preview = uzInvoice.toPreviewRow(5, row, DEFAULT_OPTS);
 
         assertEquals(ProductImportPreviewRow.STATUS_DUPLICATE, preview.status());
         assertEquals("Счёт-фактура IS-00008429 уже импортирована", preview.message());
-        verify(productRepository, never()).findByUzInvoiceDocumentIdAndSkuAndIsActiveTrue(anyString(), anyString());
-        verify(productRepository, never()).existsByIkpuAndIsActiveTrue(anyString());
     }
 
     @Test
     void catalog_sameIkpuOtherCompany_isNew() {
         when(tenantAccess.requireEffectiveCompanyId()).thenReturn(2);
-        when(productRepository.existsByCompany_IdAndSkuAndIsActiveTrue(2, "COLA-2")).thenReturn(false);
+        when(productLookup.findOne(any(ProductSpecifications.LookupBuilder.class))).thenReturn(Optional.empty());
 
         Map<String, String> row = new LinkedHashMap<>();
         row.put("sku", "COLA-2");
@@ -112,17 +112,14 @@ class ProductImportSupportTest {
         ProductImportPreviewRow preview = catalog.toPreviewRow(2, row, DEFAULT_OPTS);
 
         assertEquals(ProductImportPreviewRow.STATUS_NEW, preview.status());
-        verify(productRepository, never()).existsByCompany_IdAndIkpuAndIsActiveTrue(anyInt(), anyString());
-        verify(productRepository, never()).existsByCompany_IdAndNameIgnoreCaseAndIsActiveTrue(anyInt(), anyString());
     }
 
     @Test
     void uzInvoice_sameDocIdOtherCompany_isNew() {
         when(tenantAccess.requireEffectiveCompanyId()).thenReturn(2);
-        when(productRepository.findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(2, "IS-00008429"))
+        when(productLookup.findOne(any(ProductSpecifications.LookupBuilder.class))).thenReturn(Optional.empty());
+        when(productLookup.findFirst(any(ProductSpecifications.LookupBuilder.class), eq(Sort.by(Sort.Direction.ASC, "sku"))))
             .thenReturn(Optional.empty());
-        when(productRepository.existsByCompany_IdAndSkuStartingWithAndIsActiveTrue(2, "IS-00008429-L-"))
-            .thenReturn(false);
 
         Map<String, String> row = invoiceRow("Кола 0.5", "08470001002000000", "8000");
 
@@ -165,13 +162,9 @@ class ProductImportSupportTest {
             .isActive(true)
             .build();
 
-        when(productRepository.findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(COMPANY_ID, "IS-00008429"))
-            .thenReturn(Optional.empty());
-        when(productRepository.existsByCompany_IdAndSkuStartingWithAndIsActiveTrue(COMPANY_ID, "IS-00008429-L-"))
-            .thenReturn(true);
-        when(productRepository.findFirstByCompany_IdAndSkuStartingWithAndIsActiveTrueOrderBySkuAsc(
-            COMPANY_ID, "IS-00008429-L-"
-        )).thenReturn(Optional.of(existing));
+        when(productLookup.findOne(any(ProductSpecifications.LookupBuilder.class))).thenReturn(Optional.empty());
+        when(productLookup.findFirst(any(ProductSpecifications.LookupBuilder.class), eq(Sort.by(Sort.Direction.ASC, "sku"))))
+            .thenReturn(Optional.of(existing));
 
         ProductImportPreviewRow preview = uzInvoice.toPreviewRow(2, row, DEFAULT_OPTS);
 
@@ -191,10 +184,7 @@ class ProductImportSupportTest {
 
         assertEquals(ProductImportPreviewRow.STATUS_NEW, preview.status());
         assertNull(preview.uzInvoiceDocumentId());
-        verify(productRepository, never()).findFirstByCompany_IdAndUzInvoiceDocumentIdAndIsActiveTrue(
-            anyInt(),
-            anyString()
-        );
+        verify(productLookup, never()).findOne(any(ProductSpecifications.LookupBuilder.class));
     }
 
     @Test

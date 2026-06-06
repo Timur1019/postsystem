@@ -6,7 +6,7 @@ import com.pos.entity.Product;
 import com.pos.mapper.ProductMapper;
 import com.pos.mapper.ProductStorePriceMapper;
 import com.pos.repository.ProductStorePriceRepository;
-import com.pos.repository.StockMovementRepository;
+import com.pos.repository.stock.StockMovementQueryRepository;
 import com.pos.repository.projection.ProductDispatchedSum;
 import com.pos.util.QuantityUtil;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,8 @@ public class ProductResponseAssembler {
     private final ProductMapper productMapper;
     private final ProductStorePriceMapper productStorePriceMapper;
     private final ProductStorePriceRepository productStorePriceRepository;
-    private final StockMovementRepository stockMovementRepository;
+    private final StockMovementQueryRepository stockMovementQueryRepository;
+    private final ProductExtensionMapper extensionMapper;
 
     public ProductResponse toResponse(Product product) {
         return toResponse(product, null, null);
@@ -41,18 +42,67 @@ public class ProductResponseAssembler {
             : (int) productStorePriceRepository.countByProduct_Id(product.getId());
         int stockDispatched = dispatchedByProduct != null
             ? dispatchedByProduct.getOrDefault(product.getId(), 0)
-            : (int) stockMovementRepository.sumDispatchedByProductId(product.getId());
+            : (int) stockMovementQueryRepository.sumDispatchedByProductId(product.getId());
         List<ProductStorePriceRow> storePrices = product.getStorePrices() == null
             ? List.of()
             : productStorePriceMapper.toRowList(product.getStorePrices());
         return withStockDispatched(
-            productMapper.toResponse(
-                product,
-                storesCount,
-                productMapper.mergeBarcodes(product),
-                storePrices
+            enrichExtensions(
+                productMapper.toResponse(
+                    product,
+                    storesCount,
+                    productMapper.mergeBarcodes(product),
+                    storePrices
+                ),
+                product
             ),
             stockDispatched
+        );
+    }
+
+    private ProductResponse enrichExtensions(ProductResponse base, Product product) {
+        return new ProductResponse(
+            base.id(),
+            base.sku(),
+            base.name(),
+            base.description(),
+            base.categoryId(),
+            base.categoryName(),
+            base.costPrice(),
+            base.sellingPrice(),
+            base.defaultDiscountPercent(),
+            base.taxRate(),
+            base.productType(),
+            base.saleType(),
+            base.unitCode(),
+            base.quantityScale(),
+            base.allowFraction(),
+            base.stockQuantity(),
+            base.stockDispatched(),
+            base.lowStockAlert(),
+            base.lowStock(),
+            base.barcode(),
+            base.barcodes(),
+            base.imageUrl(),
+            base.active(),
+            base.createdAt(),
+            base.externalProductId(),
+            base.ikpu(),
+            base.ikpuStatus(),
+            base.unitOfMeasure(),
+            base.unitMeasureCode(),
+            base.packageCode(),
+            base.soldIndividually(),
+            base.markedProduct(),
+            base.storageLocation(),
+            base.ownerType(),
+            base.commissionTin(),
+            base.commissionPinfl(),
+            base.storesCount(),
+            base.storePrices(),
+            extensionMapper.toDto(product.getConstructionDetails()),
+            extensionMapper.toDto(product.getRestaurantDetails()),
+            extensionMapper.toDto(product.getServiceDetails())
         );
     }
 
@@ -71,7 +121,7 @@ public class ProductResponseAssembler {
             return Map.of();
         }
         List<UUID> ids = products.stream().map(Product::getId).distinct().toList();
-        return stockMovementRepository.sumDispatchedByProductIds(ids).stream()
+        return stockMovementQueryRepository.sumDispatchedByProductIds(ids).stream()
             .collect(Collectors.toMap(
                 ProductDispatchedSum::getProductId,
                 row -> row.getDispatched() != null ? row.getDispatched().intValue() : 0
@@ -100,6 +150,7 @@ public class ProductResponseAssembler {
             sellingPrice,
             r.defaultDiscountPercent(),
             r.taxRate(),
+            r.productType(),
             r.saleType(),
             r.unitCode(),
             r.quantityScale(),
@@ -126,7 +177,10 @@ public class ProductResponseAssembler {
             r.commissionTin(),
             r.commissionPinfl(),
             r.storesCount(),
-            r.storePrices()
+            r.storePrices(),
+            r.constructionDetails(),
+            r.restaurantDetails(),
+            r.serviceDetails()
         );
     }
 }

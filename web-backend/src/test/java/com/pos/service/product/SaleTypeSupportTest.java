@@ -52,4 +52,31 @@ class SaleTypeSupportTest {
         assertEquals(0, rules.quantityScale());
         assertFalse(rules.allowFraction());
     }
+
+    @Test
+    void importRules_meterGetsWeightWithM() {
+        ProductQuantityRules rules = ProductQuantityRulesResolver.resolve(null, null, null, null, "м");
+        assertEquals(SaleType.WEIGHT, rules.saleType());
+        assertEquals(UnitCode.M, rules.unitCode());
+        assertEquals(3, rules.quantityScale());
+        assertTrue(rules.allowFraction());
+    }
+
+    @Test
+    void importRules_millimeterGetsWeightWithMm() {
+        ProductQuantityRules rules = ProductQuantityRulesResolver.resolve(null, null, null, null, "мм");
+        assertEquals(SaleType.WEIGHT, rules.saleType());
+        assertEquals(UnitCode.MM, rules.unitCode());
+        assertEquals(0, rules.quantityScale());
+        assertTrue(rules.allowFraction());
+    }
+
+    @Test
+    void importRules_explicitMmUnitCode() {
+        ProductQuantityRules rules = ProductQuantityRulesResolver.resolve(
+            SaleType.WEIGHT, UnitCode.MM, null, null, null
+        );
+        assertEquals(UnitCode.MM, rules.unitCode());
+        assertEquals(0, rules.quantityScale());
+    }
 }

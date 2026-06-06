@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { productApi } from '../../services/api';
 import TasnifSearchPanel from './TasnifSearchPanel';
 import { buildStorePrices, syncStoreRowPrices } from '../../utils/productCatalogPrices';
+import { MEASURED_UNIT_CODES, UNIT_DEFAULTS } from '../../utils/unitConfig';
 
 function Field({ label, required, error, children }) {
   return (
@@ -66,8 +67,9 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
         barcode: z.string().optional(),
         externalProductId: z.string().optional(),
         ikpu: z.string().optional(),
+        productType: z.enum(['RETAIL', 'MATERIAL', 'DISH', 'SERVICE']),
         saleType: z.enum(['PIECE', 'WEIGHT', 'SERVICE']),
-        unitCode: z.enum(['PCS', 'KG', 'G', 'L', 'M']),
+        unitCode: z.enum(['PCS', 'KG', 'G', 'L', 'M', 'MM']),
         quantityScale: z.coerce.number().min(0).max(3),
         allowFraction: z.boolean(),
         unitOfMeasure: z.string().min(1, t('productCatalog.unitRequired')),
@@ -85,6 +87,10 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
           .string()
           .optional()
           .refine((v) => !v || /^\d{0,14}$/.test(v), t('productCatalog.pinflDigits')),
+        constructionStandardLength: z.coerce.number().min(0).optional(),
+        constructionWidth: z.coerce.number().min(0).optional(),
+        constructionThickness: z.coerce.number().min(0).optional(),
+        constructionAllowCutting: z.boolean().optional(),
       }),
     [t]
   );
@@ -102,6 +108,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       active: true,
       ownerType: 'OWN',
       unitOfMeasure: 'pcs',
+      productType: 'RETAIL',
       saleType: 'PIECE',
       unitCode: 'PCS',
       quantityScale: 0,
@@ -126,6 +133,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       barcode: full.barcode ?? '',
       externalProductId: full.externalProductId ?? '',
       ikpu: full.ikpu ?? '',
+      productType: full.productType || (full.saleType === 'SERVICE' ? 'SERVICE' : 'RETAIL'),
       saleType: full.saleType || 'PIECE',
       unitCode: full.unitCode || 'PCS',
       quantityScale: full.quantityScale ?? 0,
@@ -139,6 +147,10 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       ownerType: full.ownerType || 'OWN',
       commissionTin: full.commissionTin ?? '',
       commissionPinfl: full.commissionPinfl ?? '',
+      constructionStandardLength: full.constructionDetails?.standardLength ?? '',
+      constructionWidth: full.constructionDetails?.width ?? '',
+      constructionThickness: full.constructionDetails?.thickness ?? '',
+      constructionAllowCutting: full.constructionDetails?.allowCutting ?? false,
     });
     const prices = (full.storePrices && full.storePrices.length > 0
       ? full.storePrices
@@ -155,24 +167,50 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
   const sellingPriceWatch = watch('sellingPrice');
   const costPriceWatch = watch('costPrice');
   const saleTypeWatch = watch('saleType');
+  const productTypeWatch = watch('productType');
+  const unitCodeWatch = watch('unitCode');
+
+  useEffect(() => {
+    if (saleTypeWatch === 'SERVICE') {
+      setValue('productType', 'SERVICE');
+    }
+  }, [saleTypeWatch, setValue]);
 
   useEffect(() => {
     if (saleTypeWatch === 'WEIGHT') {
-      if (getValues('unitOfMeasure') === 'pcs') setValue('unitOfMeasure', 'kg');
-      setValue('unitCode', 'KG');
-      setValue('quantityScale', 3);
-      setValue('allowFraction', true);
+      const currentUnit = getValues('unitCode');
+      if (!MEASURED_UNIT_CODES.includes(currentUnit)) {
+        setValue('unitCode', 'KG');
+        const defaults = UNIT_DEFAULTS.KG;
+        setValue('unitOfMeasure', defaults.unitOfMeasure);
+        setValue('quantityScale', defaults.quantityScale);
+        setValue('allowFraction', defaults.allowFraction);
+      } else {
+        setValue('allowFraction', true);
+      }
     } else if (saleTypeWatch === 'SERVICE') {
+      const defaults = UNIT_DEFAULTS.PCS;
       setValue('unitCode', 'PCS');
-      setValue('quantityScale', 0);
-      setValue('allowFraction', false);
+      setValue('unitOfMeasure', defaults.unitOfMeasure);
+      setValue('quantityScale', defaults.quantityScale);
+      setValue('allowFraction', defaults.allowFraction);
     } else if (saleTypeWatch === 'PIECE') {
-      if (getValues('unitOfMeasure') === 'kg') setValue('unitOfMeasure', 'pcs');
+      const defaults = UNIT_DEFAULTS.PCS;
       setValue('unitCode', 'PCS');
-      setValue('quantityScale', 0);
-      setValue('allowFraction', false);
+      setValue('unitOfMeasure', defaults.unitOfMeasure);
+      setValue('quantityScale', defaults.quantityScale);
+      setValue('allowFraction', defaults.allowFraction);
     }
   }, [saleTypeWatch, getValues, setValue]);
+
+  useEffect(() => {
+    if (saleTypeWatch !== 'WEIGHT') return;
+    const defaults = UNIT_DEFAULTS[unitCodeWatch];
+    if (!defaults) return;
+    setValue('unitOfMeasure', defaults.unitOfMeasure);
+    setValue('quantityScale', defaults.quantityScale);
+    setValue('allowFraction', defaults.allowFraction);
+  }, [unitCodeWatch, saleTypeWatch, setValue]);
 
   useEffect(() => {
     if (sellingPriceWatch == null || sellingPriceWatch === '') return;
@@ -240,6 +278,7 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       barcode: values.barcode || undefined,
       externalProductId: values.externalProductId || undefined,
       ikpu: values.ikpu || undefined,
+      productType: values.productType,
       saleType: values.saleType,
       unitCode: values.unitCode,
       quantityScale: values.quantityScale,
@@ -247,8 +286,17 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
       unitOfMeasure: values.unitOfMeasure,
       unitMeasureCode: values.unitMeasureCode || undefined,
       packageCode: values.packageCode || undefined,
-      soldIndividually: values.soldIndividually,
-      markedProduct: values.markedProduct,
+      soldIndividually: values.productType === 'RETAIL' ? values.soldIndividually : undefined,
+      markedProduct: values.productType === 'RETAIL' ? values.markedProduct : undefined,
+      constructionDetails:
+        values.productType === 'MATERIAL'
+          ? {
+              standardLength: values.constructionStandardLength || undefined,
+              width: values.constructionWidth || undefined,
+              thickness: values.constructionThickness || undefined,
+              allowCutting: values.constructionAllowCutting ?? false,
+            }
+          : undefined,
       ownerType: values.ownerType,
       commissionTin: values.commissionTin || undefined,
       commissionPinfl: values.commissionPinfl || undefined,
@@ -322,6 +370,14 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
               <Field label={t('productModal.name')} required error={errors.name?.message}>
                 <input {...register('name')} className={inputCls} />
               </Field>
+              <Field label={t('productCatalog.productType')} required error={errors.productType?.message}>
+                <select {...register('productType')} className={inputCls}>
+                  <option value="RETAIL">{t('productCatalog.productTypeRetail')}</option>
+                  <option value="MATERIAL">{t('productCatalog.productTypeMaterial')}</option>
+                  <option value="DISH">{t('productCatalog.productTypeDish')}</option>
+                  <option value="SERVICE">{t('productCatalog.productTypeService')}</option>
+                </select>
+              </Field>
               <Field label={t('productCatalog.saleType')} required error={errors.saleType?.message}>
                 <select {...register('saleType')} className={inputCls}>
                   <option value="PIECE">{t('productCatalog.saleTypePiece')}</option>
@@ -331,11 +387,17 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
               </Field>
               <Field label={t('productCatalog.unitCode')} required error={errors.unitCode?.message}>
                 <select {...register('unitCode')} className={inputCls}>
-                  <option value="PCS">{t('productCatalog.unitCodePcs')}</option>
-                  <option value="KG">{t('productCatalog.unitCodeKg')}</option>
-                  <option value="G">{t('productCatalog.unitCodeG')}</option>
-                  <option value="L">{t('productCatalog.unitCodeL')}</option>
-                  <option value="M">{t('productCatalog.unitCodeM')}</option>
+                  {saleTypeWatch !== 'WEIGHT' ? (
+                    <option value="PCS">{t('productCatalog.unitCodePcs')}</option>
+                  ) : (
+                    <>
+                      <option value="KG">{t('productCatalog.unitCodeKg')}</option>
+                      <option value="G">{t('productCatalog.unitCodeG')}</option>
+                      <option value="L">{t('productCatalog.unitCodeL')}</option>
+                      <option value="M">{t('productCatalog.unitCodeM')}</option>
+                      <option value="MM">{t('productCatalog.unitCodeMm')}</option>
+                    </>
+                  )}
                 </select>
               </Field>
               <Field label={t('productCatalog.quantityScale')} error={errors.quantityScale?.message}>
@@ -360,15 +422,39 @@ export default function ProductCatalogModal({ product, categories, stores, onClo
                 <input {...register('packageCode')} placeholder="1–9999999" className={inputCls} />
               </Field>
             </div>
+            {productTypeWatch === 'MATERIAL' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 rounded-xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
+                <p className="md:col-span-2 text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-300">
+                  {t('productCatalog.sectionConstruction')}
+                </p>
+                <Field label={t('productCatalog.constructionStandardLength')} error={errors.constructionStandardLength?.message}>
+                  <input type="number" step="0.01" {...register('constructionStandardLength')} className={inputCls} />
+                </Field>
+                <Field label={t('productCatalog.constructionWidth')} error={errors.constructionWidth?.message}>
+                  <input type="number" step="0.01" {...register('constructionWidth')} className={inputCls} />
+                </Field>
+                <Field label={t('productCatalog.constructionThickness')} error={errors.constructionThickness?.message}>
+                  <input type="number" step="0.01" {...register('constructionThickness')} className={inputCls} />
+                </Field>
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300 md:col-span-2">
+                  <input type="checkbox" {...register('constructionAllowCutting')} className="rounded border-slate-400 dark:border-slate-600" />
+                  {t('productCatalog.constructionAllowCutting')}
+                </label>
+              </div>
+            ) : null}
             <div className="flex flex-wrap gap-6">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                <input type="checkbox" {...register('soldIndividually')} className="rounded border-slate-400 dark:border-slate-600" />
-                {t('productCatalog.soldByPiece')}
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                <input type="checkbox" {...register('markedProduct')} className="rounded border-slate-400 dark:border-slate-600" />
-                {t('productCatalog.marked')}
-              </label>
+              {productTypeWatch === 'RETAIL' ? (
+                <>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                    <input type="checkbox" {...register('soldIndividually')} className="rounded border-slate-400 dark:border-slate-600" />
+                    {t('productCatalog.soldByPiece')}
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                    <input type="checkbox" {...register('markedProduct')} className="rounded border-slate-400 dark:border-slate-600" />
+                    {t('productCatalog.marked')}
+                  </label>
+                </>
+              ) : null}
               <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                 <input type="checkbox" {...register('active')} className="rounded border-slate-400 dark:border-slate-600" />
                 {t('productCatalog.active')}

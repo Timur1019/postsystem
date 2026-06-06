@@ -2,6 +2,7 @@ package com.pos.dto.product;
 
 import jakarta.validation.Valid;
 
+import com.pos.domain.ProductType;
 import com.pos.domain.SaleType;
 import com.pos.domain.UnitCode;
 
@@ -15,6 +16,7 @@ public record UpdateProductRequest(
     BigDecimal defaultDiscountPercent,
     BigDecimal costPrice,
     BigDecimal taxRate,
+    ProductType productType,
     SaleType saleType,
     UnitCode unitCode,
     Integer quantityScale,
@@ -37,5 +39,8 @@ public record UpdateProductRequest(
     String commissionPinfl,
     String barcode,
     @Valid List<ProductStorePriceRequest> storePrices,
-    List<String> additionalBarcodes
+    List<String> additionalBarcodes,
+    ConstructionProductDetailsRequest constructionDetails,
+    RestaurantProductDetailsRequest restaurantDetails,
+    ServiceProductDetailsRequest serviceDetails
 ) {}

@@ -12,6 +12,7 @@ import com.pos.mapper.AuthMapper;
 import com.pos.repository.CompanyRepository;
 import com.pos.repository.RoleRepository;
 import com.pos.repository.UserRepository;
+import com.pos.repository.spec.UserSpecifications;
 import com.pos.security.CurrentUserProvider;
 import com.pos.security.JwtService;
 import com.pos.security.RoleName;
@@ -19,6 +20,7 @@ import com.pos.service.AuditService;
 import com.pos.service.AuthService;
 import com.pos.service.ModuleAccessService;
 import com.pos.service.email.EmailService;
+import com.pos.service.support.UserLookupSupport;
 import com.pos.util.CompanyLoginCodeUtil;
 import com.pos.util.CashierPinUtil;
 import com.pos.util.LogUtil;
@@ -37,6 +39,7 @@ import java.util.UUID;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final UserLookupSupport userLookup;
     private final CompanyRepository companyRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
@@ -53,10 +56,12 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         String username = UserLoginUtil.normalizeUsername(request.username());
-        if (userRepository.existsPlatformUsernameIgnoreCase(username, null)) {
+        if (userLookup.exists(UserSpecifications.lookup().platformOnly().usernameIgnoreCase(username))) {
             throw new BadRequestException("Username already taken");
         }
-        if (userRepository.existsPlatformEmailIgnoreCase(UserLoginUtil.normalizeEmail(request.email()), null)) {
+        if (userLookup.exists(
+            UserSpecifications.lookup().platformOnly().emailIgnoreCase(UserLoginUtil.normalizeEmail(request.email()))
+        )) {
             throw new BadRequestException("Email already registered");
         }
 
@@ -126,7 +131,13 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String digest = CashierPinUtil.digestHex(pin, pinSecret);
-        User user = userRepository.findCashierByCompanyIdAndPinDigest(company.getId(), digest)
+        User user = userLookup.findOneWithDetails(
+                UserSpecifications.lookup()
+                    .companyId(company.getId())
+                    .roleName("CASHIER")
+                    .activeOnly()
+                    .pinDigest(digest)
+            )
             .orElseThrow(() -> new BadRequestException("Invalid PIN"));
         assertLoginAllowed(user);
 
@@ -186,12 +197,18 @@ public class AuthServiceImpl implements AuthService {
                 throw new BadRequestException("Company is inactive");
             }
 
-            return userRepository.findByCompanyIdAndUsernameIgnoreCase(company.getId(), username)
+            return userLookup.findOneWithDetails(
+                    UserSpecifications.lookup().companyId(company.getId()).usernameIgnoreCase(username)
+                )
                 .orElseThrow(() -> new BadRequestException("Invalid username or password"));
         }
 
-        return userRepository.findPlatformUserByUsernameIgnoreCase(username)
-            .or(() -> userRepository.findTenantUserByUsernameIgnoreCase(username))
+        return userLookup.findOneWithDetails(
+                UserSpecifications.lookup().platformOnly().usernameIgnoreCase(username)
+            )
+            .or(() -> userLookup.findOneWithDetails(
+                UserSpecifications.lookup().tenantOnly().usernameIgnoreCase(username)
+            ))
             .orElseThrow(() -> new BadRequestException("Invalid username or password"));
     }
 

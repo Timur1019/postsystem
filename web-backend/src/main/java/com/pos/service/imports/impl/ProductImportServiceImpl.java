@@ -289,6 +289,7 @@ public class ProductImportServiceImpl implements ProductImportService {
             sellingPrice,
             BigDecimal.ZERO,
             taxRate,
+            com.pos.service.product.ProductTypeSupport.resolve(null, quantityRules.saleType()),
             quantityRules.saleType(),
             quantityRules.unitCode(),
             quantityRules.quantityScale(),
@@ -311,6 +312,9 @@ public class ProductImportServiceImpl implements ProductImportService {
             null,
             row.uzInvoiceDocumentId(),
             storePrices,
+            null,
+            null,
+            null,
             null
         );
         productService.createProduct(req);

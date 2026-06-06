@@ -13,9 +13,11 @@ import com.pos.exception.ResourceNotFoundException;
 import com.pos.mapper.UserMapper;
 import com.pos.repository.RoleRepository;
 import com.pos.repository.UserRepository;
+import com.pos.repository.spec.UserSpecifications;
 import com.pos.service.UserService;
 import com.pos.service.email.EmailService;
 import com.pos.service.support.TenantAccessSupport;
+import com.pos.service.support.UserLookupSupport;
 import com.pos.util.LogUtil;
 import com.pos.util.CashierPinUtil;
 import com.pos.util.PersonNameUtil;
@@ -41,6 +43,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserLookupSupport userLookup;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final TenantAccessSupport tenantAccess;
@@ -338,23 +341,33 @@ public class UserServiceImpl implements UserService {
 
     private void assertUsernameAvailable(Integer companyId, String username, UUID excludeUserId) {
         if (companyId == null) {
-            if (userRepository.existsPlatformUsernameIgnoreCase(username, excludeUserId)) {
+            if (userLookup.exists(
+                UserSpecifications.lookup().platformOnly().usernameIgnoreCase(username).excludeId(excludeUserId)
+            )) {
                 throw new BadRequestException("Username already taken");
             }
             return;
         }
-        if (userRepository.existsTenantUsernameIgnoreCase(username, excludeUserId)) {
+        if (userLookup.exists(
+            UserSpecifications.lookup().tenantOnly().usernameIgnoreCase(username).excludeId(excludeUserId)
+        )) {
             throw new BadRequestException("Username already taken");
         }
-        if (userRepository.existsPlatformUsernameIgnoreCase(username, excludeUserId)) {
+        if (userLookup.exists(
+            UserSpecifications.lookup().platformOnly().usernameIgnoreCase(username).excludeId(excludeUserId)
+        )) {
             throw new BadRequestException("Username already taken");
         }
     }
 
     private void assertEmailAvailable(Integer companyId, String email, UUID excludeUserId) {
         boolean taken = companyId == null
-            ? userRepository.existsPlatformEmailIgnoreCase(email, excludeUserId)
-            : userRepository.existsByCompanyIdAndEmailIgnoreCase(companyId, email, excludeUserId);
+            ? userLookup.exists(
+                UserSpecifications.lookup().platformOnly().emailIgnoreCase(email).excludeId(excludeUserId)
+            )
+            : userLookup.exists(
+                UserSpecifications.lookup().companyId(companyId).emailIgnoreCase(email).excludeId(excludeUserId)
+            );
         if (taken) {
             throw new BadRequestException("Email already registered in this company");
         }
@@ -372,7 +385,9 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("Cashier PIN must be 4-6 digits");
         }
         String digest = CashierPinUtil.digestHex(normalized, pinSecret);
-        if (userRepository.existsByCompanyIdAndPinDigest(companyId, digest, null)) {
+        if (userLookup.exists(
+            UserSpecifications.lookup().companyId(companyId).pinDigest(digest)
+        )) {
             throw new BadRequestException("PIN already used in this company");
         }
         user.setPinDigest(digest);
@@ -390,7 +405,9 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("Cashier PIN must be 4-6 digits");
         }
         String digest = CashierPinUtil.digestHex(normalized, pinSecret);
-        if (userRepository.existsByCompanyIdAndPinDigest(companyId, digest, user.getId())) {
+        if (userLookup.exists(
+            UserSpecifications.lookup().companyId(companyId).pinDigest(digest).excludeId(user.getId())
+        )) {
             throw new BadRequestException("PIN already used in this company");
         }
         user.setPinDigest(digest);

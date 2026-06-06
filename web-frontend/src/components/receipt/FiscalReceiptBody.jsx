@@ -11,6 +11,7 @@ import {
   splitDateTime,
 } from '../../utils/fiscalReceiptFormat';
 import { extractVatFromInclusive } from '../../utils/taxAmounts';
+import { unitCodeFromLabel } from '../../utils/unitConfig';
 
 function lineVatRatePercent(item) {
   const rate = item?.taxRatePercent != null ? Number(item.taxRatePercent) : 12;
@@ -219,7 +220,7 @@ export default function FiscalReceiptBody({ sale, printAreaId = 'receipt-print-a
                     <div className="receipt-items-table__row">
                       <span className="receipt-items-table__name">{item.productName}</span>
                       <span className="receipt-items-table__qty">
-                        {fmtQty(item.quantity, item.saleType)}
+                        {fmtQty(item.quantity, item.saleType, unitCodeFromLabel(item.unitOfMeasure))}
                         {item.saleType !== 'WEIGHT' && item.unitOfMeasure ? ` ${item.unitOfMeasure}` : ''}
                       </span>
                       <span className="receipt-items-table__sum">{fmtMoney(item.lineTotal)}</span>

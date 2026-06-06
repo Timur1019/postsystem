@@ -30,10 +30,22 @@ public final class SaleTypeSupport {
         if (StringUtils.hasText(requested)) {
             return requested.trim();
         }
-        return switch (saleType != null ? saleType : SaleType.PIECE) {
-            case WEIGHT -> "kg";
-            case SERVICE -> "pcs";
-            default -> "pcs";
-        };
+        if (saleType == SaleType.WEIGHT) {
+            return "kg";
+        }
+        if (saleType == SaleType.SERVICE) {
+            return "pcs";
+        }
+        return "pcs";
+    }
+
+    public static String defaultUnitOfMeasure(SaleType saleType, UnitCode unitCode, String requested) {
+        if (StringUtils.hasText(requested)) {
+            return requested.trim();
+        }
+        if (unitCode != null && unitCode != UnitCode.PCS) {
+            return unitCode.displayLabel();
+        }
+        return defaultUnitOfMeasure(saleType, requested);
     }
 }

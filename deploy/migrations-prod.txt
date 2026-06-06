@@ -28,3 +28,4 @@ migration_manual_product_quantity_rules.sql
 migration_manual_stock_inventory_quantity_numeric.sql
 migration_manual_fix_all_quantity_numeric.sql
 migration_manual_product_barcodes_tenant.sql
+migration_manual_product_type_extensions.sql

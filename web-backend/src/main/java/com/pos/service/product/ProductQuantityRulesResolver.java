@@ -81,7 +81,7 @@ public final class ProductQuantityRulesResolver {
     private static int defaultScale(SaleType saleType, UnitCode unitCode) {
         if (saleType == SaleType.WEIGHT) {
             return switch (unitCode != null ? unitCode : UnitCode.KG) {
-                case G -> 0;
+                case G, MM -> 0;
                 default -> 3;
             };
         }

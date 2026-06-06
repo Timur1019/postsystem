@@ -2,7 +2,7 @@ package com.pos.service.export.impl;
 
 import com.pos.entity.Sale;
 import com.pos.repository.SaleItemRepository;
-import com.pos.repository.SaleRepository;
+import com.pos.repository.sale.SaleSearchRepository;
 import com.pos.service.export.ReturnExportService;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.spreadsheet.ExcelSpreadsheetWriter;
@@ -32,7 +32,7 @@ public class ReturnExportServiceImpl implements ReturnExportService {
     private static final ZoneId TZ = ZoneId.of("Asia/Tashkent");
     private static final DateTimeFormatter DT = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(TZ);
 
-    private final SaleRepository saleRepository;
+    private final SaleSearchRepository saleSearchRepository;
     private final SaleItemRepository saleItemRepository;
     private final ExcelSpreadsheetWriter excelWriter;
     private final TenantAccessSupport tenantAccess;
@@ -50,7 +50,7 @@ public class ReturnExportServiceImpl implements ReturnExportService {
         Instant end = to != null ? to.plusDays(1).atStartOfDay(z).toInstant()
             : Instant.now().plus(3650, ChronoUnit.DAYS);
 
-        Page<Sale> page = saleRepository.searchReturns(
+        Page<Sale> page = saleSearchRepository.searchReturns(
             List.of(Sale.SaleStatus.VOIDED, Sale.SaleStatus.REFUNDED),
             start,
             end,

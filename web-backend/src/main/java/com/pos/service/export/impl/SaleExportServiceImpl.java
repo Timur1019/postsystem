@@ -3,7 +3,7 @@ package com.pos.service.export.impl;
 import com.pos.entity.Product;
 import com.pos.entity.Sale;
 import com.pos.entity.SaleItem;
-import com.pos.repository.SaleRepository;
+import com.pos.repository.sale.SaleSearchRepository;
 import com.pos.service.export.SaleExportService;
 import com.pos.service.support.SalesQuerySupport;
 import com.pos.service.support.TenantAccessSupport;
@@ -33,7 +33,7 @@ public class SaleExportServiceImpl implements SaleExportService {
     private static final ZoneId TZ = ZoneId.of("Asia/Tashkent");
     private static final DateTimeFormatter DT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(TZ);
 
-    private final SaleRepository saleRepository;
+    private final SaleSearchRepository saleSearchRepository;
     private final ExcelSpreadsheetWriter excelWriter;
     private final TenantAccessSupport tenantAccess;
 
@@ -60,7 +60,7 @@ public class SaleExportServiceImpl implements SaleExportService {
         }
 
         var f = filters.get();
-        Page<Sale> sales = saleRepository.searchSales(
+        Page<Sale> sales = saleSearchRepository.searchSales(
             f.start(), f.end(), f.cashierId(), f.receipt(), f.cashierName(), f.q(),
             f.paymentMethod(), f.status(), f.saleId(), f.paymentSettlement(), f.storeId(),
             tenantAccess.requireEffectiveCompanyId(),
