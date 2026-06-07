@@ -70,13 +70,13 @@
   margin-bottom: 0.9rem;
 }
 
-.platform-email-field label {
+.platform-email-field > label:not(.platform-email-user-row):not(.platform-email-select-all) {
   font-size: 0.8125rem;
   font-weight: 600;
   color: #475569;
 }
 
-.dark .platform-email-field label {
+.dark .platform-email-field > label:not(.platform-email-user-row):not(.platform-email-select-all) {
   color: #94a3b8;
 }
 
@@ -119,11 +119,63 @@
 
 .platform-email-user-row {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.35rem;
+  align-items: flex-start;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.45rem 0.35rem;
   border-radius: 0.5rem;
   font-size: 0.8125rem;
+  font-weight: 400;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.dark .platform-email-user-row {
+  color: #f8fafc;
+}
+
+.platform-email-user-row input[type='checkbox'] {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.platform-email-user-row__text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.platform-email-user-row__name {
+  display: block;
+  font-weight: 600;
+  color: inherit;
+}
+
+.platform-email-user-row__meta {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  word-break: break-word;
+}
+
+.dark .platform-email-user-row__meta {
+  color: #94a3b8;
+}
+
+.platform-email-select-all {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+}
+
+.dark .platform-email-select-all {
+  color: #cbd5e1;
 }
 
 .platform-email-user-row:hover {

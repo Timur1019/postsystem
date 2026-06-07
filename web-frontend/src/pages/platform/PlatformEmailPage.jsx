@@ -14,6 +14,30 @@ function templateLabel(t, tpl) {
   return t(`platform.email.templates.${tpl.type}`, { defaultValue: tpl.title || tpl.type });
 }
 
+function userDisplayName(user) {
+  const name = String(user?.fullName || '').trim();
+  if (name) return name;
+  const username = String(user?.username || '').trim();
+  if (username) return username;
+  const email = String(user?.email || '').trim();
+  if (email) return email;
+  return `#${String(user?.id || '').slice(0, 8)}`;
+}
+
+function userMetaLine(user, t) {
+  const parts = [];
+  const username = String(user?.username || '').trim();
+  const email = String(user?.email || '').trim();
+  const role = String(user?.role || '').trim();
+  const company = String(user?.companyName || '').trim();
+  if (username) parts.push(username);
+  if (email) parts.push(email);
+  else parts.push(t('platform.email.noEmail'));
+  if (role) parts.push(role);
+  if (company) parts.push(company);
+  return parts.join(' · ');
+}
+
 export default function PlatformEmailPage() {
   const { t } = useTranslation();
   const [subject, setSubject] = useState('');
@@ -204,7 +228,7 @@ export default function PlatformEmailPage() {
                   onChange={(e) => setUserSearch(e.target.value)}
                   placeholder={t('platform.email.recipientSearch')}
                 />
-                <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm">
+                <label className="platform-email-select-all">
                   <input
                     type="checkbox"
                     checked={allVisibleSelected}
@@ -225,13 +249,9 @@ export default function PlatformEmailPage() {
                           checked={selectedIds.has(user.id)}
                           onChange={() => toggleUser(user.id)}
                         />
-                        <span className="min-w-0 flex-1 truncate">
-                          <strong>{user.fullName}</strong>
-                          <span className="text-slate-500">
-                            {' '}
-                            — {user.username}
-                            {user.email ? ` · ${user.email}` : ` · ${t('platform.email.noEmail')}`}
-                          </span>
+                        <span className="platform-email-user-row__text">
+                          <span className="platform-email-user-row__name">{userDisplayName(user)}</span>
+                          <span className="platform-email-user-row__meta">{userMetaLine(user, t)}</span>
                         </span>
                       </label>
                     ))
