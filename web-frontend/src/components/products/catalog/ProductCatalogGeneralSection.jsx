@@ -16,16 +16,19 @@ export default function ProductCatalogGeneralSection({
   saleTypeWatch,
   productTypeWatch,
   template,
+  universalMode = false,
   showSection,
 }) {
   const showTypeSelectors = showSection('typeSelectors');
   const showAdvancedUnits = showSection('advancedUnits');
   const showConstruction =
     showSection('construction') &&
-    (template
-      ? (template.constructionFields?.length ?? 0) > 0
-      : productTypeWatch === 'MATERIAL');
-  const showRetailFlags = showSection('retailFlags') && productTypeWatch === 'RETAIL';
+    (universalMode ||
+      (template
+        ? (template.constructionFields?.length ?? 0) > 0
+        : productTypeWatch === 'MATERIAL'));
+  const showRetailFlags =
+    showSection('retailFlags') && (universalMode || productTypeWatch === 'RETAIL');
   const showOwnerVat = showSection('ownerVat');
   const unitOptions = stockUnitsForSaleType(saleTypeWatch);
 

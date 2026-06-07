@@ -1,6 +1,8 @@
 package com.pos.service.impl;
 
+import com.pos.domain.BusinessType;
 import com.pos.dto.shared.PageResponse;
+import com.pos.util.BusinessTypeParser;
 import com.pos.dto.store.CreateStoreRequest;
 import com.pos.dto.store.StoreResponse;
 import com.pos.dto.store.UpdateStoreRequest;
@@ -99,12 +101,15 @@ public class StoreServiceImpl implements StoreService {
         Company company = tenantAccess.requireCompany(companyId);
         tenantAccess.assertCanAccessCompany(companyId);
 
+        BusinessType businessType = resolveStoreBusinessType(request.businessType(), company.getBusinessType());
+
         Store store = Store.builder()
             .name(request.name().trim())
             .code(trimOrNull(request.code()))
             .address(trimOrNull(request.address()))
             .phone(trimOrNull(request.phone()))
             .company(company)
+            .businessType(businessType)
             .active(request.active() == null || request.active())
             .build();
         Store saved = storeRepository.save(store);
@@ -124,6 +129,9 @@ public class StoreServiceImpl implements StoreService {
         if (request.address() != null) store.setAddress(trimOrNull(request.address()));
         if (request.phone() != null) store.setPhone(trimOrNull(request.phone()));
         if (request.active() != null) store.setActive(request.active());
+        if (request.businessType() != null) {
+            store.setBusinessType(BusinessTypeParser.parseRequired(request.businessType()));
+        }
         if (request.companyId() != null && tenantAccess.isSuperAdmin()) {
             store.setCompany(tenantAccess.requireCompany(request.companyId()));
         }
@@ -211,5 +219,12 @@ public class StoreServiceImpl implements StoreService {
     private static String trimOrNull(String value) {
         if (!StringUtils.hasText(value)) return null;
         return value.trim();
+    }
+
+    private static BusinessType resolveStoreBusinessType(String requestType, BusinessType companyDefault) {
+        if (StringUtils.hasText(requestType)) {
+            return BusinessTypeParser.parseRequired(requestType);
+        }
+        return companyDefault != null ? companyDefault : BusinessType.UNIVERSAL;
     }
 }

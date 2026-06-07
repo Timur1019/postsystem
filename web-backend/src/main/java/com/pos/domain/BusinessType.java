@@ -11,5 +11,6 @@ public enum BusinessType {
     CANTEEN,
     RESTAURANT,
     AUTO_PARTS,
-    UNIVERSAL
+    UNIVERSAL,
+    OTHER
 }

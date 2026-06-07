@@ -45,8 +45,11 @@ export function useProductCatalogForm(product, stores, onSaved, options = {}) {
   const isEdit = !!product;
   const createTemplateCode = options.templateCode ?? null;
   const createAdvancedMode = options.advancedMode ?? false;
+  const createUniversalMode = options.universalMode ?? false;
+  const selectedStoreId = options.selectedStoreId ?? null;
   const [editAdvancedMode, setEditAdvancedMode] = useState(false);
   const advancedMode = isEdit ? editAdvancedMode : createAdvancedMode;
+  const universalMode = !isEdit && createUniversalMode;
 
   const { data: detail } = useQuery({
     queryKey: ['product', product?.id],
@@ -65,6 +68,18 @@ export function useProductCatalogForm(product, stores, onSaved, options = {}) {
   const [storeRows, setStoreRows] = useState([{ storeId: '', price: '' }]);
   const [extraBarcodes, setExtraBarcodes] = useState(['']);
   const prevSellingRef = useRef(null);
+
+  useEffect(() => {
+    if (isEdit || !selectedStoreId) return;
+    setStoreRows((rows) => {
+      if (rows.length === 1 && !rows[0].storeId) {
+        return [{ storeId: String(selectedStoreId), price: rows[0].price ?? '' }];
+      }
+      return rows.map((row, idx) => (
+        idx === 0 ? { ...row, storeId: String(selectedStoreId) } : row
+      ));
+    });
+  }, [selectedStoreId, isEdit]);
 
   const schema = useMemo(
     () =>
@@ -381,7 +396,8 @@ export function useProductCatalogForm(product, stores, onSaved, options = {}) {
 
   const showSection = (section) =>
     resolveCatalogSectionVisible(section, {
-      classicMode: advancedMode,
+      classicMode: advancedMode && !universalMode,
+      universalMode,
       template,
       productType: productTypeWatch,
     });
@@ -393,7 +409,8 @@ export function useProductCatalogForm(product, stores, onSaved, options = {}) {
     templateCode: resolvedTemplateCode,
     templateLocked,
     advancedMode,
-    canToggleAdvanced: Boolean(resolvedTemplateCode),
+    universalMode,
+    canToggleAdvanced: Boolean(resolvedTemplateCode) && !universalMode,
     setAdvancedMode: setEditAdvancedMode,
     showSection,
     register,

@@ -5,6 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { BUSINESS_TYPES } from '../../config/productCatalogTemplateRegistry';
+import { useCompanyBusinessType } from '../../hooks/useCompanyBusinessType';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
   focus:outline-none focus:ring-2 focus:ring-emerald-500
@@ -21,6 +23,7 @@ export default function StoreFormModal({
   title,
 }) {
   const { t } = useTranslation();
+  const { businessType: companyBusinessType } = useCompanyBusinessType();
 
   const schema = z.object({
     name: z.string().min(1, t('validation.fieldRequired', { field: t('stores.colName') })),
@@ -28,6 +31,7 @@ export default function StoreFormModal({
     phone: z.string().optional(),
     code: z.string().optional(),
     companyId: z.string().optional(),
+    businessType: z.string().min(1, t('validation.fieldRequired', { field: t('stores.colBusinessType') })),
     active: z.boolean().optional(),
   });
 
@@ -44,9 +48,10 @@ export default function StoreFormModal({
       phone: initial?.phone ?? '',
       code: initial?.code ?? '',
       companyId: initial?.companyId ? String(initial.companyId) : '',
+      businessType: initial?.businessType ?? companyBusinessType ?? 'UNIVERSAL',
       active: initial?.active ?? true,
     });
-  }, [open, initial, reset]);
+  }, [open, initial, reset, companyBusinessType]);
 
   if (!open) return null;
 
@@ -57,6 +62,7 @@ export default function StoreFormModal({
       phone: data.phone?.trim() || null,
       code: data.code?.trim() || null,
       companyId: data.companyId ? Number(data.companyId) : undefined,
+      businessType: data.businessType,
       active: data.active,
     });
   };
@@ -88,6 +94,18 @@ export default function StoreFormModal({
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('stores.colName')} *</label>
             <input {...register('name')} className={inputCls} />
             {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name.message}</p>}
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('stores.colBusinessType')} *</label>
+            <select {...register('businessType')} className={inputCls}>
+              {BUSINESS_TYPES.map((bt) => (
+                <option key={bt.code} value={bt.code}>
+                  {t(`productTemplates.businessTypes.${bt.code}`)}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('stores.businessTypeHint')}</p>
+            {errors.businessType && <p className="mt-1 text-xs text-red-400">{errors.businessType.message}</p>}
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('stores.colAddress')}</label>

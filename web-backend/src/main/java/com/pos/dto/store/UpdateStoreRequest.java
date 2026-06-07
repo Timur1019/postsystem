@@ -6,5 +6,6 @@ public record UpdateStoreRequest(
     String address,
     String phone,
     Integer companyId,
+    String businessType,
     Boolean active
 ) {}

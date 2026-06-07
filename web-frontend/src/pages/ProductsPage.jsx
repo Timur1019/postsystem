@@ -9,7 +9,9 @@ import { productApi, categoryApi, storeApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { useTenantScope } from '../hooks/useTenantScope';
 import ProductCatalogModal from '../components/products/ProductCatalogModal';
+import ProductStorePickerModal from '../components/products/ProductStorePickerModal';
 import ProductTemplatePickerModal from '../components/products/ProductTemplatePickerModal';
+import { isUniversalStoreType, resolveBusinessTypeForTemplates } from '../config/productCatalogTemplateRegistry';
 import StockAdjustModal from '../components/products/StockAdjustModal';
 import ProductsToolbar from '../components/products/ProductsToolbar';
 import ProductFiltersDrawer from '../components/products/ProductFiltersDrawer';
@@ -49,9 +51,12 @@ export default function ProductsPage() {
   const [pageSize, setPageSize] = useState(14);
   const [editProduct, setEditProduct] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [storePickerOpen, setStorePickerOpen] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [createStore, setCreateStore] = useState(null);
   const [createTemplateCode, setCreateTemplateCode] = useState(null);
   const [createAdvancedMode, setCreateAdvancedMode] = useState(false);
+  const [createUniversalMode, setCreateUniversalMode] = useState(false);
   const [stockProduct, setStockProduct] = useState(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
@@ -105,6 +110,80 @@ export default function ProductsPage() {
     queryFn: () => storeApi.getAll().then((r) => r.data),
     enabled: tenantReady,
   });
+
+  const activeStores = useMemo(
+    () => (stores ?? []).filter((s) => s.active !== false),
+    [stores]
+  );
+
+  const resetCreateFlow = () => {
+    setShowCreate(false);
+    setStorePickerOpen(false);
+    setTemplatePickerOpen(false);
+    setCreateStore(null);
+    setCreateTemplateCode(null);
+    setCreateAdvancedMode(false);
+    setCreateUniversalMode(false);
+  };
+
+  const openCreateFlowForStore = (store) => {
+    setCreateStore(store);
+    if (isUniversalStoreType(store.businessType)) {
+      setCreateTemplateCode(null);
+      setCreateAdvancedMode(false);
+      setCreateUniversalMode(true);
+      setTemplatePickerOpen(false);
+      setShowCreate(true);
+      return;
+    }
+    setCreateUniversalMode(false);
+    setCreateAdvancedMode(false);
+    setCreateTemplateCode(null);
+    setTemplatePickerOpen(true);
+  };
+
+  const handleAddProduct = () => {
+    if (activeStores.length === 0) {
+      toast.error(t('productTemplates.noStoresHint'));
+      return;
+    }
+    resetCreateFlow();
+    if (activeStores.length === 1) {
+      openCreateFlowForStore(activeStores[0]);
+      return;
+    }
+    setStorePickerOpen(true);
+  };
+
+  const handleCreateStoreChange = (store) => {
+    if (!createStore || !store || store.id === createStore.id) return;
+    const prevUniversal = isUniversalStoreType(createStore.businessType);
+    const nextUniversal = isUniversalStoreType(store.businessType);
+    setCreateStore(store);
+
+    if (prevUniversal && nextUniversal) return;
+
+    if (nextUniversal) {
+      setShowCreate(false);
+      setCreateTemplateCode(null);
+      setCreateAdvancedMode(false);
+      setCreateUniversalMode(true);
+      setTemplatePickerOpen(false);
+      setShowCreate(true);
+      return;
+    }
+
+    const prevType = resolveBusinessTypeForTemplates(createStore.businessType);
+    const nextType = resolveBusinessTypeForTemplates(store.businessType);
+    if (prevUniversal || prevType !== nextType) {
+      setShowCreate(false);
+      setCreateTemplateCode(null);
+      setCreateAdvancedMode(false);
+      setCreateUniversalMode(false);
+      setTemplatePickerOpen(true);
+      if (!prevUniversal) toast(t('productTemplates.storeTypeChanged'));
+    }
+  };
 
   const pageIds = useMemo(() => (data?.content ?? []).map((p) => p.id), [data?.content]);
   const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
@@ -161,7 +240,7 @@ export default function ProductsPage() {
         </div>
         <ProductsToolbar
           canManage={manage}
-          onAdd={() => setTemplatePickerOpen(true)}
+          onAdd={handleAddProduct}
           onImport={() => setImportOpen(true)}
           onExport={() => setExportOpen(true)}
           onBulkVat={() => {
@@ -218,18 +297,40 @@ export default function ProductsPage() {
         }
       />
 
-      {templatePickerOpen && (
+      {storePickerOpen && (
+        <ProductStorePickerModal
+          stores={activeStores}
+          onClose={() => setStorePickerOpen(false)}
+          onSelectStore={(store) => {
+            setStorePickerOpen(false);
+            openCreateFlowForStore(store);
+          }}
+        />
+      )}
+
+      {templatePickerOpen && createStore && (
         <ProductTemplatePickerModal
-          onClose={() => setTemplatePickerOpen(false)}
+          selectedStore={createStore}
+          onClose={resetCreateFlow}
+          onBackToStores={
+            activeStores.length > 1
+              ? () => {
+                  setTemplatePickerOpen(false);
+                  setStorePickerOpen(true);
+                }
+              : undefined
+          }
           onSelectTemplate={(code) => {
             setCreateTemplateCode(code);
             setCreateAdvancedMode(false);
+            setCreateUniversalMode(false);
             setTemplatePickerOpen(false);
             setShowCreate(true);
           }}
           onAdvanced={() => {
             setCreateTemplateCode(null);
             setCreateAdvancedMode(true);
+            setCreateUniversalMode(false);
             setTemplatePickerOpen(false);
             setShowCreate(true);
           }}
@@ -238,14 +339,20 @@ export default function ProductsPage() {
 
       {(showCreate || editProduct) && (
         <ProductCatalogModal
-          key={editProduct?.id ?? `new-${createTemplateCode ?? 'advanced'}`}
+          key={
+            editProduct?.id
+            ?? `new-${createStore?.id ?? 'x'}-${createUniversalMode ? 'universal' : createTemplateCode ?? 'advanced'}-${createAdvancedMode ? 'adv' : 'tpl'}`
+          }
           product={editProduct}
           categories={categories}
-          stores={stores}
+          stores={activeStores}
+          selectedStore={editProduct ? null : createStore}
           templateCode={editProduct ? null : createTemplateCode}
           advancedMode={!editProduct && createAdvancedMode}
+          universalMode={!editProduct && createUniversalMode}
+          onCreateStoreChange={handleCreateStoreChange}
           onBackToPicker={
-            !editProduct
+            !editProduct && !createUniversalMode
               ? () => {
                   setShowCreate(false);
                   setCreateTemplateCode(null);
@@ -254,18 +361,26 @@ export default function ProductsPage() {
                 }
               : undefined
           }
+          onBackToStores={
+            !editProduct && createUniversalMode && activeStores.length > 1
+              ? () => {
+                  setShowCreate(false);
+                  setCreateUniversalMode(false);
+                  setStorePickerOpen(true);
+                }
+              : undefined
+          }
           onClose={() => {
-            setShowCreate(false);
-            setEditProduct(null);
-            setCreateTemplateCode(null);
-            setCreateAdvancedMode(false);
+            if (editProduct) {
+              setEditProduct(null);
+            } else {
+              resetCreateFlow();
+            }
           }}
           onSaved={() => {
             invalidateProductCaches(qc);
-            setShowCreate(false);
             setEditProduct(null);
-            setCreateTemplateCode(null);
-            setCreateAdvancedMode(false);
+            resetCreateFlow();
           }}
         />
       )}

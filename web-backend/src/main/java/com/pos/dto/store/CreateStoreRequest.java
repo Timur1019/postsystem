@@ -8,5 +8,6 @@ public record CreateStoreRequest(
     String address,
     String phone,
     Integer companyId,
+    String businessType,
     Boolean active
 ) {}

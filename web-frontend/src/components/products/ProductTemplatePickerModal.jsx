@@ -1,36 +1,46 @@
-import { X, Settings2 } from 'lucide-react';
+import { ArrowLeft, Settings2, Store, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   BUSINESS_TYPES,
   listTemplatesForBusinessType,
+  resolveBusinessTypeForTemplates,
 } from '../../config/productCatalogTemplateRegistry';
-import { useCompanyBusinessType } from '../../hooks/useCompanyBusinessType';
 
 export default function ProductTemplatePickerModal({
+  selectedStore,
   onClose,
+  onBackToStores,
   onSelectTemplate,
   onAdvanced,
 }) {
   const { t } = useTranslation();
-  const { businessType, setBusinessType, isLoading, isSaving } = useCompanyBusinessType();
-
+  const businessType = resolveBusinessTypeForTemplates(selectedStore?.businessType);
   const templates = listTemplatesForBusinessType(businessType);
-
-  const handleBusinessTypeChange = (code) => {
-    setBusinessType(code);
-  };
+  const businessMeta = BUSINESS_TYPES.find((bt) => bt.code === businessType);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 dark:border-slate-800 dark:bg-slate-900">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              {t('productTemplates.pickerTitle')}
-            </h2>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              {t('productTemplates.pickerSubtitle')}
-            </p>
+          <div className="flex items-center gap-3">
+            {onBackToStores ? (
+              <button
+                type="button"
+                onClick={onBackToStores}
+                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white"
+                title={t('productTemplates.backToStores')}
+              >
+                <ArrowLeft size={18} />
+              </button>
+            ) : null}
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                {t('productTemplates.pickerTitle')}
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                {t('productTemplates.pickerSubtitleStore')}
+              </p>
+            </div>
           </div>
           <button
             type="button"
@@ -42,36 +52,25 @@ export default function ProductTemplatePickerModal({
         </div>
 
         <div className="space-y-6 p-5">
-          <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              {t('productTemplates.businessTypeLabel')}
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {BUSINESS_TYPES.map((bt) => {
-                const Icon = bt.icon;
-                const active = businessType === bt.code;
-                const disabled = isLoading || isSaving;
-                return (
-                  <button
-                    key={bt.code}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => handleBusinessTypeChange(bt.code)}
-                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition disabled:opacity-60 ${
-                      active
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:border-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300'
-                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
-                    }`}
-                  >
-                    <Icon size={14} />
-                    {t(`productTemplates.businessTypes.${bt.code}`)}
-                  </button>
-                );
-              })}
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 dark:border-emerald-900/50 dark:bg-emerald-950/30">
+            <div className="flex items-start gap-3">
+              <Store size={18} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <div>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {selectedStore?.name}
+                </p>
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                  {t('productTemplates.storeTypeHint', {
+                    type: t(`productTemplates.businessTypes.${businessType}`),
+                  })}
+                </p>
+                {businessMeta ? (
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">
+                    {t('productTemplates.templateCountHint', { count: templates.length })}
+                  </p>
+                ) : null}
+              </div>
             </div>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              {t('productTemplates.businessTypeHint')}
-            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -1,5 +1,6 @@
 package com.pos.entity;
 
+import com.pos.domain.BusinessType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -31,6 +32,11 @@ public class Store {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "business_type", nullable = false, length = 32)
+    @Builder.Default
+    private BusinessType businessType = BusinessType.UNIVERSAL;
 
     @Column(name = "is_active")
     private boolean active = true;

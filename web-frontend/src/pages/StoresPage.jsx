@@ -124,6 +124,7 @@ export default function StoresPage({ showCompanySelect = false, companyIdFilter,
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:bg-slate-800/50">
               <th className="px-4 py-3 font-medium">{t('stores.colName')}</th>
+              <th className="px-4 py-3 font-medium">{t('stores.colBusinessType')}</th>
               <th className="px-4 py-3 font-medium">{t('stores.colAddress')}</th>
               <th className="px-4 py-3 font-medium">{t('stores.colPhone')}</th>
               <th className="px-4 py-3 font-medium">{t('stores.colActive')}</th>
@@ -132,12 +133,15 @@ export default function StoresPage({ showCompanySelect = false, companyIdFilter,
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
             {isPending ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">{t('common.loading')}</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">{t('common.loading')}</td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">{t('stores.empty')}</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">{t('stores.empty')}</td></tr>
             ) : rows.map((row) => (
               <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                 <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{row.name}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                  {t(`productTemplates.businessTypes.${row.businessType ?? 'UNIVERSAL'}`)}
+                </td>
                 <td className="px-4 py-3 text-slate-600 dark:text-slate-400 max-w-md">{row.address || '—'}</td>
                 <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{row.phone || '—'}</td>
                 <td className="px-4 py-3">

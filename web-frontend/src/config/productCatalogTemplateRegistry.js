@@ -33,7 +33,7 @@ import {
   Wrench,
 } from 'lucide-react';
 
-/** @typedef {'CONSTRUCTION'|'GROCERY'|'CLOTHING'|'PHARMACY'|'CANTEEN'|'RESTAURANT'|'AUTO_PARTS'|'UNIVERSAL'} BusinessTypeCode */
+/** @typedef {'CONSTRUCTION'|'GROCERY'|'CLOTHING'|'PHARMACY'|'CANTEEN'|'RESTAURANT'|'AUTO_PARTS'|'UNIVERSAL'|'OTHER'} BusinessTypeCode */
 
 /** @typedef {'tasnif'|'typeSelectors'|'construction'|'retailFlags'|'clothing'|'pharmacy'|'ownerVat'|'advancedUnits'|'accounting'|'storePrices'|'barcodes'} CatalogSection */
 
@@ -84,6 +84,12 @@ export const BUSINESS_TYPES = [
     code: 'UNIVERSAL',
     icon: Box,
     sort: 99,
+    templateCodes: null,
+  },
+  {
+    code: 'OTHER',
+    icon: LayoutGrid,
+    sort: 100,
     templateCodes: null,
   },
 ];
@@ -483,6 +489,18 @@ export function getBusinessType(code) {
   return businessByCode.get(code) ?? businessByCode.get('UNIVERSAL');
 }
 
+/** OTHER и UNIVERSAL — полный набор шаблонов / расширенная форма. */
+export function resolveBusinessTypeForTemplates(code) {
+  if (code === 'OTHER') return 'UNIVERSAL';
+  return code ?? 'UNIVERSAL';
+}
+
+/** Гипермаркет / универсальный магазин — полная форма без шаблонов. */
+export function isUniversalStoreType(businessTypeCode) {
+  const code = resolveBusinessTypeForTemplates(businessTypeCode);
+  return code === 'UNIVERSAL';
+}
+
 export function getProductTemplate(code) {
   if (!code) return null;
   return templateByCode.get(code) ?? null;
@@ -493,7 +511,7 @@ export function listEnabledTemplates() {
 }
 
 export function listTemplatesForBusinessType(businessTypeCode) {
-  const bt = getBusinessType(businessTypeCode);
+  const bt = getBusinessType(resolveBusinessTypeForTemplates(businessTypeCode));
   if (!bt || bt.templateCodes == null) {
     return listEnabledTemplates();
   }
@@ -512,7 +530,10 @@ export function templateHasSection(template, section) {
  * classicMode — старая полная форма с tasnif (без блоков одежда/аптека/стройка разом).
  * Шаблон — базовые поля как в классике, но без tasnif если fiscalMode !== 'full'.
  */
-export function resolveCatalogSectionVisible(section, { classicMode, template, productType }) {
+export function resolveCatalogSectionVisible(section, { classicMode, universalMode, template, productType }) {
+  if (universalMode) {
+    return ALL_SECTIONS.includes(section);
+  }
   if (classicMode) {
     if (section === 'clothing' || section === 'pharmacy') return false;
     if (section === 'construction') return productType === 'MATERIAL';

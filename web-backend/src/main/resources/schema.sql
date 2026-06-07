@@ -167,8 +167,9 @@ CREATE TABLE stores (
     code        VARCHAR(50),
     address     TEXT,
     phone       VARCHAR(50),
-    company_id  INT REFERENCES companies(id) ON DELETE SET NULL,
-    is_active   BOOLEAN DEFAULT TRUE
+    company_id     INT REFERENCES companies(id) ON DELETE SET NULL,
+    business_type  VARCHAR(32) NOT NULL DEFAULT 'UNIVERSAL',
+    is_active      BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE user_stores (

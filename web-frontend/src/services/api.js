@@ -331,7 +331,6 @@ export const tenantDisplayApi = {
 
 export const companyBusinessTypeApi = {
   get: () => api.get('/company-business-type'),
-  save: (businessType) => api.put('/company-business-type', { businessType }),
 };
 
 export const unitsApi = {

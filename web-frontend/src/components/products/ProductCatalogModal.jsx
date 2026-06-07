@@ -7,6 +7,7 @@ import ProductCatalogStorePricesSection from './catalog/ProductCatalogStorePrice
 import ProductCatalogBarcodesSection from './catalog/ProductCatalogBarcodesSection';
 import ProductCatalogRetailExtrasSection from './catalog/ProductCatalogRetailExtrasSection';
 import ProductCatalogFiscalSection from './catalog/ProductCatalogFiscalSection';
+import ProductCatalogStoreContextSection from './catalog/ProductCatalogStoreContextSection';
 
 export default function ProductCatalogModal({
   product,
@@ -16,9 +17,18 @@ export default function ProductCatalogModal({
   onSaved,
   templateCode = null,
   advancedMode = false,
+  universalMode = false,
+  selectedStore = null,
+  onCreateStoreChange,
   onBackToPicker,
+  onBackToStores,
 }) {
-  const form = useProductCatalogForm(product, stores, onSaved, { templateCode, advancedMode });
+  const form = useProductCatalogForm(product, stores, onSaved, {
+    templateCode,
+    advancedMode,
+    universalMode,
+    selectedStoreId: selectedStore?.id ?? null,
+  });
   const templateTitle =
     form.templateCode && !form.advancedMode
       ? form.t(`productTemplates.${form.templateCode}.title`)
@@ -29,7 +39,17 @@ export default function ProductCatalogModal({
       <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3">
-            {!form.isEdit && onBackToPicker ? (
+            {!form.isEdit && onBackToStores ? (
+              <button
+                type="button"
+                onClick={onBackToStores}
+                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white"
+                title={form.t('productTemplates.backToStores')}
+              >
+                <ArrowLeft size={18} />
+              </button>
+            ) : null}
+            {!form.isEdit && !onBackToStores && onBackToPicker ? (
               <button
                 type="button"
                 onClick={onBackToPicker}
@@ -43,12 +63,17 @@ export default function ProductCatalogModal({
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                 {form.isEdit ? form.t('productCatalog.editTitle') : form.t('productCatalog.addTitle')}
               </h2>
+              {form.universalMode ? (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                  {form.t('productTemplates.universalBadge')}
+                </p>
+              ) : null}
               {templateTitle ? (
                 <p className="text-xs text-emerald-600 dark:text-emerald-400">
                   {form.t('productTemplates.formBadge', { template: templateTitle })}
                 </p>
               ) : null}
-              {form.advancedMode ? (
+              {form.advancedMode && !form.universalMode ? (
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {form.t('productTemplates.advancedBadge')}
                 </p>
@@ -56,7 +81,7 @@ export default function ProductCatalogModal({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {form.canToggleAdvanced ? (
+            {form.canToggleAdvanced && !form.universalMode ? (
               <button
                 type="button"
                 onClick={() => form.setAdvancedMode(!form.advancedMode)}
@@ -74,6 +99,15 @@ export default function ProductCatalogModal({
         </div>
 
         <form onSubmit={form.handleSubmit(form.onSubmit)} className="p-5 space-y-8">
+          {!form.isEdit && selectedStore && onCreateStoreChange ? (
+            <ProductCatalogStoreContextSection
+              t={form.t}
+              stores={stores}
+              selectedStore={selectedStore}
+              onStoreChange={onCreateStoreChange}
+            />
+          ) : null}
+
           {form.showSection('tasnif') ? (
             <div className="space-y-4">
               <TasnifSearchPanel setValue={form.setValue} getValues={form.getValues} isEdit={form.isEdit} />
@@ -94,6 +128,7 @@ export default function ProductCatalogModal({
             saleTypeWatch={form.saleTypeWatch}
             productTypeWatch={form.productTypeWatch}
             template={form.template}
+            universalMode={form.universalMode}
             showSection={form.showSection}
           />
 
