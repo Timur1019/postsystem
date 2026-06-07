@@ -74,6 +74,10 @@ function registerOfflineIpc(getConfig, probeApiHealth) {
     safeOffline(() => localDb.openLocalShift(payload || {}), null),
   );
 
+  ipcMain.handle('offline:sync-shift-from-server', async (_e, payload) =>
+    safeOffline(() => localDb.syncServerShiftToLocal(payload || {}), null),
+  );
+
   ipcMain.handle('offline:save-sale', async (_e, payload) =>
     safeOffline(() => localDb.saveLocalSale(payload || {}), null),
   );

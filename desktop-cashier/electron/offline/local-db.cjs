@@ -386,6 +386,72 @@ async function openLocalShift({ storeId, cashierId, cashierName, storeName }) {
   return mapLocalShift(await getOpenShift({ storeId, cashierId }));
 }
 
+/** Копирует открытую смену с сервера в SQLite — чтобы офлайн продолжал ту же смену. */
+async function syncServerShiftToLocal({ shift, storeId, cashierId, cashierName, storeName }) {
+  await getDb();
+  if (!shift || shift.status !== 'OPEN') return null;
+
+  const existing = await getOpenShift({ storeId, cashierId });
+  const serverId = String(shift.id);
+  const openedAt = shift.openedAt || new Date().toISOString();
+  const saleCount = Number(shift.saleCount ?? 0);
+  const totalAmount = Number(shift.totalAmount ?? 0);
+  const cashAmount = Number(shift.cashAmount ?? 0);
+  const cardAmount = Number(shift.cardAmount ?? 0);
+  const resolvedStoreName = storeName || shift.storeName || getMeta('storeName') || '';
+  const resolvedCashierName = cashierName || shift.cashierName || '';
+
+  if (existing) {
+    db.run(
+      `UPDATE local_shifts SET
+        server_shift_id = ?,
+        cashier_name = ?,
+        store_name = ?,
+        opened_at = ?,
+        sale_count = ?,
+        total_amount = ?,
+        cash_amount = ?,
+        card_amount = ?,
+        status = 'OPEN'
+       WHERE client_shift_id = ?`,
+      [
+        serverId,
+        resolvedCashierName,
+        resolvedStoreName,
+        openedAt,
+        saleCount,
+        totalAmount,
+        cashAmount,
+        cardAmount,
+        existing.client_shift_id,
+      ],
+    );
+  } else {
+    const clientShiftId = crypto.randomUUID();
+    db.run(
+      `INSERT INTO local_shifts(
+        client_shift_id, server_shift_id, store_id, cashier_id, cashier_name, store_name,
+        opened_at, status, sale_count, total_amount, cash_amount, card_amount
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?)`,
+      [
+        clientShiftId,
+        serverId,
+        Number(storeId),
+        String(cashierId),
+        resolvedCashierName,
+        resolvedStoreName,
+        openedAt,
+        saleCount,
+        totalAmount,
+        cashAmount,
+        cardAmount,
+      ],
+    );
+  }
+  persistDb();
+  return mapLocalShift(await getOpenShift({ storeId, cashierId }));
+}
+
 async function bumpShiftTotals(clientShiftId, saleResponse) {
   await getDb();
   db.run(
@@ -522,6 +588,7 @@ module.exports = {
   getProductById,
   getOpenShift,
   openLocalShift,
+  syncServerShiftToLocal,
   mapLocalShift,
   saveLocalSale,
   listPendingSales,

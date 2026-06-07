@@ -23,7 +23,7 @@ export default function PosShiftClosedBanner({
         <button
           type="button"
           className="btn btn-success btn-sm d-inline-flex align-items-center gap-1"
-          disabled={openShiftMutation.isPending || (offlineDesktop && !canSellOffline)}
+          disabled={openShiftMutation.isPending}
           onClick={onOpenShift}
         >
           <DoorOpen size={16} aria-hidden />
@@ -32,7 +32,7 @@ export default function PosShiftClosedBanner({
         <button
           type="button"
           className="btn btn-outline-secondary btn-sm"
-          disabled={offlineDesktop && !canSellOffline}
+          disabled={false}
           onClick={onOpenShiftModal}
         >
           {t('pos.navShift')}

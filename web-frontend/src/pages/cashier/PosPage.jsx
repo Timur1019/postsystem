@@ -160,7 +160,14 @@ export default function PosPage() {
               onOpenShift={() =>
                 openShiftMutation.mutate(undefined, {
                   onSuccess: () => toast.success(t('pos.shiftOpenedSuccess')),
-                  onError: (e) => toast.error(e.response?.data?.message ?? t('pos.shiftOpenFailed')),
+                  onError: (e) =>
+                    toast.error(
+                      e.response?.data?.message ??
+                        (e?.message === 'OFFLINE_SHIFT_OPEN_FAILED'
+                          ? t('offline.shiftOpenFailed')
+                          : e?.message) ??
+                        t('pos.shiftOpenFailed'),
+                    ),
                 })
               }
               onOpenShiftModal={openShiftModal}

@@ -2534,6 +2534,7 @@
     "updateCatalogNeedsInternet": "Katalogni yangilash faqat internet ulanganida mumkin.",
     "updateCatalogFailed": "Katalogni yangilab bo‘lmadi. Internetni tekshirib qayta urinib ko‘ring.",
     "openShiftNeedsCatalog": "Avval internetda katalogni yuklang, keyin smenani oching.",
+    "shiftOpenFailed": "Smenani mahalliy ochib bo‘lmadi. Ilovani qayta ishga tushiring.",
     "syncing": "Sinxronlanmoqda…",
     "saleSavedLocally": "Savdo mahalliy saqlandi. Internet paydo bo‘lganda serverga yuboriladi."
   },
