@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { CloudOff, CloudUpload, RefreshCw } from 'lucide-react';
+import { CloudOff, RefreshCw, Wifi } from 'lucide-react';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { useConnectivityStore, refreshConnectivityStatus } from '../../store/connectivityStore';
 import {
@@ -97,7 +97,7 @@ export default function OfflineStatusBanner() {
   return (
     <div className={`offline-banner ${tone}`} role="status">
       <span className="offline-banner__icon">
-        {showOffline ? <CloudOff size={16} aria-hidden /> : <CloudUpload size={16} aria-hidden />}
+        {showOffline ? <CloudOff size={16} aria-hidden /> : <Wifi size={16} aria-hidden />}
       </span>
       <span className="offline-banner__text">{message}</span>
       <div className="offline-banner__actions">
