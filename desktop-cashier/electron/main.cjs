@@ -650,11 +650,12 @@ async function waitLabelReadyForPrint(wc, attempts = 45) {
   return false;
 }
 
-ipcMain.handle('print-label-page', async (event) => {
+ipcMain.handle('print-label-page', async (event, opts) => {
   const wc = event.sender;
   if (!wc || wc.isDestroyed()) {
     throw new Error('Окно печати недоступно');
   }
+  const copies = Math.min(999, Math.max(1, Math.trunc(Number(opts?.copies) || 1)));
   const ready = await waitLabelReadyForPrint(wc);
   if (!ready) {
     throw new Error('Этикетка не готова для печати (штрихкод или макет)');
@@ -676,8 +677,8 @@ ipcMain.handle('print-label-page', async (event) => {
       'Принтер этикеток не выбран. Меню Aurent → «Принтер штрих-кодов» — укажите устройство из списка Windows.'
     );
   }
-  await runSilentLabelPrint(wc, { deviceName, printers, dims });
-  return { ok: true, deviceName };
+  await runSilentLabelPrint(wc, { deviceName, printers, dims, copies });
+  return { ok: true, deviceName, copies };
 });
 
 function fitWindowToPosDisplay(win) {

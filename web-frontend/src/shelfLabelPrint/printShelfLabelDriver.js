@@ -116,16 +116,17 @@ async function withLabelPrintCapture(runPrint, { settleMs = 450 } = {}) {
   }
 }
 
-async function invokeDesktopLabelPrint(requireBarcode = true) {
+async function invokeDesktopLabelPrint(requireBarcode = true, copies = 1) {
   let lastErr;
   for (let attempt = 1; attempt <= SILENT_LABEL_MAX_ATTEMPTS; attempt += 1) {
     try {
       assertLabelLayerReady(requireBarcode);
       prepareSingleLabelPrintPage();
       cancelScheduledLabelPrintUnmount();
-      const result = await withLabelPrintCapture(() => window.desktopCashier.printLabelPage(), {
-        settleMs: 450,
-      });
+      const result = await withLabelPrintCapture(
+        () => window.desktopCashier.printLabelPage({ copies }),
+        { settleMs: 450 },
+      );
       return result;
     } catch (err) {
       lastErr = normalizeLabelPrintError(err);
@@ -143,7 +144,7 @@ async function invokeDesktopLabelPrint(requireBarcode = true) {
 /**
  * Тихая печать этикетки через драйвер (Electron) или диалог браузера.
  */
-export async function printShelfLabelSilent({ requireBarcode = true } = {}) {
+export async function printShelfLabelSilent({ requireBarcode = true, copies = 1 } = {}) {
   if (!isDesktopLabelPrintAvailable()) {
     document.body.classList.add(SHELF_LABEL_PRINT_ACTIVE_CLASS);
     return new Promise((resolve, reject) => {
@@ -182,7 +183,7 @@ export async function printShelfLabelSilent({ requireBarcode = true } = {}) {
     await waitForLabelDomReady({ requireBarcode });
     await waitForPaintSettled();
     await new Promise((r) => setTimeout(r, 200));
-    const result = await invokeDesktopLabelPrint(requireBarcode);
+    const result = await invokeDesktopLabelPrint(requireBarcode, copies);
     return { mode: 'silent', deviceName: result?.deviceName };
   } finally {
     cleanupLabelPrintState();

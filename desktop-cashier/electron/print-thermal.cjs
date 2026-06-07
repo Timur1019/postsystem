@@ -164,12 +164,13 @@ const LOCK_SINGLE_LABEL_PAGE_JS = `
 
 const MEASURE_LABEL_DIMS_JS = LOCK_SINGLE_LABEL_PAGE_JS;
 
-function buildLabelSilentPrintOpts(deviceName, dims) {
+function buildLabelSilentPrintOpts(deviceName, dims, copies = 1) {
+  const count = Math.min(999, Math.max(1, Math.trunc(Number(copies) || 1)));
   const opts = {
     silent: true,
     printBackground: true,
     margins: { marginType: 'none' },
-    copies: 1,
+    copies: count,
     pageRanges: '1',
     preferCSSPageSize: true,
     landscape: false,
@@ -191,6 +192,7 @@ async function runSilentLabelPrint(webContents, options = {}) {
   const deviceName = options.deviceName ? String(options.deviceName) : '';
   const printers = options.printers || [];
   const dims = options.dims || null;
+  const copies = Math.min(999, Math.max(1, Math.trunc(Number(options.copies) || 1)));
   const printerLabel = deviceName || 'не выбран';
 
   if (!String(deviceName).trim()) {
@@ -204,7 +206,7 @@ async function runSilentLabelPrint(webContents, options = {}) {
   let lastErr;
 
   for (const name of attempts) {
-    const opts = buildLabelSilentPrintOpts(name, dims);
+    const opts = buildLabelSilentPrintOpts(name, dims, copies);
     try {
       const result = await invokeWebContentsPrint(
         webContents,

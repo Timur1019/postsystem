@@ -7,7 +7,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('desktopCashier', {
   isDesktop: true,
   getCompanyLoginCode: () => ipcRenderer.invoke('desktop:get-company-login-code'),
-  printLabelPage: () => ipcRenderer.invoke('print-label-page'),
+  printLabelPage: (opts) => ipcRenderer.invoke('print-label-page', opts || {}),
   printReceiptEscpos: (payload) => ipcRenderer.invoke('desktop:print-receipt-escpos', payload),
   printZReportEscpos: (payload) => ipcRenderer.invoke('desktop:print-z-report-escpos', payload),
   printShiftReportEscpos: (payload) => ipcRenderer.invoke('desktop:print-shift-report-escpos', payload),
