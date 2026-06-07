@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { storeApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { useConnectivityStore } from '../store/connectivityStore';
+import { useConnectivityStore, useShouldUseOfflinePos } from '../store/connectivityStore';
 
 /**
  * Cashier POS store comes only from user.storeIds (assigned in admin).
@@ -11,7 +11,7 @@ import { useConnectivityStore } from '../store/connectivityStore';
 export function useCashierStore() {
   const user = useAuthStore((s) => s.user);
   const storeIds = user?.storeIds ?? [];
-  const offlineMode = useConnectivityStore((s) => s.offlineMode);
+  const skipOnlineStore = useShouldUseOfflinePos();
   const localStoreName = useConnectivityStore((s) => s.storeName);
 
   const assignment = useMemo(() => {
@@ -29,9 +29,9 @@ export function useCashierStore() {
   const { data: store, isPending, isError } = useQuery({
     queryKey: ['cashier-store', storeId],
     queryFn: () => storeApi.getById(storeId).then((r) => r.data),
-    enabled: storeId != null && !offlineMode,
+    enabled: storeId != null && !skipOnlineStore,
     staleTime: 60_000,
-    retry: offlineMode ? false : 2,
+    retry: skipOnlineStore ? false : 2,
   });
 
   const storeName = store?.name ?? localStoreName ?? null;
@@ -39,7 +39,7 @@ export function useCashierStore() {
   return {
     storeId,
     storeName,
-    storeLoading: !offlineMode && isPending && storeId != null,
+    storeLoading: !skipOnlineStore && isPending && storeId != null,
     storeError: isError,
     noAssignment: assignment.noAssignment,
     multipleAssignment: assignment.multipleAssignment,

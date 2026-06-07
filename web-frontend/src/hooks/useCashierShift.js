@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cashierShiftApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { useConnectivityStore } from '../store/connectivityStore';
+import { useConnectivityStore, useShouldUseOfflinePos } from '../store/connectivityStore';
 import {
   isDesktopOfflineBridge,
   offlineGetCurrentShift,
@@ -53,9 +53,8 @@ export async function fetchCurrentCashierShift(storeId, user, offlineShift = fal
 export function useCashierShift(storeId) {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id;
-  const offlineMode = useConnectivityStore((s) => s.offlineMode);
   const localStoreName = useConnectivityStore((s) => s.storeName);
-  const offlineShift = isDesktopOfflineBridge() && offlineMode;
+  const offlineShift = useShouldUseOfflinePos();
   const qc = useQueryClient();
 
   const query = useQuery({
@@ -120,9 +119,8 @@ export async function openCashierShift(storeId, user, offlineShift = false, stor
 export function useOpenCashierShift(storeId) {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id;
-  const offlineMode = useConnectivityStore((s) => s.offlineMode);
   const localStoreName = useConnectivityStore((s) => s.storeName);
-  const offlineShift = isDesktopOfflineBridge() && offlineMode;
+  const offlineShift = useShouldUseOfflinePos();
   const qc = useQueryClient();
 
   return useMutation({

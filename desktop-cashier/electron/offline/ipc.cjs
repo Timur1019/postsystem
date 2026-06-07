@@ -17,7 +17,7 @@ async function safeOffline(fn, fallback) {
   }
 }
 
-function registerOfflineIpc(getConfig, probeApiHealth) {
+function registerOfflineIpc(getConfig, probeBackendOnlineQuick) {
   ipcMain.handle('offline:get-status', async () => {
     const bootstrap = await safeOffline(() => localDb.getBootstrapStatus(), {
       deviceId: null,
@@ -31,9 +31,13 @@ function registerOfflineIpc(getConfig, probeApiHealth) {
     let apiOnline = false;
     try {
       const cfg = getConfig?.();
-      if (cfg && probeApiHealth) {
-        const probe = await probeApiHealth(cfg);
-        apiOnline = Boolean(probe?.ok);
+      if (cfg && probeBackendOnlineQuick) {
+        apiOnline = await Promise.race([
+          probeBackendOnlineQuick(cfg),
+          new Promise((resolve) => {
+            setTimeout(() => resolve(false), 3000);
+          }),
+        ]);
       }
     } catch {
       apiOnline = false;

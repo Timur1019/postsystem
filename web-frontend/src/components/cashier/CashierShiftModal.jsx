@@ -10,8 +10,7 @@ import ShiftReportPrintBody from './ShiftReportPrintBody';
 import ThermalReportPrintPortal from '../reports/ThermalReportPrintPortal';
 import { useAuthStore } from '../../store/authStore';
 import { useOpenCashierShift, shiftQueryKey } from '../../hooks/useCashierShift';
-import { useConnectivityStore } from '../../store/connectivityStore';
-import { isDesktopOfflineBridge } from '../../services/offline/desktopOfflineBridge';
+import { useConnectivityStore, useShouldUseOfflinePos } from '../../store/connectivityStore';
 
 export default function CashierShiftModal({
   open,
@@ -25,8 +24,7 @@ export default function CashierShiftModal({
   const { t } = useTranslation();
   const qc = useQueryClient();
   const userId = useAuthStore((s) => s.user?.id);
-  const offlineMode = useConnectivityStore((s) => s.offlineMode);
-  const offlineShift = isDesktopOfflineBridge() && offlineMode;
+  const offlineShift = useShouldUseOfflinePos();
   const shiftId = shift?.id;
   const [printReport, setPrintReport] = useState(null);
   const [printToken, setPrintToken] = useState(0);

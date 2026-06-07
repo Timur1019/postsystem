@@ -50,6 +50,7 @@ const localDb = require('./offline/local-db.cjs');
 const { logStartup } = require('./startup-log.cjs');
 const { resolveWebDist } = require('./embedded-server.cjs');
 const { httpGet } = require('./http-client.cjs');
+const { probeBackendOnlineQuick } = require('./connectivity-probe.cjs');
 
 const ALLOWED_PATH_PREFIXES = ['/login', '/cashier', '/receipt', '/users/barcode-print'];
 
@@ -63,8 +64,7 @@ async function broadcastConnectivity() {
     const bootstrap = await localDb.getBootstrapStatus();
     let apiOnline = false;
     try {
-      const probe = await probeApiHealth(config);
-      apiOnline = Boolean(probe?.ok);
+      apiOnline = await probeBackendOnlineQuick(config);
     } catch {
       apiOnline = false;
     }
@@ -348,7 +348,7 @@ function registerDesktopIpc() {
 
   registerScaleIpc(ipcMain, () => mainWindow);
   registerLabelTsplIpc(ipcMain);
-  registerOfflineIpc(() => config, probeApiHealth);
+  registerOfflineIpc(() => config, probeBackendOnlineQuick);
 
   if (escposModule?.registerEscposIpcHandlers) {
     escposModule.registerEscposIpcHandlers(ipcMain, {
@@ -914,6 +914,10 @@ async function bootstrapApp() {
   }
   logStartup('create_window', { cashierUrl: config?.cashierUrl });
   createWindow();
+  localDb
+    .getDb()
+    .then(() => logStartup('offline_db_prewarm_ok'))
+    .catch((err) => logStartup('offline_db_prewarm_failed', { message: err?.message || String(err) }));
   startConnectivityBroadcast();
 
   setupAutoUpdater({

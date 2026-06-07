@@ -6,7 +6,7 @@ import {
   isDesktopOfflineBridge,
   offlineGetProductByBarcode,
 } from '../../services/offline/desktopOfflineBridge';
-import { useConnectivityStore } from '../../store/connectivityStore';
+import { useConnectivityStore, useShouldUseLocalPosCatalog } from '../../store/connectivityStore';
 import { useBarcodeScanner } from '../useBarcodeScanner';
 import { lineSubtotal, useCartStore } from '../../store/cartStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -33,8 +33,7 @@ export function usePosCartHandlers({
   setSelectedLineId,
 }) {
   const { t } = useTranslation();
-  const offlineMode = useConnectivityStore((s) => s.offlineMode);
-  const useLocalCatalog = isDesktopOfflineBridge() && offlineMode;
+  const useLocalCatalog = useShouldUseLocalPosCatalog();
   const scanningRef = useRef(false);
   const [weightModalProduct, setWeightModalProduct] = useState(null);
   const [weightEditLineId, setWeightEditLineId] = useState(null);

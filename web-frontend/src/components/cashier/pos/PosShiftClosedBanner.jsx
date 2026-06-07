@@ -1,6 +1,5 @@
 import { DoorOpen } from 'lucide-react';
-import { useConnectivityStore } from '../../../store/connectivityStore';
-import { isDesktopOfflineBridge } from '../../../services/offline/desktopOfflineBridge';
+import { useConnectivityStore, useShouldUseOfflinePos } from '../../../store/connectivityStore';
 
 export default function PosShiftClosedBanner({
   t,
@@ -8,9 +7,8 @@ export default function PosShiftClosedBanner({
   onOpenShift,
   onOpenShiftModal,
 }) {
-  const offlineMode = useConnectivityStore((s) => s.offlineMode);
+  const offlineDesktop = useShouldUseOfflinePos();
   const canSellOffline = useConnectivityStore((s) => s.canSellOffline);
-  const offlineDesktop = isDesktopOfflineBridge() && offlineMode;
   const hint =
     offlineDesktop && !canSellOffline
       ? t('offline.openShiftNeedsCatalog')

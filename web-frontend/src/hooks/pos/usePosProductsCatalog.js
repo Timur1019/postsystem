@@ -3,9 +3,8 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { categoryApi, productApi } from '../../services/api';
 import { ALL_CATEGORY_ID } from '../../components/cashier/PosCatalogPanel';
 import { POS_PRODUCT_PAGE_SIZE } from '../../components/cashier/pos/posCatalogConstants';
-import { useConnectivityStore } from '../../store/connectivityStore';
+import { useConnectivityStore, useShouldUseLocalPosCatalog } from '../../store/connectivityStore';
 import {
-  isDesktopOfflineBridge,
   offlineListCategories,
   offlineSearchProducts,
 } from '../../services/offline/desktopOfflineBridge';
@@ -14,8 +13,7 @@ export function usePosProductsCatalog({ storeId, posPane }) {
   const [search, setSearch] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(ALL_CATEGORY_ID);
   const [catalogBrowse, setCatalogBrowse] = useState('categories');
-  const offlineMode = useConnectivityStore((s) => s.offlineMode);
-  const useLocalCatalog = isDesktopOfflineBridge() && offlineMode;
+  const useLocalCatalog = useShouldUseLocalPosCatalog();
 
   const searchActive = search.trim().length > 0;
   const categoryFilterId =
