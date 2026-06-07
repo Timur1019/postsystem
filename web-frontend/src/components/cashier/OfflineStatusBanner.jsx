@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { CloudOff, RefreshCw, Wifi } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCashierStore } from '../../hooks/useCashierStore';
 import { useConnectivityStore, refreshConnectivityStatus } from '../../store/connectivityStore';
 import {
@@ -20,6 +22,7 @@ function formatCatalogSyncAt(iso) {
 
 export default function OfflineStatusBanner() {
   const { t } = useTranslation();
+  const qc = useQueryClient();
   const { storeId } = useCashierStore();
   const offlineMode = useConnectivityStore((s) => s.offlineMode);
   const canSellOffline = useConnectivityStore((s) => s.canSellOffline);
@@ -58,16 +61,30 @@ export default function OfflineStatusBanner() {
 
   const handleRefreshCatalog = async () => {
     if (!storeId) return;
+    if (offlineMode) {
+      toast.error(t('offline.updateCatalogNeedsInternet'));
+      return;
+    }
     useConnectivityStore.getState().setSyncingCatalog(true);
     try {
-      await refreshCatalogBootstrap(storeId, { force: true });
+      const result = await refreshCatalogBootstrap(storeId, { force: true });
+      if (result?.skipped && result?.reason === 'error') {
+        throw new Error(t('offline.updateCatalogFailed'));
+      }
       useConnectivityStore.getState().setSyncResult({ ok: true });
       await refreshConnectivityStatus();
+      qc.invalidateQueries({ queryKey: ['pos-categories'] });
+      qc.invalidateQueries({ queryKey: ['pos-products'] });
+      if (!result?.skipped) {
+        toast.success(t('offline.catalogUpdated', { count: result?.productCount ?? 0 }));
+      }
     } catch (err) {
+      const message = err?.response?.data?.message || err?.message || t('offline.updateCatalogFailed');
       useConnectivityStore.getState().setSyncResult({
         ok: false,
-        error: err?.message || String(err),
+        error: message,
       });
+      toast.error(message);
     } finally {
       useConnectivityStore.getState().setSyncingCatalog(false);
     }

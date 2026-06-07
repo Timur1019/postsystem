@@ -12,6 +12,7 @@ export const useConnectivityStore = create((set, get) => ({
   lastSyncAt: null,
   lastCatalogSyncAt: null,
   productCount: 0,
+  storeName: null,
   lastSyncError: null,
   deviceId: null,
 
@@ -25,6 +26,7 @@ export const useConnectivityStore = create((set, get) => ({
       pendingSales: Number(status.pendingSales ?? 0),
       lastCatalogSyncAt: status.lastCatalogSyncAt || null,
       productCount: Number(status.productCount ?? 0),
+      storeName: status.storeName || null,
       deviceId: status.deviceId || null,
     });
   },

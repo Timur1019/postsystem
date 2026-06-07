@@ -2529,6 +2529,10 @@
     "updateCatalog": "Katalogni yangilash",
     "updatingCatalog": "Yangilanmoqda…",
     "catalogFresh": "Oflayn katalog: {{count}} ta mahsulot · {{date}}",
+    "catalogUpdated": "Katalog yangilandi: {{count}} ta mahsulot",
+    "catalogLoadFailed": "Mahalliy katalogni yuklab bo‘lmadi. Ilovani qayta ishga tushiring yoki internetni ulang.",
+    "updateCatalogNeedsInternet": "Katalogni yangilash faqat internet ulanganida mumkin.",
+    "updateCatalogFailed": "Katalogni yangilab bo‘lmadi. Internetni tekshirib qayta urinib ko‘ring.",
     "syncing": "Sinxronlanmoqda…",
     "saleSavedLocally": "Savdo mahalliy saqlandi. Internet paydo bo‘lganda serverga yuboriladi."
   },

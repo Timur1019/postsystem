@@ -23,6 +23,7 @@ export default function PosRegisterWorkspace({
     handleSearchEnter,
     categories,
     categoriesLoading,
+    categoriesError,
     selectedCategoryId,
     handleSelectCategory,
     searchActive,
@@ -30,6 +31,7 @@ export default function PosRegisterWorkspace({
     setCatalogBrowse,
     products,
     productsLoading,
+    productsError,
     productsLoadingMore,
     productsHasMore,
     fetchMoreProducts,
@@ -68,6 +70,7 @@ export default function PosRegisterWorkspace({
               scanDisabled={!storeId}
               categories={categories}
               categoriesLoading={categoriesLoading}
+              categoriesError={categoriesError}
               selectedCategoryId={selectedCategoryId}
               onSelectCategory={handleSelectCategory}
               searchActive={searchActive}
@@ -75,6 +78,7 @@ export default function PosRegisterWorkspace({
               onBrowseChange={setCatalogBrowse}
               products={products}
               productsLoading={productsLoading}
+              productsError={productsError}
               productsLoadingMore={productsLoadingMore}
               productsHasMore={Boolean(productsHasMore)}
               onLoadMoreProducts={() => fetchMoreProducts()}

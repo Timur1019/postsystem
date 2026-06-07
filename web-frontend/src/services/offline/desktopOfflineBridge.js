@@ -1,5 +1,16 @@
 /** Desktop offline bridge (Electron IPC). */
 
+const OFFLINE_IPC_TIMEOUT_MS = 12_000;
+
+function withOfflineTimeout(promise) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('offline_ipc_timeout')), OFFLINE_IPC_TIMEOUT_MS);
+    }),
+  ]);
+}
+
 export function isDesktopOfflineBridge() {
   return (
     typeof window !== 'undefined' &&
@@ -12,62 +23,62 @@ export async function offlineGetStatus() {
   if (!isDesktopOfflineBridge()) {
     return { apiOnline: true, offlineMode: false, canSellOffline: false, bootstrapReady: false };
   }
-  return window.desktopCashier.offlineGetStatus();
+  return withOfflineTimeout(window.desktopCashier.offlineGetStatus());
 }
 
 export async function offlineImportBootstrap(payload) {
   if (!isDesktopOfflineBridge()) return null;
-  return window.desktopCashier.offlineImportBootstrap(payload);
+  return withOfflineTimeout(window.desktopCashier.offlineImportBootstrap(payload));
 }
 
 export async function offlineListCategories() {
   if (!isDesktopOfflineBridge()) return [];
-  return window.desktopCashier.offlineListCategories();
+  return withOfflineTimeout(window.desktopCashier.offlineListCategories());
 }
 
 export async function offlineSearchProducts(opts) {
   if (!isDesktopOfflineBridge()) return [];
-  return window.desktopCashier.offlineSearchProducts(opts);
+  return withOfflineTimeout(window.desktopCashier.offlineSearchProducts(opts));
 }
 
 export async function offlineGetProductByBarcode(barcode) {
   if (!isDesktopOfflineBridge()) return null;
-  return window.desktopCashier.offlineGetProductByBarcode(barcode);
+  return withOfflineTimeout(window.desktopCashier.offlineGetProductByBarcode(barcode));
 }
 
 export async function offlineGetCurrentShift(payload) {
   if (!isDesktopOfflineBridge()) return null;
-  return window.desktopCashier.offlineGetCurrentShift(payload);
+  return withOfflineTimeout(window.desktopCashier.offlineGetCurrentShift(payload));
 }
 
 export async function offlineOpenShift(payload) {
   if (!isDesktopOfflineBridge()) return null;
-  return window.desktopCashier.offlineOpenShift(payload);
+  return withOfflineTimeout(window.desktopCashier.offlineOpenShift(payload));
 }
 
 export async function offlineSaveSale(payload) {
   if (!isDesktopOfflineBridge()) return null;
-  return window.desktopCashier.offlineSaveSale(payload);
+  return withOfflineTimeout(window.desktopCashier.offlineSaveSale(payload));
 }
 
 export async function offlineListPendingSales() {
   if (!isDesktopOfflineBridge()) return [];
-  return window.desktopCashier.offlineListPendingSales();
+  return withOfflineTimeout(window.desktopCashier.offlineListPendingSales());
 }
 
 export async function offlineListMySales(opts) {
   if (!isDesktopOfflineBridge()) return [];
-  return window.desktopCashier.offlineListMySales(opts);
+  return withOfflineTimeout(window.desktopCashier.offlineListMySales(opts));
 }
 
 export async function offlineMarkSalesSynced(results) {
   if (!isDesktopOfflineBridge()) return null;
-  return window.desktopCashier.offlineMarkSalesSynced(results);
+  return withOfflineTimeout(window.desktopCashier.offlineMarkSalesSynced(results));
 }
 
 export async function offlineDecreaseStock(productId, quantity) {
   if (!isDesktopOfflineBridge()) return null;
-  return window.desktopCashier.offlineDecreaseStock({ productId, quantity });
+  return withOfflineTimeout(window.desktopCashier.offlineDecreaseStock({ productId, quantity }));
 }
 
 export function subscribeOfflineConnectivity(callback) {

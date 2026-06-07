@@ -20,7 +20,14 @@ build.asarUnpack = [
   '**/node_modules/@serialport/**',
   '**/node_modules/node-thermal-printer/**',
   '**/node_modules/iconv-lite/**',
+  '**/node_modules/sql.js/**',
 ];
+
+const sqlWasm = path.join(__dirname, 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+if (fs.existsSync(sqlWasm)) {
+  extraResources.push({ from: sqlWasm, to: 'sql.js/sql-wasm.wasm' });
+}
+
 build.extraResources = extraResources;
 
 const updateUrl = process.env.DESKTOP_UPDATE_URL || 'http://127.0.0.1/downloads/desktop/';

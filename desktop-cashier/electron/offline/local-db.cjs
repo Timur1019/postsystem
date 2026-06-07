@@ -7,6 +7,31 @@ let sqlInitPromise;
 let db;
 let dbPath;
 
+const DB_INIT_TIMEOUT_MS = 15_000;
+
+function resolveSqlWasmFile(file) {
+  const fileName = path.basename(file);
+  const candidates = [
+    path.join(process.resourcesPath, 'sql.js', fileName),
+    path.join(process.resourcesPath, fileName),
+    path.join(__dirname, '..', '..', 'node_modules', 'sql.js', 'dist', fileName),
+    path.join(app.getAppPath(), 'node_modules', 'sql.js', 'dist', fileName),
+    path.join(
+      process.resourcesPath,
+      'app.asar.unpacked',
+      'node_modules',
+      'sql.js',
+      'dist',
+      fileName,
+    ),
+    path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', fileName),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  throw new Error(`sql.js wasm not found: ${fileName}`);
+}
+
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS meta (
   key TEXT PRIMARY KEY,
@@ -91,14 +116,23 @@ function loadSql() {
     // eslint-disable-next-line global-require
     const initSqlJs = require('sql.js');
     sqlInitPromise = initSqlJs({
-      locateFile: (file) => {
-        const bundled = path.join(__dirname, '..', '..', 'node_modules', 'sql.js', 'dist', file);
-        if (fs.existsSync(bundled)) return bundled;
-        return path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', file);
-      },
+      locateFile: resolveSqlWasmFile,
+    }).catch((err) => {
+      sqlInitPromise = null;
+      console.error('[offline-db] sql.js init failed:', err);
+      throw err;
     });
   }
   return sqlInitPromise;
+}
+
+function withDbTimeout(promise, label = 'offline-db') {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timeout`)), DB_INIT_TIMEOUT_MS);
+    }),
+  ]);
 }
 
 function persistDb() {
@@ -110,7 +144,7 @@ function persistDb() {
 
 async function getDb() {
   if (db) return db;
-  const SQL = await loadSql();
+  const SQL = await withDbTimeout(loadSql(), 'sql.js load');
   const file = dbFilePath();
   if (fs.existsSync(file)) {
     db = new SQL.Database(fs.readFileSync(file));

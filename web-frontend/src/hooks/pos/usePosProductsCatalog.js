@@ -4,13 +4,18 @@ import { categoryApi, productApi } from '../../services/api';
 import { ALL_CATEGORY_ID } from '../../components/cashier/PosCatalogPanel';
 import { POS_PRODUCT_PAGE_SIZE } from '../../components/cashier/pos/posCatalogConstants';
 import { useConnectivityStore } from '../../store/connectivityStore';
-import { offlineListCategories, offlineSearchProducts } from '../../services/offline/desktopOfflineBridge';
+import {
+  isDesktopOfflineBridge,
+  offlineListCategories,
+  offlineSearchProducts,
+} from '../../services/offline/desktopOfflineBridge';
 
 export function usePosProductsCatalog({ storeId, posPane }) {
   const [search, setSearch] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(ALL_CATEGORY_ID);
   const [catalogBrowse, setCatalogBrowse] = useState('categories');
-  const offlinePos = useConnectivityStore((s) => s.offlineMode && s.canSellOffline);
+  const offlineMode = useConnectivityStore((s) => s.offlineMode);
+  const useLocalCatalog = isDesktopOfflineBridge() && offlineMode;
 
   const searchActive = search.trim().length > 0;
   const categoryFilterId =
@@ -21,25 +26,32 @@ export function usePosProductsCatalog({ storeId, posPane }) {
   const productsEnabled =
     !!storeId && posPane === 'catalog' && (searchActive || catalogBrowse === 'products');
 
-  const { data: categories = [], isPending: categoriesLoading } = useQuery({
-    queryKey: ['pos-categories', offlinePos ? 'offline' : 'online'],
+  const {
+    data: categories = [],
+    isPending: categoriesLoading,
+    isError: categoriesError,
+  } = useQuery({
+    queryKey: ['pos-categories', useLocalCatalog ? 'offline' : 'online'],
     queryFn: () =>
-      offlinePos
+      useLocalCatalog
         ? offlineListCategories()
         : categoryApi.getAll().then((r) => r.data),
     enabled: !!storeId,
+    retry: useLocalCatalog ? false : 2,
+    staleTime: useLocalCatalog ? Infinity : 0,
   });
 
   const {
     data: productsPages,
     isPending: productsLoading,
+    isError: productsError,
     isFetchingNextPage: productsLoadingMore,
     hasNextPage: productsHasMore,
     fetchNextPage: fetchMoreProducts,
   } = useInfiniteQuery({
-    queryKey: ['pos-products', storeId, categoryFilterId, search.trim(), offlinePos ? 'offline' : 'online'],
+    queryKey: ['pos-products', storeId, categoryFilterId, search.trim(), useLocalCatalog ? 'offline' : 'online'],
     queryFn: async ({ pageParam }) => {
-      if (offlinePos) {
+      if (useLocalCatalog) {
         const content = await offlineSearchProducts({
           search: search.trim(),
           categoryId: categoryFilterId,
@@ -69,9 +81,11 @@ export function usePosProductsCatalog({ storeId, posPane }) {
     getNextPageParam: (lastPage, _pages, lastPageParam) => {
       const next = (lastPage?.number ?? 0) + 1;
       const total = lastPage?.totalPages ?? 0;
-      return next < total ? (offlinePos ? lastPageParam + POS_PRODUCT_PAGE_SIZE : next) : undefined;
+      return next < total ? (useLocalCatalog ? lastPageParam + POS_PRODUCT_PAGE_SIZE : next) : undefined;
     },
     enabled: productsEnabled,
+    retry: useLocalCatalog ? false : 2,
+    staleTime: useLocalCatalog ? Infinity : 0,
   });
 
   const products = productsPages?.pages.flatMap((page) => page?.content ?? []) ?? [];
@@ -91,8 +105,10 @@ export function usePosProductsCatalog({ storeId, posPane }) {
     searchActive,
     categories,
     categoriesLoading,
+    categoriesError,
     products,
     productsLoading,
+    productsError,
     productsLoadingMore,
     productsHasMore,
     fetchMoreProducts,

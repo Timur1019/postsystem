@@ -16,6 +16,7 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
     scanDisabled = false,
     categories,
     categoriesLoading,
+    categoriesError = false,
     selectedCategoryId,
     onSelectCategory,
     searchActive,
@@ -23,6 +24,7 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
     onBrowseChange,
     products,
     productsLoading,
+    productsError = false,
     productsLoadingMore = false,
     productsHasMore = false,
     onLoadMoreProducts,
@@ -180,6 +182,8 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
         {showCategories ? (
           categoriesLoading ? (
             <p className="pos-catalog-panel__empty">{t('common.loading')}</p>
+          ) : categoriesError ? (
+            <p className="pos-catalog-panel__empty">{t('offline.catalogLoadFailed')}</p>
           ) : (
             <div className="pos-category-browse">
               <button
@@ -219,6 +223,8 @@ const PosCatalogPanel = forwardRef(function PosCatalogPanel(
             ) : null}
             {productsLoading ? (
               <p className="pos-catalog-panel__empty">{t('common.loading')}</p>
+            ) : productsError ? (
+              <p className="pos-catalog-panel__empty">{t('offline.catalogLoadFailed')}</p>
             ) : products.length === 0 ? (
               <p className="pos-catalog-panel__empty">{t('pos.noProductsInCategory')}</p>
             ) : viewMode === 'list' ? (
