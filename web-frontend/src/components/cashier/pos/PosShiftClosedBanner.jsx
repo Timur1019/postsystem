@@ -1,6 +1,6 @@
 import { DoorOpen } from 'lucide-react';
-import { useConnectivityStore } from '../../store/connectivityStore';
-import { isDesktopOfflineBridge } from '../../services/offline/desktopOfflineBridge';
+import { useConnectivityStore } from '../../../store/connectivityStore';
+import { isDesktopOfflineBridge } from '../../../services/offline/desktopOfflineBridge';
 
 export default function PosShiftClosedBanner({
   t,
