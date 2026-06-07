@@ -142,6 +142,15 @@ export default function CashierPinLoginPage() {
 
   return (
     <div className={`cashier-pin-login${touchLayout ? ' cashier-pin-login--touch' : ''}`}>
+      <Link
+        to={adminLoginPath()}
+        className="cashier-pin-login__admin-chip"
+        aria-label={t('cashierLogin.adminLogin', { defaultValue: 'Вход администратора' })}
+        title={t('cashierLogin.adminLogin', { defaultValue: 'Вход администратора' })}
+      >
+        A
+      </Link>
+
       <div className="cashier-pin-login__layout">
         <aside className="cashier-pin-login__visual" aria-hidden="true">
           <img
@@ -229,9 +238,6 @@ export default function CashierPinLoginPage() {
             </div>
 
             <footer className="cashier-pin-login__footer">
-              <Link to={adminLoginPath()} className="cashier-pin-login__admin-link">
-                {t('cashierLogin.adminLogin', { defaultValue: 'Вход администратора' })}
-              </Link>
               <p className="cashier-pin-login__copyright">
                 {t('login.footer', { year: new Date().getFullYear() })}
               </p>

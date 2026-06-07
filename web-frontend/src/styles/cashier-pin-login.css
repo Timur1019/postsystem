@@ -17,6 +17,37 @@
   box-sizing: border-box;
 }
 
+.cashier-pin-login__admin-chip {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top, 0px));
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  z-index: 2147483601;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #10b981;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 2px 10px rgb(15 23 42 / 0.08);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.cashier-pin-login__admin-chip:hover {
+  border-color: #10b981;
+  box-shadow: 0 4px 14px rgb(16 185 129 / 0.18);
+}
+
+.cashier-pin-login__admin-chip:active {
+  transform: scale(0.96);
+}
+
 .cashier-pin-login__layout {
   display: flex;
   flex-direction: column;
@@ -193,19 +224,8 @@
   text-align: left;
 }
 
-.cashier-pin-login__admin-link {
-  display: inline-block;
-  font-size: 0.8125rem;
-  color: #94a3b8;
-  text-decoration: none;
-}
-
-.cashier-pin-login__admin-link:hover {
-  color: #64748b;
-}
-
 .cashier-pin-login__copyright {
-  margin: 0.75rem 0 0;
+  margin: 0;
   font-size: 0.75rem;
   color: #94a3b8;
 }
@@ -308,6 +328,12 @@
 }
 
 /* Сенсорный POS */
+.cashier-pin-login--touch .cashier-pin-login__admin-chip {
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.0625rem;
+}
+
 .cashier-pin-login--touch .cashier-pin-login__key {
   min-height: 4rem;
   font-size: 1.65rem;
