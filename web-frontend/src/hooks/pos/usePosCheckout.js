@@ -12,7 +12,7 @@ import { isDesktopCashier } from '../../utils/printReceipt';
 import { clampPayAmount, round2 } from '../../utils/taxAmounts';
 import { saleApi } from '../../services/api';
 import { useCartStore } from '../../store/cartStore';
-import { useConnectivityStore, userAllowedOfflinePos } from '../../store/connectivityStore';
+import { canUseOfflineCheckout, refreshConnectivityStatus } from '../../store/connectivityStore';
 import {
   offlineDecreaseStock,
   offlineGetCurrentShift,
@@ -22,7 +22,6 @@ import {
   buildOfflineCheckoutPayload,
   buildOfflineSaleResponse,
 } from '../../services/offline/buildOfflineSaleResponse';
-import { refreshConnectivityStatus } from '../../store/connectivityStore';
 import { useAuthStore } from '../../store/authStore';
 
 async function processOfflineCheckout({
@@ -93,9 +92,6 @@ export function usePosCheckout({
   const navigate = useNavigate();
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
-  const offlinePos =
-    userAllowedOfflinePos() &&
-    useConnectivityStore((s) => s.offlineMode && s.canSellOffline);
 
   const clearCart = useCartStore((s) => s.clearCart);
   const getCheckoutLineItems = useCartStore((s) => s.getCheckoutLineItems);
@@ -105,7 +101,7 @@ export function usePosCheckout({
   const checkoutMutation = useMutation({
     mutationFn: async (payment) => {
       const items = useCartStore.getState().items;
-      if (offlinePos) {
+      if (canUseOfflineCheckout()) {
         return processOfflineCheckout({
           storeId,
           payment,

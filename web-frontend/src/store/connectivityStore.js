@@ -3,6 +3,45 @@ import { offlineGetStatus, subscribeOfflineConnectivity } from '../services/offl
 import { useAuthStore } from './authStore';
 import { userHasCashierOfflineAccess } from '../utils/cashierOfflineAccess';
 
+/** Сразу offline при сбое; online — только после нескольких успешных probe подряд (Windows/Wi‑Fi). */
+const ONLINE_RECOVERY_STREAK = 2;
+let stableApiOnline = null;
+let onlineRecoveryStreak = 0;
+
+function stabilizeApiOnline(rawOnline) {
+  if (stableApiOnline === null) {
+    stableApiOnline = rawOnline;
+    onlineRecoveryStreak = rawOnline ? 1 : 0;
+    return stableApiOnline;
+  }
+  if (!rawOnline) {
+    stableApiOnline = false;
+    onlineRecoveryStreak = 0;
+    return false;
+  }
+  if (!stableApiOnline) {
+    onlineRecoveryStreak += 1;
+    if (onlineRecoveryStreak >= ONLINE_RECOVERY_STREAK) {
+      stableApiOnline = true;
+    }
+    return stableApiOnline;
+  }
+  return true;
+}
+
+export function isConnectivityOfflineLike(state) {
+  const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+  return Boolean(state?.offlineMode || !state?.apiOnline || browserOffline);
+}
+
+export function canUseOfflineCheckout(state = useConnectivityStore.getState()) {
+  return (
+    userHasCashierOfflineAccess(useAuthStore.getState().user) &&
+    isConnectivityOfflineLike(state) &&
+    Boolean(state.canSellOffline)
+  );
+}
+
 export const useConnectivityStore = create((set, get) => ({
   apiOnline: true,
   offlineMode: false,
@@ -20,16 +59,36 @@ export const useConnectivityStore = create((set, get) => ({
 
   applyStatus(status) {
     if (!status) return;
+    const prev = get();
+    const rawApiOnline =
+      status.apiOnline !== undefined ? Boolean(status.apiOnline) : prev.apiOnline;
+    const apiOnline = stabilizeApiOnline(rawApiOnline);
     set({
-      apiOnline: Boolean(status.apiOnline),
-      offlineMode: Boolean(status.offlineMode),
-      canSellOffline: Boolean(status.canSellOffline),
-      bootstrapReady: Boolean(status.bootstrapReady),
-      pendingSales: Number(status.pendingSales ?? 0),
-      lastCatalogSyncAt: status.lastCatalogSyncAt || null,
-      productCount: Number(status.productCount ?? 0),
-      storeName: status.storeName || null,
-      deviceId: status.deviceId || null,
+      apiOnline,
+      offlineMode: !apiOnline,
+      canSellOffline:
+        status.canSellOffline !== undefined
+          ? Boolean(status.canSellOffline)
+          : prev.canSellOffline,
+      bootstrapReady:
+        status.bootstrapReady !== undefined
+          ? Boolean(status.bootstrapReady)
+          : prev.bootstrapReady,
+      pendingSales:
+        status.pendingSales !== undefined
+          ? Number(status.pendingSales ?? 0)
+          : prev.pendingSales,
+      lastCatalogSyncAt:
+        status.lastCatalogSyncAt !== undefined
+          ? status.lastCatalogSyncAt || null
+          : prev.lastCatalogSyncAt,
+      productCount:
+        status.productCount !== undefined
+          ? Number(status.productCount ?? 0)
+          : prev.productCount,
+      storeName:
+        status.storeName !== undefined ? status.storeName || null : prev.storeName,
+      deviceId: status.deviceId !== undefined ? status.deviceId || null : prev.deviceId,
     });
   },
 
@@ -59,11 +118,7 @@ function applyBrowserOfflineHint() {
   if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return;
   const state = useConnectivityStore.getState();
   if (state.offlineMode && !state.apiOnline) return;
-  useConnectivityStore.getState().applyStatus({
-    ...state,
-    apiOnline: false,
-    offlineMode: true,
-  });
+  useConnectivityStore.getState().applyStatus({ apiOnline: false });
 }
 
 export async function refreshConnectivityStatus() {
@@ -73,11 +128,7 @@ export async function refreshConnectivityStatus() {
     useConnectivityStore.getState().applyStatus(status);
     return status;
   } catch {
-    useConnectivityStore.getState().applyStatus({
-      apiOnline: false,
-      offlineMode: true,
-      canSellOffline: false,
-    });
+    useConnectivityStore.getState().applyStatus({ apiOnline: false });
     return null;
   }
 }
@@ -109,10 +160,7 @@ export function stopConnectivityWatcher() {
 }
 
 export function isOfflinePosMode() {
-  const user = useAuthStore.getState().user;
-  if (!userHasCashierOfflineAccess(user)) return false;
-  const { offlineMode, canSellOffline } = useConnectivityStore.getState();
-  return offlineMode && canSellOffline;
+  return canUseOfflineCheckout();
 }
 
 export function userAllowedOfflinePos() {
@@ -127,9 +175,12 @@ export function shouldUseOfflinePos() {
 
 export function shouldUseLocalPosCatalog() {
   if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return false;
-  const { offlineMode, apiOnline, bootstrapReady } = useConnectivityStore.getState();
-  const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-  return offlineMode || !apiOnline || bootstrapReady || browserOffline;
+  const state = useConnectivityStore.getState();
+  const offlineLike = isConnectivityOfflineLike(state);
+  const offlineAllowed = userHasCashierOfflineAccess(useAuthStore.getState().user);
+  if (offlineLike && !offlineAllowed) return false;
+  if (state.bootstrapReady) return true;
+  return offlineLike;
 }
 
 export function useShouldUseOfflinePos() {
@@ -143,12 +194,13 @@ export function useShouldUseOfflinePos() {
 }
 
 export function useShouldUseLocalPosCatalog() {
+  const bootstrapReady = useConnectivityStore((s) => s.bootstrapReady);
   const apiOnline = useConnectivityStore((s) => s.apiOnline);
   const offlineMode = useConnectivityStore((s) => s.offlineMode);
-  const bootstrapReady = useConnectivityStore((s) => s.bootstrapReady);
   if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return false;
   const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
   const offlineLike = offlineMode || !apiOnline || browserOffline;
   if (offlineLike && !userHasCashierOfflineAccess(useAuthStore.getState().user)) return false;
-  return offlineMode || !apiOnline || bootstrapReady || browserOffline;
+  if (bootstrapReady) return true;
+  return offlineLike;
 }

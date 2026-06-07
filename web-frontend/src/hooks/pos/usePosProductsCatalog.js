@@ -84,6 +84,7 @@ export function usePosProductsCatalog({ storeId, posPane }) {
     enabled: productsEnabled,
     retry: useLocalCatalog ? false : 2,
     staleTime: useLocalCatalog ? Infinity : 0,
+    placeholderData: (previousData) => previousData,
   });
 
   const products = productsPages?.pages.flatMap((page) => page?.content ?? []) ?? [];

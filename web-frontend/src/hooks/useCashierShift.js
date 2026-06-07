@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { cashierShiftApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { useConnectivityStore, useShouldUseOfflinePos } from '../store/connectivityStore';
@@ -65,6 +65,7 @@ export function useCashierShift(storeId) {
     retry: offlineShift ? false : 1,
     staleTime: 5_000,
     refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
   useEffect(() => {
@@ -74,12 +75,12 @@ export function useCashierShift(storeId) {
 
   useEffect(() => {
     if (!isDesktopOfflineBridge() || !storeId) return undefined;
-    let wasOnline = useConnectivityStore.getState().apiOnline;
+    let prevApiOnline = useConnectivityStore.getState().apiOnline;
     const unsub = useConnectivityStore.subscribe((state) => {
-      if (wasOnline && !state.apiOnline) {
+      if (state.apiOnline !== prevApiOnline) {
         qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
+        prevApiOnline = state.apiOnline;
       }
-      wasOnline = state.apiOnline;
     });
     return unsub;
   }, [storeId, qc]);

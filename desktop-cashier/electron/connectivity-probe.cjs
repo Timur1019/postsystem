@@ -2,7 +2,7 @@ const { buildHealthUrl } = require('./server-url.cjs');
 const { httpGet } = require('./http-client.cjs');
 
 /** Быстрая проверка только backendOrigin — для IPC/баннера, без перебора портов. */
-async function probeBackendOnlineQuick(cfg, { timeoutMs = 2500 } = {}) {
+async function probeBackendOnlineQuick(cfg, { timeoutMs = 4000 } = {}) {
   const origin = String(cfg?.backendOrigin || '')
     .trim()
     .replace(/\/api\/v1\/actuator\/health\/?$/i, '')
