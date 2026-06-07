@@ -1,4 +1,13 @@
 const { app, BrowserWindow, dialog, shell, Menu, ipcMain } = require('electron');
+
+// Windows: системный прокси часто ломает прямое подключение к IP:8081 (Mac без прокси работает).
+app.commandLine.appendSwitch('no-proxy-server');
+process.env.NO_PROXY = '*';
+delete process.env.HTTP_PROXY;
+delete process.env.HTTPS_PROXY;
+delete process.env.http_proxy;
+delete process.env.https_proxy;
+
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
@@ -8,6 +17,7 @@ const {
   readPrinterSettings,
   writePrinterSettings,
   migrateToEmbeddedIfNeeded,
+  writeUserConfig,
 } = require('./config.cjs');
 const { buildOrigin, buildHealthUrl } = require('./server-url.cjs');
 const { startEmbeddedUi, stopEmbeddedUi } = require('./embedded-server.cjs');
@@ -420,6 +430,45 @@ function collectApiHealthUrls(cfg) {
   return [...new Set(urls)];
 }
 
+async function autoRepairBackendOrigin() {
+  const directHealth = buildHealthUrl(config.backendOrigin);
+  if (await httpOk(directHealth)) {
+    logStartup('backend_ok', { backendOrigin: config.backendOrigin });
+    return config;
+  }
+
+  logStartup('backend_unreachable', {
+    backendOrigin: config.backendOrigin,
+    directHealth,
+  });
+
+  const urls = collectApiHealthUrls(config);
+  for (const url of urls) {
+    if (url === directHealth) continue;
+    if (!(await httpOk(url))) continue;
+    const origin = url.replace(/\/api\/v1\/actuator\/health\/?$/i, '').replace(/\/$/, '');
+    try {
+      const u = new URL(origin.startsWith('http') ? origin : `http://${origin}`);
+      const apiPort = u.port || (u.protocol === 'https:' ? '443' : '80');
+      const backendOrigin = `${u.protocol}//${u.host}`;
+      writeUserConfig({
+        backendOrigin,
+        apiPort: String(apiPort),
+        webPort: String(apiPort),
+        apiHealthUrl: url,
+        useRemoteUi: false,
+      });
+      stopEmbeddedUi();
+      config = loadConfig();
+      logStartup('config_auto_repaired', { backendOrigin: config.backendOrigin, healthUrl: url });
+      return config;
+    } catch {
+      // try next url
+    }
+  }
+  return config;
+}
+
 async function probeApiHealth(cfg) {
   const urls = collectApiHealthUrls(cfg);
   for (const url of urls) {
@@ -796,6 +845,7 @@ async function bootstrapApp() {
     cashierUrl: config.cashierUrl,
     backendOrigin: config.backendOrigin,
   });
+  config = await autoRepairBackendOrigin();
   registerTrustedCertificateHandler();
 
   if (!hasUserServerConfig()) {

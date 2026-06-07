@@ -6,6 +6,8 @@ const { createHttpAgent } = require('./http-client.cjs');
 const { logStartup } = require('./startup-log.cjs');
 
 let server;
+let activeTarget;
+let activePort;
 
 function resolveWebDist() {
   const candidates = [
@@ -26,8 +28,15 @@ function startEmbeddedUi({ port, backendOrigin }) {
     return Promise.resolve(null);
   }
 
-  const app = express();
   const target = String(backendOrigin || '').replace(/\/$/, '');
+  if (server && activeTarget === target && activePort === port) {
+    return Promise.resolve(`http://127.0.0.1:${port}`);
+  }
+  stopEmbeddedUi();
+
+  const app = express();
+  activeTarget = target;
+  activePort = port;
   const proxyAgent = target ? createHttpAgent(target.startsWith('https')) : undefined;
   logStartup('embedded_proxy', { target, port });
   // pathFilter без app.use('/api') — иначе Express срезает префикс и ломает /api/v1/*
@@ -65,10 +74,6 @@ function startEmbeddedUi({ port, backendOrigin }) {
   });
 
   return new Promise((resolve, reject) => {
-    if (server) {
-      resolve(`http://127.0.0.1:${port}`);
-      return;
-    }
     server = app.listen(port, '127.0.0.1', () => {
       resolve(`http://127.0.0.1:${port}`);
     });
@@ -81,6 +86,8 @@ function stopEmbeddedUi() {
     server.close();
     server = null;
   }
+  activeTarget = null;
+  activePort = null;
 }
 
 module.exports = { startEmbeddedUi, stopEmbeddedUi, resolveWebDist };
