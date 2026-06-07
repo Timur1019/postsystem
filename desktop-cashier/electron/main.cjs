@@ -282,6 +282,12 @@ function registerDesktopIpc() {
     return cfg.companyLoginCode || '';
   });
 
+  ipcMain.handle('desktop:get-api-base-url', () => {
+    const cfg = loadConfig();
+    const origin = String(cfg.backendOrigin || '').replace(/\/$/, '');
+    return origin ? `${origin}/api/v1` : '';
+  });
+
   ipcMain.handle('desktop:open-server-setup', async () => {
     await openServerSettings();
     return { ok: true };
@@ -748,6 +754,8 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      /** Прямые API-запросы desktop → backend (Windows, fallback если прокси недоступен). */
+      webSecurity: false,
       preload: path.join(__dirname, 'preload.cjs'),
     },
   });

@@ -60,6 +60,7 @@ import PlatformEmailPage from './pages/platform/PlatformEmailPage';
 import { useModuleAccess } from './hooks/useModuleAccess';
 import HtmlLangSync      from './components/shared/HtmlLangSync';
 import AuthBootstrap     from './components/shared/AuthBootstrap';
+import DesktopApiBootstrap from './components/shared/DesktopApiBootstrap';
 import TenantDisplayBootstrap from './components/shared/TenantDisplayBootstrap';
 import UnitsCatalogBootstrap from './components/shared/UnitsCatalogBootstrap';
 import CashierLayout     from './components/layout/CashierLayout';
@@ -116,6 +117,7 @@ export default function App() {
       <HtmlLangSync />
       <BrowserRouter>
         <AuthBootstrap>
+          <DesktopApiBootstrap>
           <TenantDisplayBootstrap>
           <UnitsCatalogBootstrap>
         <Routes>
@@ -290,6 +292,7 @@ export default function App() {
         </Routes>
           </UnitsCatalogBootstrap>
           </TenantDisplayBootstrap>
+          </DesktopApiBootstrap>
         </AuthBootstrap>
       </BrowserRouter>
       <ThemedToaster />

@@ -1,7 +1,8 @@
 const express = require('express');
+const http = require('http');
+const https = require('https');
 const path = require('path');
 const fs = require('fs');
-const { createProxyMiddleware } = require('http-proxy-middleware');
 const { createHttpAgent } = require('./http-client.cjs');
 const { logStartup } = require('./startup-log.cjs');
 
@@ -22,6 +23,73 @@ function resolveWebDist() {
   return null;
 }
 
+function createNativeApiProxy(backendOrigin) {
+  const target = String(backendOrigin || '').replace(/\/$/, '');
+  if (!target) {
+    return (_req, res) => {
+      res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ message: 'Сервер не настроен. Меню Aurent → Настройка сервера.' }));
+    };
+  }
+
+  let targetUrl;
+  try {
+    targetUrl = new URL(target);
+  } catch {
+    return (_req, res) => {
+      res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ message: 'Неверный адрес сервера в настройках.' }));
+    };
+  }
+
+  const isHttps = targetUrl.protocol === 'https:';
+  const client = isHttps ? https : http;
+  const agent = createHttpAgent(isHttps);
+
+  return (req, res) => {
+    const headers = { ...req.headers, host: targetUrl.host, connection: 'close' };
+    delete headers.origin;
+    delete headers.referer;
+
+    const options = {
+      hostname: targetUrl.hostname,
+      port: targetUrl.port || (isHttps ? 443 : 80),
+      path: req.originalUrl,
+      method: req.method,
+      headers,
+      agent,
+      rejectUnauthorized: false,
+      timeout: 20_000,
+    };
+
+    const proxyReq = client.request(options, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
+      proxyRes.pipe(res);
+    });
+
+    proxyReq.on('error', (err) => {
+      console.error('[Aurent proxy]', target, req.method, req.originalUrl, err.message);
+      logStartup('proxy_error', {
+        target,
+        path: req.originalUrl,
+        message: err.message,
+      });
+      if (!res.headersSent) {
+        res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(
+          JSON.stringify({
+            message:
+              `Не удалось связаться с сервером (${target}). ` +
+              'Проверьте IP 111.88.132.126, порт 8081, «Настройка сервера».',
+          }),
+        );
+      }
+    });
+
+    req.pipe(proxyReq);
+  };
+}
+
 function startEmbeddedUi({ port, backendOrigin }) {
   const distPath = resolveWebDist();
   if (!distPath) {
@@ -37,37 +105,9 @@ function startEmbeddedUi({ port, backendOrigin }) {
   const app = express();
   activeTarget = target;
   activePort = port;
-  const proxyAgent = target ? createHttpAgent(target.startsWith('https')) : undefined;
-  logStartup('embedded_proxy', { target, port });
-  // pathFilter без app.use('/api') — иначе Express срезает префикс и ломает /api/v1/*
-  app.use(
-    createProxyMiddleware({
-      target,
-      changeOrigin: true,
-      secure: false,
-      agent: proxyAgent,
-      xfwd: true,
-      proxyTimeout: 20_000,
-      timeout: 20_000,
-      pathFilter: (pathname) => pathname.startsWith('/api'),
-      on: {
-        error: (err, _req, res) => {
-          console.error('[Aurent proxy]', target, err.message);
-          logStartup('proxy_error', { target, message: err.message });
-          if (res && typeof res.writeHead === 'function' && !res.headersSent) {
-            res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(
-              JSON.stringify({
-                message:
-                  `Не удалось связаться с сервером (${target || 'не настроен'}). ` +
-                  'Проверьте IP, порт 8081 и «Настройка сервера» в меню Aurent.',
-              }),
-            );
-          }
-        },
-      },
-    }),
-  );
+  logStartup('embedded_proxy', { target, port, mode: 'native' });
+
+  app.use('/api', createNativeApiProxy(target));
   app.use(express.static(distPath, { index: false }));
   app.get('*', (_req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
