@@ -398,7 +398,10 @@ CREATE TABLE sales (
     change_given    NUMERIC(18, 2) DEFAULT 0,
     status          VARCHAR(20) DEFAULT 'COMPLETED', -- COMPLETED, REFUNDED, VOIDED
     notes           TEXT,
-    created_at      TIMESTAMPTZ DEFAULT NOW()
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    client_sale_id  UUID UNIQUE,
+    offline_device_id VARCHAR(64),
+    sale_source     VARCHAR(20) NOT NULL DEFAULT 'ONLINE'
 );
 
 CREATE TABLE sale_items (

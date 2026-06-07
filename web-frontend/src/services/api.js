@@ -74,6 +74,11 @@ api.interceptors.response.use(
   }
 );
 
+export const syncApi = {
+  bootstrap: (storeId) => api.get('/sync/bootstrap', { params: { storeId } }),
+  pushSalesBatch: (body) => api.post('/sync/sales/batch', body),
+};
+
 // ---- Typed API modules ----
 export const authApi = {
   login:   (data) => api.post('/auth/login', data),

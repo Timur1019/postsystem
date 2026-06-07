@@ -1,0 +1,72 @@
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.offline-banner--offline {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.offline-banner--warn {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.offline-banner--pending {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.offline-banner--ok {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.offline-banner__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.offline-banner__text {
+  flex: 1 1 auto;
+}
+
+.offline-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.offline-banner__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.offline-banner--ok .offline-banner__action,
+.offline-banner--pending .offline-banner__action {
+  color: inherit;
+  border-color: currentColor;
+}
+
+.offline-banner--offline .offline-banner__action,
+.offline-banner--warn .offline-banner__action {
+  color: inherit;
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+.offline-banner__action .spin {
+  animation: offline-spin 0.9s linear infinite;
+}
+
+@keyframes offline-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

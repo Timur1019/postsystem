@@ -17,6 +17,8 @@ public interface SaleRepository extends JpaRepository<Sale, UUID>, JpaSpecificat
 
     Optional<Sale> findByReceiptNumber(String receiptNumber);
 
+    Optional<Sale> findByClientSaleId(UUID clientSaleId);
+
     @EntityGraph(attributePaths = {"cashier", "store", "items", "items.product", "cashierShift"})
     @Query("""
         SELECT s FROM Sale s

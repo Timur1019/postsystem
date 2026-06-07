@@ -1,9 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cashierShiftApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { useConnectivityStore } from '../store/connectivityStore';
+import {
+  offlineGetCurrentShift,
+  offlineOpenShift,
+} from '../services/offline/desktopOfflineBridge';
 
 /** Текущая открытая смена из БД; null — смена не открыта. */
-export async function fetchCurrentCashierShift(storeId) {
+export async function fetchCurrentCashierShift(storeId, user, offlinePos = false) {
+  if (offlinePos) {
+    if (!user?.id) return null;
+    return offlineGetCurrentShift({ storeId, cashierId: user.id });
+  }
   try {
     const res = await cashierShiftApi.current(storeId);
     return res.data;
@@ -14,11 +23,13 @@ export async function fetchCurrentCashierShift(storeId) {
 }
 
 export function useCashierShift(storeId) {
-  const userId = useAuthStore((s) => s.user?.id);
+  const user = useAuthStore((s) => s.user);
+  const userId = user?.id;
+  const offlinePos = useConnectivityStore((s) => s.offlineMode && s.canSellOffline);
 
   return useQuery({
-    queryKey: ['cashier-shift', storeId, userId],
-    queryFn: () => fetchCurrentCashierShift(storeId),
+    queryKey: ['cashier-shift', storeId, userId, offlinePos ? 'offline' : 'online'],
+    queryFn: () => fetchCurrentCashierShift(storeId, user, offlinePos),
     enabled: storeId != null && userId != null,
     retry: false,
     staleTime: 5_000,
@@ -27,7 +38,14 @@ export function useCashierShift(storeId) {
 }
 
 /** Открыть смену (POST /open; если уже открыта — GET /current). */
-export async function openCashierShift(storeId) {
+export async function openCashierShift(storeId, user, offlinePos = false) {
+  if (offlinePos) {
+    return offlineOpenShift({
+      storeId,
+      cashierId: user?.id,
+      cashierName: user?.fullName || user?.username || '',
+    });
+  }
   try {
     const res = await cashierShiftApi.open(storeId);
     return res.data;
@@ -42,13 +60,15 @@ export async function openCashierShift(storeId) {
 }
 
 export function useOpenCashierShift(storeId) {
-  const userId = useAuthStore((s) => s.user?.id);
+  const user = useAuthStore((s) => s.user);
+  const userId = user?.id;
+  const offlinePos = useConnectivityStore((s) => s.offlineMode && s.canSellOffline);
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: () => openCashierShift(storeId),
+    mutationFn: () => openCashierShift(storeId, user, offlinePos),
     onSuccess: (data) => {
-      qc.setQueryData(['cashier-shift', storeId, userId], data);
+      qc.setQueryData(['cashier-shift', storeId, userId, offlinePos ? 'offline' : 'online'], data);
     },
   });
 }

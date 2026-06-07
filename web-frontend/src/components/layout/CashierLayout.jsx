@@ -27,7 +27,9 @@ import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 import { cashierLoginPath } from '../../utils/authLogin';
 import BrandMark from '../shared/BrandMark';
 import { useCashierShift } from '../../hooks/useCashierShift';
+import { useOfflineConnectivity } from '../../hooks/useOfflineConnectivity';
 import { useCashierTouchLayout } from '../../hooks/useCashierTouchLayout';
+import OfflineStatusBanner from '../cashier/OfflineStatusBanner';
 import { resetCashierDocumentUiState } from '../../utils/resetCashierDocumentUiState';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../styles/cashier-modals.css';
@@ -38,6 +40,7 @@ import '../../styles/cashier-pos-layout.css';
 import '../../styles/cashier-register-pay-rail.css';
 import '../../styles/cashier-responsive.css';
 import '../../styles/cashier-secondary-pages.css';
+import '../../styles/offline-banner.css';
 
 function displayName(user) {
   if (!user) return '';
@@ -154,6 +157,8 @@ function CashierLayoutShell() {
   const themeClass = cashierThemeClassName(cashierTheme);
   const isDesktopApp =
     typeof window !== 'undefined' && Boolean(window.desktopCashier?.isDesktop);
+
+  useOfflineConnectivity();
 
   useEffect(() => {
     if (!isDesktopApp) return undefined;
@@ -324,6 +329,7 @@ function CashierLayoutShell() {
                 </div>
               </div>
             </header>
+            {isDesktopApp ? <OfflineStatusBanner /> : null}
             <main className="flex-grow-1 overflow-hidden p-2 p-lg-3 d-flex flex-column min-h-0">
               <Outlet />
             </main>
@@ -389,6 +395,7 @@ function CashierLayoutShell() {
                 <LanguageSwitcher variant="cashier" className="cashier-topbar__lang" />
               </div>
             </header>
+            {isDesktopApp ? <OfflineStatusBanner /> : null}
             <main className="flex-grow-1 overflow-hidden p-2 p-lg-3 d-flex flex-column min-h-0">
               <Outlet />
             </main>

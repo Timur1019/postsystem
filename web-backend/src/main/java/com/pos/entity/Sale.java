@@ -105,11 +105,30 @@ public class Sale {
 
     private String notes;
 
+    /** Idempotency key from desktop offline queue. */
+    @Column(name = "client_sale_id", unique = true)
+    private UUID clientSaleId;
+
+    @Column(name = "offline_device_id", length = 64)
+    private String offlineDeviceId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sale_source", nullable = false, length = 20)
+    @Builder.Default
+    private SaleSource saleSource = SaleSource.ONLINE;
+
     @Column(name = "created_at")
     private Instant createdAt;
 
+    public enum SaleSource {
+        ONLINE,
+        OFFLINE_SYNC
+    }
+
     @PrePersist void prePersist() {
-        this.createdAt = Instant.now();
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
         if (this.company == null && this.store != null && this.store.getCompany() != null) {
             this.company = this.store.getCompany();
         }

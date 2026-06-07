@@ -2518,6 +2518,20 @@
       }
     }
   },
+  "offline": {
+    "onlineOk": "Server bilan aloqa o‘rnatildi",
+    "workingOffline": "Tarmoqsiz rejim — savdolar shu kompyuterga saqlanadi",
+    "noCatalog": "Mahalliy katalog yo‘q. Birinchi yuklash uchun internetni ulang.",
+    "pendingSales": "Serverga yuborish kutilmoqda: {{count}}",
+    "preparingCatalog": "Oflayn katalog tayyorlanmoqda…",
+    "syncNow": "Sinxronlash",
+    "syncSales": "Savdolarni yuborish",
+    "updateCatalog": "Katalogni yangilash",
+    "updatingCatalog": "Yangilanmoqda…",
+    "catalogFresh": "Oflayn katalog: {{count}} ta mahsulot · {{date}}",
+    "syncing": "Sinxronlanmoqda…",
+    "saleSavedLocally": "Savdo mahalliy saqlandi. Internet paydo bo‘lganda serverga yuboriladi."
+  },
   "unitConversion": {
     "helperTitle": "Boshqa birlikda kiriting → {{unit}}",
     "altUnit": "Birlik",

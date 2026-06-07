@@ -34,6 +34,8 @@ function loadEscposModule() {
 const escposModule = loadEscposModule();
 const { registerScaleIpc } = require('./scales/index.cjs');
 const { registerLabelTsplIpc } = require('./label-tspl/index.cjs');
+const { registerOfflineIpc } = require('./offline/ipc.cjs');
+const localDb = require('./offline/local-db.cjs');
 const { logStartup } = require('./startup-log.cjs');
 const { resolveWebDist } = require('./embedded-server.cjs');
 
@@ -41,6 +43,35 @@ const ALLOWED_PATH_PREFIXES = ['/login', '/cashier', '/receipt', '/users/barcode
 
 let mainWindow;
 let config;
+let connectivityTimer;
+
+async function broadcastConnectivity() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  try {
+    const bootstrap = await localDb.getBootstrapStatus();
+    let apiOnline = false;
+    try {
+      const probe = await probeApiHealth(config);
+      apiOnline = Boolean(probe?.ok);
+    } catch {
+      apiOnline = false;
+    }
+    mainWindow.webContents.send('offline:connectivity', {
+      ...bootstrap,
+      apiOnline,
+      offlineMode: !apiOnline,
+      canSellOffline: bootstrap.bootstrapReady && bootstrap.productCount > 0,
+    });
+  } catch {
+    // ignore broadcast errors
+  }
+}
+
+function startConnectivityBroadcast() {
+  if (connectivityTimer) return;
+  broadcastConnectivity();
+  connectivityTimer = setInterval(broadcastConnectivity, 12_000);
+}
 
 function buildLoginUrl(cfg) {
   const base = `${String(cfg.cashierUrl || '').replace(/\/$/, '')}/cashier/login`;
@@ -229,6 +260,7 @@ function registerDesktopIpc() {
 
   registerScaleIpc(ipcMain, () => mainWindow);
   registerLabelTsplIpc(ipcMain);
+  registerOfflineIpc(() => config, probeApiHealth);
 
   if (escposModule?.registerEscposIpcHandlers) {
     escposModule.registerEscposIpcHandlers(ipcMain, {
@@ -692,17 +724,19 @@ async function bootstrapApp() {
   let check = await waitForServices();
   if (!check.ok) {
     logStartup('health_failed', { message: check.message });
-    const buttons =
-      process.platform === 'win32'
-        ? ['Настроить сервер', 'Открыть кассу всё равно', 'Закрыть']
-        : ['Настроить сервер', 'Закрыть'];
+    const hasEmbeddedUi = Boolean(config?.useEmbedded || resolveWebDist());
+    const buttons = hasEmbeddedUi
+      ? ['Настроить сервер', 'Открыть кассу офлайн', 'Закрыть']
+      : ['Настроить сервер', 'Закрыть'];
     const retry = dialog.showMessageBoxSync({
       type: 'error',
       title: 'Aurent — Касса',
       message: 'Не удалось подключиться к серверу',
-      detail: `${check.message}\n\nПроверьте интернет и порт 8081 (или 443 для HTTPS).`,
+      detail: `${check.message}\n\nПроверьте интернет и порт 8081 (или 443 для HTTPS).${
+        hasEmbeddedUi ? '\n\nМожно открыть кассу в офлайн-режиме, если каталог уже был загружен ранее.' : ''
+      }`,
       buttons,
-      defaultId: 0,
+      defaultId: hasEmbeddedUi ? 1 : 0,
       cancelId: buttons.length - 1,
     });
     if (retry === 0) {
@@ -713,9 +747,20 @@ async function bootstrapApp() {
       } catch {
         check = { ok: false, message: check.message };
       }
-    } else if (process.platform === 'win32' && retry === 1) {
-      logStartup('health_bypass_win');
-      check = { ok: true };
+    } else if (hasEmbeddedUi && retry === 1) {
+      logStartup('health_bypass_offline');
+      if (config.useEmbedded) {
+        try {
+          const url = await startEmbeddedUi({
+            port: config.embeddedPort,
+            backendOrigin: config.backendOrigin,
+          });
+          if (url) config.cashierUrl = url.replace(/\/$/, '');
+        } catch {
+          /* UI may still load from prior session */
+        }
+      }
+      check = { ok: true, offline: true };
     }
     if (!check.ok) {
       dialog.showErrorBox('Aurent — Касса', check.message);
@@ -725,6 +770,7 @@ async function bootstrapApp() {
   }
   logStartup('create_window', { cashierUrl: config?.cashierUrl });
   createWindow();
+  startConnectivityBroadcast();
 
   setupAutoUpdater({
     getMainWindow: () => mainWindow,
@@ -754,5 +800,9 @@ app.on('window-all-closed', () => {
 });
 
 app.on('quit', () => {
+  if (connectivityTimer) {
+    clearInterval(connectivityTimer);
+    connectivityTimer = null;
+  }
   stopEmbeddedUi();
 });

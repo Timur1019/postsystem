@@ -45,4 +45,23 @@ contextBridge.exposeInMainWorld('desktopCashier', {
   },
   openScalePicker: () => ipcRenderer.invoke('desktop:open-scale-picker'),
   scaleAutoDetect: (opts) => ipcRenderer.invoke('desktop:scale-auto-detect', opts || {}),
+
+  offlineGetStatus: () => ipcRenderer.invoke('offline:get-status'),
+  offlineImportBootstrap: (payload) => ipcRenderer.invoke('offline:import-bootstrap', payload),
+  offlineListCategories: () => ipcRenderer.invoke('offline:list-categories'),
+  offlineSearchProducts: (opts) => ipcRenderer.invoke('offline:search-products', opts || {}),
+  offlineGetProductByBarcode: (barcode) =>
+    ipcRenderer.invoke('offline:get-product-by-barcode', barcode),
+  offlineGetCurrentShift: (payload) => ipcRenderer.invoke('offline:get-current-shift', payload),
+  offlineOpenShift: (payload) => ipcRenderer.invoke('offline:open-shift', payload),
+  offlineSaveSale: (payload) => ipcRenderer.invoke('offline:save-sale', payload),
+  offlineListPendingSales: () => ipcRenderer.invoke('offline:list-pending-sales'),
+  offlineListMySales: (opts) => ipcRenderer.invoke('offline:list-my-sales', opts || {}),
+  offlineMarkSalesSynced: (results) => ipcRenderer.invoke('offline:mark-sales-synced', results),
+  offlineDecreaseStock: (payload) => ipcRenderer.invoke('offline:decrease-stock', payload),
+  onOfflineConnectivity: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on('offline:connectivity', listener);
+    return () => ipcRenderer.removeListener('offline:connectivity', listener);
+  },
 });
