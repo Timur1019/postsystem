@@ -2,7 +2,10 @@ import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { productApi } from '../../services/api';
-import { offlineGetProductByBarcode } from '../../services/offline/desktopOfflineBridge';
+import {
+  isDesktopOfflineBridge,
+  offlineGetProductByBarcode,
+} from '../../services/offline/desktopOfflineBridge';
 import { useConnectivityStore } from '../../store/connectivityStore';
 import { useBarcodeScanner } from '../useBarcodeScanner';
 import { lineSubtotal, useCartStore } from '../../store/cartStore';
@@ -30,7 +33,8 @@ export function usePosCartHandlers({
   setSelectedLineId,
 }) {
   const { t } = useTranslation();
-  const offlinePos = useConnectivityStore((s) => s.offlineMode && s.canSellOffline);
+  const offlineMode = useConnectivityStore((s) => s.offlineMode);
+  const useLocalCatalog = isDesktopOfflineBridge() && offlineMode;
   const scanningRef = useRef(false);
   const [weightModalProduct, setWeightModalProduct] = useState(null);
   const [weightEditLineId, setWeightEditLineId] = useState(null);
@@ -155,7 +159,7 @@ export function usePosCartHandlers({
       if (!trimmed || !storeId || scanningRef.current || payOpen || returnOpen) return false;
       scanningRef.current = true;
       try {
-        if (offlinePos) {
+        if (useLocalCatalog) {
           const product = await offlineGetProductByBarcode(trimmed);
           if (product) {
             addProductToCart(product);
@@ -177,7 +181,7 @@ export function usePosCartHandlers({
         searchInputRef.current?.focus();
       }
     },
-    [storeId, addProductToCart, payOpen, returnOpen, t, setSearch, searchInputRef, offlinePos]
+    [storeId, addProductToCart, payOpen, returnOpen, t, setSearch, searchInputRef, useLocalCatalog]
   );
 
   useBarcodeScanner({

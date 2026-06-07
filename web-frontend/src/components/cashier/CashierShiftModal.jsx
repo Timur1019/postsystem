@@ -9,7 +9,9 @@ import PosModalPortal from './PosModalPortal';
 import ShiftReportPrintBody from './ShiftReportPrintBody';
 import ThermalReportPrintPortal from '../reports/ThermalReportPrintPortal';
 import { useAuthStore } from '../../store/authStore';
-import { useOpenCashierShift } from '../../hooks/useCashierShift';
+import { useOpenCashierShift, shiftQueryKey } from '../../hooks/useCashierShift';
+import { useConnectivityStore } from '../../store/connectivityStore';
+import { isDesktopOfflineBridge } from '../../services/offline/desktopOfflineBridge';
 
 export default function CashierShiftModal({
   open,
@@ -23,6 +25,8 @@ export default function CashierShiftModal({
   const { t } = useTranslation();
   const qc = useQueryClient();
   const userId = useAuthStore((s) => s.user?.id);
+  const offlineMode = useConnectivityStore((s) => s.offlineMode);
+  const offlineShift = isDesktopOfflineBridge() && offlineMode;
   const shiftId = shift?.id;
   const [printReport, setPrintReport] = useState(null);
   const [printToken, setPrintToken] = useState(0);
@@ -48,7 +52,7 @@ export default function CashierShiftModal({
   });
 
   const applyNewShift = (newShift) => {
-    qc.setQueryData(['cashier-shift', storeId, userId], newShift);
+    qc.setQueryData(shiftQueryKey(storeId, userId, offlineShift), newShift);
     qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
     qc.invalidateQueries({ queryKey: ['my-sales'] });
     onShiftUpdated?.(newShift);
@@ -78,7 +82,7 @@ export default function CashierShiftModal({
     onSuccess: (closedShift) => {
       qc.invalidateQueries({ queryKey: ['z-reports'] });
       toast.success(t('pos.shiftClosedWithZReport'));
-      qc.setQueryData(['cashier-shift', storeId, userId], null);
+      qc.setQueryData(shiftQueryKey(storeId, userId, offlineShift), null);
       qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
       onShiftUpdated?.(closedShift);
       onClose();

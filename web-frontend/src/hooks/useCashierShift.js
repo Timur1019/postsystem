@@ -3,13 +3,18 @@ import { cashierShiftApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { useConnectivityStore } from '../store/connectivityStore';
 import {
+  isDesktopOfflineBridge,
   offlineGetCurrentShift,
   offlineOpenShift,
 } from '../services/offline/desktopOfflineBridge';
 
+function shiftQueryKey(storeId, userId, offlineShift) {
+  return ['cashier-shift', storeId, userId, offlineShift ? 'offline' : 'online'];
+}
+
 /** Текущая открытая смена из БД; null — смена не открыта. */
-export async function fetchCurrentCashierShift(storeId, user, offlinePos = false) {
-  if (offlinePos) {
+export async function fetchCurrentCashierShift(storeId, user, offlineShift = false) {
+  if (offlineShift) {
     if (!user?.id) return null;
     return offlineGetCurrentShift({ storeId, cashierId: user.id });
   }
@@ -25,25 +30,27 @@ export async function fetchCurrentCashierShift(storeId, user, offlinePos = false
 export function useCashierShift(storeId) {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id;
-  const offlinePos = useConnectivityStore((s) => s.offlineMode && s.canSellOffline);
+  const offlineMode = useConnectivityStore((s) => s.offlineMode);
+  const offlineShift = isDesktopOfflineBridge() && offlineMode;
 
   return useQuery({
-    queryKey: ['cashier-shift', storeId, userId, offlinePos ? 'offline' : 'online'],
-    queryFn: () => fetchCurrentCashierShift(storeId, user, offlinePos),
+    queryKey: shiftQueryKey(storeId, userId, offlineShift),
+    queryFn: () => fetchCurrentCashierShift(storeId, user, offlineShift),
     enabled: storeId != null && userId != null,
-    retry: false,
+    retry: offlineShift ? false : 1,
     staleTime: 5_000,
     refetchOnWindowFocus: false,
   });
 }
 
 /** Открыть смену (POST /open; если уже открыта — GET /current). */
-export async function openCashierShift(storeId, user, offlinePos = false) {
-  if (offlinePos) {
+export async function openCashierShift(storeId, user, offlineShift = false, storeName = '') {
+  if (offlineShift) {
     return offlineOpenShift({
       storeId,
       cashierId: user?.id,
       cashierName: user?.fullName || user?.username || '',
+      storeName,
     });
   }
   try {
@@ -62,13 +69,17 @@ export async function openCashierShift(storeId, user, offlinePos = false) {
 export function useOpenCashierShift(storeId) {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id;
-  const offlinePos = useConnectivityStore((s) => s.offlineMode && s.canSellOffline);
+  const offlineMode = useConnectivityStore((s) => s.offlineMode);
+  const localStoreName = useConnectivityStore((s) => s.storeName);
+  const offlineShift = isDesktopOfflineBridge() && offlineMode;
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: () => openCashierShift(storeId, user, offlinePos),
+    mutationFn: () => openCashierShift(storeId, user, offlineShift, localStoreName || ''),
     onSuccess: (data) => {
-      qc.setQueryData(['cashier-shift', storeId, userId, offlinePos ? 'offline' : 'online'], data);
+      qc.setQueryData(shiftQueryKey(storeId, userId, offlineShift), data);
     },
   });
 }
+
+export { shiftQueryKey };

@@ -1,4 +1,6 @@
 import { DoorOpen } from 'lucide-react';
+import { useConnectivityStore } from '../../store/connectivityStore';
+import { isDesktopOfflineBridge } from '../../services/offline/desktopOfflineBridge';
 
 export default function PosShiftClosedBanner({
   t,
@@ -6,20 +8,33 @@ export default function PosShiftClosedBanner({
   onOpenShift,
   onOpenShiftModal,
 }) {
+  const offlineMode = useConnectivityStore((s) => s.offlineMode);
+  const canSellOffline = useConnectivityStore((s) => s.canSellOffline);
+  const offlineDesktop = isDesktopOfflineBridge() && offlineMode;
+  const hint =
+    offlineDesktop && !canSellOffline
+      ? t('offline.openShiftNeedsCatalog')
+      : t('pos.shiftRequired');
+
   return (
     <div className="pos-shift-closed-banner mb-2 flex-shrink-0" role="status">
-      <span className="pos-shift-closed-banner__text">{t('pos.shiftRequired')}</span>
+      <span className="pos-shift-closed-banner__text">{hint}</span>
       <div className="pos-shift-closed-banner__actions">
         <button
           type="button"
           className="btn btn-success btn-sm d-inline-flex align-items-center gap-1"
-          disabled={openShiftMutation.isPending}
+          disabled={openShiftMutation.isPending || (offlineDesktop && !canSellOffline)}
           onClick={onOpenShift}
         >
           <DoorOpen size={16} aria-hidden />
           {t('pos.openShift')}
         </button>
-        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onOpenShiftModal}>
+        <button
+          type="button"
+          className="btn btn-outline-secondary btn-sm"
+          disabled={offlineDesktop && !canSellOffline}
+          onClick={onOpenShiftModal}
+        >
           {t('pos.navShift')}
         </button>
       </div>

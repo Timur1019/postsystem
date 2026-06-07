@@ -185,8 +185,10 @@ function saveConfig({ host, webPort, apiPort, companyLoginCode }) {
     web = api;
   }
 
+  /** С web-dist интерфейс всегда локальный; API — только backendOrigin. */
+  const useRemoteUi = !hasEmbedded;
+
   const origin = buildOrigin(h, api);
-  const useRemoteUi = !hasEmbedded || shouldUseRemoteUi(h, web, api);
 
   const payload = useRemoteUi
     ? {

@@ -7,6 +7,7 @@ const {
   loadConfig,
   readPrinterSettings,
   writePrinterSettings,
+  migrateToEmbeddedIfNeeded,
 } = require('./config.cjs');
 const { buildOrigin, buildHealthUrl } = require('./server-url.cjs');
 const { startEmbeddedUi, stopEmbeddedUi } = require('./embedded-server.cjs');
@@ -115,6 +116,72 @@ async function reloadCashierLogin(cfg, { clearSession = false } = {}) {
   mainWindow.loadURL(buildLoginUrl(cfg));
 }
 
+async function ensureEmbeddedUiRunning(cfg) {
+  if (!resolveWebDist()) return cfg;
+  const next = loadConfig();
+  if (!next.useEmbedded) return next;
+  try {
+    const url = await startEmbeddedUi({
+      port: next.embeddedPort,
+      backendOrigin: next.backendOrigin,
+    });
+    if (url) {
+      next.cashierUrl = url.replace(/\/$/, '');
+    }
+  } catch {
+    // ignore — reload may still work
+  }
+  return next;
+}
+
+/** Безопасное «Обновить»: не перезагружать aurent.uz без сети. */
+async function reloadCashierPage() {
+  if (!mainWindow || mainWindow.isDestroyed()) return { ok: false };
+
+  if (migrateToEmbeddedIfNeeded()) {
+    config = loadConfig();
+  } else {
+    config = loadConfig();
+  }
+
+  const hasEmbedded = Boolean(resolveWebDist());
+  if (hasEmbedded) {
+    config = await ensureEmbeddedUiRunning(config);
+    const current = mainWindow.webContents.getURL();
+    let pathPart = '/cashier/pos';
+    try {
+      const parsed = new URL(current);
+      if (parsed.pathname.startsWith('/cashier') || parsed.pathname.startsWith('/login')) {
+        pathPart = `${parsed.pathname}${parsed.search}`;
+      }
+    } catch {
+      // keep default
+    }
+    const isLocal =
+      current.includes('127.0.0.1') || current.includes('localhost') || current.startsWith('file:');
+    if (isLocal) {
+      mainWindow.webContents.reload();
+    } else {
+      await mainWindow.loadURL(`${config.cashierUrl}${pathPart}`);
+    }
+    return { ok: true };
+  }
+
+  const probe = await probeApiHealth(config);
+  if (!probe?.ok) {
+    dialog.showMessageBoxSync({
+      type: 'warning',
+      title: 'Aurent — Касса',
+      message: 'Нет связи с сервером',
+      detail: 'Обновление страницы без интернета недоступно. Подключите сеть или перезапустите приложение.',
+      buttons: ['OK'],
+    });
+    return { ok: false };
+  }
+  mainWindow.webContents.reload();
+  return { ok: true };
+}
+
 async function openServerSettings() {
   try {
     await configureServerInteractive();
@@ -178,7 +245,16 @@ function buildAppMenuTemplate() {
             });
           },
         },
-        { role: 'reload', label: 'Обновить' },
+        { type: 'separator' },
+        {
+          label: 'Обновить',
+          accelerator: 'CmdOrCtrl+R',
+          click: () => {
+            reloadCashierPage().catch((err) => {
+              console.error('[Aurent] reload failed:', err?.message || err);
+            });
+          },
+        },
         { role: 'togglefullscreen', label: 'На весь экран' },
       ],
     },
@@ -199,12 +275,7 @@ function registerDesktopIpc() {
     await openServerSettings();
     return { ok: true };
   });
-  ipcMain.handle('desktop:reload', () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.reload();
-    }
-    return { ok: true };
-  });
+  ipcMain.handle('desktop:reload', async () => reloadCashierPage());
   ipcMain.handle('desktop:toggle-fullscreen', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.setFullScreen(!mainWindow.isFullScreen());
@@ -406,7 +477,7 @@ async function waitForServices() {
   }
 
   let apiProbe = await probeApiHealth(config);
-  if (!apiProbe.ok) {
+  if (!apiProbe.ok && !config.useEmbedded) {
     try {
       await configureServerInteractive();
       config = loadConfig();
@@ -426,6 +497,9 @@ async function waitForServices() {
   }
 
   if (!apiProbe.ok) {
+    if (config.useEmbedded) {
+      return { ok: true, offline: true };
+    }
     const tried = (apiProbe.tried || []).slice(0, 4).join('\n');
     return {
       ok: false,
@@ -659,12 +733,29 @@ function createWindow() {
   mainWindow.webContents.on('will-navigate', guardNavigation);
   mainWindow.webContents.on('will-redirect', guardNavigation);
 
-  mainWindow.webContents.on('did-fail-load', (_event, code, description, url) => {
+  mainWindow.webContents.on('did-fail-load', async (_event, code, description, url) => {
     if (code === -3) return;
+    if (migrateToEmbeddedIfNeeded() || resolveWebDist()) {
+      config = loadConfig();
+      config = await ensureEmbeddedUiRunning(config);
+      const isRemote =
+        url && !url.includes('127.0.0.1') && !url.includes('localhost');
+      if (isRemote && config.useEmbedded) {
+        let pathPart = '/cashier/login';
+        try {
+          const parsed = new URL(url);
+          pathPart = `${parsed.pathname}${parsed.search}`;
+        } catch {
+          // keep login
+        }
+        mainWindow.loadURL(`${config.cashierUrl}${pathPart}`);
+        return;
+      }
+    }
     dialog.showErrorBox(
       'Aurent — Касса',
       `Не удалось загрузить страницу:\n${url}\n\n${description} (${code})\n\n` +
-        'Проверьте адрес сервера (Вид → Настройка сервера): IP 111.88.132.126, порт 8081.'
+        'Проверьте адрес сервера (Вид → Настройка сервера). Интерфейс кассы работает локально; нужен интернет только для синхронизации.'
     );
   });
 
@@ -703,6 +794,9 @@ async function bootstrapApp() {
   });
   registerDesktopIpc();
   buildAppMenu();
+  if (migrateToEmbeddedIfNeeded()) {
+    logStartup('config_migrated_embedded');
+  }
   config = loadConfig();
   logStartup('config_loaded', {
     useEmbedded: config.useEmbedded,

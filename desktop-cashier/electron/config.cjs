@@ -63,13 +63,13 @@ function loadConfig() {
     Boolean(backendOrigin && backendOrigin !== DEFAULTS.backendOrigin) &&
     (looksLocalCashier || fileConfig.useRemoteUi === false);
 
-  const useRemoteUi =
-    fromEnv.useRemoteUi === true ||
-    fileConfig.useRemoteUi === true ||
-    forceRemoteUi ||
-    (!hasEmbeddedDist &&
-      Boolean(savedCashierUrl) &&
-      !looksLocalCashier);
+  /** Встроенный web-dist всегда локально — UI не с сервера (офлайн-касса). */
+  const useRemoteUi = hasEmbeddedDist
+    ? false
+    : fromEnv.useRemoteUi === true ||
+      fileConfig.useRemoteUi === true ||
+      forceRemoteUi ||
+      (Boolean(savedCashierUrl) && !looksLocalCashier);
 
   /** Встроенный UI из web-dist; API — на сервер (backendOrigin). */
   const useEmbedded =
@@ -157,6 +157,23 @@ function writePrinterSettings(settings) {
   return readPrinterSettings();
 }
 
+/** Старые установки с useRemoteUi + aurent.uz → локальный web-dist. */
+function migrateToEmbeddedIfNeeded() {
+  if (!resolveWebDist()) return false;
+  const user = readUserConfig();
+  const embeddedPort = Number(user.embeddedPort || DEFAULTS.embeddedPort);
+  const cashier = String(user.cashierUrl || '');
+  const needsMigrate =
+    user.useRemoteUi === true ||
+    (cashier && !cashier.includes('127.0.0.1') && !cashier.includes('localhost'));
+  if (!needsMigrate) return false;
+  writeUserConfig({
+    useRemoteUi: false,
+    cashierUrl: `http://127.0.0.1:${embeddedPort}`,
+  });
+  return true;
+}
+
 module.exports = {
   loadConfig,
   DEFAULTS,
@@ -165,4 +182,5 @@ module.exports = {
   writeUserConfig,
   readPrinterSettings,
   writePrinterSettings,
+  migrateToEmbeddedIfNeeded,
 };
