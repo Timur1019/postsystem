@@ -80,7 +80,7 @@
   color: #94a3b8;
 }
 
-.platform-email-field input,
+.platform-email-field input:not([type='checkbox']):not([type='radio']),
 .platform-email-field textarea,
 .platform-email-field select {
   width: 100%;
@@ -92,12 +92,18 @@
   color: #0f172a;
 }
 
-.dark .platform-email-field input,
+.dark .platform-email-field input:not([type='checkbox']):not([type='radio']),
 .dark .platform-email-field textarea,
 .dark .platform-email-field select {
   border-color: #334155;
   background: #111827;
   color: #f8fafc;
+}
+
+.platform-email-field input[type='checkbox'],
+.platform-email-field input[type='radio'] {
+  width: auto;
+  flex-shrink: 0;
 }
 
 .platform-email-field textarea {
@@ -107,7 +113,8 @@
 
 .platform-email-users {
   max-height: 14rem;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   border: 1px solid #e2e8f0;
   border-radius: 0.625rem;
   padding: 0.5rem;
@@ -156,7 +163,7 @@
   margin-top: 0.1rem;
   font-size: 0.75rem;
   color: #64748b;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .dark .platform-email-user-row__meta {
