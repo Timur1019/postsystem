@@ -12,7 +12,7 @@ import { isDesktopCashier } from '../../utils/printReceipt';
 import { clampPayAmount, round2 } from '../../utils/taxAmounts';
 import { saleApi } from '../../services/api';
 import { useCartStore } from '../../store/cartStore';
-import { useConnectivityStore } from '../../store/connectivityStore';
+import { useConnectivityStore, userAllowedOfflinePos } from '../../store/connectivityStore';
 import {
   offlineDecreaseStock,
   offlineGetCurrentShift,
@@ -93,7 +93,9 @@ export function usePosCheckout({
   const navigate = useNavigate();
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
-  const offlinePos = useConnectivityStore((s) => s.offlineMode && s.canSellOffline);
+  const offlinePos =
+    userAllowedOfflinePos() &&
+    useConnectivityStore((s) => s.offlineMode && s.canSellOffline);
 
   const clearCart = useCartStore((s) => s.clearCart);
   const getCheckoutLineItems = useCartStore((s) => s.getCheckoutLineItems);

@@ -1,10 +1,10 @@
 // src/components/users/UserFormModal.jsx
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { X, Loader } from 'lucide-react';
+import { X, Loader, Eye, EyeOff, Copy } from 'lucide-react';
 import { companyApi, storeApi, userApi } from '../../services/api';
 import { useTenantDisplayStore } from '../../store/tenantDisplayStore';
 import { useTenantScope } from '../../hooks/useTenantScope';
@@ -39,6 +39,9 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
 
   const [storeIds, setStoreIds] = useState(() => new Set());
   const [companyId, setCompanyId] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState(null);
+  const createCredentialsRef = useRef(null);
 
   const {
     register,
@@ -63,7 +66,7 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
   const isCashierRole = selectedRole === 'CASHIER';
   const fieldOn = useTenantDisplayStore((s) => s.isUserFormFieldOn);
   const pinRequired = !isEdit || (isCashierRole && user?.role !== 'CASHIER');
-  const showPasswordField = !isCashierRole && (fieldOn('password') || !isEdit);
+  const showPasswordField = !isCashierRole && (isPlatform || fieldOn('password') || !isEdit);
 
   const { data: companies = [] } = useQuery({
     queryKey: ['companies-all'],
@@ -78,6 +81,16 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
   });
 
   const stores = asStoreList(storesRaw);
+
+  const selectedCompany = useMemo(() => {
+    if (!isPlatform) return null;
+    const id = isEdit ? user?.companyId : companyId ? Number(companyId) : null;
+    if (!id) return null;
+    return companies.find((c) => Number(c.id) === Number(id)) ?? null;
+  }, [isPlatform, isEdit, user?.companyId, companyId, companies]);
+
+  const companyLoginCode =
+    (isEdit ? user?.companyLoginCode : selectedCompany?.loginCode) || null;
 
   const filteredStores = useMemo(() => {
     if (!isPlatform) return stores;
@@ -106,7 +119,10 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
   }, [isPlatform, filteredStores, stores, isEdit, user]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setPasswordVisible(false);
+      return;
+    }
 
     if (isEdit) {
       if (!user?.id) return;
@@ -155,6 +171,12 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users'] });
+      if (!isEdit && isPlatform && createCredentialsRef.current) {
+        setCreatedCredentials(createCredentialsRef.current);
+        createCredentialsRef.current = null;
+        onClose();
+        return;
+      }
       toast.success(isEdit ? t('users.updated') : t('users.created'));
       onClose();
     },
@@ -252,11 +274,43 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
       companyId: isPlatform && companyId ? Number(companyId) : undefined,
       storeIds: selectedStoreIds,
     });
+    if (isPlatform) {
+      createCredentialsRef.current = {
+        username,
+        password: role === 'CASHIER' ? null : String(data.password || '').trim(),
+        pin: role === 'CASHIER' ? pin : null,
+        role,
+        companyLoginCode,
+      };
+    }
   };
 
-  if (!open) return null;
+  const buildCredentialsText = (cred) => {
+    const lines = [];
+    if (cred.companyLoginCode) {
+      lines.push(`${t('users.platformCompanyCode')}: ${cred.companyLoginCode}`);
+    }
+    lines.push(`${t('users.credentialsLogin')}: ${cred.username}`);
+    if (cred.role === 'CASHIER' && cred.pin) {
+      lines.push(`${t('users.pin')}: ${cred.pin}`);
+    } else if (cred.password) {
+      lines.push(`${t('users.password')}: ${cred.password}`);
+    }
+    return lines.join('\n');
+  };
 
-  if (isEdit && !user?.id) {
+  const copyCredentials = async (cred) => {
+    try {
+      await navigator.clipboard.writeText(buildCredentialsText(cred));
+      toast.success(t('users.copied'));
+    } catch {
+      toast.error(t('common.error'));
+    }
+  };
+
+  if (!open && !createdCredentials) return null;
+
+  if (open && isEdit && !user?.id) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
         <div className="rounded-xl bg-white p-6 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
@@ -273,6 +327,60 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
   ].filter((f) => fieldOn(f.key));
 
   return (
+    <>
+      {createdCredentials ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-2xl border bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('users.credentialsCreatedTitle')}</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{t('users.credentialsCreatedHint')}</p>
+            <div className="mt-4 space-y-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm dark:border-emerald-900/50 dark:bg-emerald-950/30">
+              {createdCredentials.companyLoginCode ? (
+                <p>
+                  <span className="text-slate-500">{t('users.platformCompanyCode')}:</span>{' '}
+                  <span className="font-mono font-semibold">{createdCredentials.companyLoginCode}</span>
+                </p>
+              ) : null}
+              <p>
+                <span className="text-slate-500">{t('users.credentialsLogin')}:</span>{' '}
+                <span className="font-mono font-semibold">{createdCredentials.username}</span>
+              </p>
+              {createdCredentials.role === 'CASHIER' ? (
+                <p>
+                  <span className="text-slate-500">{t('users.pin')}:</span>{' '}
+                  <span className="font-mono font-semibold">{createdCredentials.pin}</span>
+                </p>
+              ) : (
+                <p>
+                  <span className="text-slate-500">{t('users.password')}:</span>{' '}
+                  <span className="font-mono font-semibold">{createdCredentials.password}</span>
+                </p>
+              )}
+            </div>
+            <div className="mt-4 flex gap-3">
+              <button
+                type="button"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5"
+                onClick={() => copyCredentials(createdCredentials)}
+              >
+                <Copy size={16} />
+                {t('users.copyAll')}
+              </button>
+              <button
+                type="button"
+                className="flex-1 rounded-lg bg-emerald-500 py-2.5 font-semibold text-white"
+                onClick={() => {
+                  setCreatedCredentials(null);
+                  toast.success(t('users.created'));
+                }}
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {open ? (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border bg-white dark:border-slate-700 dark:bg-slate-900">
         <div className="flex items-center justify-between border-b p-5 dark:border-slate-800">
@@ -284,6 +392,31 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
           </button>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-5">
+          {isPlatform && isEdit ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800/50">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {t('users.platformCredentialsTitle')}
+              </p>
+              {companyLoginCode ? (
+                <p className="mt-2 text-sm">
+                  <span className="text-slate-500">{t('users.platformCompanyCode')}:</span>{' '}
+                  <span className="font-mono font-semibold">{companyLoginCode}</span>
+                </p>
+              ) : null}
+              <p className="mt-1 text-sm">
+                <span className="text-slate-500">{t('users.credentialsLogin')}:</span>{' '}
+                <span className="font-mono font-semibold">{user?.username}</span>
+              </p>
+              <p className="mt-2 text-xs text-slate-500">
+                {isCashierRole ? t('users.pinHiddenHint') : t('users.passwordHiddenHint')}
+              </p>
+            </div>
+          ) : null}
+          {isPlatform && !isEdit && companyLoginCode ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-100">
+              {t('users.platformCompanyCode')}: <span className="font-mono font-semibold">{companyLoginCode}</span>
+            </div>
+          ) : null}
           {fioFields.map(({ name, label }) => (
             <div key={name}>
               <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{label} *</label>
@@ -332,15 +465,27 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
               {t('users.password')}
               {!isEdit ? ' *' : ''}
             </label>
-            <input
-              type="password"
-              autoComplete="new-password"
-              placeholder={isEdit ? t('users.passwordEditPlaceholder') : undefined}
-              {...register('password', isEdit ? {} : { required: true, minLength: 6 })}
-              className={inputCls}
-            />
+            <div className="relative">
+              <input
+                type={passwordVisible ? 'text' : 'password'}
+                autoComplete="new-password"
+                placeholder={isEdit ? t('users.passwordEditPlaceholder') : undefined}
+                {...register('password', isEdit ? {} : { required: true, minLength: 6 })}
+                className={`${inputCls} pr-10`}
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                onClick={() => setPasswordVisible((v) => !v)}
+                aria-label={passwordVisible ? t('users.hidePassword') : t('users.showPassword')}
+              >
+                {passwordVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             {isEdit && (
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('users.passwordEditHint')}</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                {isPlatform ? t('users.passwordHiddenHint') : t('users.passwordEditHint')}
+              </p>
             )}
             {!isEdit && errors.password && (
               <p className="mt-1 text-xs text-red-400">{t('users.passwordMinLength')}</p>
@@ -368,7 +513,7 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
               </select>
             </div>
           )}
-          {fieldOn('role') ? (
+          {(isPlatform || fieldOn('role')) ? (
           <div>
             <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{t('users.role')}</label>
             <select {...register('role')} className={inputCls}>
@@ -387,7 +532,7 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
             </select>
           </div>
           ) : null}
-          {fieldOn('stores') ? (
+          {(isPlatform || fieldOn('stores')) ? (
           <div>
             <label className="mb-2 block text-xs font-medium text-slate-500 dark:text-slate-400">{t('users.colStores')}</label>
             {isCashierRole && (
@@ -435,5 +580,7 @@ export default function UserFormModal({ open, onClose, isPlatform, mode, editing
         </form>
       </div>
     </div>
+      ) : null}
+    </>
   );
 }

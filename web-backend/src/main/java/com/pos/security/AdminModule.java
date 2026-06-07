@@ -49,7 +49,9 @@ public enum AdminModule {
     USERS_BARCODE_PRINT("usersBarcodePrint", "settings", Set.of("ADMIN", "MANAGER")),
     CHECKOUT("checkout", "main", Set.of("ADMIN", "MANAGER")),
     CASHIER_POS("cashierPos", "cashier", Set.of("CASHIER", "ADMIN", "MANAGER")),
-    CASHIER_SALES("cashierSales", "cashier", Set.of("CASHIER", "ADMIN", "MANAGER"));
+    CASHIER_SALES("cashierSales", "cashier", Set.of("CASHIER", "ADMIN", "MANAGER")),
+    /** Офлайн-режим на desktop-кассе; по умолчанию никому — только через SUPER_ADMIN. */
+    CASHIER_OFFLINE("cashierOffline", "cashier", Set.of());
 
     private final String key;
     private final String group;

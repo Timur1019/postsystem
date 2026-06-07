@@ -1004,6 +1004,9 @@
     "users": "Foydalanuvchilar",
     "companiesTitle": "Kompaniyalar",
     "usersTitle": "Kompaniya administratorlari",
+    "userSearch": "Ism, login, email, kompaniya bo‘yicha qidiruv…",
+    "searchResults": "topildi: {{count}}",
+    "noSearchResults": "Hech narsa topilmadi",
     "addCompany": "Kompaniya qo‘shish",
     "editCompany": "Kompaniyani tahrirlash",
     "companySearch": "Kompaniya nomi bo‘yicha qidiruv",
@@ -1045,7 +1048,21 @@
       "resetDone": "Rol huquqlari tiklandi",
       "needOne": "Kamida bitta modulni yoqing",
       "saveFailed": "Kirish huquqlarini saqlab bo‘lmadi",
-      "customHint": "Quyidagi modullarni belgilang — saqlashda individual huquqlar yoqiladi"
+      "customHint": "Quyidagi modullarni belgilang — saqlashda individual huquqlar yoqiladi",
+      "filterAll": "Hammasi",
+      "filterUnconfigured": "Sozlanmagan",
+      "filterCustom": "Individual",
+      "unconfiguredCount": "Sozlanmagan: {{count}}",
+      "selectAllVisible": "Ro‘yxatdagi hammasini tanlash ({{count}})",
+      "enableAll": "Barcha modullarni yoqish",
+      "disableAll": "Hammasini o‘chirish",
+      "allOn": "Hammasi yoq.",
+      "allOff": "Hammasi o‘ch.",
+      "applyToSelected": "Tanlanganlarga qo‘llash ({{count}})",
+      "bulkHint": "Avval faol foydalanuvchi uchun modullarni sozlang, keyin tanlanganlarga qo‘llang",
+      "bulkSaved": "Kirish {{count}} foydalanuvchiga qo‘llandi",
+      "pickUsersForBulk": "Ommaviy qo‘llash uchun foydalanuvchilarni tanlang",
+      "enableCustomFirst": "Individual huquqlarni yoqing va modullarni sozlang"
     },
     "moduleGroups": {
       "main": "Asosiy",
@@ -1101,7 +1118,8 @@
       "reportsStockInventories": "Inventarizatsiya (hisobot)",
       "reportsStockTransfers": "Ko'chirishlar (hisobot)",
       "cashierPos": "Kassa — sotuv",
-      "cashierSales": "Kassa — mening cheklarim"
+      "cashierSales": "Kassa — mening cheklarim",
+      "cashierOffline": "Kassa — oflayn rejim"
     },
     "monitoring": {
       "nav": "Monitoring",
@@ -1168,6 +1186,14 @@
       "sentSummary": "Navbatga qo'yildi: {{sent}}, emailsiz o'tkazib yuborildi: {{skipped}}",
       "fillSubjectMessage": "Mavzu va matnni to'ldiring",
       "pickRecipients": "Qabul qiluvchilarni tanlang yoki «barchaga» ni yoqing",
+      "selectAllVisible": "Ro‘yxatdagi hammasini tanlash ({{count}})",
+      "selectedCount": "Tanlangan: {{count}}",
+      "templatesLoadFailed": "Shablonlarni yuklab bo‘lmadi",
+      "templates": {
+        "BROADCAST": "Yuborish",
+        "USER_CREDENTIALS": "Kirish ma’lumotlari",
+        "SUPER_ADMIN_LOGIN": "Super-admin kirishi"
+      },
       "defaultSubject": "Aurent POS dan xabar",
       "defaultMessage": "Tizim foydalanuvchilari uchun namuna matn."
     }
@@ -1284,7 +1310,22 @@
     "createUser": "Yaratish",
     "placeholderName": "Ali Vali",
     "placeholderUser": "ali",
-    "placeholderEmail": "ali@store.com"
+    "placeholderEmail": "ali@store.com",
+    "colCompanyCode": "Kirish kodi",
+    "colCredentials": "Kirish",
+    "credentialsLogin": "Login",
+    "credentialsPasswordHidden": "Parol yashirilgan",
+    "credentialsPinHidden": "PIN yashirilgan",
+    "passwordHiddenHint": "Parol shifrlangan holda saqlanadi va ko‘rsatilmaydi. O‘zgartirish uchun quyida yangi parol kiriting.",
+    "pinHiddenHint": "PIN shifrlangan holda saqlanadi. O‘zgartirish uchun quyida yangi PIN kiriting.",
+    "platformCredentialsTitle": "Kirish ma’lumotlari",
+    "platformCompanyCode": "Kompaniya kodi (kassa)",
+    "credentialsCreatedTitle": "Foydalanuvchi yaratildi — ma’lumotlarni uzating",
+    "credentialsCreatedHint": "Login va parol/PIN ni saqlang. Parol yana ko‘rsatilmaydi.",
+    "copyAll": "Hammasini nusxalash",
+    "copied": "Nusxalandi",
+    "showPassword": "Ko‘rsatish",
+    "hidePassword": "Yashirish"
   },
   "usersBarcodePrint": {
     "title": "Shtrix kod chop etish",
@@ -2522,6 +2563,7 @@
     "onlineOk": "Server bilan aloqa o‘rnatildi",
     "workingOffline": "Tarmoqsiz rejim — savdolar shu kompyuterga saqlanadi",
     "noCatalog": "Mahalliy katalog yo‘q. Birinchi yuklash uchun internetni ulang.",
+    "notAllowed": "Hisobingiz uchun oflayn rejim o‘chirilgan. Platforma administratoriga murojaat qiling.",
     "pendingSales": "Serverga yuborish kutilmoqda: {{count}}",
     "preparingCatalog": "Oflayn katalog tayyorlanmoqda…",
     "syncNow": "Sinxronlash",

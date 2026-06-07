@@ -1004,6 +1004,9 @@
     "users": "Пользователи",
     "companiesTitle": "Компании",
     "usersTitle": "Администраторы компаний",
+    "userSearch": "Поиск по имени, логину, email, компании…",
+    "searchResults": "найдено: {{count}}",
+    "noSearchResults": "Ничего не найдено",
     "addCompany": "Добавить компанию",
     "editCompany": "Изменить компанию",
     "companySearch": "Поиск по названию компании",
@@ -1045,7 +1048,22 @@
       "resetDone": "Восстановлены права по роли",
       "needOne": "Включите хотя бы один модуль",
       "saveFailed": "Не удалось сохранить доступы",
-      "customHint": "Отметьте модули ниже — индивидуальные права включатся автоматически при сохранении"
+      "customHint": "Отметьте модули ниже — индивидуальные права включатся автоматически при сохранении",
+      "userSearch": "Поиск пользователя…",
+      "filterAll": "Все",
+      "filterUnconfigured": "Без настройки",
+      "filterCustom": "Свои права",
+      "unconfiguredCount": "Без настройки: {{count}}",
+      "selectAllVisible": "Выбрать всех в списке ({{count}})",
+      "enableAll": "Включить все модули",
+      "disableAll": "Выключить все",
+      "allOn": "Все вкл.",
+      "allOff": "Все выкл.",
+      "applyToSelected": "Применить к выбранным ({{count}})",
+      "bulkHint": "Сначала настройте модули для активного пользователя, затем примените к выбранным",
+      "bulkSaved": "Доступ применён к {{count}} пользователям",
+      "pickUsersForBulk": "Выберите пользователей для массового применения",
+      "enableCustomFirst": "Включите индивидуальные права и настройте модули"
     },
     "moduleGroups": {
       "main": "Главное",
@@ -1101,7 +1119,8 @@
       "reportsStockInventories": "Инвентаризация (отчёт)",
       "reportsStockTransfers": "Перемещения (отчёт)",
       "cashierPos": "Касса — продажи",
-      "cashierSales": "Касса — мои чеки"
+      "cashierSales": "Касса — мои чеки",
+      "cashierOffline": "Касса — офлайн-режим"
     },
     "monitoring": {
       "nav": "Мониторинг",
@@ -1168,6 +1187,14 @@
       "sentSummary": "Поставлено в очередь: {{sent}}, пропущено без email: {{skipped}}",
       "fillSubjectMessage": "Заполните тему и текст сообщения",
       "pickRecipients": "Выберите получателей или включите «всем пользователям»",
+      "selectAllVisible": "Выбрать всех в списке ({{count}})",
+      "selectedCount": "Выбрано: {{count}}",
+      "templatesLoadFailed": "Не удалось загрузить шаблоны",
+      "templates": {
+        "BROADCAST": "Рассылка",
+        "USER_CREDENTIALS": "Данные для входа",
+        "SUPER_ADMIN_LOGIN": "Вход супер-админа"
+      },
       "defaultSubject": "Сообщение от Aurent POS",
       "defaultMessage": "Пример текста рассылки для пользователей системы."
     }
@@ -1284,7 +1311,22 @@
     "createUser": "Создать",
     "placeholderName": "Иван Иванов",
     "placeholderUser": "ivan",
-    "placeholderEmail": "ivan@store.com"
+    "placeholderEmail": "ivan@store.com",
+    "colCompanyCode": "Код входа",
+    "colCredentials": "Доступ",
+    "credentialsLogin": "Логин",
+    "credentialsPasswordHidden": "Пароль скрыт",
+    "credentialsPinHidden": "PIN скрыт",
+    "passwordHiddenHint": "Пароль хранится в зашифрованном виде и не может быть показан. Укажите новый пароль ниже, чтобы сменить его.",
+    "pinHiddenHint": "PIN хранится в зашифрованном виде. Укажите новый PIN ниже, чтобы сменить его.",
+    "platformCredentialsTitle": "Учётные данные для входа",
+    "platformCompanyCode": "Код компании (касса)",
+    "credentialsCreatedTitle": "Пользователь создан — передайте данные",
+    "credentialsCreatedHint": "Сохраните логин и пароль/PIN. Пароль больше не будет показан.",
+    "copyAll": "Скопировать всё",
+    "copied": "Скопировано",
+    "showPassword": "Показать",
+    "hidePassword": "Скрыть"
   },
   "usersBarcodePrint": {
     "title": "Печать штрих-кода",
@@ -2522,6 +2564,7 @@
     "onlineOk": "Связь с сервером установлена",
     "workingOffline": "Режим без сети — продажи сохраняются на этом компьютере",
     "noCatalog": "Нет локального каталога. Подключите интернет один раз для первичной загрузки.",
+    "notAllowed": "Офлайн-режим для вашей учётной записи отключён. Обратитесь к администратору платформы.",
     "pendingSales": "Ожидают отправки на сервер: {{count}}",
     "preparingCatalog": "Подготовка офлайн-каталога…",
     "syncNow": "Синхронизировать",

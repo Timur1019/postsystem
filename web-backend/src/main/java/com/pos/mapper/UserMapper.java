@@ -17,6 +17,7 @@ public interface UserMapper {
     @Mapping(target = "role", source = "role.name")
     @Mapping(target = "companyId", source = "company.id")
     @Mapping(target = "companyName", source = "company.name")
+    @Mapping(target = "companyLoginCode", source = "company.loginCode")
     @Mapping(target = "active", source = "active")
     @Mapping(target = "storeIds", source = "stores", qualifiedByName = "storeIds")
     @Mapping(target = "storeNames", source = "stores", qualifiedByName = "storeNames")

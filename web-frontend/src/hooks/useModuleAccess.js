@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { ADMIN_MODULE_IDS } from '../config/moduleHandbook';
+import { ADMIN_MODULE_IDS, CASHIER_MODULE_IDS } from '../config/moduleHandbook';
 
 /** Проверка доступа к модулю админки (по allowedModules с бэкенда или fallback по роли). */
 export function useModuleAccess() {
@@ -9,20 +9,21 @@ export function useModuleAccess() {
   const allowed = user?.allowedModules;
   const custom = user?.moduleAccessCustom;
 
+  const moduleDefs = useMemo(() => [...ADMIN_MODULE_IDS, ...CASHIER_MODULE_IDS], []);
+
   const hasModule = useCallback(
     (moduleId) => {
       if (!moduleId || !role) return false;
       if (role === 'SUPER_ADMIN') return true;
       if (custom && Array.isArray(allowed)) {
         if (allowed.includes(moduleId)) return true;
-        // Новые модули до перелогина: как у роли (синхрон с бэкендом)
-        const def = ADMIN_MODULE_IDS.find((m) => m.id === moduleId);
+        const def = moduleDefs.find((m) => m.id === moduleId);
         return def ? def.roles.includes(role) : false;
       }
-      const def = ADMIN_MODULE_IDS.find((m) => m.id === moduleId);
+      const def = moduleDefs.find((m) => m.id === moduleId);
       return def ? def.roles.includes(role) : false;
     },
-    [role, allowed, custom]
+    [role, allowed, custom, moduleDefs]
   );
 
   const hasAnyModule = useCallback(

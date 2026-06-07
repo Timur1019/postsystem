@@ -14,6 +14,7 @@ public record UserResponse(
     String role,
     Integer companyId,
     String companyName,
+    String companyLoginCode,
     List<Integer> storeIds,
     List<String> storeNames,
     boolean active

@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { offlineGetStatus, subscribeOfflineConnectivity } from '../services/offline/desktopOfflineBridge';
+import { useAuthStore } from './authStore';
+import { userHasCashierOfflineAccess } from '../utils/cashierOfflineAccess';
 
 export const useConnectivityStore = create((set, get) => ({
   apiOnline: true,
@@ -107,8 +109,14 @@ export function stopConnectivityWatcher() {
 }
 
 export function isOfflinePosMode() {
+  const user = useAuthStore.getState().user;
+  if (!userHasCashierOfflineAccess(user)) return false;
   const { offlineMode, canSellOffline } = useConnectivityStore.getState();
   return offlineMode && canSellOffline;
+}
+
+export function userAllowedOfflinePos() {
+  return userHasCashierOfflineAccess(useAuthStore.getState().user);
 }
 
 export function shouldUseOfflinePos() {
@@ -129,7 +137,9 @@ export function useShouldUseOfflinePos() {
   const offlineMode = useConnectivityStore((s) => s.offlineMode);
   if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return false;
   const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-  return offlineMode || !apiOnline || browserOffline;
+  const offlineLike = offlineMode || !apiOnline || browserOffline;
+  if (offlineLike && !userHasCashierOfflineAccess(useAuthStore.getState().user)) return false;
+  return offlineLike;
 }
 
 export function useShouldUseLocalPosCatalog() {
@@ -138,5 +148,7 @@ export function useShouldUseLocalPosCatalog() {
   const bootstrapReady = useConnectivityStore((s) => s.bootstrapReady);
   if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return false;
   const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+  const offlineLike = offlineMode || !apiOnline || browserOffline;
+  if (offlineLike && !userHasCashierOfflineAccess(useAuthStore.getState().user)) return false;
   return offlineMode || !apiOnline || bootstrapReady || browserOffline;
 }

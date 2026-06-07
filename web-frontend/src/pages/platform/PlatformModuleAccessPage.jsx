@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { Shield, RotateCcw, Save } from 'lucide-react';
+import { Shield, RotateCcw, Save, Search, Users } from 'lucide-react';
 import { companyApi, platformModuleAccessApi } from '../../services/api';
 
-const GROUP_ORDER = ['main', 'goods', 'stock', 'orders', 'registers', 'reportsSales', 'reportsStock', 'settings'];
+const GROUP_ORDER = ['main', 'goods', 'stock', 'orders', 'registers', 'reportsSales', 'reportsStock', 'settings', 'cashier'];
 
 function catalogGroupFor(moduleId, catalogById) {
   return catalogById?.[moduleId] ?? 'main';
@@ -26,6 +26,9 @@ export default function PlatformModuleAccessPage() {
   const qc = useQueryClient();
   const [companyId, setCompanyId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedUserIds, setSelectedUserIds] = useState(() => new Set());
+  const [userSearch, setUserSearch] = useState('');
+  const [userFilter, setUserFilter] = useState('all');
   const [customAccess, setCustomAccess] = useState(false);
   const [moduleToggles, setModuleToggles] = useState({});
 
@@ -52,6 +55,27 @@ export default function PlatformModuleAccessPage() {
     queryFn: () => platformModuleAccessApi.listUsers(Number(companyId)).then((r) => r.data),
     enabled: !!companyId,
   });
+
+  const filteredUsers = useMemo(() => {
+    let list = users;
+    if (userFilter === 'unconfigured') {
+      list = list.filter((u) => !u.moduleAccessCustom);
+    } else if (userFilter === 'custom') {
+      list = list.filter((u) => u.moduleAccessCustom);
+    }
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((u) =>
+      [u.fullName, u.username, u.role, u.companyName]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q))
+    );
+  }, [users, userSearch, userFilter]);
+
+  const unconfiguredCount = useMemo(
+    () => users.filter((u) => !u.moduleAccessCustom).length,
+    [users]
+  );
 
   const { data: detail, isLoading: detailLoading } = useQuery({
     queryKey: ['platform-module-access-detail', selectedUserId],
@@ -93,6 +117,22 @@ export default function PlatformModuleAccessPage() {
     },
   });
 
+  const bulkSaveMutation = useMutation({
+    mutationFn: async ({ userIds, payload }) => {
+      for (const userId of userIds) {
+        await platformModuleAccessApi.updateUser(userId, payload);
+      }
+    },
+    onSuccess: (_data, { userIds }) => {
+      toast.success(t('platform.moduleAccess.bulkSaved', { count: userIds.length }));
+      qc.invalidateQueries({ queryKey: ['platform-module-access-users', companyId] });
+      for (const userId of userIds) {
+        qc.invalidateQueries({ queryKey: ['platform-module-access-detail', userId] });
+      }
+    },
+    onError: (e) => toast.error(extractApiError(e, t('platform.moduleAccess.saveFailed'))),
+  });
+
   const buildModulesPayload = () => {
     const modules = {};
     for (const row of detail?.modules ?? []) {
@@ -101,25 +141,80 @@ export default function PlatformModuleAccessPage() {
     return modules;
   };
 
+  const buildSavePayload = () => {
+    const modules = buildModulesPayload();
+    const hasAny = Object.values(modules).some(Boolean);
+    if (!hasAny) {
+      toast.error(t('platform.moduleAccess.needOne'));
+      return null;
+    }
+    return { customAccess: true, modules };
+  };
+
   const handleSave = () => {
     if (!selectedUserId || !detail?.modules?.length) return;
     if (!customAccess) {
       resetMutation.mutate();
       return;
     }
-    const modules = buildModulesPayload();
-    const hasAny = Object.values(modules).some(Boolean);
-    if (!hasAny) {
-      toast.error(t('platform.moduleAccess.needOne'));
+    const payload = buildSavePayload();
+    if (!payload) return;
+    saveMutation.mutate(payload);
+  };
+
+  const handleBulkApply = () => {
+    if (!detail?.modules?.length || selectedUserIds.size === 0) {
+      toast.error(t('platform.moduleAccess.pickUsersForBulk'));
       return;
     }
-    saveMutation.mutate({ customAccess: true, modules });
+    if (!customAccess) {
+      toast.error(t('platform.moduleAccess.enableCustomFirst'));
+      return;
+    }
+    const payload = buildSavePayload();
+    if (!payload) return;
+    const userIds = [...selectedUserIds];
+    bulkSaveMutation.mutate({ userIds, payload });
   };
 
   const handleToggleModule = (moduleId, checked) => {
     setCustomAccess(true);
     setModuleToggles((prev) => ({ ...prev, [moduleId]: checked }));
   };
+
+  const setAllModules = (enabled, groupFilter = null) => {
+    if (!detail?.modules?.length) return;
+    setCustomAccess(true);
+    setModuleToggles((prev) => {
+      const next = { ...prev };
+      for (const row of detail.modules) {
+        const group = catalogGroupFor(row.id, catalogById);
+        if (groupFilter && group !== groupFilter) continue;
+        next[row.id] = enabled;
+      }
+      return next;
+    });
+  };
+
+  const toggleUserSelection = (userId) => {
+    setSelectedUserIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  const handleSelectAllFilteredUsers = (checked) => {
+    if (checked) {
+      setSelectedUserIds(new Set(filteredUsers.map((u) => u.userId)));
+    } else {
+      setSelectedUserIds(new Set());
+    }
+  };
+
+  const allFilteredSelected =
+    filteredUsers.length > 0 && filteredUsers.every((u) => selectedUserIds.has(u.userId));
 
   const resetMutation = useMutation({
     mutationFn: () => platformModuleAccessApi.resetUser(selectedUserId),
@@ -159,6 +254,7 @@ export default function PlatformModuleAccessPage() {
           onChange={(e) => {
             setCompanyId(e.target.value);
             setSelectedUserId(null);
+            setSelectedUserIds(new Set());
           }}
         >
           <option value="">{t('platform.moduleAccess.selectCompany')}</option>
@@ -173,22 +269,73 @@ export default function PlatformModuleAccessPage() {
       {companyId ? (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <div className="border-b border-slate-200 px-4 py-3 text-sm font-semibold dark:border-slate-800">
-              {t('platform.moduleAccess.users')}
+            <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold">{t('platform.moduleAccess.users')}</span>
+                {unconfiguredCount > 0 ? (
+                  <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-900/40 dark:text-amber-100">
+                    {t('platform.moduleAccess.unconfiguredCount', { count: unconfiguredCount })}
+                  </span>
+                ) : null}
+              </div>
+              <div className="relative mt-2">
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  placeholder={t('platform.userSearch')}
+                  className="w-full rounded-lg border border-slate-200 py-2 pl-8 pr-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+                />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {[
+                  ['all', t('platform.moduleAccess.filterAll')],
+                  ['unconfigured', t('platform.moduleAccess.filterUnconfigured')],
+                  ['custom', t('platform.moduleAccess.filterCustom')],
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setUserFilter(key)}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                      userFilter === key
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={allFilteredSelected}
+                  onChange={(e) => handleSelectAllFilteredUsers(e.target.checked)}
+                />
+                {t('platform.moduleAccess.selectAllVisible', { count: filteredUsers.length })}
+              </label>
             </div>
             <div className="max-h-[min(70vh,520px)] overflow-y-auto">
               {usersLoading ? (
                 <p className="p-4 text-sm text-slate-500">{t('common.loading')}</p>
-              ) : users.length === 0 ? (
-                <p className="p-4 text-sm text-slate-500">{t('platform.moduleAccess.noUsers')}</p>
+              ) : filteredUsers.length === 0 ? (
+                <p className="p-4 text-sm text-slate-500">{t('platform.noSearchResults')}</p>
               ) : (
                 <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {users.map((u) => (
-                    <li key={u.userId}>
+                  {filteredUsers.map((u) => (
+                    <li key={u.userId} className="flex items-stretch">
+                      <label className="flex items-center px-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.has(u.userId)}
+                          onChange={() => toggleUserSelection(u.userId)}
+                        />
+                      </label>
                       <button
                         type="button"
                         onClick={() => setSelectedUserId(u.userId)}
-                        className={`flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
+                        className={`flex min-w-0 flex-1 flex-col items-start gap-0.5 px-2 py-3 text-left text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
                           selectedUserId === u.userId ? 'bg-emerald-50 dark:bg-emerald-950/40' : ''
                         }`}
                       >
@@ -207,6 +354,20 @@ export default function PlatformModuleAccessPage() {
                 </ul>
               )}
             </div>
+            {selectedUserIds.size > 0 ? (
+              <div className="border-t border-slate-200 p-3 dark:border-slate-800">
+                <button
+                  type="button"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+                  disabled={!selectedUserId || bulkSaveMutation.isPending || !customAccess}
+                  onClick={handleBulkApply}
+                >
+                  <Users size={16} />
+                  {t('platform.moduleAccess.applyToSelected', { count: selectedUserIds.size })}
+                </button>
+                <p className="mt-1 text-xs text-slate-500">{t('platform.moduleAccess.bulkHint')}</p>
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
@@ -230,14 +391,48 @@ export default function PlatformModuleAccessPage() {
                   {!customAccess ? (
                     <p className="mt-1 text-xs text-amber-600">{t('platform.moduleAccess.customHint')}</p>
                   ) : null}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="rounded border px-2 py-1 text-xs"
+                      onClick={() => setAllModules(true)}
+                    >
+                      {t('platform.moduleAccess.enableAll')}
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded border px-2 py-1 text-xs"
+                      onClick={() => setAllModules(false)}
+                    >
+                      {t('platform.moduleAccess.disableAll')}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="max-h-[min(55vh,440px)] space-y-4 overflow-y-auto p-4">
                   {groupedModules.map(({ group, items }) => (
                     <section key={group}>
-                      <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                        {t(`platform.moduleGroups.${group}`, { defaultValue: group })}
-                      </h3>
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                          {t(`platform.moduleGroups.${group}`, { defaultValue: group })}
+                        </h3>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            className="rounded border px-1.5 py-0.5 text-[10px]"
+                            onClick={() => setAllModules(true, group)}
+                          >
+                            {t('platform.moduleAccess.allOn')}
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded border px-1.5 py-0.5 text-[10px]"
+                            onClick={() => setAllModules(false, group)}
+                          >
+                            {t('platform.moduleAccess.allOff')}
+                          </button>
+                        </div>
+                      </div>
                       <ul className="space-y-1">
                         {items.map((row) => (
                           <li
@@ -278,7 +473,7 @@ export default function PlatformModuleAccessPage() {
                   <button
                     type="button"
                     className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-                    disabled={saveMutation.isPending || resetMutation.isPending}
+                    disabled={saveMutation.isPending || resetMutation.isPending || bulkSaveMutation.isPending}
                     onClick={handleSave}
                   >
                     <Save size={16} />

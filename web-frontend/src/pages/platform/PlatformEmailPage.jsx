@@ -9,11 +9,16 @@ import '../../styles/platform-email.css';
 
 const BROADCAST_TYPE = 'BROADCAST';
 
+function templateLabel(t, tpl) {
+  if (!tpl) return '';
+  return t(`platform.email.templates.${tpl.type}`, { defaultValue: tpl.title || tpl.type });
+}
+
 export default function PlatformEmailPage() {
   const { t } = useTranslation();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [selectAll, setSelectAll] = useState(false);
+  const [selectAllActive, setSelectAllActive] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewSubject, setPreviewSubject] = useState('');
@@ -25,7 +30,7 @@ export default function PlatformEmailPage() {
     queryFn: () => userApi.getAll().then((r) => r.data),
   });
 
-  const { data: templates = [] } = useQuery({
+  const { data: templates = [], isError: templatesError } = useQuery({
     queryKey: ['platform-email-templates'],
     queryFn: () => platformEmailApi.templates().then((r) => r.data),
   });
@@ -39,6 +44,21 @@ export default function PlatformEmailPage() {
         .some((v) => String(v).toLowerCase().includes(q))
     );
   }, [users, userSearch]);
+
+  const activeTemplate = useMemo(
+    () => templates.find((tpl) => tpl.type === templateType) ?? templates[0] ?? null,
+    [templates, templateType]
+  );
+
+  const allVisibleSelected =
+    filteredUsers.length > 0 && filteredUsers.every((u) => selectedIds.has(u.id));
+
+  useEffect(() => {
+    if (!templates.length) return;
+    if (!templates.some((tpl) => tpl.type === templateType)) {
+      setTemplateType(templates[0].type);
+    }
+  }, [templates, templateType]);
 
   const previewMutation = useMutation({
     mutationFn: (payload) => platformEmailApi.preview(payload).then((r) => r.data),
@@ -73,7 +93,7 @@ export default function PlatformEmailPage() {
   }, [templates.length]);
 
   const toggleUser = (id) => {
-    setSelectAll(false);
+    setSelectAllActive(false);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -82,9 +102,18 @@ export default function PlatformEmailPage() {
     });
   };
 
-  const handleSelectAll = (checked) => {
-    setSelectAll(checked);
+  const handleSelectAllActive = (checked) => {
+    setSelectAllActive(checked);
     if (checked) {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectAllVisible = (checked) => {
+    setSelectAllActive(false);
+    if (checked) {
+      setSelectedIds(new Set(filteredUsers.map((u) => u.id)));
+    } else {
       setSelectedIds(new Set());
     }
   };
@@ -103,15 +132,15 @@ export default function PlatformEmailPage() {
       toast.error(t('platform.email.fillSubjectMessage'));
       return;
     }
-    if (!selectAll && selectedIds.size === 0) {
+    if (!selectAllActive && selectedIds.size === 0) {
       toast.error(t('platform.email.pickRecipients'));
       return;
     }
     sendMutation.mutate({
       subject: subject.trim(),
       message: message.trim(),
-      selectAll,
-      userIds: selectAll ? [] : [...selectedIds],
+      selectAll: selectAllActive,
+      userIds: selectAllActive ? [] : [...selectedIds],
     });
   };
 
@@ -157,8 +186,8 @@ export default function PlatformEmailPage() {
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={selectAll}
-                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  checked={selectAllActive}
+                  onChange={(e) => handleSelectAllActive(e.target.checked)}
                 />
                 <Users size={14} />
                 {t('platform.email.selectAll')}
@@ -166,7 +195,7 @@ export default function PlatformEmailPage() {
               <p className="platform-email-hint">{t('platform.email.selectAllHint')}</p>
             </div>
 
-            {!selectAll ? (
+            {!selectAllActive ? (
               <div className="platform-email-field">
                 <label htmlFor="email-user-search">{t('platform.email.recipients')}</label>
                 <input
@@ -175,6 +204,14 @@ export default function PlatformEmailPage() {
                   onChange={(e) => setUserSearch(e.target.value)}
                   placeholder={t('platform.email.recipientSearch')}
                 />
+                <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={(e) => handleSelectAllVisible(e.target.checked)}
+                  />
+                  {t('platform.email.selectAllVisible', { count: filteredUsers.length })}
+                </label>
                 <div className="platform-email-users">
                   {usersLoading ? (
                     <p className="platform-email-hint">{t('common.loading')}</p>
@@ -190,12 +227,19 @@ export default function PlatformEmailPage() {
                         />
                         <span className="min-w-0 flex-1 truncate">
                           <strong>{user.fullName}</strong>
-                          <span className="text-slate-500"> — {user.email || t('platform.email.noEmail')}</span>
+                          <span className="text-slate-500">
+                            {' '}
+                            — {user.username}
+                            {user.email ? ` · ${user.email}` : ` · ${t('platform.email.noEmail')}`}
+                          </span>
                         </span>
                       </label>
                     ))
                   )}
                 </div>
+                {selectedIds.size > 0 ? (
+                  <p className="platform-email-hint">{t('platform.email.selectedCount', { count: selectedIds.size })}</p>
+                ) : null}
               </div>
             ) : null}
 
@@ -235,9 +279,13 @@ export default function PlatformEmailPage() {
           <div className="platform-email-card__body">
             <div className="platform-email-field">
               <label htmlFor="email-template-type">{t('platform.email.templateType')}</label>
+              {templatesError ? (
+                <p className="platform-email-hint text-red-500">{t('platform.email.templatesLoadFailed')}</p>
+              ) : null}
               <select
                 id="email-template-type"
                 value={templateType}
+                disabled={!templates.length}
                 onChange={(e) => {
                   const next = e.target.value;
                   setTemplateType(next);
@@ -248,25 +296,29 @@ export default function PlatformEmailPage() {
                   });
                 }}
               >
-                {templates.map((tpl) => (
-                  <option key={tpl.type} value={tpl.type}>
-                    {tpl.title}
-                  </option>
-                ))}
+                {templates.length === 0 ? (
+                  <option value="">{t('common.loading')}</option>
+                ) : (
+                  templates.map((tpl) => (
+                    <option key={tpl.type} value={tpl.type}>
+                      {templateLabel(t, tpl)}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
-            {templates.map((tpl) => (
-              <div key={tpl.type} className="platform-email-template">
-                <div className="platform-email-template__title">{tpl.title}</div>
-                <div className="platform-email-template__desc">{tpl.description}</div>
+            {activeTemplate ? (
+              <div className="platform-email-template">
+                <div className="platform-email-template__title">{templateLabel(t, activeTemplate)}</div>
+                <div className="platform-email-template__desc">{activeTemplate.description}</div>
                 <div className="platform-email-template__vars">
-                  {tpl.variables?.map((v) => (
+                  {activeTemplate.variables?.map((v) => (
                     <span key={v} className="platform-email-template__var">{`{{${v}}}`}</span>
                   ))}
                 </div>
               </div>
-            ))}
+            ) : null}
 
             <div className="platform-email-preview">
               {previewHtml ? (
