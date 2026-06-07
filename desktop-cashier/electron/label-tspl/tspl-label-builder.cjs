@@ -56,9 +56,9 @@ function buildItemCommands(item, payload, ox, oy, compact, fontScale) {
   const paperHmm = Number(payload.paperHmm) || 40;
 
   let y = oy + mmToDots(compact ? 1 : 2);
-  const priceMul = compact ? 1 : fontScale >= 1.2 ? 2 : 1;
+  const priceMul = compact ? 1 : fontScale >= 1.05 ? 2 : 1;
   const nameFont = compact ? '2' : '3';
-  const nameMul = fontScale >= 1.3 ? 2 : 1;
+  const nameMul = fontScale >= 1.06 ? 2 : 1;
 
   if (isPriceTag && item.showPrice && hasPrice) {
     const priceText = `${fmtMoney(item.price)} ${cur}`;
@@ -83,7 +83,10 @@ function buildItemCommands(item, payload, ox, oy, compact, fontScale) {
   if (!isPriceTag && item.showPrice && hasPrice) {
     y += mmToDots(1);
     const priceText = `${fmtMoney(item.price)} ${cur}`;
-    lines.push(`TEXT ${ox + mmToDots(2)},${y},"3",0,1,1,"${escapeTsplText(priceText)}"`);
+    const footerMul = fontScale >= 1.05 ? 2 : 1;
+    lines.push(
+      `TEXT ${ox + mmToDots(2)},${y},"3",0,${footerMul},${footerMul},"${escapeTsplText(priceText)}"`,
+    );
     y += mmToDots(4);
   }
 

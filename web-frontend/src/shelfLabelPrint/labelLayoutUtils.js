@@ -2,6 +2,7 @@ import {
   DEFAULT_LABEL_LAYOUT,
   DEFAULT_PRESET_ID,
   LABEL_PRINT_SETTINGS_KEY,
+  effectiveLabelFontScale,
   findLabelPresetBySize,
   getLabelPresetById,
   layoutFromPreset,
@@ -38,7 +39,7 @@ export function getSafePadMaxMm(paperMm, minContentMm = 14, absMaxMm = 50) {
 export function applyLabelPrintCssVars(settings) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  root.style.setProperty('--label-font-scale', String(settings.fontScale ?? 1));
+  root.style.setProperty('--label-font-scale', String(effectiveLabelFontScale(settings.fontScale)));
   root.style.setProperty('--label-pad-x', `${settings.padXmm ?? 6}mm`);
   root.style.setProperty('--label-pad-y', `${settings.padYmm ?? 10}mm`);
   root.style.setProperty('--label-rotate', settings.rotate180 ? '180deg' : '0deg');

@@ -2,6 +2,7 @@
  * Payload этикетки для TSPL (XP-365B по сети).
  */
 import i18n from '../../i18n/config';
+import { effectiveLabelFontScale } from '../../shelfLabelPrint/constants';
 import { resolveAutoLabelLayout } from '../../shelfLabelPrint/resolveAutoLabelLayout';
 
 /** @param {object} printJob @param {Function} t */
@@ -32,7 +33,7 @@ export function buildTsplLabelPayload(printJob, t) {
     padYmm: Number(auto?.padYmm ?? printJob.padYmm) || 0,
     offsetXmm: Number(auto?.offsetXmm ?? printJob.offsetXmm) || 0,
     offsetYmm: Number(auto?.offsetYmm ?? printJob.offsetYmm) || 0,
-    fontScale: Number(auto?.fontScale ?? printJob.fontScale) || 1,
+    fontScale: effectiveLabelFontScale(auto?.fontScale ?? printJob.fontScale),
     rotate180: Boolean(auto?.rotate180 ?? printJob.rotate180),
     labelsMeta: { currency },
     labels: [

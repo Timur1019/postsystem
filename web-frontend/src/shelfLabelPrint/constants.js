@@ -40,6 +40,14 @@ export const DEFAULT_PRESET_ID = 'standard_58_40';
 
 export const LABEL_PRINT_SETTINGS_KEY = 'aurent_label_print_settings_v4';
 
+/** Глобальное увеличение текста этикетки (~6%). Калибровку и layout не меняет. */
+export const LABEL_TEXT_SIZE_BOOST = 1.06;
+
+/** @param {number} [fontScale] */
+export function effectiveLabelFontScale(fontScale) {
+  return Math.min(1.6, (Number(fontScale) || 1) * LABEL_TEXT_SIZE_BOOST);
+}
+
 export const LABEL_SIZE_CATEGORIES = [
   { id: 'micro', i18nKey: 'usersBarcodePrint.sizeCategory.micro' },
   { id: 'standard', i18nKey: 'usersBarcodePrint.sizeCategory.standard' },
