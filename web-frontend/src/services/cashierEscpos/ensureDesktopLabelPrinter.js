@@ -1,8 +1,11 @@
 /**
- * Перед печатью этикетки — выбранный «Принтер штрих-кодов» в Aurent.
+ * Перед печатью этикетки — выбранный «Принтер штрих-кодов» в Aurent
+ * или TSPL (сетевой XP-365B).
  */
 import { isDesktopCashier } from '../../utils/printReceipt';
+import { isDesktopLabelPrintAvailable } from '../../shelfLabelPrint/printShelfLabelDriver';
 import { isCashierEscposLabelPrintAvailable } from './printLabelEscpos';
+import { isLabelTsplEnabled, isLabelTsplPrintAvailable } from './printLabelTspl';
 
 async function readLabelPrinterName() {
   if (typeof window.desktopCashier?.getPrinterSettings !== 'function') {
@@ -12,14 +15,17 @@ async function readLabelPrinterName() {
   return String(settings?.labelPrinterName || '').trim();
 }
 
-/** Десктоп Aurent с ESC/POS печатью этикеток. */
+/** Десктоп Aurent с печатью этикеток (драйвер / TSPL / ESC/POS). */
 export function isDesktopLabelPrintEnvironment() {
-  return isDesktopCashier() && isCashierEscposLabelPrintAvailable();
+  return (
+    isDesktopCashier() &&
+    (isDesktopLabelPrintAvailable() || isLabelTsplPrintAvailable() || isCashierEscposLabelPrintAvailable())
+  );
 }
 
 /**
  * @param {Function} t
- * @returns {Promise<{ deviceName: string }>}
+ * @returns {Promise<{ deviceName: string, mode?: 'tspl'|'driver' }>}
  */
 export async function ensureDesktopLabelPrinter(t) {
   if (!isDesktopCashier()) {
@@ -31,7 +37,21 @@ export async function ensureDesktopLabelPrinter(t) {
     );
   }
 
-  if (!isCashierEscposLabelPrintAvailable()) {
+  if (isLabelTsplPrintAvailable() && (await isLabelTsplEnabled())) {
+    const settings = await window.desktopCashier.labelTsplGetSettings();
+    const host = String(settings?.host || '').trim();
+    if (!host) {
+      throw new Error(
+        t('usersBarcodePrint.tsplHostRequired', {
+          defaultValue: 'Укажите IP принтера этикеток в настройках TSPL (XP-365B).',
+        }),
+      );
+    }
+    const port = Number(settings?.port) || 9100;
+    return { deviceName: `${host}:${port}`, mode: 'tspl' };
+  }
+
+  if (!isCashierEscposLabelPrintAvailable() && !isDesktopLabelPrintAvailable()) {
     throw new Error(
       t('pos.escposDriverMissing', {
         defaultValue: 'Печать недоступна в этой версии приложения. Обновите Aurent Cashier.',
@@ -41,7 +61,7 @@ export async function ensureDesktopLabelPrinter(t) {
 
   let name = await readLabelPrinterName();
   if (name) {
-    return { deviceName: name };
+    return { deviceName: name, mode: 'driver' };
   }
 
   if (typeof window.desktopCashier.openLabelPrinterPicker === 'function') {
@@ -50,7 +70,7 @@ export async function ensureDesktopLabelPrinter(t) {
   }
 
   if (name) {
-    return { deviceName: name };
+    return { deviceName: name, mode: 'driver' };
   }
 
   throw new Error(

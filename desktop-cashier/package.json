@@ -17,6 +17,7 @@
     "dist:win:dir": "node scripts/rebuild-native-printer.cjs --required && electron-builder --win dir --config electron-builder.config.cjs --publish never --config.win.signAndEditExecutable=false",
     "test:print": "node scripts/test-print-logic.cjs",
     "test:escpos": "node scripts/test-escpos-build.cjs",
+    "test:tspl": "node scripts/test-tspl-build.cjs",
     "verify:win-unpacked": "node scripts/verify-windows-unpacked.cjs"
   },
   "build": {

@@ -8,6 +8,7 @@ import {
 } from './constants';
 import { clampNum, snapStep } from './labelLayoutUtils';
 import { ToggleSwitch } from './ShelfLabelPrintControls';
+import LabelTsplSettingsPanel from './LabelTsplSettingsPanel';
 
 function formatNumValue(value, step) {
   const n = Number(value);
@@ -117,6 +118,8 @@ export default function ShelfLabelPrintSettingsPanel({
           })}
         </p>
       ) : null}
+
+      <LabelTsplSettingsPanel t={t} />
 
       <div className={`space-y-4 ${compact ? 'mt-3' : 'mt-4'}`}>
         {LABEL_SIZE_CATEGORIES.map((category) => {

@@ -1,10 +1,10 @@
 /**
  * Единая печать этикетки / ценника.
- * На десктопе для XP-365B и аналогов — сначала печать через драйвер (HTML + printLabelPage),
- * ESC/POS — запасной путь, если printLabelPage недоступен.
+ * TSPL (XP-365B по сети) → драйвер Windows (HTML) → ESC/POS запасной путь.
  */
 import { isDesktopLabelPrintAvailable } from '../../shelfLabelPrint/printShelfLabelDriver';
 import { isCashierEscposLabelPrintAvailable, printLabelEscpos } from './printLabelEscpos';
+import { isLabelTsplEnabled, isLabelTsplPrintAvailable, printLabelTspl } from './printLabelTspl';
 
 /**
  * @param {object} printJob — результат buildLabelPrintJob
@@ -16,6 +16,10 @@ export async function printShelfLabelUnified(printJob, t, opts = {}) {
 
   if (requireBarcode && printJob?.showBarcode && !String(printJob?.barcode || '').trim()) {
     throw new Error('No barcode');
+  }
+
+  if (isLabelTsplPrintAvailable() && (await isLabelTsplEnabled())) {
+    return printLabelTspl(printJob, t);
   }
 
   if (preferDriverPrint && isDesktopLabelPrintAvailable()) {

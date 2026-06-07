@@ -27,6 +27,12 @@ export {
   printLabelEscpos,
 } from './printLabelEscpos';
 export {
+  isLabelTsplPrintAvailable,
+  isLabelTsplEnabled,
+  printLabelTspl,
+} from './printLabelTspl';
+export { buildTsplLabelPayload } from './buildTsplLabelPayload';
+export {
   ensureDesktopLabelPrinter,
   isDesktopLabelPrintEnvironment,
 } from './ensureDesktopLabelPrinter';

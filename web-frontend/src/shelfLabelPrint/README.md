@@ -15,12 +15,13 @@
 ```
 buildLabelPrintJob → printShelfLabel(printJob, t)
   → ensureDesktopLabelPrinter
-  → printShelfLabelUnified (preferDriverPrint)
-      1. HTML + printLabelPage (драйвер, XP-365B и аналоги)
-      2. ESC/POS — запасной путь (printLabelsEscpos)
+  → printShelfLabelUnified
+      1. TSPL (XP-365B по сети, если включено) — desktop:print-label-tspl
+      2. HTML + printLabelPage (драйвер Windows)
+      3. ESC/POS — запасной путь (printLabelsEscpos)
 ```
 
-Принтер: Aurent → «Принтер штрих-кодов». Размер бумаги при `autoLabelPrint` — из `resolveAutoLabelLayout`.
+Принтер: Aurent → «Принтер штрих-кодов» (драйвер) **или** TSPL в настройках на `/users/barcode-print`.
 
 XP-365B и многие термопринтеры этикеток на Windows игнорируют сырой ESC/POS — поэтому основной путь через драйвер.
 
