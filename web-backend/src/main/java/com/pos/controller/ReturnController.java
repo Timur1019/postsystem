@@ -1,5 +1,6 @@
 package com.pos.controller;
 
+import com.pos.config.openapi.StandardApiResponses;
 import com.pos.dto.returns.ReturnRowResponse;
 import com.pos.dto.returns.UpdateReturnReasonRequest;
 import com.pos.dto.sale.SaleResponse;
@@ -7,6 +8,9 @@ import com.pos.dto.shared.PageResponse;
 import com.pos.service.ReturnService;
 import com.pos.service.export.ReturnExportService;
 import com.pos.spreadsheet.SpreadsheetDownloadSupport;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +33,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/returns")
 @RequiredArgsConstructor
+@Tag(name = "Returns", description = "Журнал возвратов и управление ими")
+@StandardApiResponses
 public class ReturnController {
 
     private final ReturnService returnService;
@@ -36,6 +42,8 @@ public class ReturnController {
 
     @GetMapping("/export")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Экспорт возвратов", description = "Выгрузка журнала возвратов в Excel")
+    @ApiResponse(responseCode = "200", description = "Файл Excel")
     public ResponseEntity<byte[]> exportExcel(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
@@ -49,6 +57,8 @@ public class ReturnController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Список возвратов", description = "Постраничный журнал возвратов с фильтрами")
+    @ApiResponse(responseCode = "200", description = "Список возвратов")
     public ResponseEntity<PageResponse<ReturnRowResponse>> list(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
@@ -62,12 +72,16 @@ public class ReturnController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Детали возврата", description = "Получение детальной информации о возврате")
+    @ApiResponse(responseCode = "200", description = "Данные возврата")
     public ResponseEntity<SaleResponse> getDetails(@PathVariable UUID id) {
         return ResponseEntity.ok(returnService.getDetails(id));
     }
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Изменить причину", description = "Обновление причины возврата")
+    @ApiResponse(responseCode = "200", description = "Причина обновлена")
     public ResponseEntity<ReturnRowResponse> updateReason(
         @PathVariable UUID id,
         @Valid @RequestBody UpdateReturnReasonRequest request
@@ -77,6 +91,8 @@ public class ReturnController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Отменить возврат", description = "Отмена оформленного возврата")
+    @ApiResponse(responseCode = "204", description = "Возврат отменён")
     public ResponseEntity<Void> cancelReturn(@PathVariable UUID id) {
         returnService.cancelReturn(id);
         return ResponseEntity.noContent().build();

@@ -32,8 +32,8 @@ public class EmailTemplateRenderer {
         merged.putIfAbsent("year", String.valueOf(java.time.Year.now().getValue()));
 
         String body = applyPlaceholders(loadTemplate(type), merged);
-        String layout = applyPlaceholders(loadLayout(), merged);
-        return layout.replace("{{content}}", body);
+        String layout = loadLayout().replace("{{content}}", body);
+        return applyPlaceholders(layout, merged);
     }
 
     private String loadLayout() {

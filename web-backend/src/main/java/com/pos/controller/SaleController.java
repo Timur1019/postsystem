@@ -1,11 +1,15 @@
 package com.pos.controller;
 
+import com.pos.config.openapi.StandardApiResponses;
 import com.pos.dto.sale.CreateSaleRequest;
 import com.pos.dto.sale.PartialReturnRequest;
 import com.pos.dto.sale.SaleResponse;
 import com.pos.dto.shared.PageResponse;
 import com.pos.exception.BadRequestException;
 import com.pos.service.SaleService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -25,11 +29,15 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/sales")
 @RequiredArgsConstructor
+@Tag(name = "Sales", description = "Продажи, чеки и операции с ними")
+@StandardApiResponses
 public class SaleController {
 
     private final SaleService saleService;
 
     @PostMapping
+    @Operation(summary = "Создать продажу", description = "Оформление новой продажи (чека)")
+    @ApiResponse(responseCode = "201", description = "Продажа создана")
     public ResponseEntity<SaleResponse> createSale(
         @Valid @RequestBody CreateSaleRequest request,
         @AuthenticationPrincipal User currentUser
@@ -40,6 +48,8 @@ public class SaleController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Список продаж", description = "Постраничный журнал продаж с фильтрами")
+    @ApiResponse(responseCode = "200", description = "Список продаж")
     public ResponseEntity<PageResponse<SaleResponse>> getSales(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
@@ -64,6 +74,8 @@ public class SaleController {
 
     @GetMapping(value = "/export")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Экспорт продаж", description = "Выгрузка журнала продаж в Excel")
+    @ApiResponse(responseCode = "200", description = "Файл Excel")
     public ResponseEntity<byte[]> exportSoldLines(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
@@ -86,17 +98,23 @@ public class SaleController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Продажа по ID", description = "Получение чека по UUID")
+    @ApiResponse(responseCode = "200", description = "Данные продажи")
     public ResponseEntity<SaleResponse> getSale(@PathVariable UUID id) {
         return ResponseEntity.ok(saleService.getSale(id));
     }
 
     @GetMapping("/receipt/{receiptNumber}")
+    @Operation(summary = "Продажа по номеру чека", description = "Поиск чека по номеру фискального чека")
+    @ApiResponse(responseCode = "200", description = "Данные продажи")
     public ResponseEntity<SaleResponse> getByReceipt(@PathVariable String receiptNumber) {
         return ResponseEntity.ok(saleService.getByReceiptNumber(receiptNumber));
     }
 
     @PostMapping("/{id}/void")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CASHIER')")
+    @Operation(summary = "Аннулировать продажу", description = "Полная отмена (void) продажи")
+    @ApiResponse(responseCode = "200", description = "Продажа аннулирована")
     public ResponseEntity<SaleResponse> voidSale(
         @PathVariable UUID id,
         @RequestParam(required = false) String reason
@@ -106,6 +124,8 @@ public class SaleController {
 
     @PostMapping("/{id}/return-items")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CASHIER')")
+    @Operation(summary = "Частичный возврат", description = "Возврат отдельных позиций из чека")
+    @ApiResponse(responseCode = "200", description = "Возврат оформлен")
     public ResponseEntity<SaleResponse> returnItems(
         @PathVariable UUID id,
         @Valid @RequestBody PartialReturnRequest request
@@ -114,6 +134,8 @@ public class SaleController {
     }
 
     @GetMapping("/my-sales")
+    @Operation(summary = "Мои продажи", description = "Продажи текущего кассира с фильтрами")
+    @ApiResponse(responseCode = "200", description = "Список продаж кассира")
     public ResponseEntity<PageResponse<SaleResponse>> mySales(
         @AuthenticationPrincipal User currentUser,
         @RequestParam(required = false) UUID shiftId,

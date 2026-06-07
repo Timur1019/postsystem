@@ -1,5 +1,6 @@
 package com.pos.controller;
 
+import com.pos.config.openapi.StandardApiResponses;
 import com.pos.dto.report.DailySummaryResponse;
 import com.pos.dto.report.SalesReportResponse;
 import com.pos.dto.report.sales.PeriodCompareResponse;
@@ -7,6 +8,9 @@ import com.pos.service.ReportService;
 import com.pos.service.cache.PosCacheRefreshOrchestrator;
 import com.pos.service.export.ReportExportService;
 import com.pos.spreadsheet.SpreadsheetDownloadSupport;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +23,8 @@ import java.time.LocalDate;
 @RequestMapping("/reports")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+@Tag(name = "Reports (general)", description = "Общие отчёты: дневная сводка, продажи, топ товаров")
+@StandardApiResponses
 public class ReportController {
 
     private final ReportService reportService;
@@ -26,6 +32,8 @@ public class ReportController {
     private final PosCacheRefreshOrchestrator posCacheRefreshOrchestrator;
 
     @GetMapping("/daily")
+    @Operation(summary = "Дневная сводка", description = "Сводка продаж и показателей за день")
+    @ApiResponse(responseCode = "200", description = "Дневная сводка")
     public ResponseEntity<DailySummaryResponse> dailySummary(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
@@ -34,6 +42,8 @@ public class ReportController {
     }
 
     @GetMapping(value = "/daily/export")
+    @Operation(summary = "Экспорт дневной сводки", description = "Выгрузка дневной сводки в Excel")
+    @ApiResponse(responseCode = "200", description = "Файл Excel")
     public ResponseEntity<byte[]> exportDaily(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
@@ -44,6 +54,8 @@ public class ReportController {
     }
 
     @GetMapping("/sales")
+    @Operation(summary = "Отчёт по продажам", description = "Агрегированный отчёт продаж за период")
+    @ApiResponse(responseCode = "200", description = "Отчёт по продажам")
     public ResponseEntity<SalesReportResponse> salesReport(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
@@ -52,6 +64,8 @@ public class ReportController {
     }
 
     @GetMapping("/top-products")
+    @Operation(summary = "Топ товаров", description = "Рейтинг самых продаваемых товаров за период")
+    @ApiResponse(responseCode = "200", description = "Топ товаров")
     public ResponseEntity<?> topProducts(
         @RequestParam(defaultValue = "10") int limit,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -62,6 +76,8 @@ public class ReportController {
 
     @GetMapping("/cashier-performance")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Эффективность кассиров", description = "Отчёт по показателям работы кассиров")
+    @ApiResponse(responseCode = "200", description = "Отчёт по кассирам")
     public ResponseEntity<?> cashierPerformance(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
@@ -71,6 +87,8 @@ public class ReportController {
 
     @GetMapping(value = "/cashier-performance/export")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Экспорт эффективности кассиров", description = "Выгрузка отчёта по кассирам в Excel")
+    @ApiResponse(responseCode = "200", description = "Файл Excel")
     public ResponseEntity<byte[]> exportCashierPerformance(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
@@ -82,6 +100,8 @@ public class ReportController {
     }
 
     @GetMapping("/sales/period-compare")
+    @Operation(summary = "Сравнение периодов", description = "Сравнение показателей продаж между периодами")
+    @ApiResponse(responseCode = "200", description = "Сравнение периодов")
     public ResponseEntity<PeriodCompareResponse> periodCompare(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
@@ -91,6 +111,8 @@ public class ReportController {
     }
 
     @GetMapping(value = "/sales/period-compare/export")
+    @Operation(summary = "Экспорт сравнения периодов", description = "Выгрузка сравнения периодов в Excel")
+    @ApiResponse(responseCode = "200", description = "Файл Excel")
     public ResponseEntity<byte[]> exportPeriodCompare(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
@@ -104,6 +126,8 @@ public class ReportController {
 
     @PostMapping("/cache/refresh")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Обновить кэш", description = "Принудительное обновление кэшей POS-данных")
+    @ApiResponse(responseCode = "204", description = "Кэш обновлён")
     public ResponseEntity<Void> refreshCaches() {
         posCacheRefreshOrchestrator.refreshAll();
         return ResponseEntity.noContent().build();

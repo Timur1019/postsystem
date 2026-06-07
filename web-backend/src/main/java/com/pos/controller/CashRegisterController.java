@@ -1,5 +1,6 @@
 package com.pos.controller;
 
+import com.pos.config.openapi.StandardApiResponses;
 import com.pos.dto.cashregister.CashRegisterDetailResponse;
 import com.pos.dto.cashregister.CashRegisterRowResponse;
 import com.pos.dto.cashregister.CashTransferRowResponse;
@@ -8,6 +9,9 @@ import com.pos.service.CashRegisterService;
 import com.pos.service.CashTransferService;
 import com.pos.service.export.CashTransferExportService;
 import com.pos.spreadsheet.SpreadsheetDownloadSupport;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -27,6 +31,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/cash-registers")
 @RequiredArgsConstructor
+@Tag(name = "Cash Registers", description = "Кассовое оборудование и инкассации")
+@StandardApiResponses
 public class CashRegisterController {
 
     private final CashRegisterService cashRegisterService;
@@ -35,12 +41,16 @@ public class CashRegisterController {
 
     @GetMapping("/equipment-serials")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Серийные номера", description = "Список уникальных серийных номеров оборудования")
+    @ApiResponse(responseCode = "200", description = "Список серийных номеров")
     public ResponseEntity<List<String>> listEquipmentSerials() {
         return ResponseEntity.ok(cashRegisterService.listDistinctEquipmentSerials());
     }
 
     @GetMapping("/transfers/export")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Экспорт инкассаций", description = "Выгрузка журнала инкассаций в Excel")
+    @ApiResponse(responseCode = "200", description = "Файл Excel")
     public ResponseEntity<byte[]> exportTransfers(
         @RequestParam(required = false) String search,
         @RequestParam(required = false) Integer registerNumber,
@@ -58,6 +68,8 @@ public class CashRegisterController {
 
     @GetMapping("/transfers")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Журнал инкассаций", description = "Постраничный список инкассаций с фильтрами")
+    @ApiResponse(responseCode = "200", description = "Список инкассаций")
     public ResponseEntity<PageResponse<CashTransferRowResponse>> listTransfers(
         @RequestParam(required = false) String search,
         @RequestParam(required = false) Integer registerNumber,
@@ -72,18 +84,24 @@ public class CashRegisterController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Касса по ID", description = "Детальная информация о кассовом аппарате")
+    @ApiResponse(responseCode = "200", description = "Данные кассы")
     public ResponseEntity<CashRegisterDetailResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(cashRegisterService.getById(id));
     }
 
     @PatchMapping("/{id}/toggle-status")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Переключить статус", description = "Активация или деактивация кассового аппарата")
+    @ApiResponse(responseCode = "200", description = "Статус изменён")
     public ResponseEntity<CashRegisterRowResponse> toggleStatus(@PathVariable Long id) {
         return ResponseEntity.ok(cashRegisterService.toggleStatus(id));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @Operation(summary = "Список касс", description = "Постраничный список кассовых аппаратов")
+    @ApiResponse(responseCode = "200", description = "Список касс")
     public ResponseEntity<PageResponse<CashRegisterRowResponse>> list(
         @RequestParam(required = false) String search,
         @RequestParam(required = false) String equipmentModel,

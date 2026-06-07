@@ -1,5 +1,6 @@
 package com.pos.controller;
 
+import com.pos.config.openapi.StandardApiResponses;
 import com.pos.dto.order.CreateCustomerOrderRequest;
 import com.pos.dto.order.CourierOptionResponse;
 import com.pos.dto.order.CustomerOrderCreatedResponse;
@@ -7,6 +8,9 @@ import com.pos.dto.order.CustomerOrderRowResponse;
 import com.pos.dto.order.PhotoDownload;
 import com.pos.dto.shared.PageResponse;
 import com.pos.service.CustomerOrderService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -35,16 +39,22 @@ import java.util.UUID;
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+@Tag(name = "Customer Orders", description = "Заказы клиентов и управление доставкой")
+@StandardApiResponses
 public class CustomerOrderController {
 
     private final CustomerOrderService customerOrderService;
 
     @GetMapping("/couriers")
+    @Operation(summary = "Список курьеров", description = "Кандидаты в курьеры для назначения на заказ")
+    @ApiResponse(responseCode = "200", description = "Список курьеров")
     public List<CourierOptionResponse> couriers() {
         return customerOrderService.listCourierCandidates();
     }
 
     @GetMapping
+    @Operation(summary = "Список заказов", description = "Постраничный журнал заказов клиентов с фильтрами")
+    @ApiResponse(responseCode = "200", description = "Список заказов")
     public ResponseEntity<PageResponse<CustomerOrderRowResponse>> list(
         @RequestParam(required = false) String search,
         @RequestParam(required = false) String externalNumber,
@@ -61,6 +71,8 @@ public class CustomerOrderController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Создать заказ", description = "Оформление нового заказа клиента")
+    @ApiResponse(responseCode = "201", description = "Заказ создан")
     public ResponseEntity<CustomerOrderCreatedResponse> create(
         @Valid @RequestBody CreateCustomerOrderRequest body,
         @AuthenticationPrincipal User user
@@ -70,6 +82,8 @@ public class CustomerOrderController {
     }
 
     @GetMapping("/{id}/photos/{slot}")
+    @Operation(summary = "Фото заказа", description = "Получение фотографии заказа по слоту")
+    @ApiResponse(responseCode = "200", description = "Изображение")
     public ResponseEntity<Resource> photo(@PathVariable long id, @PathVariable int slot) {
         PhotoDownload dl = customerOrderService.loadPhoto(id, slot);
         return ResponseEntity.ok()
