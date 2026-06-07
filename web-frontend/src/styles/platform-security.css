@@ -1,0 +1,35 @@
+.platform-security__card {
+  border-radius: 1rem;
+  border: 1px solid rgb(226 232 240);
+  background: #fff;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.dark .platform-security__card {
+  border-color: rgb(30 41 59);
+  background: rgb(15 23 42);
+}
+
+.platform-security__card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.platform-security__note {
+  margin-bottom: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(191 219 254);
+  background: rgb(239 246 255);
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  color: rgb(30 64 175);
+}
+
+.dark .platform-security__note {
+  border-color: rgb(30 58 138 / 0.5);
+  background: rgb(23 37 84 / 0.35);
+  color: rgb(147 197 253);
+}

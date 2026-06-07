@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Barcode, ChevronDown, Maximize, Printer, RefreshCw, Server, LogOut, FileText, Tag, Download, Scale } from 'lucide-react';
+import { Barcode, ChevronDown, Maximize, Printer, RefreshCw, LogOut, FileText, Tag, Download, Scale } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { CASHIER_ESCPOS_TOAST } from '../../config/cashierEscposConfig';
@@ -63,18 +63,6 @@ export default function CashierDesktopMenu({ appName }) {
       document.removeEventListener('keydown', onKey);
     };
   }, [open, close, refreshPrinter]);
-
-  useEffect(() => {
-    if (!isDesktopCashier()) return undefined;
-    const onKey = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === ',') {
-        e.preventDefault();
-        window.desktopCashier?.openServerSetup?.();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
 
   if (!isDesktopCashier()) return null;
 
@@ -197,15 +185,6 @@ export default function CashierDesktopMenu({ appName }) {
         <ChevronDown size={16} strokeWidth={2.5} className="cashier-desktop-menu__chevron" aria-hidden />
       </button>
       <div className="cashier-desktop-menu__panel" role="menu">
-        <button
-          type="button"
-          className="cashier-desktop-menu__item cashier-desktop-menu__item--primary"
-          role="menuitem"
-          onClick={() => run(() => window.desktopCashier.openServerSetup())}
-        >
-          <Server size={18} strokeWidth={2} aria-hidden />
-          <span>{t('desktop.serverSetup')}</span>
-        </button>
         <button
           type="button"
           className="cashier-desktop-menu__item cashier-desktop-menu__item--stacked"

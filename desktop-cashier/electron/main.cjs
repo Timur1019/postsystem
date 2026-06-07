@@ -22,6 +22,7 @@ const {
 const { buildOrigin, buildHealthUrl } = require('./server-url.cjs');
 const { startEmbeddedUi, stopEmbeddedUi } = require('./embedded-server.cjs');
 const { showSetupWindow, configPath } = require('./setup-window.cjs');
+const { showServerSetupPasswordWindow } = require('./server-setup-password-window.cjs');
 const { showPrinterPickerWindow } = require('./printer-picker-window.cjs');
 const { matchPrinterName } = require('./printer-match.cjs');
 const {
@@ -195,6 +196,10 @@ async function reloadCashierPage() {
 
 async function openServerSettings() {
   try {
+    config = loadConfig();
+    if (hasUserServerConfig()) {
+      await showServerSetupPasswordWindow(config);
+    }
     await configureServerInteractive();
     config = loadConfig();
     if (config.useEmbedded) {
