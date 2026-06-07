@@ -57,7 +57,7 @@ function buildSetupHtml(current) {
     ? 'Укажите адрес магазина (как сказал администратор). Обычно это IP или имя сервера — ничего сложного настраивать не нужно.'
     : 'Укажите адрес сервера магазина. Интерфейс загрузится из сети — после обновления на сервере нажмите «Вид → Обновить».';
   const hint = hasEmbedded
-    ? 'Порт API: <strong>443</strong> для HTTPS (aurent.uz). Укажите домен <strong>точно как в браузере</strong> (часто www.aurent.uz, не aurent.uz).'
+    ? 'Для сервера по IP (111.88.132.126): порт <strong>8081</strong>. Для HTTPS-домена: порт <strong>443</strong>. Проверка в браузере: <strong>/api/v1/actuator/health</strong> → {"status":"UP"}.'
     : 'Порт сайта и API: <strong>443</strong> для HTTPS. Домен — как в браузере (www.aurent.uz). Для HTTP в сети магазина — 8081.';
   const displayApiPort = apiPort;
   const portFields = hasEmbedded

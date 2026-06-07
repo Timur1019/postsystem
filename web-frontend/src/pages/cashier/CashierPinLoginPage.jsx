@@ -103,7 +103,11 @@ export default function CashierPinLoginPage() {
       navigate('/cashier/pos', { replace: true });
     } catch (err) {
       const apiMsg = err.response?.data?.message;
-      toast.error(apiMsg || t('login.failed'));
+      if (!err.response) {
+        toast.error(t('login.networkError'), { id: 'cashier-login-network' });
+      } else {
+        toast.error(apiMsg || t('login.failed'));
+      }
       setPin('');
     } finally {
       setLoading(false);

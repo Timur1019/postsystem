@@ -39,6 +39,7 @@ const { registerOfflineIpc } = require('./offline/ipc.cjs');
 const localDb = require('./offline/local-db.cjs');
 const { logStartup } = require('./startup-log.cjs');
 const { resolveWebDist } = require('./embedded-server.cjs');
+const { httpGet } = require('./http-client.cjs');
 
 const ALLOWED_PATH_PREFIXES = ['/login', '/cashier', '/receipt', '/users/barcode-print'];
 
@@ -373,25 +374,7 @@ function isAllowedLocation(urlString) {
 }
 
 function httpOk(url) {
-  return new Promise((resolve) => {
-    let parsed;
-    try {
-      parsed = new URL(url);
-    } catch {
-      resolve(false);
-      return;
-    }
-    const client = parsed.protocol === 'https:' ? https : http;
-    const req = client.get(url, (res) => {
-      res.resume();
-      resolve(res.statusCode >= 200 && res.statusCode < 400);
-    });
-    req.on('error', () => resolve(false));
-    req.setTimeout(8000, () => {
-      req.destroy();
-      resolve(false);
-    });
-  });
+  return httpGet(url, { timeoutMs: 8000 });
 }
 
 /** Health: HTTPS :443, HTTP :80, прямой API :8080. */
@@ -420,6 +403,12 @@ function collectApiHealthUrls(cfg) {
     const host = u.hostname;
     if (host && host !== '127.0.0.1' && host !== 'localhost') {
       const seen = new Set(urls);
+      const preferredPort = String(cfg.apiPort || u.port || '').trim();
+      if (preferredPort) {
+        const preferred = buildHealthUrl(buildOrigin(host, preferredPort));
+        urls.unshift(preferred);
+        seen.add(preferred);
+      }
       for (const port of ['8081', '443', '80', '8080']) {
         const line = buildHealthUrl(buildOrigin(host, port));
         if (!seen.has(line)) urls.push(line);
@@ -435,9 +424,11 @@ async function probeApiHealth(cfg) {
   const urls = collectApiHealthUrls(cfg);
   for (const url of urls) {
     if (await httpOk(url)) {
+      logStartup('health_ok', { url });
       return { ok: true, url };
     }
   }
+  logStartup('health_failed_all', { tried: urls.slice(0, 6), backendOrigin: cfg.backendOrigin });
   return { ok: false, tried: urls };
 }
 

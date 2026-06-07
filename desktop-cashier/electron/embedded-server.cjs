@@ -2,6 +2,8 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const { createHttpAgent } = require('./http-client.cjs');
+const { logStartup } = require('./startup-log.cjs');
 
 let server;
 
@@ -26,28 +28,36 @@ function startEmbeddedUi({ port, backendOrigin }) {
 
   const app = express();
   const target = String(backendOrigin || '').replace(/\/$/, '');
+  const proxyAgent = target ? createHttpAgent(target.startsWith('https')) : undefined;
+  logStartup('embedded_proxy', { target, port });
   // pathFilter без app.use('/api') — иначе Express срезает префикс и ломает /api/v1/*
   app.use(
     createProxyMiddleware({
       target,
       changeOrigin: true,
       secure: false,
+      agent: proxyAgent,
       xfwd: true,
+      proxyTimeout: 20_000,
+      timeout: 20_000,
       pathFilter: (pathname) => pathname.startsWith('/api'),
       on: {
         error: (err, _req, res) => {
-          console.error('[Aurent proxy]', err.message);
+          console.error('[Aurent proxy]', target, err.message);
+          logStartup('proxy_error', { target, message: err.message });
           if (res && typeof res.writeHead === 'function' && !res.headersSent) {
             res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(
               JSON.stringify({
-                message: 'Не удалось связаться с сервером Aurent. Проверьте IP, порт 8080 и интернет.',
-              })
+                message:
+                  `Не удалось связаться с сервером (${target || 'не настроен'}). ` +
+                  'Проверьте IP, порт 8081 и «Настройка сервера» в меню Aurent.',
+              }),
             );
           }
         },
       },
-    })
+    }),
   );
   app.use(express.static(distPath, { index: false }));
   app.get('*', (_req, res) => {
