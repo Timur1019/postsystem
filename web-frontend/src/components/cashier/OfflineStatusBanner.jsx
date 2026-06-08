@@ -4,7 +4,9 @@ import { CloudOff, RefreshCw, Wifi } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCashierStore } from '../../hooks/useCashierStore';
-import { useConnectivityStore, refreshConnectivityStatus, userAllowedOfflinePos } from '../../store/connectivityStore';
+import { useAuthStore } from '../../store/authStore';
+import { userHasCashierOfflineAccess } from '../../utils/cashierOfflineAccess';
+import { useConnectivityStore, refreshConnectivityStatus } from '../../store/connectivityStore';
 import {
   pushPendingSales,
   refreshCatalogBootstrap,
@@ -33,8 +35,8 @@ export default function OfflineStatusBanner() {
   const bootstrapReady = useConnectivityStore((s) => s.bootstrapReady);
   const lastCatalogSyncAt = useConnectivityStore((s) => s.lastCatalogSyncAt);
   const productCount = useConnectivityStore((s) => s.productCount);
-
-  const offlineAllowed = userAllowedOfflinePos();
+  const user = useAuthStore((s) => s.user);
+  const offlineAllowed = userHasCashierOfflineAccess(user);
 
   if (!isDesktopOfflineBridge()) return null;
 

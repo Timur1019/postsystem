@@ -25,6 +25,7 @@ import {
   REPORT_STOCK_CHILDREN,
   REST_NAV,
 } from './layoutNavConfig';
+import { syncAuthSession } from '../../utils/syncAuthSession';
 import '../../styles/cashier-modals.css';
 
 export default function AppShellLayout() {
@@ -43,6 +44,10 @@ export default function AppShellLayout() {
   const [reportsOpen, setReportsOpen] = useState(true);
   const [reportsSalesOpen, setReportsSalesOpen] = useState(true);
   const [reportsStockOpen, setReportsStockOpen] = useState(true);
+
+  useEffect(() => {
+    syncAuthSession();
+  }, []);
   const [registersOpen, setRegistersOpen] = useState(true);
   const [usersOpen, setUsersOpen] = useState(true);
   const [ordersOpen, setOrdersOpen] = useState(true);

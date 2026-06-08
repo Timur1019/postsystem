@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,7 +35,7 @@ public class ModuleAccessServiceImpl implements ModuleAccessService {
 
     @Override
     public List<AdminModuleCatalogItem> catalog() {
-        return AdminModule.adminScope().stream()
+        return Arrays.stream(AdminModule.values())
             .map(m -> new AdminModuleCatalogItem(m.key(), m.group()))
             .toList();
     }

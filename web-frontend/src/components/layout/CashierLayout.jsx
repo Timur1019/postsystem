@@ -31,6 +31,7 @@ import { useOfflineConnectivity } from '../../hooks/useOfflineConnectivity';
 import { useCashierTouchLayout } from '../../hooks/useCashierTouchLayout';
 import OfflineStatusBanner from '../cashier/OfflineStatusBanner';
 import { resetCashierDocumentUiState } from '../../utils/resetCashierDocumentUiState';
+import { syncAuthSession } from '../../utils/syncAuthSession';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../styles/cashier-modals.css';
 import '../../styles/cashier-bootstrap.css';
@@ -87,6 +88,10 @@ function CashierLayoutShell() {
       document.documentElement.classList.remove('cashier-theme--light', 'cashier-theme--dark');
       document.documentElement.style.colorScheme = '';
     };
+  }, []);
+
+  useEffect(() => {
+    syncAuthSession();
   }, []);
 
   const toggleCashierTheme = () => {

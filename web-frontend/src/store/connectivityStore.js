@@ -184,23 +184,25 @@ export function shouldUseLocalPosCatalog() {
 }
 
 export function useShouldUseOfflinePos() {
+  const user = useAuthStore((s) => s.user);
   const apiOnline = useConnectivityStore((s) => s.apiOnline);
   const offlineMode = useConnectivityStore((s) => s.offlineMode);
   if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return false;
   const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
   const offlineLike = offlineMode || !apiOnline || browserOffline;
-  if (offlineLike && !userHasCashierOfflineAccess(useAuthStore.getState().user)) return false;
+  if (offlineLike && !userHasCashierOfflineAccess(user)) return false;
   return offlineLike;
 }
 
 export function useShouldUseLocalPosCatalog() {
+  const user = useAuthStore((s) => s.user);
   const bootstrapReady = useConnectivityStore((s) => s.bootstrapReady);
   const apiOnline = useConnectivityStore((s) => s.apiOnline);
   const offlineMode = useConnectivityStore((s) => s.offlineMode);
   if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return false;
   const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
   const offlineLike = offlineMode || !apiOnline || browserOffline;
-  if (offlineLike && !userHasCashierOfflineAccess(useAuthStore.getState().user)) return false;
+  if (offlineLike && !userHasCashierOfflineAccess(user)) return false;
   if (bootstrapReady) return true;
   return offlineLike;
 }

@@ -60,8 +60,9 @@ api.interceptors.response.use(
         const res = await axios.post(`${api.defaults.baseURL}/auth/refresh`, null, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setToken(res.data.token);
-        original.headers.Authorization = `Bearer ${res.data.token}`;
+        const { token: newToken, ...profile } = res.data;
+        useAuthStore.getState().setAuth(newToken, profile);
+        original.headers.Authorization = `Bearer ${newToken}`;
         return api(original);
       } catch {
         logoutAndResetSession();
@@ -84,6 +85,7 @@ export const authApi = {
   login:   (data) => api.post('/auth/login', data),
   cashierPinLogin: (data) => api.post('/auth/cashier-pin/login', data),
   register:(data) => api.post('/auth/register', data),
+  refresh: () => api.post('/auth/refresh'),
   verifyPassword: (data) => api.post('/auth/verify-password', data),
   verifyPin: (data) => api.post('/auth/verify-pin', data),
 };
