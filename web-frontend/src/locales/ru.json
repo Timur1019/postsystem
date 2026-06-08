@@ -1668,6 +1668,8 @@
     "pickerSubtitleStore": "Шаблоны подобраны по типу выбранного магазина",
     "storePickerTitle": "Выберите магазин",
     "storePickerSubtitle": "Поля товара зависят от типа магазина",
+    "templateLabel": "Шаблон товара",
+    "templatePlaceholder": "Выберите шаблон",
     "noStoresHint": "Сначала создайте магазин и укажите его тип в разделе «Магазины».",
     "storeTypeHint": "Тип магазина: {{type}}. Тип товара подставится автоматически.",
     "templateCountHint": "Доступно шаблонов: {{count}}",

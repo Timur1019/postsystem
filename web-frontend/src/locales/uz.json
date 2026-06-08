@@ -1667,6 +1667,8 @@
     "pickerSubtitleStore": "Shablonlar tanlangan do‘kon turiga moslab ko‘rsatiladi",
     "storePickerTitle": "Do‘konni tanlang",
     "storePickerSubtitle": "Mahsulot maydonlari do‘kon turiga bog‘liq",
+    "templateLabel": "Mahsulot shabloni",
+    "templatePlaceholder": "Shablonni tanlang",
     "noStoresHint": "Avval «Do‘konlar» bo‘limida do‘kon yarating va uning turini belgilang.",
     "storeTypeHint": "Do‘kon turi: {{type}}. Mahsulot turi avtomatik tanlanadi.",
     "templateCountHint": "Mavjud shablonlar: {{count}}",

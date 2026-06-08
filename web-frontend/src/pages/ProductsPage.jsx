@@ -9,9 +9,11 @@ import { productApi, categoryApi, storeApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { useTenantScope } from '../hooks/useTenantScope';
 import ProductCatalogModal from '../components/products/ProductCatalogModal';
-import ProductStorePickerModal from '../components/products/ProductStorePickerModal';
-import ProductTemplatePickerModal from '../components/products/ProductTemplatePickerModal';
-import { isUniversalStoreType, resolveBusinessTypeForTemplates } from '../config/productCatalogTemplateRegistry';
+import {
+  isUniversalStoreType,
+  listTemplatesForBusinessType,
+  resolveBusinessTypeForTemplates,
+} from '../config/productCatalogTemplateRegistry';
 import StockAdjustModal from '../components/products/StockAdjustModal';
 import ProductsToolbar from '../components/products/ProductsToolbar';
 import ProductFiltersDrawer from '../components/products/ProductFiltersDrawer';
@@ -51,8 +53,6 @@ export default function ProductsPage() {
   const [pageSize, setPageSize] = useState(14);
   const [editProduct, setEditProduct] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [storePickerOpen, setStorePickerOpen] = useState(false);
-  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [createStore, setCreateStore] = useState(null);
   const [createTemplateCode, setCreateTemplateCode] = useState(null);
   const [createAdvancedMode, setCreateAdvancedMode] = useState(false);
@@ -116,30 +116,31 @@ export default function ProductsPage() {
     [stores]
   );
 
+  const defaultTemplateForStore = (store) => {
+    const templates = listTemplatesForBusinessType(store.businessType);
+    return templates[0]?.code ?? null;
+  };
+
   const resetCreateFlow = () => {
     setShowCreate(false);
-    setStorePickerOpen(false);
-    setTemplatePickerOpen(false);
     setCreateStore(null);
     setCreateTemplateCode(null);
     setCreateAdvancedMode(false);
     setCreateUniversalMode(false);
   };
 
-  const openCreateFlowForStore = (store) => {
+  const startCreateFlow = (store) => {
     setCreateStore(store);
     if (isUniversalStoreType(store.businessType)) {
       setCreateTemplateCode(null);
       setCreateAdvancedMode(false);
       setCreateUniversalMode(true);
-      setTemplatePickerOpen(false);
-      setShowCreate(true);
-      return;
+    } else {
+      setCreateUniversalMode(false);
+      setCreateAdvancedMode(false);
+      setCreateTemplateCode(defaultTemplateForStore(store));
     }
-    setCreateUniversalMode(false);
-    setCreateAdvancedMode(false);
-    setCreateTemplateCode(null);
-    setTemplatePickerOpen(true);
+    setShowCreate(true);
   };
 
   const handleAddProduct = () => {
@@ -148,11 +149,7 @@ export default function ProductsPage() {
       return;
     }
     resetCreateFlow();
-    if (activeStores.length === 1) {
-      openCreateFlowForStore(activeStores[0]);
-      return;
-    }
-    setStorePickerOpen(true);
+    startCreateFlow(activeStores[0]);
   };
 
   const handleCreateStoreChange = (store) => {
@@ -164,25 +161,32 @@ export default function ProductsPage() {
     if (prevUniversal && nextUniversal) return;
 
     if (nextUniversal) {
-      setShowCreate(false);
       setCreateTemplateCode(null);
       setCreateAdvancedMode(false);
       setCreateUniversalMode(true);
-      setTemplatePickerOpen(false);
-      setShowCreate(true);
       return;
     }
 
     const prevType = resolveBusinessTypeForTemplates(createStore.businessType);
     const nextType = resolveBusinessTypeForTemplates(store.businessType);
     if (prevUniversal || prevType !== nextType) {
-      setShowCreate(false);
-      setCreateTemplateCode(null);
+      setCreateTemplateCode(defaultTemplateForStore(store));
       setCreateAdvancedMode(false);
       setCreateUniversalMode(false);
-      setTemplatePickerOpen(true);
       if (!prevUniversal) toast(t('productTemplates.storeTypeChanged'));
     }
+  };
+
+  const handleCreateTemplateChange = (value) => {
+    if (value === '__advanced__') {
+      setCreateTemplateCode(null);
+      setCreateAdvancedMode(true);
+      setCreateUniversalMode(false);
+      return;
+    }
+    setCreateTemplateCode(value);
+    setCreateAdvancedMode(false);
+    setCreateUniversalMode(false);
   };
 
   const pageIds = useMemo(() => (data?.content ?? []).map((p) => p.id), [data?.content]);
@@ -297,46 +301,6 @@ export default function ProductsPage() {
         }
       />
 
-      {storePickerOpen && (
-        <ProductStorePickerModal
-          stores={activeStores}
-          onClose={() => setStorePickerOpen(false)}
-          onSelectStore={(store) => {
-            setStorePickerOpen(false);
-            openCreateFlowForStore(store);
-          }}
-        />
-      )}
-
-      {templatePickerOpen && createStore && (
-        <ProductTemplatePickerModal
-          selectedStore={createStore}
-          onClose={resetCreateFlow}
-          onBackToStores={
-            activeStores.length > 1
-              ? () => {
-                  setTemplatePickerOpen(false);
-                  setStorePickerOpen(true);
-                }
-              : undefined
-          }
-          onSelectTemplate={(code) => {
-            setCreateTemplateCode(code);
-            setCreateAdvancedMode(false);
-            setCreateUniversalMode(false);
-            setTemplatePickerOpen(false);
-            setShowCreate(true);
-          }}
-          onAdvanced={() => {
-            setCreateTemplateCode(null);
-            setCreateAdvancedMode(true);
-            setCreateUniversalMode(false);
-            setTemplatePickerOpen(false);
-            setShowCreate(true);
-          }}
-        />
-      )}
-
       {(showCreate || editProduct) && (
         <ProductCatalogModal
           key={
@@ -351,25 +315,7 @@ export default function ProductsPage() {
           advancedMode={!editProduct && createAdvancedMode}
           universalMode={!editProduct && createUniversalMode}
           onCreateStoreChange={handleCreateStoreChange}
-          onBackToPicker={
-            !editProduct && !createUniversalMode
-              ? () => {
-                  setShowCreate(false);
-                  setCreateTemplateCode(null);
-                  setCreateAdvancedMode(false);
-                  setTemplatePickerOpen(true);
-                }
-              : undefined
-          }
-          onBackToStores={
-            !editProduct && createUniversalMode && activeStores.length > 1
-              ? () => {
-                  setShowCreate(false);
-                  setCreateUniversalMode(false);
-                  setStorePickerOpen(true);
-                }
-              : undefined
-          }
+          onCreateTemplateChange={handleCreateTemplateChange}
           onClose={() => {
             if (editProduct) {
               setEditProduct(null);

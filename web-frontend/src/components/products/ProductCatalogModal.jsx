@@ -1,4 +1,4 @@
-import { ArrowLeft, Loader, X } from 'lucide-react';
+import { Loader, X } from 'lucide-react';
 import TasnifSearchPanel from './TasnifSearchPanel';
 import { useProductCatalogForm } from '../../hooks/useProductCatalogForm';
 import ProductCatalogGeneralSection from './catalog/ProductCatalogGeneralSection';
@@ -20,8 +20,7 @@ export default function ProductCatalogModal({
   universalMode = false,
   selectedStore = null,
   onCreateStoreChange,
-  onBackToPicker,
-  onBackToStores,
+  onCreateTemplateChange,
 }) {
   const form = useProductCatalogForm(product, stores, onSaved, {
     templateCode,
@@ -39,26 +38,6 @@ export default function ProductCatalogModal({
       <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3">
-            {!form.isEdit && onBackToStores ? (
-              <button
-                type="button"
-                onClick={onBackToStores}
-                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white"
-                title={form.t('productTemplates.backToStores')}
-              >
-                <ArrowLeft size={18} />
-              </button>
-            ) : null}
-            {!form.isEdit && !onBackToStores && onBackToPicker ? (
-              <button
-                type="button"
-                onClick={onBackToPicker}
-                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white"
-                title={form.t('productTemplates.backToPicker')}
-              >
-                <ArrowLeft size={18} />
-              </button>
-            ) : null}
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                 {form.isEdit ? form.t('productCatalog.editTitle') : form.t('productCatalog.addTitle')}
@@ -81,7 +60,7 @@ export default function ProductCatalogModal({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {form.canToggleAdvanced && !form.universalMode ? (
+            {form.isEdit && form.canToggleAdvanced && !form.universalMode ? (
               <button
                 type="button"
                 onClick={() => form.setAdvancedMode(!form.advancedMode)}
@@ -105,6 +84,10 @@ export default function ProductCatalogModal({
               stores={stores}
               selectedStore={selectedStore}
               onStoreChange={onCreateStoreChange}
+              universalMode={form.universalMode}
+              templateCode={templateCode}
+              advancedMode={advancedMode}
+              onTemplateChange={onCreateTemplateChange}
             />
           ) : null}
 
