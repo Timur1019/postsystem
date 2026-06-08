@@ -56,14 +56,16 @@ export default function ProductCatalogGeneralSection({
         </ProductCatalogField>
         {showTypeSelectors ? (
           <>
-            <ProductCatalogField label={t('productCatalog.productType')} required error={errors.productType?.message}>
-              <select {...register('productType')} className={inputCls}>
-                <option value="RETAIL">{t('productCatalog.productTypeRetail')}</option>
-                <option value="MATERIAL">{t('productCatalog.productTypeMaterial')}</option>
-                <option value="DISH">{t('productCatalog.productTypeDish')}</option>
-                <option value="SERVICE">{t('productCatalog.productTypeService')}</option>
-              </select>
-            </ProductCatalogField>
+            {universalMode || isEdit ? (
+              <ProductCatalogField label={t('productCatalog.productType')} required error={errors.productType?.message}>
+                <select {...register('productType')} className={inputCls}>
+                  <option value="RETAIL">{t('productCatalog.productTypeRetail')}</option>
+                  <option value="MATERIAL">{t('productCatalog.productTypeMaterial')}</option>
+                  <option value="DISH">{t('productCatalog.productTypeDish')}</option>
+                  <option value="SERVICE">{t('productCatalog.productTypeService')}</option>
+                </select>
+              </ProductCatalogField>
+            ) : null}
             <ProductCatalogField label={t('productCatalog.saleType')} required error={errors.saleType?.message}>
               <select {...register('saleType')} className={inputCls}>
                 <option value="PIECE">{t('productCatalog.saleTypePiece')}</option>

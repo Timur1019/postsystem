@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { productApi } from '../services/api';
 import {
   applyTemplateDefaults,
+  defaultProductTypeForBusinessType,
   getProductTemplate,
   resolveProductTemplateCode,
   resolveCatalogSectionVisible,
@@ -47,6 +48,7 @@ export function useProductCatalogForm(product, stores, onSaved, options = {}) {
   const createAdvancedMode = options.advancedMode ?? false;
   const createUniversalMode = options.universalMode ?? false;
   const selectedStoreId = options.selectedStoreId ?? null;
+  const selectedStoreBusinessType = options.selectedStoreBusinessType ?? null;
   const [editAdvancedMode, setEditAdvancedMode] = useState(false);
   const advancedMode = isEdit ? editAdvancedMode : createAdvancedMode;
   const universalMode = !isEdit && createUniversalMode;
@@ -220,6 +222,19 @@ export function useProductCatalogForm(product, stores, onSaved, options = {}) {
       setValue('productType', 'SERVICE');
     }
   }, [saleTypeWatch, setValue, templateLocked]);
+
+  useEffect(() => {
+    if (isEdit || universalMode || !advancedMode || !selectedStoreBusinessType) return;
+    if (saleTypeWatch === 'SERVICE') return;
+    setValue('productType', defaultProductTypeForBusinessType(selectedStoreBusinessType));
+  }, [
+    isEdit,
+    universalMode,
+    advancedMode,
+    selectedStoreBusinessType,
+    saleTypeWatch,
+    setValue,
+  ]);
 
   useEffect(() => {
     if (templateLocked) return;

@@ -27,6 +27,7 @@ export default function ProductCatalogModal({
     advancedMode,
     universalMode,
     selectedStoreId: selectedStore?.id ?? null,
+    selectedStoreBusinessType: selectedStore?.businessType ?? null,
   });
   const templateTitle =
     form.templateCode && !form.advancedMode

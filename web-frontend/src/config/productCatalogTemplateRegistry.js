@@ -501,6 +501,14 @@ export function isUniversalStoreType(businessTypeCode) {
   return code === 'UNIVERSAL';
 }
 
+/** Тип товара по умолчанию для стандартной формы (тип магазина уже выбран). */
+export function defaultProductTypeForBusinessType(businessTypeCode) {
+  const code = resolveBusinessTypeForTemplates(businessTypeCode);
+  if (code === 'CONSTRUCTION') return 'MATERIAL';
+  if (code === 'CANTEEN' || code === 'RESTAURANT') return 'DISH';
+  return 'RETAIL';
+}
+
 export function getProductTemplate(code) {
   if (!code) return null;
   return templateByCode.get(code) ?? null;
