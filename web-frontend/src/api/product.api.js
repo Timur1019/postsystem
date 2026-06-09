@@ -1,7 +1,7 @@
 import { api } from './client';
 
 export const productApi = {
-  getAll: (params) => api.get('/products', { params }),
+  getAll: (params, config) => api.get('/products', { params, ...config }),
   getById: (id, params) => api.get(`/products/${id}`, { params }),
   lifecycle: (id, params) => api.get(`/products/${id}/lifecycle`, { params }),
   getByBarcode: (barcode, storeId) =>

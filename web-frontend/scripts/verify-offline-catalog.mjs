@@ -23,11 +23,25 @@ function productsEnabled({ storeId, searchActive, catalogBrowse }) {
   return Boolean(storeId && (searchActive || catalogBrowse === 'products'));
 }
 
-function shouldUseLocalPosCatalog({ isDesktop, offlineLike, offlineAllowed, bootstrapReady }) {
-  if (!isDesktop) return false;
-  if (offlineLike && !offlineAllowed) return false;
-  if (bootstrapReady) return true;
+function hasLocalPosCatalog({ bootstrapReady, canSellOffline, productCount }) {
+  return Boolean(bootstrapReady || canSellOffline || productCount > 0);
+}
+
+function shouldUseLocalPosCatalog({
+  isDesktop,
+  offlineLike,
+  offlineAllowed,
+  bootstrapReady,
+  canSellOffline,
+  productCount,
+}) {
+  if (!isDesktop || !offlineAllowed) return false;
+  if (hasLocalPosCatalog({ bootstrapReady, canSellOffline, productCount })) return true;
   return offlineLike;
+}
+
+function resolvePosCatalogSource(ctx) {
+  return shouldUseLocalPosCatalog(ctx) ? 'offline' : 'online';
 }
 
 console.log('Aurent — verify offline catalog logic\n');
@@ -48,22 +62,41 @@ test('офлайн + desktop → локальный каталог даже бе
       offlineLike: true,
       offlineAllowed: true,
       bootstrapReady: false,
+      canSellOffline: false,
+      productCount: 0,
     })
   ) {
     throw new Error('expected local catalog when offline');
   }
 });
 
-test('онлайн без bootstrap → онлайн каталог', () => {
+test('онлайн без локального каталога → онлайн', () => {
   if (
     shouldUseLocalPosCatalog({
       isDesktop: true,
       offlineLike: false,
       offlineAllowed: true,
       bootstrapReady: false,
+      canSellOffline: false,
+      productCount: 0,
     })
   ) {
-    throw new Error('must use online catalog when online and no bootstrap');
+    throw new Error('must use online catalog when online and no local data');
+  }
+});
+
+test('productCount > 0 → всегда локальный каталог (даже если probe онлайн)', () => {
+  if (
+    resolvePosCatalogSource({
+      isDesktop: true,
+      offlineLike: false,
+      offlineAllowed: true,
+      bootstrapReady: false,
+      canSellOffline: false,
+      productCount: 12,
+    }) !== 'offline'
+  ) {
+    throw new Error('expected local catalog when productCount > 0');
   }
 });
 
@@ -74,9 +107,26 @@ test('bootstrap готов → всегда локальный каталог н
       offlineLike: false,
       offlineAllowed: true,
       bootstrapReady: true,
+      canSellOffline: false,
+      productCount: 0,
     })
   ) {
     throw new Error('expected local catalog when bootstrap ready');
+  }
+});
+
+test('нет offline-доступа → онлайн даже при обрыве', () => {
+  if (
+    shouldUseLocalPosCatalog({
+      isDesktop: true,
+      offlineLike: true,
+      offlineAllowed: false,
+      bootstrapReady: true,
+      canSellOffline: true,
+      productCount: 10,
+    })
+  ) {
+    throw new Error('must not use local without offline permission');
   }
 });
 

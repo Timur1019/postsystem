@@ -9,7 +9,7 @@ import { userHasCashierOfflineAccess } from '../utils/cashierOfflineAccess';
 
 /** Сразу offline при сбое probe; online — после двух подряд успешных probe. */
 const ONLINE_RECOVERY_STREAK = 2;
-const CONNECTIVITY_POLL_MS = 5_000;
+const CONNECTIVITY_POLL_MS = 2_000;
 let stableApiOnline = null;
 let onlineRecoveryStreak = 0;
 
@@ -132,13 +132,21 @@ let refreshTimer;
 let unsubscribeConnectivity;
 let browserConnectivityBound;
 
-function applyBrowserOfflineHint() {
-  // Desktop: Electron probe — единственный источник истины; navigator.onLine на Windows нестабилен.
-  if (typeof window !== 'undefined' && window.desktopCashier?.isDesktop) return;
-  if (typeof navigator === 'undefined' || navigator.onLine) return;
+/** Локальный SQLite-каталог уже загружен на desktop. */
+export function hasLocalPosCatalog(state = useConnectivityStore.getState()) {
+  return Boolean(state.bootstrapReady || state.canSellOffline || state.productCount > 0);
+}
+
+/** Мгновенно пометить API недоступным (axios 502, navigator offline, proxy error). */
+export function markApiUnreachable() {
   const state = useConnectivityStore.getState();
-  if (state.offlineMode && !state.apiOnline) return;
-  useConnectivityStore.getState().applyStatus({ apiOnline: false });
+  if (!state.apiOnline && state.offlineMode) return;
+  useConnectivityStore.getState().applyStatus({ apiOnline: false, offlineMode: true });
+}
+
+function applyBrowserOfflineHint() {
+  if (typeof navigator === 'undefined' || navigator.onLine) return;
+  markApiUnreachable();
 }
 
 export async function refreshConnectivityStatus() {
@@ -208,11 +216,10 @@ export function shouldUseOfflinePos() {
 export function shouldUseLocalPosCatalog() {
   if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return false;
   const state = useConnectivityStore.getState();
-  const offlineLike = isConnectivityOfflineLike(state);
   const offlineAllowed = userHasCashierOfflineAccess(useAuthStore.getState().user);
-  if (offlineLike && !offlineAllowed) return false;
-  if (state.bootstrapReady) return true;
-  return offlineLike;
+  if (!offlineAllowed) return false;
+  if (hasLocalPosCatalog(state)) return true;
+  return isConnectivityOfflineLike(state);
 }
 
 export function useShouldUseOfflinePos() {
@@ -229,12 +236,13 @@ export function useShouldUseOfflinePos() {
 export function useShouldUseLocalPosCatalog() {
   const user = useAuthStore((s) => s.user);
   const bootstrapReady = useConnectivityStore((s) => s.bootstrapReady);
+  const canSellOffline = useConnectivityStore((s) => s.canSellOffline);
+  const productCount = useConnectivityStore((s) => s.productCount);
   const apiOnline = useConnectivityStore((s) => s.apiOnline);
   const offlineMode = useConnectivityStore((s) => s.offlineMode);
   if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return false;
+  if (!userHasCashierOfflineAccess(user)) return false;
+  if (bootstrapReady || canSellOffline || productCount > 0) return true;
   const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-  const offlineLike = offlineMode || !apiOnline || browserOffline;
-  if (offlineLike && !userHasCashierOfflineAccess(user)) return false;
-  if (bootstrapReady) return true;
-  return offlineLike;
+  return offlineMode || !apiOnline || browserOffline;
 }

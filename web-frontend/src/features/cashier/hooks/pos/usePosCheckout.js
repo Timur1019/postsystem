@@ -9,6 +9,8 @@ import {
   resolveEscposPrintErrorMessage,
 } from '../../../../services/cashierEscpos';
 import { isDesktopCashier } from '../../../../utils/printReceipt';
+import { isDesktopOfflineBridge } from '../../../../services/offline/desktopOfflineBridge';
+import { POS_CATALOG_ONLINE_TIMEOUT_MS } from '../../../../services/offline/posCatalogConstants';
 import { clampPayAmount, round2 } from '../../../../utils/taxAmounts';
 import { saleApi } from '../../../../services/api';
 import { useCartStore } from '../../../../store/cartStore';
@@ -59,25 +61,31 @@ export function usePosCheckout({
         try {
           return await runOfflineCheckout(payment, items);
         } catch (offlineErr) {
-          if (!shouldRetryOnlineAfterOfflineFailure()) {
+          if (!shouldRetryOnlineAfterOfflineFailure(offlineErr)) {
             throw offlineErr;
           }
         }
       }
 
       try {
-        return await saleApi.create({
-          storeId: Number(storeId),
-          paymentMethod: payment.paymentMethod,
-          receiptType: payment.receiptType,
-          cardType: payment.cardType,
-          cashAmount: payment.cashAmount,
-          cardAmount: payment.cardAmount,
-          amountTendered: payment.amountTendered,
-          items: getCheckoutLineItems(),
-          orderDiscountAmount: getCheckoutOrderDiscountAmount(),
-          orderDiscountPercent: getCheckoutOrderDiscountPercent(),
-        });
+        const onlineTimeout = isDesktopOfflineBridge()
+          ? POS_CATALOG_ONLINE_TIMEOUT_MS + 2_000
+          : undefined;
+        return await saleApi.create(
+          {
+            storeId: Number(storeId),
+            paymentMethod: payment.paymentMethod,
+            receiptType: payment.receiptType,
+            cardType: payment.cardType,
+            cashAmount: payment.cashAmount,
+            cardAmount: payment.cardAmount,
+            amountTendered: payment.amountTendered,
+            items: getCheckoutLineItems(),
+            orderDiscountAmount: getCheckoutOrderDiscountAmount(),
+            orderDiscountPercent: getCheckoutOrderDiscountPercent(),
+          },
+          onlineTimeout ? { timeout: onlineTimeout } : undefined,
+        );
       } catch (err) {
         if (isApiUnreachableError(err) && canFallbackToOfflineCheckout()) {
           return runOfflineCheckout(payment, items);

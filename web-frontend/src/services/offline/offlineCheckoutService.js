@@ -111,8 +111,20 @@ export async function processOfflineCheckout({
   return { data: { ...response, receiptNumber: saved.receiptNumber || response.receiptNumber } };
 }
 
-/** Пробовать локальный чекаут; при онлайне — fallback на сервер. */
-export function shouldRetryOnlineAfterOfflineFailure() {
+const OFFLINE_CHECKOUT_NO_ONLINE_RETRY = new Set([
+  'offline_ipc_timeout',
+  'offline_checkout_timeout',
+  'OFFLINE_SALE_SAVE_FAILED',
+  'offline_sale_save_failed',
+  'OFFLINE_SHIFT_REQUIRED',
+]);
+
+/** После сбоя локального чекаутa не уходить в онлайн при обрыве сети. */
+export function shouldRetryOnlineAfterOfflineFailure(offlineErr) {
+  const msg = String(offlineErr?.message || '');
+  if (OFFLINE_CHECKOUT_NO_ONLINE_RETRY.has(msg)) return false;
+  if (shouldPreferLocalCheckout()) return false;
   const state = useConnectivityStore.getState();
+  if (isConnectivityOfflineLike(state)) return false;
   return Boolean(state.apiOnline && !state.offlineMode && !shouldUseOfflinePos());
 }

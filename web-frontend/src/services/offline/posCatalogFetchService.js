@@ -7,19 +7,28 @@ import {
   offlineListCategories,
   offlineSearchProducts,
 } from './desktopOfflineBridge';
+import { POS_CATALOG_ONLINE_TIMEOUT_MS } from './posCatalogConstants';
 
 export function getPosCatalogMode() {
   return shouldUseLocalPosCatalog() ? 'offline' : 'online';
 }
 
-export async function fetchPosCategories() {
+function onlineCatalogRequestConfig(signal) {
+  return {
+    timeout: POS_CATALOG_ONLINE_TIMEOUT_MS,
+    ...(signal ? { signal } : {}),
+  };
+}
+
+export async function fetchPosCategories({ signal } = {}) {
   if (shouldUseLocalPosCatalog()) {
     return offlineListCategories();
   }
   try {
-    const res = await categoryApi.getAll();
+    const res = await categoryApi.getAll(onlineCatalogRequestConfig(signal));
     return res.data;
   } catch (err) {
+    if (signal?.aborted) throw err;
     if (isDesktopOfflineBridge() && isApiUnreachableError(err)) {
       return offlineListCategories();
     }
@@ -43,7 +52,13 @@ function buildOfflineProductsPage(content, pageParam) {
   };
 }
 
-export async function fetchPosProductsPage({ storeId, categoryId, search, pageParam }) {
+export async function fetchPosProductsPage({
+  storeId,
+  categoryId,
+  search,
+  pageParam,
+  signal,
+}) {
   const trimmedSearch = search?.trim() || '';
   if (shouldUseLocalPosCatalog()) {
     const content = await offlineSearchProducts({
@@ -55,16 +70,20 @@ export async function fetchPosProductsPage({ storeId, categoryId, search, pagePa
     return buildOfflineProductsPage(content, pageParam);
   }
   try {
-    const res = await productApi.getAll({
-      storeId,
-      categoryId,
-      search: trimmedSearch || undefined,
-      page: pageParam,
-      size: POS_PRODUCT_PAGE_SIZE,
-      activeOnly: true,
-    });
+    const res = await productApi.getAll(
+      {
+        storeId,
+        categoryId,
+        search: trimmedSearch || undefined,
+        page: pageParam,
+        size: POS_PRODUCT_PAGE_SIZE,
+        activeOnly: true,
+      },
+      onlineCatalogRequestConfig(signal),
+    );
     return res.data;
   } catch (err) {
+    if (signal?.aborted) throw err;
     if (isDesktopOfflineBridge() && isApiUnreachableError(err)) {
       const content = await offlineSearchProducts({
         search: trimmedSearch,
@@ -83,4 +102,18 @@ export function getPosProductsNextPageParam(lastPage, lastPageParam) {
   const next = (lastPage?.number ?? 0) + 1;
   const total = lastPage?.totalPages ?? 0;
   return next < total ? (useLocal ? lastPageParam + POS_PRODUCT_PAGE_SIZE : next) : undefined;
+}
+
+/** @internal тесты */
+export function resolvePosCatalogSource({
+  isDesktop,
+  offlineAllowed,
+  offlineLike,
+  bootstrapReady,
+  canSellOffline,
+  productCount,
+}) {
+  if (!isDesktop || !offlineAllowed) return 'online';
+  if (bootstrapReady || canSellOffline || productCount > 0) return 'offline';
+  return offlineLike ? 'offline' : 'online';
 }

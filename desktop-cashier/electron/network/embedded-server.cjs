@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { createHttpAgent } = require('../core/http-client.cjs');
 const { logStartup } = require('../core/startup-log.cjs');
+const { broadcastConnectivity } = require('../connectivity/broadcast.cjs');
 
 let server;
 let activeTarget;
@@ -74,6 +75,7 @@ function createNativeApiProxy(backendOrigin) {
         path: req.originalUrl,
         message: err.message,
       });
+      void broadcastConnectivity();
       if (!res.headersSent) {
         res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(

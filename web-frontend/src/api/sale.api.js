@@ -1,7 +1,7 @@
 import { api } from './client';
 
 export const saleApi = {
-  create: (data) => api.post('/sales', data),
+  create: (data, config) => api.post('/sales', data, config),
   getAll: (params) => api.get('/sales', { params }),
   exportLines: (params) => api.get('/sales/export', { params, responseType: 'blob' }),
   getById: (id) => api.get(`/sales/${id}`),

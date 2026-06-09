@@ -19,7 +19,7 @@ export async function configureDesktopApiBaseUrl() {
 
   if (isLocalEmbeddedUi()) {
     api.defaults.baseURL = '/api/v1';
-    api.defaults.timeout = 20_000;
+    api.defaults.timeout = 10_000;
     configured = true;
     return api.defaults.baseURL;
   }
@@ -29,7 +29,7 @@ export async function configureDesktopApiBaseUrl() {
     if (baseUrl && /^https?:\/\//i.test(baseUrl)) {
       api.defaults.baseURL = String(baseUrl).replace(/\/$/, '');
     }
-    api.defaults.timeout = 20_000;
+    api.defaults.timeout = 10_000;
   } catch {
     // relative /api/v1 — fallback через локальный прокси
   }

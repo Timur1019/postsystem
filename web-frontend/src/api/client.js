@@ -3,7 +3,11 @@ import { useAuthStore } from '../store/authStore';
 import { logoutAndResetSession } from '../utils/authSession';
 import { isAuthPage, normalizeCompanyLoginCode, redirectToLogin } from '../utils/authLogin';
 import { isApiNetworkError } from '../utils/apiNetworkError';
-import { refreshConnectivityStatus, useConnectivityStore } from '../store/connectivityStore';
+import {
+  markApiUnreachable,
+  refreshConnectivityStatus,
+  useConnectivityStore,
+} from '../store/connectivityStore';
 import { isDesktopOfflineBridge } from '../services/offline/desktopOfflineBridge';
 
 let connectivityRefreshTimer;
@@ -55,10 +59,16 @@ api.interceptors.response.use(
       isDesktopOfflineBridge() &&
       (status === 502 || status === 503 || status === 504 || isApiNetworkError(error))
     ) {
-      useConnectivityStore.getState().applyStatus({ apiOnline: false });
+      markApiUnreachable();
       scheduleConnectivityRefreshFromApi();
     }
     if (status === 403) {
+      return Promise.reject(error);
+    }
+    if (
+      isDesktopOfflineBridge() &&
+      (isApiNetworkError(error) || status === 502 || status === 503 || status === 504)
+    ) {
       return Promise.reject(error);
     }
     if (status === 401 && !original._retry) {

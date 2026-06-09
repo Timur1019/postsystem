@@ -28,7 +28,7 @@ async function broadcastConnectivity() {
 function startConnectivityBroadcast() {
   if (state.getConnectivityTimer()) return;
   broadcastConnectivity();
-  state.setConnectivityTimer(setInterval(broadcastConnectivity, 3_000));
+  state.setConnectivityTimer(setInterval(broadcastConnectivity, 1_500));
 }
 
 function stopConnectivityBroadcast() {
