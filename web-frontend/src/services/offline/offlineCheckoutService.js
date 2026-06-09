@@ -1,9 +1,12 @@
 import {
   canFallbackToOfflineCheckout,
+  isConnectivityOfflineLike,
   refreshConnectivityStatus,
   shouldUseOfflinePos,
   useConnectivityStore,
 } from '../../store/connectivityStore';
+import { userHasCashierOfflineAccess } from '../../utils/cashierOfflineAccess';
+import { useAuthStore } from '../../store/authStore';
 import { isDesktopOfflineBridge, offlineCompleteCheckout } from './desktopOfflineBridge';
 import {
   buildOfflineCheckoutPayload,
@@ -28,9 +31,13 @@ function withCheckoutTimeout(promise) {
   ]);
 }
 
-/** Desktop + локальный каталог → сначала локальная продажа. */
+/** Desktop + локальный каталог или офлайн → сначала локальная продажа. */
 export function shouldPreferLocalCheckout() {
-  return isDesktopOfflineBridge() && canFallbackToOfflineCheckout();
+  if (!isDesktopOfflineBridge()) return false;
+  if (!userHasCashierOfflineAccess(useAuthStore.getState().user)) return false;
+  const state = useConnectivityStore.getState();
+  if (state.canSellOffline) return true;
+  return isConnectivityOfflineLike(state);
 }
 
 /** @deprecated use shouldPreferLocalCheckout */

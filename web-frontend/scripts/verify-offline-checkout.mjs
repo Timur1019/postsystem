@@ -33,8 +33,16 @@ function isApiUnreachableError(error, isDesktop) {
   return status === 502 || status === 503 || status === 504;
 }
 
-function shouldPreferLocalCheckout({ isDesktop, canSellOffline }) {
-  return Boolean(isDesktop && canSellOffline);
+function shouldPreferLocalCheckout({ isDesktop, canSellOffline, offlineLike, offlineAllowed }) {
+  if (!isDesktop || !offlineAllowed) return false;
+  if (canSellOffline) return true;
+  return Boolean(offlineLike);
+}
+
+function canFallbackToOfflineCheckout({ isDesktop, canSellOffline, offlineLike, offlineAllowed }) {
+  if (!offlineAllowed) return false;
+  if (canSellOffline) return true;
+  return Boolean(isDesktop && offlineLike);
 }
 
 console.log('Aurent — verify offline checkout logic\n');
@@ -55,14 +63,51 @@ test('400 бизнес-ошибка → не fallback', () => {
 });
 
 test('desktop + каталог → сначала локальный чекаут (даже если probe онлайн)', () => {
-  if (!shouldPreferLocalCheckout({ isDesktop: true, canSellOffline: true })) {
+  if (
+    !shouldPreferLocalCheckout({
+      isDesktop: true,
+      canSellOffline: true,
+      offlineLike: false,
+      offlineAllowed: true,
+    })
+  ) {
     throw new Error('expected local-first');
   }
 });
 
-test('нет каталога → не форсировать локальный чекаут', () => {
-  if (shouldPreferLocalCheckout({ isDesktop: true, canSellOffline: false })) {
-    throw new Error('must not force local without catalog');
+test('онлайн без каталога → не форсировать локальный чекаут', () => {
+  if (
+    shouldPreferLocalCheckout({
+      isDesktop: true,
+      canSellOffline: false,
+      offlineLike: false,
+      offlineAllowed: true,
+    })
+  ) {
+    throw new Error('must not force local when online without catalog');
+  }
+});
+
+test('офлайн без canSellOffline в store → всё равно локальный чекаут', () => {
+  if (
+    !shouldPreferLocalCheckout({
+      isDesktop: true,
+      canSellOffline: false,
+      offlineLike: true,
+      offlineAllowed: true,
+    })
+  ) {
+    throw new Error('expected local checkout when offline');
+  }
+  if (
+    !canFallbackToOfflineCheckout({
+      isDesktop: true,
+      canSellOffline: false,
+      offlineLike: true,
+      offlineAllowed: true,
+    })
+  ) {
+    throw new Error('expected offline fallback when offline');
   }
 });
 

@@ -1,19 +1,24 @@
-import { useState } from 'react';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { categoryApi, productApi } from '../../../../services/api';
+import { useEffect, useRef, useState } from 'react';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ALL_CATEGORY_ID } from '../usePosCatalogPanel';
-import { POS_PRODUCT_PAGE_SIZE } from '../../components/pos/posCatalogConstants';
-import { useConnectivityStore, useShouldUseLocalPosCatalog } from '../../../../store/connectivityStore';
+import { useConnectivityStore } from '../../../../store/connectivityStore';
 import {
-  offlineListCategories,
-  offlineSearchProducts,
-} from '../../../../services/offline/desktopOfflineBridge';
+  fetchPosCategories,
+  fetchPosProductsPage,
+  getPosCatalogMode,
+  getPosProductsNextPageParam,
+} from '../../../../services/offline/posCatalogFetchService';
+import { isDesktopOfflineBridge } from '../../../../services/offline/desktopOfflineBridge';
 
-export function usePosProductsCatalog({ storeId, posPane }) {
+export function usePosProductsCatalog({ storeId }) {
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(ALL_CATEGORY_ID);
   const [catalogBrowse, setCatalogBrowse] = useState('categories');
-  const useLocalCatalog = useShouldUseLocalPosCatalog();
+  const catalogMode = getPosCatalogMode();
+  const apiOnline = useConnectivityStore((s) => s.apiOnline);
+  const bootstrapReady = useConnectivityStore((s) => s.bootstrapReady);
+  const prevCatalogModeRef = useRef(catalogMode);
 
   const searchActive = search.trim().length > 0;
   const categoryFilterId =
@@ -22,21 +27,41 @@ export function usePosProductsCatalog({ storeId, posPane }) {
       : selectedCategoryId;
 
   const productsEnabled =
-    !!storeId && posPane === 'catalog' && (searchActive || catalogBrowse === 'products');
+    !!storeId && (searchActive || catalogBrowse === 'products');
+
+  useEffect(() => {
+    if (!isDesktopOfflineBridge() || !storeId) return undefined;
+    const prev = prevCatalogModeRef.current;
+    if (prev !== catalogMode) {
+      qc.invalidateQueries({ queryKey: ['pos-categories'] });
+      qc.invalidateQueries({ queryKey: ['pos-products'] });
+    }
+    prevCatalogModeRef.current = catalogMode;
+  }, [catalogMode, storeId, qc]);
+
+  useEffect(() => {
+    if (!isDesktopOfflineBridge() || !storeId) return undefined;
+    let prevApiOnline = apiOnline;
+    const unsub = useConnectivityStore.subscribe((state) => {
+      if (state.apiOnline !== prevApiOnline) {
+        qc.invalidateQueries({ queryKey: ['pos-categories'] });
+        qc.invalidateQueries({ queryKey: ['pos-products'] });
+        prevApiOnline = state.apiOnline;
+      }
+    });
+    return unsub;
+  }, [storeId, apiOnline, qc]);
 
   const {
     data: categories = [],
     isPending: categoriesLoading,
     isError: categoriesError,
   } = useQuery({
-    queryKey: ['pos-categories', useLocalCatalog ? 'offline' : 'online'],
-    queryFn: () =>
-      useLocalCatalog
-        ? offlineListCategories()
-        : categoryApi.getAll().then((r) => r.data),
+    queryKey: ['pos-categories', catalogMode],
+    queryFn: fetchPosCategories,
     enabled: !!storeId,
-    retry: useLocalCatalog ? false : 2,
-    staleTime: useLocalCatalog ? Infinity : 0,
+    retry: catalogMode === 'offline' ? false : 1,
+    staleTime: catalogMode === 'offline' ? Infinity : 0,
   });
 
   const {
@@ -47,44 +72,27 @@ export function usePosProductsCatalog({ storeId, posPane }) {
     hasNextPage: productsHasMore,
     fetchNextPage: fetchMoreProducts,
   } = useInfiniteQuery({
-    queryKey: ['pos-products', storeId, categoryFilterId, search.trim(), useLocalCatalog ? 'offline' : 'online'],
-    queryFn: async ({ pageParam }) => {
-      if (useLocalCatalog) {
-        const content = await offlineSearchProducts({
-          search: search.trim(),
-          categoryId: categoryFilterId,
-          limit: POS_PRODUCT_PAGE_SIZE,
-          offset: pageParam,
-        });
-        const total = content.length < POS_PRODUCT_PAGE_SIZE ? pageParam + content.length : pageParam + content.length + 1;
-        return {
-          content,
-          number: pageParam / POS_PRODUCT_PAGE_SIZE,
-          totalPages: content.length < POS_PRODUCT_PAGE_SIZE ? pageParam / POS_PRODUCT_PAGE_SIZE + 1 : pageParam / POS_PRODUCT_PAGE_SIZE + 2,
-          totalElements: total,
-        };
-      }
-      return productApi
-        .getAll({
-          storeId,
-          categoryId: categoryFilterId,
-          search: search.trim() || undefined,
-          page: pageParam,
-          size: POS_PRODUCT_PAGE_SIZE,
-          activeOnly: true,
-        })
-        .then((r) => r.data);
-    },
+    queryKey: [
+      'pos-products',
+      storeId,
+      categoryFilterId,
+      search.trim(),
+      catalogMode,
+      bootstrapReady,
+    ],
+    queryFn: ({ pageParam }) =>
+      fetchPosProductsPage({
+        storeId,
+        categoryId: categoryFilterId,
+        search,
+        pageParam,
+      }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage, _pages, lastPageParam) => {
-      const next = (lastPage?.number ?? 0) + 1;
-      const total = lastPage?.totalPages ?? 0;
-      return next < total ? (useLocalCatalog ? lastPageParam + POS_PRODUCT_PAGE_SIZE : next) : undefined;
-    },
+    getNextPageParam: (lastPage, _pages, lastPageParam) =>
+      getPosProductsNextPageParam(lastPage, lastPageParam),
     enabled: productsEnabled,
-    retry: useLocalCatalog ? false : 2,
-    staleTime: useLocalCatalog ? Infinity : 0,
-    placeholderData: (previousData) => previousData,
+    retry: catalogMode === 'offline' ? false : 1,
+    staleTime: catalogMode === 'offline' ? Infinity : 0,
   });
 
   const products = productsPages?.pages.flatMap((page) => page?.content ?? []) ?? [];

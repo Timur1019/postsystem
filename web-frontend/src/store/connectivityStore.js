@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { offlineGetStatus, subscribeOfflineConnectivity } from '../services/offline/desktopOfflineBridge';
+import {
+  isDesktopOfflineBridge,
+  offlineGetStatus,
+  subscribeOfflineConnectivity,
+} from '../services/offline/desktopOfflineBridge';
 import { useAuthStore } from './authStore';
 import { userHasCashierOfflineAccess } from '../utils/cashierOfflineAccess';
 
@@ -50,10 +54,9 @@ export function canUseOfflineCheckout(state = useConnectivityStore.getState()) {
 
 /** Локальный каталог готов — можно сохранить продажу офлайн при сетевом сбое. */
 export function canFallbackToOfflineCheckout(state = useConnectivityStore.getState()) {
-  return (
-    userHasCashierOfflineAccess(useAuthStore.getState().user) &&
-    Boolean(state.canSellOffline)
-  );
+  if (!userHasCashierOfflineAccess(useAuthStore.getState().user)) return false;
+  if (state.canSellOffline) return true;
+  return isDesktopOfflineBridge() && isConnectivityOfflineLike(state);
 }
 
 export const useConnectivityStore = create((set, get) => ({

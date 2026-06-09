@@ -13,9 +13,7 @@ function scheduleConnectivityRefreshFromApi() {
   if (connectivityRefreshTimer) return;
   connectivityRefreshTimer = window.setTimeout(() => {
     connectivityRefreshTimer = null;
-    if (!useConnectivityStore.getState().apiOnline) {
-      refreshConnectivityStatus();
-    }
+    refreshConnectivityStatus();
   }, 800);
 }
 
@@ -58,6 +56,7 @@ api.interceptors.response.use(
       (status === 502 || status === 503 || status === 504 || isApiNetworkError(error))
     ) {
       useConnectivityStore.getState().applyStatus({ apiOnline: false });
+      scheduleConnectivityRefreshFromApi();
     }
     if (status === 403) {
       return Promise.reject(error);

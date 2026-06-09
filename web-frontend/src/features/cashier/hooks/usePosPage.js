@@ -41,7 +41,7 @@ export function usePosPage() {
   const clearOrderDiscount = useCartStore((s) => s.clearOrderDiscount);
 
   const { viewMode, handleViewModeChange } = usePosCatalogViewMode();
-  const catalog = usePosProductsCatalog({ storeId, posPane });
+  const catalog = usePosProductsCatalog({ storeId });
 
   const { handleClosePayment } = usePosNavigation({
     posPane,

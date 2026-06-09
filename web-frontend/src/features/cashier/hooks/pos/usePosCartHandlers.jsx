@@ -6,7 +6,10 @@ import {
   isDesktopOfflineBridge,
   offlineGetProductByBarcode,
 } from '../../../../services/offline/desktopOfflineBridge';
-import { useConnectivityStore, useShouldUseLocalPosCatalog } from '../../../../store/connectivityStore';
+import {
+  canFallbackToOfflineCheckout,
+  shouldUseLocalPosCatalog,
+} from '../../../../store/connectivityStore';
 import { isApiUnreachableError } from '../../../../utils/apiNetworkError';
 import { useBarcodeScanner } from '../../../../hooks/useBarcodeScanner';
 import { lineSubtotal, useCartStore } from '../../../../store/cartStore';
@@ -34,7 +37,6 @@ export function usePosCartHandlers({
   setSelectedLineId,
 }) {
   const { t } = useTranslation();
-  const useLocalCatalog = useShouldUseLocalPosCatalog();
   const scanningRef = useRef(false);
   const [weightModalProduct, setWeightModalProduct] = useState(null);
   const [weightEditLineId, setWeightEditLineId] = useState(null);
@@ -159,7 +161,7 @@ export function usePosCartHandlers({
       if (!trimmed || !storeId || scanningRef.current || payOpen || returnOpen) return false;
       scanningRef.current = true;
       try {
-        if (useLocalCatalog) {
+        if (shouldUseLocalPosCatalog()) {
           const product = await offlineGetProductByBarcode(trimmed);
           if (product) {
             addProductToCart(product);
@@ -177,7 +179,7 @@ export function usePosCartHandlers({
         if (
           isApiUnreachableError(e) &&
           isDesktopOfflineBridge() &&
-          useConnectivityStore.getState().canSellOffline
+          canFallbackToOfflineCheckout()
         ) {
           const product = await offlineGetProductByBarcode(trimmed);
           if (product) {
@@ -193,7 +195,7 @@ export function usePosCartHandlers({
         searchInputRef.current?.focus();
       }
     },
-    [storeId, addProductToCart, payOpen, returnOpen, t, setSearch, searchInputRef, useLocalCatalog]
+    [storeId, addProductToCart, payOpen, returnOpen, t, setSearch, searchInputRef]
   );
 
   useBarcodeScanner({
