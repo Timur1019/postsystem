@@ -2,19 +2,15 @@ import {
   canFallbackToOfflineCheckout,
   refreshConnectivityStatus,
   shouldUseOfflinePos,
+  useConnectivityStore,
 } from '../../store/connectivityStore';
-import {
-  isDesktopOfflineBridge,
-  offlineDecreaseStock,
-  offlineGetCurrentShift,
-  offlineOpenShift,
-  offlineSaveSale,
-  offlineSyncShiftFromServer,
-} from './desktopOfflineBridge';
+import { isDesktopOfflineBridge, offlineCompleteCheckout } from './desktopOfflineBridge';
 import {
   buildOfflineCheckoutPayload,
   buildOfflineSaleResponse,
 } from './buildOfflineSaleResponse';
+
+const CHECKOUT_TIMEOUT_MS = 10_000;
 
 function newClientSaleId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -23,73 +19,24 @@ function newClientSaleId() {
   return `off-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-async function syncCachedShiftToLocal({ cachedShift, storeId, user, storeName }) {
-  if (!cachedShift || cachedShift.status !== 'OPEN' || !user?.id || !storeId) return null;
-  try {
-    await offlineSyncShiftFromServer({
-      shift: cachedShift,
-      storeId,
-      cashierId: user.id,
-      cashierName: user?.fullName || user?.username || cachedShift.cashierName || '',
-      storeName: storeName || cachedShift.storeName || '',
-    });
-  } catch {
-    // try reading local shift below
-  }
-  return offlineGetCurrentShift({ storeId, cashierId: user.id });
+function withCheckoutTimeout(promise) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('offline_checkout_timeout')), CHECKOUT_TIMEOUT_MS);
+    }),
+  ]);
 }
 
-async function openLocalShiftFallback({ storeId, user, storeName }) {
-  if (!canFallbackToOfflineCheckout() || !user?.id || !storeId) return null;
-  try {
-    return await offlineOpenShift({
-      storeId,
-      cashierId: user.id,
-      cashierName: user?.fullName || user?.username || '',
-      storeName: storeName || '',
-    });
-  } catch {
-    return null;
-  }
+/** Desktop + локальный каталог → сначала локальная продажа. */
+export function shouldPreferLocalCheckout() {
+  return isDesktopOfflineBridge() && canFallbackToOfflineCheckout();
 }
 
-/** Гарантирует открытую локальную смену перед офлайн-продажей. */
-export async function resolveOfflineShiftForCheckout({
-  storeId,
-  user,
-  cachedShift = null,
-  storeName = '',
-}) {
-  if (!user?.id || !storeId) {
-    throw new Error('OFFLINE_SHIFT_REQUIRED');
-  }
-
-  let shift = await offlineGetCurrentShift({ storeId, cashierId: user.id });
-  if (shift?.status === 'OPEN') return shift;
-
-  shift = await syncCachedShiftToLocal({ cachedShift, storeId, user, storeName });
-  if (shift?.status === 'OPEN') return shift;
-
-  shift = await openLocalShiftFallback({ storeId, user, storeName });
-  if (shift?.status === 'OPEN') return shift;
-
-  throw new Error('OFFLINE_SHIFT_REQUIRED');
-}
-
+/** @deprecated use shouldPreferLocalCheckout */
 export function shouldRunOfflineCheckoutFirst() {
-  if (!isDesktopOfflineBridge()) return false;
-  if (!canFallbackToOfflineCheckout()) return false;
+  if (!shouldPreferLocalCheckout()) return false;
   return shouldUseOfflinePos();
-}
-
-async function applyLocalStockDecrease(cartItems) {
-  for (const line of cartItems) {
-    try {
-      await offlineDecreaseStock(line.productId, line.quantity);
-    } catch {
-      // stock mirror must not block sale
-    }
-  }
 }
 
 export async function processOfflineCheckout({
@@ -98,17 +45,13 @@ export async function processOfflineCheckout({
   user,
   cachedShift,
   storeName,
-  getCheckoutLineItems,
   getCheckoutOrderDiscountAmount,
   getCheckoutOrderDiscountPercent,
   items,
 }) {
-  const shift = await resolveOfflineShiftForCheckout({
-    storeId,
-    user,
-    cachedShift,
-    storeName,
-  });
+  if (!isDesktopOfflineBridge()) {
+    throw new Error('OFFLINE_SALE_SAVE_FAILED');
+  }
 
   const clientSaleId = newClientSaleId();
   const receiptNumber = `OFF-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Date.now()).slice(-4)}`;
@@ -129,24 +72,40 @@ export async function processOfflineCheckout({
     receiptNumber,
     payment,
     storeId,
-    storeName: shift.storeName || storeName,
-    cashierName: user?.fullName || user?.username || shift.cashierName,
-    shift,
+    storeName: storeName || cachedShift?.storeName || '',
+    cashierName: user?.fullName || user?.username || cachedShift?.cashierName || '',
+    shift: cachedShift,
     cartItems,
     orderDiscountAmount,
     orderDiscountPercent,
   });
 
-  const saved = await offlineSaveSale({
-    clientShiftId: shift.id || shift.clientShiftId,
-    payload,
-    response,
-  });
+  const saved = await withCheckoutTimeout(
+    offlineCompleteCheckout({
+      storeId,
+      cashierId: user?.id,
+      cashierName: user?.fullName || user?.username || '',
+      storeName: storeName || cachedShift?.storeName || '',
+      cachedShift,
+      payload,
+      response,
+      stockLines: cartItems.map((line) => ({
+        productId: line.productId,
+        quantity: line.quantity,
+      })),
+    }),
+  );
+
   if (!saved?.clientSaleId) {
     throw new Error('OFFLINE_SALE_SAVE_FAILED');
   }
 
-  await applyLocalStockDecrease(cartItems);
   void refreshConnectivityStatus();
-  return { data: response };
+  return { data: { ...response, receiptNumber: saved.receiptNumber || response.receiptNumber } };
+}
+
+/** Пробовать локальный чекаут; при онлайне — fallback на сервер. */
+export function shouldRetryOnlineAfterOfflineFailure() {
+  const state = useConnectivityStore.getState();
+  return Boolean(state.apiOnline && !state.offlineMode && !shouldUseOfflinePos());
 }

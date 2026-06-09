@@ -91,6 +91,14 @@ export async function offlineDecreaseStock(productId, quantity) {
   return withOfflineTimeout(window.desktopCashier.offlineDecreaseStock({ productId, quantity }));
 }
 
+export async function offlineCompleteCheckout(payload) {
+  if (!isDesktopOfflineBridge()) return null;
+  if (typeof window.desktopCashier.offlineCompleteCheckout !== 'function') {
+    throw new Error('OFFLINE_SALE_SAVE_FAILED');
+  }
+  return withOfflineTimeout(window.desktopCashier.offlineCompleteCheckout(payload));
+}
+
 export function subscribeOfflineConnectivity(callback) {
   if (!isDesktopOfflineBridge() || typeof window.desktopCashier.onOfflineConnectivity !== 'function') {
     return () => {};

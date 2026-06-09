@@ -1,7 +1,9 @@
 const { ipcMain } = require('electron');
 const localDb = require('./index.cjs');
+const { completeLocalCheckout } = require('./checkout.cjs');
 
 const IPC_TIMEOUT_MS = 12_000;
+const CHECKOUT_IPC_TIMEOUT_MS = 8_000;
 
 async function safeOffline(fn, fallback) {
   try {
@@ -109,6 +111,20 @@ function registerOfflineIpc(getConfig, probeBackendOnlineQuick) {
   ipcMain.handle('offline:decrease-stock', async (_e, { productId, quantity }) =>
     safeOffline(() => localDb.decreaseLocalStock(productId, quantity), null),
   );
+
+  ipcMain.handle('offline:complete-checkout', async (_e, payload) => {
+    try {
+      return await Promise.race([
+        completeLocalCheckout(payload || {}),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('offline_checkout_timeout')), CHECKOUT_IPC_TIMEOUT_MS);
+        }),
+      ]);
+    } catch (err) {
+      console.error('[offline ipc] complete-checkout', err?.message || err);
+      throw err;
+    }
+  });
 }
 
 module.exports = { registerOfflineIpc };

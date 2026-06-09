@@ -12,14 +12,12 @@ import { isDesktopCashier } from '../../../../utils/printReceipt';
 import { clampPayAmount, round2 } from '../../../../utils/taxAmounts';
 import { saleApi } from '../../../../services/api';
 import { useCartStore } from '../../../../store/cartStore';
-import {
-  canFallbackToOfflineCheckout,
-  useConnectivityStore,
-} from '../../../../store/connectivityStore';
+import { canFallbackToOfflineCheckout, useConnectivityStore } from '../../../../store/connectivityStore';
 import { isApiUnreachableError } from '../../../../utils/apiNetworkError';
 import {
   processOfflineCheckout,
-  shouldRunOfflineCheckoutFirst,
+  shouldPreferLocalCheckout,
+  shouldRetryOnlineAfterOfflineFailure,
 } from '../../../../services/offline/offlineCheckoutService';
 import { useAuthStore } from '../../../../store/authStore';
 
@@ -48,7 +46,6 @@ export function usePosCheckout({
       user,
       cachedShift: shift,
       storeName: storeName || shift?.storeName || '',
-      getCheckoutLineItems,
       getCheckoutOrderDiscountAmount,
       getCheckoutOrderDiscountPercent,
       items,
@@ -58,8 +55,14 @@ export function usePosCheckout({
     mutationFn: async (payment) => {
       const items = useCartStore.getState().items;
 
-      if (shouldRunOfflineCheckoutFirst()) {
-        return runOfflineCheckout(payment, items);
+      if (shouldPreferLocalCheckout()) {
+        try {
+          return await runOfflineCheckout(payment, items);
+        } catch (offlineErr) {
+          if (!shouldRetryOnlineAfterOfflineFailure()) {
+            throw offlineErr;
+          }
+        }
       }
 
       try {
@@ -126,7 +129,12 @@ export function usePosCheckout({
         toast.error(t('pos.shiftRequired'));
         return;
       }
-      if (e?.message === 'OFFLINE_SALE_SAVE_FAILED' || e?.message === 'offline_ipc_timeout') {
+      if (
+        e?.message === 'OFFLINE_SALE_SAVE_FAILED' ||
+        e?.message === 'offline_ipc_timeout' ||
+        e?.message === 'offline_checkout_timeout' ||
+        e?.message === 'offline_sale_save_failed'
+      ) {
         toast.error(t('offline.saleSaveFailed'));
         return;
       }

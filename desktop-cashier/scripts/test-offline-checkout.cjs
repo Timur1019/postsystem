@@ -30,6 +30,8 @@ const {
   collectBackendOrigins,
 } = require('../electron/core/api-origin.cjs');
 const localDb = require('../electron/offline/index.cjs');
+const { persistDb } = require('../electron/offline/db/connection.cjs');
+const { completeLocalCheckout } = require('../electron/offline/checkout.cjs');
 
 let passed = 0;
 let failed = 0;
@@ -145,6 +147,57 @@ async function run() {
     assert.ok(shift);
     assert.strictEqual(shift.status, 'OPEN');
     assert.strictEqual(shift.storeId, 2);
+  });
+
+  await test('SQLite: атомарный completeLocalCheckout (как в UI)', async () => {
+    const shift = await localDb.syncServerShiftToLocal({
+      storeId: 3,
+      cashierId: '99',
+      cashierName: 'Atomic Cashier',
+      storeName: 'Atomic Store',
+      shift: {
+        id: 9003,
+        status: 'OPEN',
+        openedAt: '2026-06-10T12:00:00.000Z',
+      },
+    });
+    assert.ok(shift);
+
+    const db = await localDb.getDb();
+    db.run(
+      `INSERT INTO products(id, name, selling_price, tax_rate, barcode, stock_quantity, active, payload_json)
+       VALUES ('p9', 'Atomic', 500, 12, '999', 5, 1, '{}')`,
+    );
+    persistDb();
+
+    const saved = await completeLocalCheckout({
+      storeId: 3,
+      cashierId: '99',
+      cashierName: 'Atomic Cashier',
+      storeName: 'Atomic Store',
+      cachedShift: shift,
+      payload: {
+        storeId: 3,
+        paymentMethod: 'CASH',
+        receiptType: 'SALE',
+        items: [{ productId: 'p9', quantity: 1, unitPrice: 500, discount: 0 }],
+      },
+      response: {
+        id: 'atomic-sale-1',
+        receiptNumber: 'OFF-ATOMIC-0001',
+        createdAt: '2026-06-10T12:01:00.000Z',
+        totalAmount: 500,
+        cashAmount: 500,
+        cardAmount: 0,
+        offlinePendingSync: true,
+        status: 'COMPLETED',
+      },
+      stockLines: [{ productId: 'p9', quantity: 1 }],
+    });
+    assert.strictEqual(saved.clientSaleId, 'atomic-sale-1');
+
+    const pending = await localDb.listPendingSales();
+    assert.ok(pending.some((p) => p.clientSaleId === 'atomic-sale-1'));
   });
 
   await test('SQLite: списание остатков не падает', async () => {

@@ -63,6 +63,7 @@ contextBridge.exposeInMainWorld('desktopCashier', {
   offlineListMySales: (opts) => ipcRenderer.invoke('offline:list-my-sales', opts || {}),
   offlineMarkSalesSynced: (results) => ipcRenderer.invoke('offline:mark-sales-synced', results),
   offlineDecreaseStock: (payload) => ipcRenderer.invoke('offline:decrease-stock', payload),
+  offlineCompleteCheckout: (payload) => ipcRenderer.invoke('offline:complete-checkout', payload),
   onOfflineConnectivity: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on('offline:connectivity', listener);

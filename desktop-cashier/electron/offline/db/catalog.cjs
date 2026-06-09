@@ -143,11 +143,19 @@ async function getProductById(id) {
 }
 
 async function decreaseLocalStock(productId, quantity) {
+  await decreaseLocalStockBatch([{ productId, quantity }]);
+}
+
+async function decreaseLocalStockBatch(lines = []) {
+  if (!lines.length) return;
   const db = await getDb();
-  db.run(
-    'UPDATE products SET stock_quantity = CASE WHEN stock_quantity - ? < 0 THEN 0 ELSE stock_quantity - ? END WHERE id = ?',
-    [Number(quantity), Number(quantity), String(productId)],
-  );
+  for (const line of lines) {
+    if (!line?.productId) continue;
+    db.run(
+      'UPDATE products SET stock_quantity = CASE WHEN stock_quantity - ? < 0 THEN 0 ELSE stock_quantity - ? END WHERE id = ?',
+      [Number(line.quantity), Number(line.quantity), String(line.productId)],
+    );
+  }
   persistDb();
 }
 
@@ -159,4 +167,5 @@ module.exports = {
   getProductByBarcode,
   getProductById,
   decreaseLocalStock,
+  decreaseLocalStockBatch,
 };

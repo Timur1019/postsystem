@@ -33,8 +33,8 @@ function isApiUnreachableError(error, isDesktop) {
   return status === 502 || status === 503 || status === 504;
 }
 
-function shouldRunOfflineCheckoutFirst({ isDesktop, canSellOffline, offlineLike }) {
-  return Boolean(isDesktop && canSellOffline && offlineLike);
+function shouldPreferLocalCheckout({ isDesktop, canSellOffline }) {
+  return Boolean(isDesktop && canSellOffline);
 }
 
 console.log('Aurent — verify offline checkout logic\n');
@@ -54,21 +54,15 @@ test('400 бизнес-ошибка → не fallback', () => {
   if (isApiUnreachableError(err, true)) throw new Error('must not fallback on 400');
 });
 
-test('desktop offline + catalog → сразу локальный чекаут', () => {
-  if (!shouldRunOfflineCheckoutFirst({ isDesktop: true, canSellOffline: true, offlineLike: true })) {
-    throw new Error('expected offline-first');
+test('desktop + каталог → сначала локальный чекаут (даже если probe онлайн)', () => {
+  if (!shouldPreferLocalCheckout({ isDesktop: true, canSellOffline: true })) {
+    throw new Error('expected local-first');
   }
 });
 
-test('desktop online → не форсировать офлайн', () => {
-  if (shouldRunOfflineCheckoutFirst({ isDesktop: true, canSellOffline: true, offlineLike: false })) {
-    throw new Error('must not force offline when online');
-  }
-});
-
-test('нет каталога → не форсировать офлайн', () => {
-  if (shouldRunOfflineCheckoutFirst({ isDesktop: true, canSellOffline: false, offlineLike: true })) {
-    throw new Error('must not force offline without catalog');
+test('нет каталога → не форсировать локальный чекаут', () => {
+  if (shouldPreferLocalCheckout({ isDesktop: true, canSellOffline: false })) {
+    throw new Error('must not force local without catalog');
   }
 });
 
