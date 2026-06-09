@@ -57,7 +57,9 @@ export default function CashierPinLoginPage() {
         }));
         return;
       }
-      navigate('/cashier/pos', { replace: true });
+      if (window.location.pathname.startsWith('/cashier/login')) {
+        navigate('/cashier/pos', { replace: true });
+      }
     })();
 
     return () => {
@@ -93,12 +95,17 @@ export default function CashierPinLoginPage() {
         toast.error(t('login.failed'));
         return;
       }
-      setAuth(accessToken, profile);
       if (profile.role !== 'CASHIER') {
         toast.error(t('login.failed'));
         return;
       }
-      persistCompanyLoginCode(companyCode);
+      const loginCode = normalizeCompanyLoginCode(companyCode)
+        || normalizeCompanyLoginCode(profile.companyLoginCode);
+      setAuth(accessToken, {
+        ...profile,
+        companyLoginCode: loginCode || profile.companyLoginCode,
+      });
+      if (loginCode) persistCompanyLoginCode(loginCode);
       navigate('/cashier/pos', { replace: true });
     } catch (err) {
       const apiMsg = err.response?.data?.message;

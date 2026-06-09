@@ -98,6 +98,7 @@ export function cashierSessionMatchesCompany(user, companyCode) {
   const expected = normalizeCompanyLoginCode(companyCode);
   if (!expected) return true;
   const sessionCode = normalizeCompanyLoginCode(user.companyLoginCode);
-  if (!sessionCode) return false;
+  // Нет кода в профиле — не выкидываем (свежий PIN-логин / старый JWT без поля).
+  if (!sessionCode) return true;
   return sessionCode === expected;
 }

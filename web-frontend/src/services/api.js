@@ -41,11 +41,8 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config;
     const status = error.response?.status;
-    if (status === 403 && !original._retry) {
-      logoutAndResetSession();
-      if (!isAuthPage(window.location.pathname)) {
-        redirectToLogin();
-      }
+    // 403 = нет прав на конкретный ресурс, не инвалидируем всю сессию (кассир не должен вылетать).
+    if (status === 403) {
       return Promise.reject(error);
     }
     if (status === 401 && !original._retry) {
