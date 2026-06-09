@@ -14,6 +14,10 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    mail:
+      # SMTP не должен блокировать liveness (Gmail rate-limit ломает /actuator/health).
+      enabled: false
 
 logging:
   level:
