@@ -15,7 +15,7 @@ import {
   offlineOpenShift,
   offlineSyncShiftFromServer,
 } from '../services/offline/desktopOfflineBridge';
-import { isApiNetworkError } from '../utils/apiNetworkError';
+import { isApiUnreachableError } from '../utils/apiNetworkError';
 
 function shiftQueryKey(storeId, userId) {
   return ['cashier-shift', storeId, userId];
@@ -66,7 +66,7 @@ export async function fetchCurrentCashierShift(storeId, user, offlineShift = fal
       return null;
     }
     if (
-      isApiNetworkError(e) &&
+      isApiUnreachableError(e) &&
       isDesktopOfflineBridge() &&
       canFallbackToOfflineCheckout() &&
       user?.id
@@ -145,7 +145,7 @@ export async function openCashierShift(storeId, user, offlineShift = false, stor
       return res.data;
     }
     if (
-      isApiNetworkError(e) &&
+      isApiUnreachableError(e) &&
       isDesktopOfflineBridge() &&
       canFallbackToOfflineCheckout() &&
       user?.id

@@ -86,9 +86,13 @@ function registerOfflineIpc(getConfig, probeBackendOnlineQuick) {
     safeOffline(() => localDb.closeLocalShift(payload || {}), { ok: false }),
   );
 
-  ipcMain.handle('offline:save-sale', async (_e, payload) =>
-    safeOffline(() => localDb.saveLocalSale(payload || {}), null),
-  );
+  ipcMain.handle('offline:save-sale', async (_e, payload) => {
+    const result = await safeOffline(() => localDb.saveLocalSale(payload || {}), null);
+    if (!result?.clientSaleId) {
+      throw new Error('offline_sale_save_failed');
+    }
+    return result;
+  });
 
   ipcMain.handle('offline:list-pending-sales', async () =>
     safeOffline(() => localDb.listPendingSales(), []),

@@ -5,7 +5,7 @@ import { userHasCashierOfflineAccess } from '../utils/cashierOfflineAccess';
 
 /** Сразу offline при сбое probe; online — после двух подряд успешных probe. */
 const ONLINE_RECOVERY_STREAK = 2;
-const CONNECTIVITY_POLL_MS = 10_000;
+const CONNECTIVITY_POLL_MS = 5_000;
 let stableApiOnline = null;
 let onlineRecoveryStreak = 0;
 

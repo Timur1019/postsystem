@@ -13,7 +13,7 @@ import { clampPayAmount, round2 } from '../../../../utils/taxAmounts';
 import { saleApi } from '../../../../services/api';
 import { useCartStore } from '../../../../store/cartStore';
 import { canUseOfflineCheckout, canFallbackToOfflineCheckout, refreshConnectivityStatus } from '../../../../store/connectivityStore';
-import { isApiNetworkError } from '../../../../utils/apiNetworkError';
+import { isApiUnreachableError } from '../../../../utils/apiNetworkError';
 import {
   offlineDecreaseStock,
   offlineGetCurrentShift,
@@ -69,11 +69,14 @@ async function processOfflineCheckout({
     orderDiscountPercent,
   });
 
-  await offlineSaveSale({
+  const saved = await offlineSaveSale({
     clientShiftId: shift.id || shift.clientShiftId,
     payload,
     response,
   });
+  if (!saved?.clientSaleId) {
+    throw new Error('OFFLINE_SALE_SAVE_FAILED');
+  }
 
   for (const line of cartItems) {
     await offlineDecreaseStock(line.productId, line.quantity);
@@ -127,7 +130,7 @@ export function usePosCheckout({
           orderDiscountPercent: getCheckoutOrderDiscountPercent(),
         });
       } catch (err) {
-        if (isApiNetworkError(err) && canFallbackToOfflineCheckout()) {
+        if (isApiUnreachableError(err) && canFallbackToOfflineCheckout()) {
           return processOfflineCheckout({
             storeId,
             payment,
@@ -183,6 +186,10 @@ export function usePosCheckout({
     onError: (e) => {
       if (e?.message === 'OFFLINE_SHIFT_REQUIRED') {
         toast.error(t('pos.shiftRequired'));
+        return;
+      }
+      if (e?.message === 'OFFLINE_SALE_SAVE_FAILED') {
+        toast.error(t('offline.saleSaveFailed'));
         return;
       }
       const msg = e.response?.data?.message ?? e.message ?? t('pos.saleFailed');

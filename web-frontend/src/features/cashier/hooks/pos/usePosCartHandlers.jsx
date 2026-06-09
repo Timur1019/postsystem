@@ -7,7 +7,7 @@ import {
   offlineGetProductByBarcode,
 } from '../../../../services/offline/desktopOfflineBridge';
 import { useConnectivityStore, useShouldUseLocalPosCatalog } from '../../../../store/connectivityStore';
-import { isApiNetworkError } from '../../../../utils/apiNetworkError';
+import { isApiUnreachableError } from '../../../../utils/apiNetworkError';
 import { useBarcodeScanner } from '../../../../hooks/useBarcodeScanner';
 import { lineSubtotal, useCartStore } from '../../../../store/cartStore';
 import { fmtMoney as fmt } from '../../../../utils/formatMoney';
@@ -175,7 +175,7 @@ export function usePosCartHandlers({
         return true;
       } catch (e) {
         if (
-          isApiNetworkError(e) &&
+          isApiUnreachableError(e) &&
           isDesktopOfflineBridge() &&
           useConnectivityStore.getState().canSellOffline
         ) {

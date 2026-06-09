@@ -53,6 +53,12 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config;
     const status = error.response?.status;
+    if (
+      isDesktopOfflineBridge() &&
+      (status === 502 || status === 503 || status === 504 || isApiNetworkError(error))
+    ) {
+      useConnectivityStore.getState().applyStatus({ apiOnline: false });
+    }
     if (status === 403) {
       return Promise.reject(error);
     }

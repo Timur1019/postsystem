@@ -51,7 +51,7 @@ export default function OfflineStatusBanner() {
     );
   }
 
-  const showOffline = offlineMode;
+  const showOffline = offlineMode || !apiOnline;
   const showPending = apiOnline && pendingSales > 0;
   const catalogLabel = formatCatalogSyncAt(lastCatalogSyncAt);
   const showCatalogStrip = apiOnline && bootstrapReady && !showOffline;

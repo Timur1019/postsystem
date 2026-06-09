@@ -50,18 +50,27 @@ function collectBackendOrigins(cfg) {
   return origins;
 }
 
-/** Только известные origin для probe online/offline (без перебора 80/443/8080). */
+function isEmbeddedProxyOrigin(cfg, origin) {
+  if (!cfg?.useEmbedded || !cfg?.embeddedPort || !origin) return false;
+  try {
+    const url = new URL(origin.startsWith('http') ? origin : `http://${origin}`);
+    const host = url.hostname;
+    const isLoopback = host === '127.0.0.1' || host === 'localhost' || host === '::1';
+    return isLoopback && String(url.port || '') === String(cfg.embeddedPort);
+  } catch {
+    return false;
+  }
+}
+
+/** Backend для probe online/offline: без локального embedded-прокси (он отвечает 502 при обрыве сети). */
 function collectConnectivityProbeOrigins(cfg) {
   const origins = [];
   const push = (raw) => {
     const origin = normalizeOrigin(raw);
-    if (!origin || origins.includes(origin)) return;
+    if (!origin || origins.includes(origin) || isEmbeddedProxyOrigin(cfg, origin)) return;
     origins.push(origin);
   };
 
-  if (cfg?.useEmbedded && cfg?.embeddedPort) {
-    push(`http://127.0.0.1:${cfg.embeddedPort}`);
-  }
   push(cfg?.backendOrigin);
   if (cfg?.apiHealthUrl) {
     push(String(cfg.apiHealthUrl).replace(/\/api\/v1\/actuator\/health\/?$/i, ''));
