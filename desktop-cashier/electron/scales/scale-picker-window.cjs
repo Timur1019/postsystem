@@ -1,5 +1,6 @@
 const path = require('path');
 const { BrowserWindow, ipcMain } = require('electron');
+const { windowIconOptions } = require('../core/window-icon.cjs');
 const { listSerialPorts } = require('./scale-serial-port.cjs');
 const { readScaleSettings, writeScaleSettings } = require('./scale-config.cjs');
 const { autoDetectPort, probePort } = require('./scale-auto-detect.cjs');
@@ -178,6 +179,7 @@ function buildPickerHtml() {
 function showScalePickerWindow(mainWindow) {
   return new Promise((resolve, reject) => {
     const win = new BrowserWindow({
+      ...windowIconOptions(),
       width: 480,
       height: 560,
       resizable: false,

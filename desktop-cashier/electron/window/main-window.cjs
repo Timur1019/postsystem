@@ -8,6 +8,7 @@ const { resolveWebDist } = require('../network/embedded-server.cjs');
 const { buildLoginUrl, ensureEmbeddedUiRunning } = require('./cashier-session.cjs');
 const { isAllowedLocation } = require('./navigation.cjs');
 const state = require('../bootstrap/state.cjs');
+const { windowIconOptions } = require('../core/window-icon.cjs');
 
 function fitWindowToPosDisplay(win) {
   try {
@@ -24,6 +25,7 @@ function fitWindowToPosDisplay(win) {
 function createMainWindow() {
   const config = state.getConfig();
   const mainWindow = new BrowserWindow({
+    ...windowIconOptions(),
     width: 1366,
     height: 900,
     minWidth: 1024,

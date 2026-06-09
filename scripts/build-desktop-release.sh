@@ -105,6 +105,9 @@ else
   npm ci --silent 2>/dev/null || npm install
 fi
 
+echo "==> App icons (Aurent brand)..."
+npm run icons
+
 case "$TARGET" in
   mac)
     npm run dist:mac

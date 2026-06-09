@@ -9,6 +9,11 @@ const extraResources = [
   { from: 'server.default.json', to: 'server.default.json' },
 ];
 
+const brandDir = path.join(__dirname, 'assets', 'brand');
+if (fs.existsSync(brandDir)) {
+  extraResources.push({ from: 'assets/brand', to: 'assets/brand', filter: ['**/*'] });
+}
+
 const webDist = path.join(__dirname, 'web-dist', 'index.html');
 if (fs.existsSync(webDist)) {
   extraResources.push({ from: 'web-dist', to: 'web-dist', filter: ['**/*'] });

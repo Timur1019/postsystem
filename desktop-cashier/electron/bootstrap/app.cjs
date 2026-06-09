@@ -16,6 +16,7 @@ const { registerTrustedCertificateHandler } = require('../window/navigation.cjs'
 const { setupAutoUpdater } = require('../updates/auto-update.cjs');
 const localDb = require('../offline/index.cjs');
 const state = require('./state.cjs');
+const { applyAppIcon } = require('../core/app-icon.cjs');
 const {
   waitForServices,
   ensureInitialServerConfig,
@@ -82,6 +83,7 @@ async function bootstrapApp() {
     }
   }
 
+  applyAppIcon();
   logStartup('create_window', { cashierUrl: state.getConfig()?.cashierUrl });
   createMainWindow();
   localDb

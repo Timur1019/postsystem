@@ -1,4 +1,5 @@
 const { BrowserWindow, ipcMain } = require('electron');
+const { windowIconOptions } = require('../core/window-icon.cjs');
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
@@ -236,6 +237,7 @@ function showSetupWindow(existing) {
 
   return new Promise((resolve, reject) => {
     const win = new BrowserWindow({
+      ...windowIconOptions(),
       width: 440,
       height: 540,
       resizable: false,

@@ -1,6 +1,6 @@
 name: Build Desktop Cashier
 
-# CI rebuild trigger: 2026-06-10 v1.1.5 atomic-offline-checkout
+# CI rebuild trigger: 2026-06-10 v1.1.6 aurent-app-icon
 
 on:
   push:

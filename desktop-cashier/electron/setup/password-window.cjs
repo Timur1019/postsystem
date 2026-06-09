@@ -1,6 +1,7 @@
 const { BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { verifyServerSetupPassword } = require('./verify-password.cjs');
+const { windowIconOptions } = require('../core/window-icon.cjs');
 
 function buildPasswordHtml(errorMessage = '') {
   const err = errorMessage
@@ -64,6 +65,7 @@ function showServerSetupPasswordWindow(cfg, { errorMessage = '' } = {}) {
   return new Promise((resolve, reject) => {
     let settled = false;
     const win = new BrowserWindow({
+      ...windowIconOptions(),
       width: 420,
       height: 300,
       resizable: false,

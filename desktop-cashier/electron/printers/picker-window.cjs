@@ -1,5 +1,6 @@
 const path = require('path');
 const { BrowserWindow, ipcMain } = require('electron');
+const { windowIconOptions } = require('../core/window-icon.cjs');
 const { readPrinterSettings, writePrinterSettings } = require('../core/config.cjs');
 
 const KIND_META = {
@@ -146,6 +147,7 @@ function showPrinterPickerWindow(mainWindow, options = {}) {
 
   return new Promise((resolve, reject) => {
     const win = new BrowserWindow({
+      ...windowIconOptions(),
       width: 460,
       height: 480,
       resizable: false,

@@ -1,6 +1,6 @@
 {
   "name": "masterpiece-pos-cashier-desktop",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "private": true,
   "description": "Desktop shell for Aurent cashier (same UI as web)",
   "main": "electron/main.cjs",
@@ -19,22 +19,26 @@
     "test:escpos": "node scripts/test-escpos-build.cjs",
     "test:tspl": "node scripts/test-tspl-build.cjs",
     "test:offline": "node scripts/test-offline-checkout.cjs",
+    "icons": "node scripts/generate-app-icons.cjs",
     "verify:win-unpacked": "node scripts/verify-windows-unpacked.cjs"
   },
   "build": {
     "appId": "com.aurent.pos.cashier",
     "productName": "Aurent Cashier",
+    "icon": "assets/brand/icon.png",
     "directories": {
       "output": "release"
     },
     "files": [
       "electron/**/*",
+      "assets/brand/**/*",
       "config.default.json",
       "package.json"
     ],
     "extraResources": [],
     "mac": {
       "category": "public.app-category.business",
+      "icon": "assets/brand/icon.icns",
       "artifactName": "Aurent-Cashier-${version}-mac-universal.${ext}",
       "target": [
         {
@@ -46,6 +50,7 @@
       ]
     },
     "win": {
+      "icon": "assets/brand/icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -91,6 +96,8 @@
   "devDependencies": {
     "@electron/rebuild": "^3.7.1",
     "electron": "^28.3.3",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "png-to-ico": "^2.1.8",
+    "sharp": "^0.33.5"
   }
 }
