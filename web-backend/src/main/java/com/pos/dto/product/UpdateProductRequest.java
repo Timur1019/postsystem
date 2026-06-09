@@ -8,6 +8,7 @@ import com.pos.domain.UnitCode;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 public record UpdateProductRequest(
     String name,
@@ -44,5 +45,7 @@ public record UpdateProductRequest(
     ConstructionProductDetailsRequest constructionDetails,
     RestaurantProductDetailsRequest restaurantDetails,
     ServiceProductDetailsRequest serviceDetails,
-    RetailExtrasRequest retailExtras
+    RetailExtrasRequest retailExtras,
+    String businessTypeCode,
+    Map<String, String> attributes
 ) {}

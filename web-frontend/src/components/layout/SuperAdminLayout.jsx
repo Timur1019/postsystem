@@ -1,7 +1,7 @@
 // src/components/layout/SuperAdminLayout.jsx
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Building2, Store, Users, LogOut, Shield, Menu, KeyRound, Activity, Mail, ShieldCheck } from 'lucide-react';
+import { Building2, Store, Users, LogOut, Shield, Menu, KeyRound, Activity, Mail, ShieldCheck, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { logoutAndResetSession } from '../../utils/authSession';
@@ -12,6 +12,7 @@ const NAV = [
   { to: '/platform/stores', icon: Store, key: 'platform.stores' },
   { to: '/platform/users', icon: Users, key: 'platform.users' },
   { to: '/platform/access', icon: KeyRound, key: 'platform.moduleAccess.nav' },
+  { to: '/platform/business-types', icon: Layers, key: 'platform.businessTypes.nav' },
   { to: '/platform/monitoring', icon: Activity, key: 'platform.monitoring.nav' },
   { to: '/platform/email', icon: Mail, key: 'platform.email.nav' },
   { to: '/platform/security', icon: ShieldCheck, key: 'platform.security.nav' },

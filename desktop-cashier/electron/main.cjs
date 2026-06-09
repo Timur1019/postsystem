@@ -83,7 +83,7 @@ async function broadcastConnectivity() {
 function startConnectivityBroadcast() {
   if (connectivityTimer) return;
   broadcastConnectivity();
-  connectivityTimer = setInterval(broadcastConnectivity, 12_000);
+  connectivityTimer = setInterval(broadcastConnectivity, 4_000);
 }
 
 function buildLoginUrl(cfg) {

@@ -12,7 +12,8 @@ import { isDesktopCashier } from '../../utils/printReceipt';
 import { clampPayAmount, round2 } from '../../utils/taxAmounts';
 import { saleApi } from '../../services/api';
 import { useCartStore } from '../../store/cartStore';
-import { canUseOfflineCheckout, refreshConnectivityStatus } from '../../store/connectivityStore';
+import { canUseOfflineCheckout, canFallbackToOfflineCheckout, refreshConnectivityStatus } from '../../store/connectivityStore';
+import { isApiNetworkError } from '../../utils/apiNetworkError';
 import {
   offlineDecreaseStock,
   offlineGetCurrentShift,
@@ -112,18 +113,33 @@ export function usePosCheckout({
           items,
         });
       }
-      return saleApi.create({
-        storeId: Number(storeId),
-        paymentMethod: payment.paymentMethod,
-        receiptType: payment.receiptType,
-        cardType: payment.cardType,
-        cashAmount: payment.cashAmount,
-        cardAmount: payment.cardAmount,
-        amountTendered: payment.amountTendered,
-        items: getCheckoutLineItems(),
-        orderDiscountAmount: getCheckoutOrderDiscountAmount(),
-        orderDiscountPercent: getCheckoutOrderDiscountPercent(),
-      });
+      try {
+        return await saleApi.create({
+          storeId: Number(storeId),
+          paymentMethod: payment.paymentMethod,
+          receiptType: payment.receiptType,
+          cardType: payment.cardType,
+          cashAmount: payment.cashAmount,
+          cardAmount: payment.cardAmount,
+          amountTendered: payment.amountTendered,
+          items: getCheckoutLineItems(),
+          orderDiscountAmount: getCheckoutOrderDiscountAmount(),
+          orderDiscountPercent: getCheckoutOrderDiscountPercent(),
+        });
+      } catch (err) {
+        if (isApiNetworkError(err) && canFallbackToOfflineCheckout()) {
+          return processOfflineCheckout({
+            storeId,
+            payment,
+            user,
+            getCheckoutLineItems,
+            getCheckoutOrderDiscountAmount,
+            getCheckoutOrderDiscountPercent,
+            items,
+          });
+        }
+        throw err;
+      }
     },
     onSuccess: async (res, payment) => {
       clearCart();

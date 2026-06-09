@@ -317,6 +317,8 @@ public class ProductImportServiceImpl implements ProductImportService {
             null,
             null,
             null,
+            null,
+            null,
             null
         );
         productService.createProduct(req);

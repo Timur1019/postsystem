@@ -6,6 +6,7 @@ import ProductCatalogAccountingSection from './catalog/ProductCatalogAccountingS
 import ProductCatalogStorePricesSection from './catalog/ProductCatalogStorePricesSection';
 import ProductCatalogBarcodesSection from './catalog/ProductCatalogBarcodesSection';
 import ProductCatalogRetailExtrasSection from './catalog/ProductCatalogRetailExtrasSection';
+import ProductCatalogDynamicFieldsSection from './catalog/ProductCatalogDynamicFieldsSection';
 import ProductCatalogFiscalSection from './catalog/ProductCatalogFiscalSection';
 import ProductCatalogStoreContextSection from './catalog/ProductCatalogStoreContextSection';
 
@@ -144,6 +145,14 @@ export default function ProductCatalogModal({
               showSection={form.showSection}
             />
           ) : null}
+
+          <ProductCatalogDynamicFieldsSection
+            t={form.t}
+            register={form.register}
+            errors={form.errors}
+            fields={form.businessConfig?.fields ?? []}
+            loading={form.businessConfigLoading}
+          />
 
           {form.showSection('barcodes') ? (
             <ProductCatalogBarcodesSection

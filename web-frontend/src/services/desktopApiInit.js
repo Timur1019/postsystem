@@ -15,6 +15,7 @@ export async function configureDesktopApiBaseUrl() {
     if (baseUrl && /^https?:\/\//i.test(baseUrl)) {
       api.defaults.baseURL = String(baseUrl).replace(/\/$/, '');
     }
+    api.defaults.timeout = 6_000;
   } catch {
     // relative /api/v1 — fallback через локальный прокси
   }

@@ -3,6 +3,9 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import { logoutAndResetSession } from '../utils/authSession';
 import { isAuthPage, redirectToLogin } from '../utils/authLogin';
+import { isApiNetworkError } from '../utils/apiNetworkError';
+import { markApiOffline, refreshConnectivityStatus } from '../store/connectivityStore';
+import { isDesktopOfflineBridge } from './offline/desktopOfflineBridge';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
@@ -70,6 +73,10 @@ api.interceptors.response.use(
           redirectToLogin();
         }
       }
+    }
+    if (isApiNetworkError(error) && isDesktopOfflineBridge()) {
+      markApiOffline();
+      refreshConnectivityStatus();
     }
     return Promise.reject(error);
   }
@@ -199,6 +206,23 @@ export const platformMonitoringApi = {
     api.get(`/platform/monitoring/metrics/${encodeURIComponent(name)}`),
   logs: (params) => api.get('/platform/monitoring/logs', { params }),
   clearLogs: () => api.delete('/platform/monitoring/logs'),
+};
+
+export const platformBusinessTypeApi = {
+  list: () => api.get('/platform/business-types'),
+  get: (id) => api.get(`/platform/business-types/${id}`),
+  create: (body) => api.post('/platform/business-types', body),
+  update: (id, body) => api.put(`/platform/business-types/${id}`, body),
+  delete: (id) => api.delete(`/platform/business-types/${id}`),
+  addField: (typeId, body) => api.post(`/platform/business-types/${typeId}/fields`, body),
+  updateField: (typeId, fieldId, body) =>
+    api.put(`/platform/business-types/${typeId}/fields/${fieldId}`, body),
+  deleteField: (typeId, fieldId) => api.delete(`/platform/business-types/${typeId}/fields/${fieldId}`),
+};
+
+export const businessConfigApi = {
+  byCode: (code) => api.get('/business-config', { params: { code } }),
+  forStore: (storeId) => api.get(`/business-config/store/${storeId}`),
 };
 
 export const cashRegisterApi = {

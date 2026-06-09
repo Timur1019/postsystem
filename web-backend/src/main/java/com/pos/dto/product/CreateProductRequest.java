@@ -11,6 +11,7 @@ import com.pos.domain.UnitCode;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 public record CreateProductRequest(
     @NotBlank String sku,
@@ -49,5 +50,7 @@ public record CreateProductRequest(
     ConstructionProductDetailsRequest constructionDetails,
     RestaurantProductDetailsRequest restaurantDetails,
     ServiceProductDetailsRequest serviceDetails,
-    RetailExtrasRequest retailExtras
+    RetailExtrasRequest retailExtras,
+    String businessTypeCode,
+    Map<String, String> attributes
 ) {}

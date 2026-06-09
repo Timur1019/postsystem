@@ -49,6 +49,7 @@ services:
       - ./web-backend/src/main/resources/db/migration_manual_offline_sync.sql:/docker-entrypoint-initdb.d/37-offline_sync.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_store_business_type.sql:/docker-entrypoint-initdb.d/38-store_business_type.sql:ro
       - ./web-backend/src/main/resources/db/migration_manual_platform_security.sql:/docker-entrypoint-initdb.d/39-platform_security.sql:ro
+      - ./web-backend/src/main/resources/db/migration_manual_business_constructor.sql:/docker-entrypoint-initdb.d/40-business_constructor.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pos_user -d pos_db"]
       interval: 5s

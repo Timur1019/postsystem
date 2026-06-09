@@ -7,6 +7,7 @@ import com.pos.domain.UnitCode;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public record ProductResponse(
@@ -53,5 +54,6 @@ public record ProductResponse(
     ConstructionProductDetailsDto constructionDetails,
     RestaurantProductDetailsDto restaurantDetails,
     ServiceProductDetailsDto serviceDetails,
-    RetailExtrasDto retailExtras
+    RetailExtrasDto retailExtras,
+    Map<String, String> attributes
 ) {}

@@ -7,6 +7,7 @@ import {
   offlineGetProductByBarcode,
 } from '../../services/offline/desktopOfflineBridge';
 import { useConnectivityStore, useShouldUseLocalPosCatalog } from '../../store/connectivityStore';
+import { isApiNetworkError } from '../../utils/apiNetworkError';
 import { useBarcodeScanner } from '../useBarcodeScanner';
 import { lineSubtotal, useCartStore } from '../../store/cartStore';
 import { fmtMoney as fmt } from '../../utils/formatMoney';
@@ -173,6 +174,18 @@ export function usePosCartHandlers({
         setSearch('');
         return true;
       } catch (e) {
+        if (
+          isApiNetworkError(e) &&
+          isDesktopOfflineBridge() &&
+          useConnectivityStore.getState().canSellOffline
+        ) {
+          const product = await offlineGetProductByBarcode(trimmed);
+          if (product) {
+            addProductToCart(product);
+            setSearch('');
+            return true;
+          }
+        }
         if (!silent) toast.error(e.response?.data?.message ?? t('pos.barcodeNotFound'));
         return false;
       } finally {

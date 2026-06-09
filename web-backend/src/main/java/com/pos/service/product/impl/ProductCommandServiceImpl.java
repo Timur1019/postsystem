@@ -27,6 +27,7 @@ import com.pos.service.support.ProductLookupSupport;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.repository.spec.ProductSpecifications;
 import com.pos.service.UnitCatalogService;
+import com.pos.service.ProductAttributeService;
 import com.pos.service.stock.StoreStockService;
 import com.pos.util.ProductTemplateCodeValidator;
 import org.springframework.stereotype.Service;
@@ -50,6 +51,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
     private final TenantAccessSupport tenantAccess;
     private final StoreStockService storeStockService;
     private final UnitCatalogService unitCatalogService;
+    private final ProductAttributeService productAttributeService;
 
     public ProductCommandServiceImpl(
         ProductRepository productRepository,
@@ -63,7 +65,8 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         ProductExtensionService extensionService,
         TenantAccessSupport tenantAccess,
         StoreStockService storeStockService,
-        UnitCatalogService unitCatalogService
+        UnitCatalogService unitCatalogService,
+        ProductAttributeService productAttributeService
     ) {
         super(productRepository, productLookup, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
         this.stockMovementRepository = stockMovementRepository;
@@ -72,6 +75,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         this.tenantAccess = tenantAccess;
         this.storeStockService = storeStockService;
         this.unitCatalogService = unitCatalogService;
+        this.productAttributeService = productAttributeService;
     }
 
     @Override
@@ -160,6 +164,7 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
         applyExtraBarcodes(saved, req.additionalBarcodes(), saved.getBarcode());
         Product persisted = productRepository.save(saved);
         applyInitialStock(persisted, req.initialStock(), req.storePrices(), companyId, "Начальный остаток при создании товара");
+        productAttributeService.saveAttributes(persisted.getId(), req.businessTypeCode(), req.attributes());
         return assembler.toResponse(persisted);
     }
 
@@ -167,7 +172,11 @@ public class ProductCommandServiceImpl extends AbstractProductCatalogSupport imp
     public ProductResponse updateProduct(UUID id, UpdateProductRequest req) {
         Product product = findDetailed(id);
         applyUpdates(product, req);
-        return assembler.toResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        if (req.attributes() != null) {
+            productAttributeService.saveAttributes(saved.getId(), req.businessTypeCode(), req.attributes());
+        }
+        return assembler.toResponse(saved);
     }
 
     @Override

@@ -13,10 +13,13 @@ import {
   getProductTemplate,
   resolveProductTemplateCode,
   resolveCatalogSectionVisible,
+  resolveBusinessTypeForTemplates,
 } from '../config/productCatalogTemplateRegistry';
 import { buildStorePrices, syncStoreRowPrices } from '../utils/productCatalogPrices';
 import { UNIT_DEFAULTS } from '../utils/unitConfig';
-
+import useBusinessConfig from './useBusinessConfig';
+import { useCompanyBusinessType } from './useCompanyBusinessType';
+import { businessAttributeFieldName } from '../components/products/catalog/ProductCatalogDynamicFieldsSection';
 const defaultFormValues = {
   taxRate: 0,
   defaultDiscountPercent: 0,
@@ -41,6 +44,27 @@ const defaultFormValues = {
   pharmacyDosageForm: '',
 };
 
+function attributeFormValue(value, fieldType) {
+  if (fieldType === 'BOOLEAN') return value === 'true' || value === true;
+  return value ?? '';
+}
+
+function buildAttributesPayload(values, fields) {
+  if (!fields?.length) return undefined;
+  const attrs = {};
+  for (const field of fields) {
+    if (field.enabled === false) continue;
+    const raw = values[businessAttributeFieldName(field.fieldKey)];
+    if (field.fieldType === 'BOOLEAN') {
+      attrs[field.fieldKey] = raw ? 'true' : '';
+      continue;
+    }
+    const text = raw == null ? '' : String(raw).trim();
+    attrs[field.fieldKey] = text;
+  }
+  return attrs;
+}
+
 export function useProductCatalogForm(product, stores, onSaved, options = {}) {
   const { t } = useTranslation();
   const isEdit = !!product;
@@ -49,6 +73,11 @@ export function useProductCatalogForm(product, stores, onSaved, options = {}) {
   const createUniversalMode = options.universalMode ?? false;
   const selectedStoreId = options.selectedStoreId ?? null;
   const selectedStoreBusinessType = options.selectedStoreBusinessType ?? null;
+  const { businessType: companyBusinessType } = useCompanyBusinessType();
+  const effectiveBusinessType = resolveBusinessTypeForTemplates(
+    selectedStoreBusinessType ?? companyBusinessType ?? 'UNIVERSAL'
+  );
+  const { data: businessConfig, isLoading: businessConfigLoading } = useBusinessConfig(effectiveBusinessType);
   const [editAdvancedMode, setEditAdvancedMode] = useState(false);
   const advancedMode = isEdit ? editAdvancedMode : createAdvancedMode;
   const universalMode = !isEdit && createUniversalMode;
@@ -209,6 +238,18 @@ export function useProductCatalogForm(product, stores, onSaved, options = {}) {
     setExtraBarcodes(extras.length ? extras : ['']);
     prevSellingRef.current = full.sellingPrice ?? null;
   }, [full, reset, isEdit]);
+
+  useEffect(() => {
+    if (!full?.attributes || !businessConfig?.fields?.length) return;
+    for (const field of businessConfig.fields) {
+      const value = full.attributes[field.fieldKey];
+      if (value == null && field.fieldType !== 'BOOLEAN') continue;
+      setValue(
+        businessAttributeFieldName(field.fieldKey),
+        attributeFormValue(value ?? '', field.fieldType)
+      );
+    }
+  }, [full?.attributes, businessConfig?.fields, setValue]);
 
   const sellingPriceWatch = watch('sellingPrice');
   const costPriceWatch = watch('costPrice');
@@ -387,6 +428,8 @@ export function useProductCatalogForm(product, stores, onSaved, options = {}) {
       commissionTin: values.commissionTin || undefined,
       commissionPinfl: values.commissionPinfl || undefined,
       retailExtras: buildRetailExtrasPayload(values),
+      businessTypeCode: effectiveBusinessType,
+      attributes: buildAttributesPayload(values, businessConfig?.fields),
       storePrices,
       additionalBarcodes,
       templateCode: advancedMode ? null : (resolvedTemplateCode || null),
@@ -442,5 +485,7 @@ export function useProductCatalogForm(product, stores, onSaved, options = {}) {
     sellingPriceWatch,
     saleTypeWatch,
     productTypeWatch,
+    businessConfig,
+    businessConfigLoading,
   };
 }

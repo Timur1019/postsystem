@@ -33,9 +33,9 @@ function registerOfflineIpc(getConfig, probeBackendOnlineQuick) {
       const cfg = getConfig?.();
       if (cfg && probeBackendOnlineQuick) {
         apiOnline = await Promise.race([
-          probeBackendOnlineQuick(cfg),
+          probeBackendOnlineQuick(cfg, { timeoutMs: 2000 }),
           new Promise((resolve) => {
-            setTimeout(() => resolve(false), 3000);
+            setTimeout(() => resolve(false), 2500);
           }),
         ]);
       }

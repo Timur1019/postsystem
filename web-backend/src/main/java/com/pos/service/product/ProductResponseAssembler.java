@@ -8,6 +8,7 @@ import com.pos.mapper.ProductStorePriceMapper;
 import com.pos.repository.ProductStorePriceRepository;
 import com.pos.repository.stock.StockMovementQueryRepository;
 import com.pos.repository.projection.ProductDispatchedSum;
+import com.pos.service.ProductAttributeService;
 import com.pos.util.QuantityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,7 @@ public class ProductResponseAssembler {
     private final ProductStorePriceRepository productStorePriceRepository;
     private final StockMovementQueryRepository stockMovementQueryRepository;
     private final ProductExtensionMapper extensionMapper;
+    private final ProductAttributeService productAttributeService;
 
     public ProductResponse toResponse(Product product) {
         return toResponse(product, null, null);
@@ -104,7 +106,8 @@ public class ProductResponseAssembler {
             extensionMapper.toDto(product.getConstructionDetails()),
             extensionMapper.toDto(product.getRestaurantDetails()),
             extensionMapper.toDto(product.getServiceDetails()),
-            extensionMapper.toDto(product.getRetailDetails())
+            extensionMapper.toDto(product.getRetailDetails()),
+            productAttributeService.getAttributes(product.getId())
         );
     }
 
@@ -184,7 +187,8 @@ public class ProductResponseAssembler {
             r.constructionDetails(),
             r.restaurantDetails(),
             r.serviceDetails(),
-            r.retailExtras()
+            r.retailExtras(),
+            r.attributes()
         );
     }
 }

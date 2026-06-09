@@ -5,6 +5,7 @@ import { userHasCashierOfflineAccess } from '../utils/cashierOfflineAccess';
 
 /** Сразу offline при сбое; online — только после нескольких успешных probe подряд (Windows/Wi‑Fi). */
 const ONLINE_RECOVERY_STREAK = 2;
+const CONNECTIVITY_POLL_MS = 4_000;
 let stableApiOnline = null;
 let onlineRecoveryStreak = 0;
 
@@ -38,6 +39,14 @@ export function canUseOfflineCheckout(state = useConnectivityStore.getState()) {
   return (
     userHasCashierOfflineAccess(useAuthStore.getState().user) &&
     isConnectivityOfflineLike(state) &&
+    Boolean(state.canSellOffline)
+  );
+}
+
+/** Локальный каталог готов — можно сохранить продажу офлайн при сетевом сбое. */
+export function canFallbackToOfflineCheckout(state = useConnectivityStore.getState()) {
+  return (
+    userHasCashierOfflineAccess(useAuthStore.getState().user) &&
     Boolean(state.canSellOffline)
   );
 }
@@ -121,6 +130,12 @@ function applyBrowserOfflineHint() {
   useConnectivityStore.getState().applyStatus({ apiOnline: false });
 }
 
+/** Мгновенно перевести кассу в offline (API probe / axios ещё не успели). */
+export function markApiOffline() {
+  if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return;
+  useConnectivityStore.getState().applyStatus({ apiOnline: false });
+}
+
 export async function refreshConnectivityStatus() {
   applyBrowserOfflineHint();
   try {
@@ -128,23 +143,33 @@ export async function refreshConnectivityStatus() {
     useConnectivityStore.getState().applyStatus(status);
     return status;
   } catch {
-    useConnectivityStore.getState().applyStatus({ apiOnline: false });
+    markApiOffline();
     return null;
   }
+}
+
+function onWindowFocusRefreshConnectivity() {
+  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+  refreshConnectivityStatus();
 }
 
 export function startConnectivityWatcher() {
   if (refreshTimer) return;
   applyBrowserOfflineHint();
   refreshConnectivityStatus();
-  refreshTimer = setInterval(refreshConnectivityStatus, 12_000);
+  refreshTimer = setInterval(refreshConnectivityStatus, CONNECTIVITY_POLL_MS);
   unsubscribeConnectivity = subscribeOfflineConnectivity((payload) => {
     useConnectivityStore.getState().applyStatus(payload);
   });
   if (!browserConnectivityBound && typeof window !== 'undefined') {
     browserConnectivityBound = true;
     window.addEventListener('online', () => refreshConnectivityStatus());
-    window.addEventListener('offline', applyBrowserOfflineHint);
+    window.addEventListener('offline', () => {
+      applyBrowserOfflineHint();
+      refreshConnectivityStatus();
+    });
+    window.addEventListener('focus', onWindowFocusRefreshConnectivity);
+    document.addEventListener('visibilitychange', onWindowFocusRefreshConnectivity);
   }
 }
 

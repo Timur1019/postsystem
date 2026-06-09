@@ -9,6 +9,8 @@ import {
   offlineOpenShift,
   offlineSyncShiftFromServer,
 } from '../services/offline/desktopOfflineBridge';
+import { isApiNetworkError } from '../utils/apiNetworkError';
+import { canFallbackToOfflineCheckout } from '../store/connectivityStore';
 
 function shiftQueryKey(storeId, userId, offlineShift) {
   return ['cashier-shift', storeId, userId, offlineShift ? 'offline' : 'online'];
@@ -46,6 +48,14 @@ export async function fetchCurrentCashierShift(storeId, user, offlineShift = fal
     return shift;
   } catch (e) {
     if (e.response?.status === 404) return null;
+    if (
+      isApiNetworkError(e) &&
+      isDesktopOfflineBridge() &&
+      canFallbackToOfflineCheckout() &&
+      user?.id
+    ) {
+      return offlineGetCurrentShift({ storeId, cashierId: user.id });
+    }
     throw e;
   }
 }
@@ -112,6 +122,21 @@ export async function openCashierShift(storeId, user, offlineShift = false, stor
       const res = await cashierShiftApi.current(storeId);
       await mirrorOnlineShiftToLocal(res.data, storeId, user, storeName);
       return res.data;
+    }
+    if (
+      isApiNetworkError(e) &&
+      isDesktopOfflineBridge() &&
+      canFallbackToOfflineCheckout() &&
+      user?.id
+    ) {
+      const shift = await offlineOpenShift({
+        storeId,
+        cashierId: user.id,
+        cashierName: user?.fullName || user?.username || '',
+        storeName,
+      });
+      if (!shift) throw new Error('OFFLINE_SHIFT_OPEN_FAILED');
+      return shift;
     }
     throw e;
   }
