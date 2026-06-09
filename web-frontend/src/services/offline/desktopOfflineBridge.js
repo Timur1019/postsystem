@@ -1,6 +1,6 @@
 /** Desktop offline bridge (Electron IPC). */
 
-const OFFLINE_IPC_TIMEOUT_MS = 12_000;
+const OFFLINE_IPC_TIMEOUT_MS = 6_000;
 
 function withOfflineTimeout(promise) {
   return Promise.race([

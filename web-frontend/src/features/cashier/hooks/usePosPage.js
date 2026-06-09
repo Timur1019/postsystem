@@ -72,6 +72,7 @@ export function usePosPage() {
     total,
     setPayOpen,
     setSelectedLineId,
+    shift,
   });
 
   const cartHandlers = usePosCartHandlers({

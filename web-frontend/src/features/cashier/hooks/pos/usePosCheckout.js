@@ -12,110 +12,56 @@ import { isDesktopCashier } from '../../../../utils/printReceipt';
 import { clampPayAmount, round2 } from '../../../../utils/taxAmounts';
 import { saleApi } from '../../../../services/api';
 import { useCartStore } from '../../../../store/cartStore';
-import { canUseOfflineCheckout, canFallbackToOfflineCheckout, refreshConnectivityStatus } from '../../../../store/connectivityStore';
+import {
+  canFallbackToOfflineCheckout,
+  useConnectivityStore,
+} from '../../../../store/connectivityStore';
 import { isApiUnreachableError } from '../../../../utils/apiNetworkError';
 import {
-  offlineDecreaseStock,
-  offlineGetCurrentShift,
-  offlineSaveSale,
-} from '../../../../services/offline/desktopOfflineBridge';
-import {
-  buildOfflineCheckoutPayload,
-  buildOfflineSaleResponse,
-} from '../../../../services/offline/buildOfflineSaleResponse';
+  processOfflineCheckout,
+  shouldRunOfflineCheckoutFirst,
+} from '../../../../services/offline/offlineCheckoutService';
 import { useAuthStore } from '../../../../store/authStore';
-
-async function processOfflineCheckout({
-  storeId,
-  payment,
-  user,
-  getCheckoutLineItems,
-  getCheckoutOrderDiscountAmount,
-  getCheckoutOrderDiscountPercent,
-  items,
-}) {
-  const shift = await offlineGetCurrentShift({
-    storeId,
-    cashierId: user?.id,
-  });
-  if (!shift || shift.status !== 'OPEN') {
-    throw new Error('OFFLINE_SHIFT_REQUIRED');
-  }
-
-  const clientSaleId = crypto.randomUUID();
-  const receiptNumber = `OFF-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Date.now()).slice(-4)}`;
-  const cartItems = items;
-  const orderDiscountAmount = getCheckoutOrderDiscountAmount();
-  const orderDiscountPercent = getCheckoutOrderDiscountPercent();
-
-  const payload = buildOfflineCheckoutPayload({
-    storeId,
-    payment,
-    cartItems,
-    orderDiscountAmount,
-    orderDiscountPercent,
-  });
-
-  const response = buildOfflineSaleResponse({
-    clientSaleId,
-    receiptNumber,
-    payment,
-    storeId,
-    storeName: shift.storeName,
-    cashierName: user?.fullName || user?.username || shift.cashierName,
-    shift,
-    cartItems,
-    orderDiscountAmount,
-    orderDiscountPercent,
-  });
-
-  const saved = await offlineSaveSale({
-    clientShiftId: shift.id || shift.clientShiftId,
-    payload,
-    response,
-  });
-  if (!saved?.clientSaleId) {
-    throw new Error('OFFLINE_SALE_SAVE_FAILED');
-  }
-
-  for (const line of cartItems) {
-    await offlineDecreaseStock(line.productId, line.quantity);
-  }
-
-  await refreshConnectivityStatus();
-  return { data: response };
-}
 
 export function usePosCheckout({
   storeId,
   total,
   setPayOpen,
   setSelectedLineId,
+  shift = null,
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
+  const storeName = useConnectivityStore((s) => s.storeName);
 
   const clearCart = useCartStore((s) => s.clearCart);
   const getCheckoutLineItems = useCartStore((s) => s.getCheckoutLineItems);
   const getCheckoutOrderDiscountAmount = useCartStore((s) => s.getCheckoutOrderDiscountAmount);
   const getCheckoutOrderDiscountPercent = useCartStore((s) => s.getCheckoutOrderDiscountPercent);
 
+  const runOfflineCheckout = (payment, items) =>
+    processOfflineCheckout({
+      storeId,
+      payment,
+      user,
+      cachedShift: shift,
+      storeName: storeName || shift?.storeName || '',
+      getCheckoutLineItems,
+      getCheckoutOrderDiscountAmount,
+      getCheckoutOrderDiscountPercent,
+      items,
+    });
+
   const checkoutMutation = useMutation({
     mutationFn: async (payment) => {
       const items = useCartStore.getState().items;
-      if (canUseOfflineCheckout()) {
-        return processOfflineCheckout({
-          storeId,
-          payment,
-          user,
-          getCheckoutLineItems,
-          getCheckoutOrderDiscountAmount,
-          getCheckoutOrderDiscountPercent,
-          items,
-        });
+
+      if (shouldRunOfflineCheckoutFirst()) {
+        return runOfflineCheckout(payment, items);
       }
+
       try {
         return await saleApi.create({
           storeId: Number(storeId),
@@ -131,15 +77,7 @@ export function usePosCheckout({
         });
       } catch (err) {
         if (isApiUnreachableError(err) && canFallbackToOfflineCheckout()) {
-          return processOfflineCheckout({
-            storeId,
-            payment,
-            user,
-            getCheckoutLineItems,
-            getCheckoutOrderDiscountAmount,
-            getCheckoutOrderDiscountPercent,
-            items,
-          });
+          return runOfflineCheckout(payment, items);
         }
         throw err;
       }
@@ -188,7 +126,7 @@ export function usePosCheckout({
         toast.error(t('pos.shiftRequired'));
         return;
       }
-      if (e?.message === 'OFFLINE_SALE_SAVE_FAILED') {
+      if (e?.message === 'OFFLINE_SALE_SAVE_FAILED' || e?.message === 'offline_ipc_timeout') {
         toast.error(t('offline.saleSaveFailed'));
         return;
       }

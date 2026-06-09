@@ -76,7 +76,9 @@ export const useConnectivityStore = create((set, get) => ({
     const prev = get();
     const rawApiOnline =
       status.apiOnline !== undefined ? Boolean(status.apiOnline) : prev.apiOnline;
-    const apiOnline = stabilizeApiOnline(rawApiOnline);
+    const rawOfflineMode =
+      status.offlineMode !== undefined ? Boolean(status.offlineMode) : !rawApiOnline;
+    const apiOnline = rawOfflineMode ? false : stabilizeApiOnline(rawApiOnline);
     set({
       apiOnline,
       offlineMode: !apiOnline,
