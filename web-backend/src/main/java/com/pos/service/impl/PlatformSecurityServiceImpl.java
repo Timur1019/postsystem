@@ -17,6 +17,7 @@ import com.pos.repository.RoleRepository;
 import com.pos.repository.UserRepository;
 import com.pos.repository.spec.UserSpecifications;
 import com.pos.security.RoleName;
+import com.pos.security.cache.AuthenticatedUserCache;
 import com.pos.service.PlatformSecurityService;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
@@ -42,6 +43,7 @@ public class PlatformSecurityServiceImpl implements PlatformSecurityService {
     private final PlatformSettingRepository platformSettingRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final AuthenticatedUserCache authenticatedUserCache;
     private final RoleRepository roleRepository;
     private final TenantAccessSupport tenantAccess;
 
@@ -133,6 +135,7 @@ public class PlatformSecurityServiceImpl implements PlatformSecurityService {
         }
 
         User saved = userRepository.save(user);
+        authenticatedUserCache.evict(saved.getId());
         LogUtil.info(PlatformSecurityServiceImpl.class, "Platform super-admin updated: id={}", id);
         return toSuperAdminResponse(saved);
     }

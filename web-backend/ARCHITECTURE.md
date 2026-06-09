@@ -107,9 +107,9 @@ stockService.adjustStock(...);
 |-------|--------|--------|
 | Product | `ProductServiceImpl` | OK |
 | Sale | `SaleServiceImpl` | OK |
-| User | `UserServiceImpl` | Нужен split |
-| Report | `ReportServiceImpl` | Частично OK |
-| Stock reports | `StockReportServiceImpl` | Нужен split |
+| User | `UserServiceImpl` | OK (~80 строк) |
+| Report | `ReportServiceImpl` | OK (~110 строк, support/*) |
+| Stock reports | `StockReportServiceImpl` | OK (TashkentPeriod + TextUtil) |
 
 ---
 
@@ -312,7 +312,7 @@ com.pos/
 | **Sales** | Sale*, Return* | OK (facade есть) |
 | **Stock** | StoreStock*, StockReport* | P1 — split reports |
 | **Cashier** | CashierShift*, ZReport* | P2 |
-| **Identity** | User*, Auth* | P0 — split User |
+| **Identity** | User*, Auth* | OK — handlers + UserAccessPolicy |
 | **Platform** | Company*, PlatformSecurity*, ModuleAccess* | P2 |
 | **Sync** | CashierSync* | P1 |
 | **Analytics** | Report*, AI* | P2 |
@@ -377,18 +377,19 @@ service/user/
 
 ---
 
-### PR-5: Liquibase (ops maturity)
+### PR-5: Liquibase (ops maturity) ✅
 
 ```
 resources/db/changelog/
 ├── db.changelog-master.xml
-├── v1-baseline.sql          # schema.sql snapshot
-└── v2-v40-incremental.xml   # migration from migrations-prod.txt
+├── v1-baseline.xml          # app_schema_migrations + schema.sql (пустая БД)
+└── v2-incremental.xml       # 39 changesets из migrations-prod.txt
 ```
 
-- Spring Boot `spring.liquibase.enabled=true`
-- `deploy/migrate-db.sh` → вызывает Liquibase или остаётся fallback для prod
+- `spring.liquibase.enabled=true` (профили local/prod)
+- `deploy/migrate-db.sh` — fallback без рестарта backend
 - `ddl-auto: validate` сохраняется
+- Новые миграции: SQL в `db/` + changeset в `v2-incremental.xml`
 
 ---
 
@@ -501,8 +502,8 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 |---------|--------|------|
 | Классов >300 строк | 8 | 0 |
 | `extends Abstract*Support` | 3 product services | 0 |
-| Тестов (unit) | 13 | 30+ |
-| Liquibase | нет | да |
+| Тестов (unit) | 69 | 30+ ✅ |
+| Liquibase | да (PR-5) | да |
 | LogUtil в write services | ~60% | 100% |
 | PosExceptions vs raw throw | mixed | handlers 100% |
 
@@ -515,6 +516,6 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 3. **PR-4 PosExceptions + LogUtil**
 4. **PR-5 Liquibase**
 5. **PR-6 Stock reports**
-6. **PR-7 Tests**
+6. **PR-7 Tests** — handlers: ProductCreate, UserPin, StockDocument + util tests
 
 Каждый PR — отдельный review, API contract не ломается, deploy без downtime.

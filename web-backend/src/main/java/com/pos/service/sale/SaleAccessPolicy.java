@@ -2,7 +2,7 @@ package com.pos.service.sale;
 
 import com.pos.entity.Sale;
 import com.pos.entity.User;
-import com.pos.exception.BadRequestException;
+import com.pos.exception.PosExceptions;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class SaleAccessPolicy {
             return;
         }
         if (!isOwner(actor, sale)) {
-            throw new BadRequestException("Access denied");
+            throw PosExceptions.badRequest("Access denied");
         }
     }
 
@@ -35,7 +35,7 @@ public class SaleAccessPolicy {
         if (currentUserProvider.isCashier(actor) && isOwner(actor, sale)) {
             return;
         }
-        throw new BadRequestException("Нет прав на возврат этого чека");
+        throw PosExceptions.badRequest("Нет прав на возврат этого чека");
     }
 
     private void assertTenantSaleAccess(Sale sale) {

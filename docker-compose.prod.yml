@@ -7,6 +7,16 @@ services:
     image: postgres:15-alpine
     container_name: aurent-pos-db
     restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - max_connections=120
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - work_mem=8MB
+      - -c
+      - effective_cache_size=768MB
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-pos_db}
       POSTGRES_USER: ${POSTGRES_USER:-pos_user}
@@ -14,43 +24,8 @@ services:
       TZ: ${TZ:-Asia/Tashkent}
     volumes:
       - pos_pg_data:/var/lib/postgresql/data
-      - ./web-backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_customer_orders.sql:/docker-entrypoint-initdb.d/02-customer_orders.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_cash_register_configs.sql:/docker-entrypoint-initdb.d/03-cash_register_configs.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_companies_stores_users.sql:/docker-entrypoint-initdb.d/04-companies_stores_users.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_sales_store.sql:/docker-entrypoint-initdb.d/05-sales_store.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_z_reports_from_sales.sql:/docker-entrypoint-initdb.d/06-z_reports_from_sales.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_cashier_shifts.sql:/docker-entrypoint-initdb.d/07-cashier_shifts.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_cashier_shift_period.sql:/docker-entrypoint-initdb.d/08-cashier_shift_period.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_product_discount.sql:/docker-entrypoint-initdb.d/09-product_discount.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_sale_payment_split.sql:/docker-entrypoint-initdb.d/10-sale_payment_split.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_user_module_access.sql:/docker-entrypoint-initdb.d/11-user_module_access.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_uz_invoice_document_id.sql:/docker-entrypoint-initdb.d/12-uz_invoice_document_id.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_sale_item_returned_qty.sql:/docker-entrypoint-initdb.d/13-sale_item_returned_qty.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_stock_movements_enhanced.sql:/docker-entrypoint-initdb.d/14-stock_movements_enhanced.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_stock_receipts.sql:/docker-entrypoint-initdb.d/15-stock_receipts.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_stock_inventory_transfer.sql:/docker-entrypoint-initdb.d/16-stock_inventory_transfer.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_sale_order_discount.sql:/docker-entrypoint-initdb.d/17-sale_order_discount.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_z_report_discount.sql:/docker-entrypoint-initdb.d/18-z_report_discount.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_tenant_isolation.sql:/docker-entrypoint-initdb.d/19-tenant_isolation.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_company_login_code.sql:/docker-entrypoint-initdb.d/20-company_login_code.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_cashier_pin_login.sql:/docker-entrypoint-initdb.d/21-cashier_pin_login.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_company_tenant_display_settings.sql:/docker-entrypoint-initdb.d/22-company_tenant_display_settings.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_sale_type_decimal_quantity.sql:/docker-entrypoint-initdb.d/23-sale_type_decimal_quantity.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_product_quantity_rules.sql:/docker-entrypoint-initdb.d/24-product_quantity_rules.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_stock_inventory_quantity_numeric.sql:/docker-entrypoint-initdb.d/25-stock_inventory_quantity_numeric.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_tenant_username_global.sql:/docker-entrypoint-initdb.d/26-tenant_username_global.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_company_login_code_numeric.sql:/docker-entrypoint-initdb.d/27-company_login_code_numeric.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_fix_all_quantity_numeric.sql:/docker-entrypoint-initdb.d/28-fix_all_quantity_numeric.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_product_barcodes_tenant.sql:/docker-entrypoint-initdb.d/29-product_barcodes_tenant.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_product_type_extensions.sql:/docker-entrypoint-initdb.d/30-product_type_extensions.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_company_business_type.sql:/docker-entrypoint-initdb.d/31-company_business_type.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_company_business_type_extend.sql:/docker-entrypoint-initdb.d/32-company_business_type_extend.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_units_catalog.sql:/docker-entrypoint-initdb.d/33-units_catalog.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_product_template_code.sql:/docker-entrypoint-initdb.d/34-product_template_code.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_retail_vertical_fields.sql:/docker-entrypoint-initdb.d/35-retail_vertical_fields.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_z_report_payment_breakdown.sql:/docker-entrypoint-initdb.d/36-z_report_payment_breakdown.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_offline_sync.sql:/docker-entrypoint-initdb.d/37-offline_sync.sql:ro
+      # Схема и миграции — только Liquibase при старте backend (db/changelog/).
+      # Не монтируйте SQL в docker-entrypoint-initdb.d — иначе три источника правды.
     ports:
       # Только localhost сервера — для DBeaver/DataGrip через SSH (не в интернет)
       - '127.0.0.1:5432:5432'
@@ -102,6 +77,11 @@ services:
       MAIL_SUPER_ADMIN_LOGIN_RECIPIENTS: ${MAIL_SUPER_ADMIN_LOGIN_RECIPIENTS:-aripov1219@gmail.com,maxmudov71707@gmail.com}
       MAIL_SEND_CREDENTIALS_ON_CREATE: ${MAIL_SEND_CREDENTIALS_ON_CREATE:-true}
       MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+      HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-25}
+      HIKARI_MIN_IDLE: ${HIKARI_MIN_IDLE:-8}
+      TOMCAT_MAX_THREADS: ${TOMCAT_MAX_THREADS:-100}
+      SPRINGDOC_SWAGGER_UI_ENABLED: ${SPRINGDOC_SWAGGER_UI_ENABLED:-false}
+      SPRINGDOC_API_DOCS_ENABLED: ${SPRINGDOC_API_DOCS_ENABLED:-false}
     ports:
       - '${API_PORT:-8080}:8080'
     volumes:
@@ -112,7 +92,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 12
-      start_period: 180s
+      start_period: 60s
     networks:
       - pos-net
 

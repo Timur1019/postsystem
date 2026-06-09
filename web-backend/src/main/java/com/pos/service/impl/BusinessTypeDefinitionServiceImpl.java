@@ -11,6 +11,7 @@ import com.pos.repository.BusinessTypeDefinitionRepository;
 import com.pos.repository.BusinessTypeFieldRepository;
 import com.pos.service.BusinessTypeDefinitionService;
 import com.pos.util.LogUtil;
+import com.pos.util.TextUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,7 +59,7 @@ public class BusinessTypeDefinitionServiceImpl implements BusinessTypeDefinition
         BusinessTypeDefinition saved = typeRepository.save(BusinessTypeDefinition.builder()
             .code(code)
             .name(request.name().trim())
-            .description(trimOrNull(request.description()))
+            .description(TextUtil.trimOrNull(request.description()))
             .active(request.active() == null || request.active())
             .sortOrder(request.sortOrder() != null ? request.sortOrder() : 100)
             .build());
@@ -71,7 +72,7 @@ public class BusinessTypeDefinitionServiceImpl implements BusinessTypeDefinition
     public BusinessTypeDetailResponse update(Integer id, UpdateBusinessTypeRequest request) {
         BusinessTypeDefinition entity = requireDetailed(id);
         entity.setName(request.name().trim());
-        entity.setDescription(trimOrNull(request.description()));
+        entity.setDescription(TextUtil.trimOrNull(request.description()));
         if (request.active() != null) {
             entity.setActive(request.active());
         }
@@ -109,8 +110,8 @@ public class BusinessTypeDefinitionServiceImpl implements BusinessTypeDefinition
             .required(Boolean.TRUE.equals(request.required()))
             .enabled(request.enabled() == null || request.enabled())
             .sortOrder(request.sortOrder() != null ? request.sortOrder() : 100)
-            .placeholder(trimOrNull(request.placeholder()))
-            .hint(trimOrNull(request.hint()))
+            .placeholder(TextUtil.trimOrNull(request.placeholder()))
+            .hint(TextUtil.trimOrNull(request.hint()))
             .build();
         applyOptions(field, request.options());
         type.getFields().add(field);
@@ -138,8 +139,8 @@ public class BusinessTypeDefinitionServiceImpl implements BusinessTypeDefinition
         if (request.sortOrder() != null) {
             field.setSortOrder(request.sortOrder());
         }
-        field.setPlaceholder(trimOrNull(request.placeholder()));
-        field.setHint(trimOrNull(request.hint()));
+        field.setPlaceholder(TextUtil.trimOrNull(request.placeholder()));
+        field.setHint(TextUtil.trimOrNull(request.hint()));
         field.getOptions().clear();
         applyOptions(field, request.options());
         LogUtil.info(BusinessTypeDefinitionServiceImpl.class, "Field updated: id={}", fieldId);
@@ -182,7 +183,4 @@ public class BusinessTypeDefinitionServiceImpl implements BusinessTypeDefinition
         field.getOptions().addAll(entities);
     }
 
-    private static String trimOrNull(String value) {
-        return StringUtils.hasText(value) ? value.trim() : null;
-    }
 }

@@ -16,6 +16,7 @@ import com.pos.repository.spec.CompanySpecifications;
 import com.pos.service.CompanyService;
 import com.pos.util.CompanyLoginCodeUtil;
 import com.pos.util.LogUtil;
+import com.pos.util.TextUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -66,10 +67,10 @@ public class CompanyServiceImpl implements CompanyService {
         Company company = Company.builder()
             .name(name)
             .loginCode(loginCode)
-            .legalName(trimOrNull(request.legalName()))
-            .tin(trimOrNull(request.tin()))
-            .address(trimOrNull(request.address()))
-            .phone(trimOrNull(request.phone()))
+            .legalName(TextUtil.trimOrNull(request.legalName()))
+            .tin(TextUtil.trimOrNull(request.tin()))
+            .address(TextUtil.trimOrNull(request.address()))
+            .phone(TextUtil.trimOrNull(request.phone()))
             .businessType(BusinessTypeParser.parseOrDefault(request.businessType(), BusinessType.UNIVERSAL))
             .active(request.active() == null || request.active())
             .build();
@@ -89,10 +90,10 @@ public class CompanyServiceImpl implements CompanyService {
             }
             company.setName(name);
         }
-        if (request.legalName() != null) company.setLegalName(trimOrNull(request.legalName()));
-        if (request.tin() != null) company.setTin(trimOrNull(request.tin()));
-        if (request.address() != null) company.setAddress(trimOrNull(request.address()));
-        if (request.phone() != null) company.setPhone(trimOrNull(request.phone()));
+        if (request.legalName() != null) company.setLegalName(TextUtil.trimOrNull(request.legalName()));
+        if (request.tin() != null) company.setTin(TextUtil.trimOrNull(request.tin()));
+        if (request.address() != null) company.setAddress(TextUtil.trimOrNull(request.address()));
+        if (request.phone() != null) company.setPhone(TextUtil.trimOrNull(request.phone()));
         if (request.businessType() != null) {
             company.setBusinessType(BusinessTypeParser.parseRequired(request.businessType()));
         }
@@ -151,8 +152,4 @@ public class CompanyServiceImpl implements CompanyService {
             : companyRepository.existsByLoginCodeIgnoreCaseAndIdNot(code, excludeId);
     }
 
-    private static String trimOrNull(String value) {
-        if (!StringUtils.hasText(value)) return null;
-        return value.trim();
-    }
 }

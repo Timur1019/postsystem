@@ -1,5 +1,24 @@
 # Деплой Aurent POS на Ubuntu-сервер
 
+## Архитектура (senior-level для текущего масштаба)
+
+```
+git pull → deploy.sh
+    ├── postgres (volume, healthcheck)
+    ├── backend  (Liquibase → JPA validate → API)
+    └── frontend (nginx, /api → backend)
+```
+
+| Компонент | Оценка | Комментарий |
+|-----------|--------|-------------|
+| Docker Compose prod | ✅ | healthcheck, depends_on, secrets из `.env` |
+| Скрипты deploy | ✅ | `set -euo pipefail`, проверка JWT/паролей, ожидание health |
+| Миграции БД | ✅ | один путь: Liquibase (после PR-5) |
+| CI/CD backend | ✅ | `deploy-web.yml` + desktop workflow |
+| Бэкапы Postgres | ✅ | `backup-db.sh` + cron |
+| SSL / reverse proxy | ⚠️ | пример nginx есть, не в compose |
+| K8s | — | не нужен на этом этапе |
+
 Схема:
 
 ```
@@ -53,14 +72,24 @@ bash deploy/prod-check.sh
 bash deploy/deploy.sh
 ```
 
-Скрипт сам поднимает Postgres, применяет **новые** миграции из списка `deploy/migrations-prod.txt` (учёт в `app_schema_migrations`), затем запускает backend и frontend. Ручной `psql` для этих миграций не нужен.
+Скрипт поднимает Postgres → backend (Liquibase) → frontend.
 
-Новую миграцию добавьте в `web-backend/src/main/resources/db/` и пропишите имя файла в `deploy/migrations-prod.txt`.
+**Один источник правды для схемы БД:** Liquibase `web-backend/src/main/resources/db/changelog/`.
 
-Только миграции (БД уже запущена):
+| Этап | Кто |
+|------|-----|
+| Пустая БД | backend: `v1-baseline` (schema.sql) + `v2-incremental` |
+| Уже работающий prod | Liquibase видит `app_schema_migrations` → пропускает применённые |
+| Hotfix без рестарта backend | `bash deploy/migrate-db.sh` (legacy fallback) |
+
+Новая миграция: SQL в `db/` + changeset в `v2-incremental.xml`.
+
+Legacy migrate-db (опционально):
 
 ```bash
 bash deploy/migrate-db.sh
+# или вместе с deploy:
+RUN_LEGACY_MIGRATE=1 bash deploy/deploy.sh
 ```
 
 Проверка:
@@ -191,7 +220,47 @@ PLATFORM=mac COPY_TO_DOWNLOADS=1 ./scripts/build-desktop-release.sh
 | **UI кассы** (React) | `bash deploy/git-update.sh` → на кассе «Вид → Обновить» |
 | **Electron-оболочка** | CI → `/downloads/desktop/` → auto-update в приложении |
 
-## 8. Полезные команды
+## 8. Бэкапы PostgreSQL
+
+Ручной дамп:
+
+```bash
+bash deploy/backup-db.sh
+# → backups/postgres/pos_db_YYYYMMDD_HHMMSS.sql.gz
+```
+
+Ежедневно в 03:00 (cron на сервере):
+
+```bash
+bash deploy/install-backup-cron.sh
+```
+
+Восстановление (осторожно — перезаписывает БД):
+
+```bash
+bash deploy/restore-db.sh backups/postgres/pos_db_20260610_030001.sql.gz
+```
+
+Переменные: `BACKUP_DIR`, `RETENTION_DAYS` (по умолчанию 14).
+
+## 9. CI/CD — автодеплой web (GitHub Actions)
+
+Workflow **Deploy Web Stack** (`.github/workflows/deploy-web.yml`):
+
+- триггер: push в `main` при изменении `web-backend/`, `web-frontend/`, `deploy/`
+- шаги: бэкап БД → `git-update.sh` на сервере → health check
+
+Secrets (те же, что для desktop):
+
+| Secret | Назначение |
+|--------|------------|
+| `DEPLOY_SSH_KEY` или `DEPLOY_SSH_KEY_B64` | приватный SSH-ключ |
+| `DEPLOY_HOST` | IP/домен сервера |
+| `DEPLOY_USER` | SSH-пользователь (по умолчанию `root`) |
+
+Ручной запуск: GitHub → Actions → **Deploy Web Stack** → Run workflow.
+
+## 10. Полезные команды
 
 ```bash
 docker compose -f docker-compose.prod.yml ps
@@ -206,7 +275,7 @@ docker compose -f docker-compose.prod.yml down
 bash deploy/git-update.sh
 ```
 
-## 9. Подключение к БД (DataGrip / DBeaver)
+## 11. Подключение к БД (DataGrip / DBeaver)
 
 На сервере Postgres слушает только внутри Docker. С Mac — SSH-туннель:
 
@@ -222,7 +291,7 @@ ssh -L 5433:127.0.0.1:5432 user@IP_СЕРВЕРА
 docker compose -f docker-compose.prod.yml exec -it postgres psql -U pos_user -d pos_db
 ```
 
-## 10. SSL (по желанию)
+## 12. SSL (по желанию)
 
 См. `deploy/nginx-host.conf.example` и Certbot для домена.
 

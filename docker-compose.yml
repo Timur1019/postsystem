@@ -10,46 +10,7 @@ services:
       - "5433:5432"
     volumes:
       - pos_pg_data:/var/lib/postgresql/data
-      - ./web-backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_customer_orders.sql:/docker-entrypoint-initdb.d/02-customer_orders.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_cash_register_configs.sql:/docker-entrypoint-initdb.d/03-cash_register_configs.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_companies_stores_users.sql:/docker-entrypoint-initdb.d/04-companies_stores_users.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_sales_store.sql:/docker-entrypoint-initdb.d/05-sales_store.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_z_reports_from_sales.sql:/docker-entrypoint-initdb.d/06-z_reports_from_sales.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_cashier_shifts.sql:/docker-entrypoint-initdb.d/07-cashier_shifts.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_cashier_shift_period.sql:/docker-entrypoint-initdb.d/08-cashier_shift_period.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_product_discount.sql:/docker-entrypoint-initdb.d/09-product_discount.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_sale_payment_split.sql:/docker-entrypoint-initdb.d/10-sale_payment_split.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_user_module_access.sql:/docker-entrypoint-initdb.d/11-user_module_access.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_uz_invoice_document_id.sql:/docker-entrypoint-initdb.d/12-uz_invoice_document_id.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_sale_item_returned_qty.sql:/docker-entrypoint-initdb.d/13-sale_item_returned_qty.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_stock_movements_enhanced.sql:/docker-entrypoint-initdb.d/14-stock_movements_enhanced.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_stock_receipts.sql:/docker-entrypoint-initdb.d/15-stock_receipts.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_stock_inventory_transfer.sql:/docker-entrypoint-initdb.d/16-stock_inventory_transfer.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_sale_order_discount.sql:/docker-entrypoint-initdb.d/17-sale_order_discount.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_z_report_discount.sql:/docker-entrypoint-initdb.d/18-z_report_discount.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_tenant_isolation.sql:/docker-entrypoint-initdb.d/19-tenant_isolation.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_company_login_code.sql:/docker-entrypoint-initdb.d/20-company_login_code.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_cashier_pin_login.sql:/docker-entrypoint-initdb.d/21-cashier_pin_login.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_company_tenant_display_settings.sql:/docker-entrypoint-initdb.d/22-company_tenant_display_settings.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_sale_type_decimal_quantity.sql:/docker-entrypoint-initdb.d/23-sale_type_decimal_quantity.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_product_quantity_rules.sql:/docker-entrypoint-initdb.d/24-product_quantity_rules.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_stock_inventory_quantity_numeric.sql:/docker-entrypoint-initdb.d/25-stock_inventory_quantity_numeric.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_tenant_username_global.sql:/docker-entrypoint-initdb.d/26-tenant_username_global.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_company_login_code_numeric.sql:/docker-entrypoint-initdb.d/27-company_login_code_numeric.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_fix_all_quantity_numeric.sql:/docker-entrypoint-initdb.d/28-fix_all_quantity_numeric.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_product_barcodes_tenant.sql:/docker-entrypoint-initdb.d/29-product_barcodes_tenant.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_product_type_extensions.sql:/docker-entrypoint-initdb.d/30-product_type_extensions.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_company_business_type.sql:/docker-entrypoint-initdb.d/31-company_business_type.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_company_business_type_extend.sql:/docker-entrypoint-initdb.d/32-company_business_type_extend.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_units_catalog.sql:/docker-entrypoint-initdb.d/33-units_catalog.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_product_template_code.sql:/docker-entrypoint-initdb.d/34-product_template_code.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_retail_vertical_fields.sql:/docker-entrypoint-initdb.d/35-retail_vertical_fields.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_z_report_payment_breakdown.sql:/docker-entrypoint-initdb.d/36-z_report_payment_breakdown.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_offline_sync.sql:/docker-entrypoint-initdb.d/37-offline_sync.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_store_business_type.sql:/docker-entrypoint-initdb.d/38-store_business_type.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_platform_security.sql:/docker-entrypoint-initdb.d/39-platform_security.sql:ro
-      - ./web-backend/src/main/resources/db/migration_manual_business_constructor.sql:/docker-entrypoint-initdb.d/40-business_constructor.sql:ro
+      # Миграции — Liquibase при старте backend (см. web-backend/src/main/resources/db/changelog/).
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pos_user -d pos_db"]
       interval: 5s
@@ -65,7 +26,8 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: prod
+      # local — Swagger включён (см. application-local.yml). Prod: docker-compose.prod.yml
+      SPRING_PROFILES_ACTIVE: local
       DB_URL: jdbc:postgresql://postgres:5432/pos_db
       DB_USERNAME: pos_user
       DB_PASSWORD: pos_password
@@ -75,6 +37,8 @@ services:
       AI_ASSISTANT_BASE_URL: ${AI_ASSISTANT_BASE_URL:-https://api.deepseek.com}
       AI_ASSISTANT_MODEL: ${AI_ASSISTANT_MODEL:-deepseek-chat}
       AI_ASSISTANT_API_KEY: ${AI_ASSISTANT_API_KEY:-}
+      MAIL_ENABLED: "false"
+      MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
     ports:
       - "8080:8080"
 

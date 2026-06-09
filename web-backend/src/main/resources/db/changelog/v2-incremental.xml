@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="v2-001-customer_orders" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_customer_orders.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_customer_orders.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_customer_orders.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-002-cash_register_configs" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_cash_register_configs.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_cash_register_configs.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_cash_register_configs.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-003-companies_stores_users" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_companies_stores_users.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_companies_stores_users.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_companies_stores_users.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-004-sales_store" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_sales_store.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_sales_store.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_sales_store.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-005-z_reports_from_sales" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_z_reports_from_sales.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_z_reports_from_sales.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_z_reports_from_sales.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-006-cashier_shifts" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_cashier_shifts.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_cashier_shifts.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_cashier_shifts.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-007-cashier_shift_period" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_cashier_shift_period.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_cashier_shift_period.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_cashier_shift_period.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-008-product_discount" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_product_discount.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_product_discount.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_product_discount.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-009-sale_payment_split" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_sale_payment_split.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_sale_payment_split.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_sale_payment_split.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-010-user_module_access" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_user_module_access.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_user_module_access.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_user_module_access.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-011-uz_invoice_document_id" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_uz_invoice_document_id.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_uz_invoice_document_id.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_uz_invoice_document_id.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-012-sale_item_returned_qty" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_sale_item_returned_qty.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_sale_item_returned_qty.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_sale_item_returned_qty.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-013-stock_movements_enhanced" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_stock_movements_enhanced.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_stock_movements_enhanced.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_stock_movements_enhanced.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-014-stock_receipts" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_stock_receipts.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_stock_receipts.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_stock_receipts.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-015-stock_inventory_transfer" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_stock_inventory_transfer.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_stock_inventory_transfer.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_stock_inventory_transfer.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-016-sale_order_discount" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_sale_order_discount.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_sale_order_discount.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_sale_order_discount.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-017-z_report_discount" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_z_report_discount.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_z_report_discount.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_z_report_discount.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-018-tenant_isolation" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_tenant_isolation.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_tenant_isolation.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_tenant_isolation.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-019-company_login_code" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_company_login_code.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_company_login_code.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_company_login_code.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-020-cashier_pin_login" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_cashier_pin_login.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_cashier_pin_login.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_cashier_pin_login.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-021-tenant_username_global" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_tenant_username_global.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_tenant_username_global.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_tenant_username_global.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-022-company_login_code_numeric" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_company_login_code_numeric.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_company_login_code_numeric.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_company_login_code_numeric.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-023-company_tenant_display_settings" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_company_tenant_display_settings.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_company_tenant_display_settings.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_company_tenant_display_settings.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-024-sale_type_decimal_quantity" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_sale_type_decimal_quantity.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_sale_type_decimal_quantity.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_sale_type_decimal_quantity.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-025-product_quantity_rules" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_product_quantity_rules.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_product_quantity_rules.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_product_quantity_rules.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-026-stock_inventory_quantity_numeric" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_stock_inventory_quantity_numeric.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_stock_inventory_quantity_numeric.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_stock_inventory_quantity_numeric.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-027-fix_all_quantity_numeric" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_fix_all_quantity_numeric.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_fix_all_quantity_numeric.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_fix_all_quantity_numeric.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-028-product_barcodes_tenant" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_product_barcodes_tenant.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_product_barcodes_tenant.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_product_barcodes_tenant.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-029-product_type_extensions" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_product_type_extensions.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_product_type_extensions.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_product_type_extensions.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-030-company_business_type" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_company_business_type.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_company_business_type.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_company_business_type.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-031-company_business_type_extend" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_company_business_type_extend.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_company_business_type_extend.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_company_business_type_extend.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-032-units_catalog" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_units_catalog.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_units_catalog.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_units_catalog.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-033-product_template_code" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_product_template_code.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_product_template_code.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_product_template_code.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-034-retail_vertical_fields" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_retail_vertical_fields.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_retail_vertical_fields.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_retail_vertical_fields.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-035-store_business_type" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_store_business_type.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_store_business_type.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_store_business_type.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-036-platform_security" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_platform_security.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_platform_security.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_platform_security.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-037-z_report_payment_breakdown" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_z_report_payment_breakdown.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_z_report_payment_breakdown.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_z_report_payment_breakdown.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-038-offline_sync" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_offline_sync.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_offline_sync.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_offline_sync.sql"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="v2-039-business_constructor" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_business_constructor.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_business_constructor.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_business_constructor.sql"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Совместимость с deploy/migrate-db.sh (учёт уже применённых SQL). -->
+    <changeSet id="v1-app-schema-migrations-table" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="app_schema_migrations"/>
+            </not>
+        </preConditions>
+        <sql>
+            CREATE TABLE app_schema_migrations (
+                filename    VARCHAR(255) PRIMARY KEY,
+                applied_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+        </sql>
+    </changeSet>
+
+    <!-- Полная схема для пустой БД (docker initdb / новый инстанс). -->
+    <changeSet id="v1-baseline-schema" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="roles"/>
+            </not>
+        </preConditions>
+        <sqlFile path="schema.sql" relativeToChangelogFile="false" splitStatements="false"/>
+    </changeSet>
+
+</databaseChangeLog>

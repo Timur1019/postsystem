@@ -18,7 +18,7 @@
 7. **Composition, не наследование** — `@Component` Support, не `extends AbstractXxxService`.
 8. **Interface + Impl** для каждого сервиса, публичного наружу.
 9. **Файл ≤ 200 строк** (Handler) / **≤ 300 строк** (Service). Больше — split.
-10. **Схема БД только через Liquibase** — не `ddl-auto: update`, не ручные SQL без changelog.
+10. **Схема БД только через Liquibase** — `db/changelog/`, не `ddl-auto: update`. Новый SQL → changeset в `v2-incremental.xml`.
 
 ---
 
@@ -59,7 +59,7 @@ com.pos/
 | Общая валидация домена | `{domain}/support/` |
 | Проверка tenant | `service/support/TenantAccessSupport` |
 | Сложный отчёт SQL | `repository/report/impl/` + `resources/sql/` |
-| Миграция БД | `resources/db/changelog/` |
+| Миграция БД | `resources/db/changelog/v2-incremental.xml` + SQL в `db/` |
 
 ---
 
@@ -216,6 +216,11 @@ log.info("...");
 | Ошибка клиенту | `PosExceptions` / `PosException` | `RuntimeException` |
 | Маппинг | MapStruct + `PosMapperConfig` | Entity в response |
 | Tenant | `TenantAccessSupport` | Копипаст `companyId` checks |
+| trim / search | `TextUtil` | private `trimOrNull` в каждом сервисе |
+| Даты отчётов | `TashkentPeriod.dayRange` | копия `atStartOfDay(ZONE)` |
+| save + DB errors | `DbExceptionTranslator.persist` | try/catch вокруг `saveAndFlush` |
+| Складские документы | `StockDocumentSupport` | копия requireLines/requireActiveProduct |
+| Ошибки в handlers | `PosExceptions.*` | `new BadRequestException(...)` |
 | Поиск user/product | `*LookupSupport` | Дублирование Specification |
 | SQL отчёты | `resources/sql/` + repository impl | `@Query` на 50 строк в service |
 | Тест бизнес-правила | Unit test на Handler/Support | Только manual QA |
@@ -262,6 +267,11 @@ log.info("...");
 | Файл | Почему |
 |------|--------|
 | `ProductServiceImpl` | Facade, только delegate |
+| `ProductCreateHandler` / `ProductUpdateHandler` | Один use-case на класс |
+| `UserServiceImpl` (~90 строк) | Facade → Create/Update handlers |
+| `UserAccessPolicy` / `UserPinService` | Support + выделенный поддомен |
+| `ReportServiceImpl` + `report/support/*` | Facade + DbLoader + cache |
+| `StockDocumentSupport` | Общие проверки складских документов |
 | `SaleServiceImpl` | Facade + payment strategies |
 | `TenantAccessSupport` | Support component |
 | `PosMapperConfig` | Strict MapStruct |
@@ -272,8 +282,7 @@ log.info("...");
 
 | Файл | Проблема | Куда идём |
 |------|----------|-----------|
-| `AbstractProductCatalogSupport` | Наследование вместо composition | `product/support/*` |
-| `UserServiceImpl` (415 строк) | God class | `UserPinService`, `UserProvisioningService` |
+| `extends AbstractXxxService` (кроме cache) | Наследование вместо composition | `{domain}/support/*` + Handler |
 | `new ResourceNotFoundException("...")` | Нет фабрики | `PosExceptions.notFound(...)` |
 | `migration_manual_*.sql` | Нет версионирования | Liquibase changelog |
 

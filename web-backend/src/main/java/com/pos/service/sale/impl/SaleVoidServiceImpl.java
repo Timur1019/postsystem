@@ -5,8 +5,7 @@ import com.pos.entity.Product;
 import com.pos.entity.Sale;
 import com.pos.domain.StockMovementType;
 import com.pos.entity.StockMovement;
-import com.pos.exception.BadRequestException;
-import com.pos.exception.ResourceNotFoundException;
+import com.pos.exception.PosExceptions;
 import com.pos.mapper.SaleMapper;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.SaleRepository;
@@ -40,12 +39,12 @@ public class SaleVoidServiceImpl implements SaleVoidService {
     @Override
     public SaleResponse voidSale(UUID id, String reason) {
         Sale sale = saleRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Sale not found"));
+            .orElseThrow(() -> PosExceptions.notFound("Sale"));
 
         accessPolicy.assertCanVoid(sale);
 
         if (sale.getStatus() == Sale.SaleStatus.VOIDED) {
-            throw new BadRequestException("Sale already voided");
+            throw PosExceptions.badRequest("Sale already voided");
         }
 
         String r = reason != null ? reason : "";
@@ -77,7 +76,7 @@ public class SaleVoidServiceImpl implements SaleVoidService {
         }
 
         if (!anyRemaining && SalePartialReturnServiceImpl.allItemsFullyReturned(sale)) {
-            throw new BadRequestException("Чек уже полностью возвращён");
+            throw PosExceptions.badRequest("Чек уже полностью возвращён");
         }
 
         sale.setStatus(Sale.SaleStatus.VOIDED);

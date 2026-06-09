@@ -3,7 +3,7 @@ package com.pos.service.sale.impl;
 import com.pos.dto.sale.SaleResponse;
 import com.pos.dto.shared.PageResponse;
 import com.pos.entity.Sale;
-import com.pos.exception.ResourceNotFoundException;
+import com.pos.exception.PosExceptions;
 import com.pos.mapper.SaleMapper;
 import com.pos.repository.SaleRepository;
 import com.pos.repository.sale.SaleSearchRepository;
@@ -43,7 +43,7 @@ public class SaleQueryServiceImpl implements SaleQueryService {
     @Override
     public SaleResponse getSale(UUID id) {
         Sale sale = saleRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Sale not found"));
+            .orElseThrow(() -> PosExceptions.notFound("Sale not found"));
         accessPolicy.assertCanView(sale);
         return saleMapper.toResponse(sale);
     }
@@ -51,17 +51,17 @@ public class SaleQueryServiceImpl implements SaleQueryService {
     @Override
     public SaleResponse getByReceiptNumber(String receiptNumber) {
         if (receiptNumber == null || receiptNumber.isBlank()) {
-            throw new ResourceNotFoundException("Receipt not found");
+            throw PosExceptions.notFound("Receipt not found");
         }
 
         Sale sale;
         Optional<String> exact = ReceiptLookupSupport.resolveExactReceiptNumber(receiptNumber);
         if (exact.isPresent()) {
             sale = saleRepository.findByReceiptNumber(exact.get())
-                .orElseThrow(() -> new ResourceNotFoundException("Receipt not found"));
+                .orElseThrow(() -> PosExceptions.notFound("Receipt not found"));
         } else {
             String suffix = ReceiptLookupSupport.extractNumericSuffix(receiptNumber)
-                .orElseThrow(() -> new ResourceNotFoundException("Receipt not found"));
+                .orElseThrow(() -> PosExceptions.notFound("Receipt not found"));
             Integer companyId = tenantAccess.requireEffectiveCompanyId();
             sale = saleRepository
                 .findByReceiptSuffixAndCompanyOrderByCreatedAtDesc(
@@ -71,7 +71,7 @@ public class SaleQueryServiceImpl implements SaleQueryService {
                 )
                 .stream()
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("Receipt not found"));
+                .orElseThrow(() -> PosExceptions.notFound("Receipt not found"));
         }
 
         accessPolicy.assertCanView(sale);

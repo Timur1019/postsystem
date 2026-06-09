@@ -12,11 +12,12 @@ import org.springframework.stereotype.Component;
 public class PosCacheRefreshScheduler {
 
     private final PosCacheRefreshOrchestrator cacheRefreshOrchestrator;
+    private final PosCacheWarmupRunner cacheWarmupRunner;
 
     @EventListener(ApplicationReadyEvent.class)
     public void warmOnStartup() {
-        LogUtil.info(PosCacheRefreshScheduler.class, "Warming POS caches on startup");
-        cacheRefreshOrchestrator.refreshAll();
+        LogUtil.info(PosCacheRefreshScheduler.class, "Scheduling POS cache warmup in background");
+        cacheWarmupRunner.warmInBackground();
     }
 
     @Scheduled(cron = "${app.cache.refresh-cron:0 0 1 * * *}", zone = "${app.cache.zone-id:Asia/Tashkent}")

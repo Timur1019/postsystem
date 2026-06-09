@@ -110,18 +110,12 @@ else
 fi
 
 echo ""
-echo "5. Обязательные SQL-миграции в compose"
+echo "5. Liquibase changelog"
 for f in \
-  schema.sql \
-  db/migration_manual_customer_orders.sql \
-  db/migration_manual_cash_register_configs.sql \
-  db/migration_manual_companies_stores_users.sql \
-  db/migration_manual_sales_store.sql \
-  db/migration_manual_z_reports_from_sales.sql \
-  db/migration_manual_cashier_shifts.sql \
-  db/migration_manual_cashier_shift_period.sql \
-  db/migration_manual_product_discount.sql \
-  db/migration_manual_sale_payment_split.sql
+  db/changelog/db.changelog-master.xml \
+  db/changelog/v1-baseline.xml \
+  db/changelog/v2-incremental.xml \
+  schema.sql
 do
   if [[ -f "web-backend/src/main/resources/$f" ]]; then
     ok "$f"

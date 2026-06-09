@@ -12,14 +12,14 @@ import com.pos.entity.StockTransfer;
 import com.pos.entity.StockTransferLine;
 import com.pos.entity.Store;
 import com.pos.entity.User;
-import com.pos.exception.BadRequestException;
-import com.pos.exception.ResourceNotFoundException;
+import com.pos.exception.PosExceptions;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.repository.StockTransferRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.stock.StockTransferService;
+import com.pos.service.stock.support.StockDocumentSupport;
 import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -52,26 +52,25 @@ public class StockTransferServiceImpl implements StockTransferService {
     private final StoreRepository storeRepository;
     private final CurrentUserProvider currentUserProvider;
     private final TenantAccessSupport tenantAccess;
+    private final StockDocumentSupport stockDocument;
 
     @Override
     public StockTransferResponse create(CreateStockTransferRequest request) {
         if (request.fromStoreId().equals(request.toStoreId())) {
-            throw new BadRequestException("From and to store must differ");
+            throw PosExceptions.badRequest("From and to store must differ");
         }
-        if (request.lines() == null || request.lines().isEmpty()) {
-            throw new BadRequestException("Add at least one line");
-        }
+        stockDocument.requireLines(request.lines());
         User user = currentUserProvider.requireCurrentUser();
         Store fromStore = storeRepository.findById(request.fromStoreId())
-            .orElseThrow(() -> new BadRequestException("From store not found"));
+            .orElseThrow(() -> PosExceptions.notFound("From store"));
         Store toStore = storeRepository.findById(request.toStoreId())
-            .orElseThrow(() -> new BadRequestException("To store not found"));
+            .orElseThrow(() -> PosExceptions.notFound("To store"));
         tenantAccess.assertCanAccessStore(fromStore);
         tenantAccess.assertCanAccessStore(toStore);
         if (fromStore.getCompany() == null
             || toStore.getCompany() == null
             || !fromStore.getCompany().getId().equals(toStore.getCompany().getId())) {
-            throw new BadRequestException("Transfer is allowed only between stores of the same company");
+            throw PosExceptions.badRequest("Transfer is allowed only between stores of the same company");
         }
 
         String number = nextTransferNumber();
@@ -89,18 +88,12 @@ public class StockTransferServiceImpl implements StockTransferService {
         List<StockTransferLine> lines = new ArrayList<>();
 
         for (StockTransferLineRequest lineReq : request.lines()) {
-            Product product = productRepository.findById(lineReq.productId())
-                .orElseThrow(() -> new BadRequestException("Product not found: " + lineReq.productId()));
-            if (!product.isActive()) {
-                throw new BadRequestException("Product is not active: " + product.getName());
-            }
+            Product product = stockDocument.requireActiveProduct(lineReq.productId());
             BigDecimal q = QuantityUtil.normalize(lineReq.quantity());
-            if (q.signum() <= 0) {
-                throw new BadRequestException("Quantity must be greater than zero");
-            }
+            stockDocument.requirePositiveQuantity(q);
             com.pos.util.QuantityValidator.validate(product, q);
             if (product.getStockQuantity().compareTo(q) < 0) {
-                throw new BadRequestException("Insufficient stock for " + product.getName());
+                throw PosExceptions.badRequest("Insufficient stock for " + product.getName());
             }
 
             lines.add(StockTransferLine.builder()
@@ -143,7 +136,7 @@ public class StockTransferServiceImpl implements StockTransferService {
     @Transactional(readOnly = true)
     public StockTransferResponse getById(UUID id) {
         StockTransfer transfer = stockTransferRepository.findDetailedById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Transfer not found"));
+            .orElseThrow(() -> PosExceptions.notFound("Transfer"));
         tenantAccess.assertCanAccessStore(transfer.getFromStore());
         return toResponse(transfer);
     }

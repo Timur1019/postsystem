@@ -1,12 +1,13 @@
 package com.pos.service.ai.support;
 
+import com.pos.util.TashkentPeriod;
+
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 
 public final class AnalyticsPeriodSupport {
 
-    public static final ZoneId ZONE = ZoneId.of("Asia/Tashkent");
+    public static final java.time.ZoneId ZONE = TashkentPeriod.ZONE;
 
     private AnalyticsPeriodSupport() {
     }
@@ -15,14 +16,13 @@ public final class AnalyticsPeriodSupport {
     }
 
     public static Period period(LocalDate from, LocalDate to, int defaultDaysBack) {
-        LocalDate safeTo = to != null ? to : LocalDate.now(ZONE);
+        LocalDate safeTo = to != null ? to : TashkentPeriod.today();
         LocalDate safeFrom = from != null ? from : safeTo.minusDays(defaultDaysBack);
-        Instant start = safeFrom.atStartOfDay(ZONE).toInstant();
-        Instant end = safeTo.plusDays(1).atStartOfDay(ZONE).toInstant();
-        return new Period(safeFrom, safeTo, start, end);
+        TashkentPeriod.InstantRange range = TashkentPeriod.dayRange(safeFrom, safeTo);
+        return new Period(safeFrom, safeTo, range.startInclusive(), range.endExclusive());
     }
 
     public static LocalDate today() {
-        return LocalDate.now(ZONE);
+        return TashkentPeriod.today();
     }
 }

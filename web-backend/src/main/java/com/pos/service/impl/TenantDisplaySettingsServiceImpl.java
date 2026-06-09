@@ -10,6 +10,7 @@ import com.pos.repository.CompanyTenantDisplaySettingsRepository;
 import com.pos.service.TenantDisplaySettingsService;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.LogUtil;
+import com.pos.util.TextUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,15 +67,15 @@ public class TenantDisplaySettingsServiceImpl implements TenantDisplaySettingsSe
 
     private TenantDisplaySettingsPayload sanitize(TenantDisplaySettingsPayload payload) {
         return new TenantDisplaySettingsPayload(
-            trimOrNull(payload.systemLogoDataUrl()),
+            TextUtil.trimOrNull(payload.systemLogoDataUrl()),
             payload.systemLogoSizePx(),
-            trimOrNull(payload.systemAppName()),
-            trimOrNull(payload.receiptLogoDataUrl()),
+            TextUtil.trimOrNull(payload.systemAppName()),
+            TextUtil.trimOrNull(payload.receiptLogoDataUrl()),
             payload.receiptLogoMaxHeightMm(),
-            trimOrNull(payload.receiptCompanyName()),
-            trimOrNull(payload.receiptCompanyAddress()),
-            trimOrNull(payload.receiptCompanyPhone()),
-            trimOrNull(payload.receiptStir()),
+            TextUtil.trimOrNull(payload.receiptCompanyName()),
+            TextUtil.trimOrNull(payload.receiptCompanyAddress()),
+            TextUtil.trimOrNull(payload.receiptCompanyPhone()),
+            TextUtil.trimOrNull(payload.receiptStir()),
             payload.receiptFields(),
             payload.userFormFields(),
             payload.printSettings()
@@ -91,13 +92,6 @@ public class TenantDisplaySettingsServiceImpl implements TenantDisplaySettingsSe
         if (!dataUrl.startsWith("data:image/")) {
             throw new BadRequestException("Logo must be a PNG or JPG image");
         }
-    }
-
-    private static String trimOrNull(String value) {
-        if (!StringUtils.hasText(value)) {
-            return null;
-        }
-        return value.trim();
     }
 
     private TenantDisplaySettingsPayload toPayload(JsonNode settings) {

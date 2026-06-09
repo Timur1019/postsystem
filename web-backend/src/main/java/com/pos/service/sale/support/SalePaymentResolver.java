@@ -2,7 +2,7 @@ package com.pos.service.sale.support;
 
 import com.pos.dto.sale.CreateSaleRequest;
 import com.pos.entity.Sale;
-import com.pos.exception.BadRequestException;
+import com.pos.exception.PosExceptions;
 import com.pos.service.sale.payment.SalePaymentStrategy;
 import org.springframework.stereotype.Component;
 
@@ -40,7 +40,7 @@ public class SalePaymentResolver {
     public PaymentAmounts resolve(Sale.PaymentMethod paymentMethod, BigDecimal total, CreateSaleRequest req) {
         SalePaymentStrategy strategy = strategies.get(paymentMethod);
         if (strategy == null) {
-            throw new BadRequestException("Способ оплаты не поддерживается: " + paymentMethod);
+            throw PosExceptions.badRequest("Способ оплаты не поддерживается: " + paymentMethod);
         }
         return strategy.resolve(total, req);
     }

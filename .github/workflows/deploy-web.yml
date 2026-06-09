@@ -1,0 +1,85 @@
+name: Deploy Web Stack
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web-backend/**'
+      - 'web-frontend/**'
+      - 'deploy/**'
+      - 'docker-compose.prod.yml'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+    inputs:
+      skip_backup:
+        description: 'Skip DB backup before deploy'
+        required: false
+        default: 'false'
+        type: boolean
+
+concurrency:
+  group: web-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KEY_B64: ${{ secrets.DEPLOY_SSH_KEY_B64 }}
+        run: |
+          chmod +x deploy/ci-ssh-setup.sh
+          bash deploy/ci-ssh-setup.sh
+
+      - name: Backup database
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_backup != true }}
+        continue-on-error: true
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER || 'root' }}
+        run: |
+          set -euo pipefail
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            'cd /opt/aurent-pos && bash deploy/backup-db.sh'
+
+      - name: Deploy (git pull + docker rebuild)
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER || 'root' }}
+        run: |
+          set -euo pipefail
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            'cd /opt/aurent-pos && bash deploy/git-update.sh'
+
+      - name: Health check
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER || 'root' }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 12); do
+            if ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+              "${DEPLOY_USER}@${DEPLOY_HOST}" \
+              'curl -fsS http://127.0.0.1:8080/api/v1/actuator/health | grep -q UP'; then
+              echo "Backend health: UP"
+              exit 0
+            fi
+            echo "Waiting for backend... ($i/12)"
+            sleep 10
+          done
+          echo "Health check failed"
+          exit 1
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

@@ -4,7 +4,9 @@ import com.pos.exception.CacheRefreshException;
 import com.pos.util.LogUtil;
 
 /**
- * Шаблон refresh для in-memory кэшей: load → replace → log.
+ * Единственный approved abstract для service-слоя: шаблон refresh in-memory кэшей (load → replace → log).
+ * Для общей бизнес-логики используйте {@code @Component} Support, не наследование.
+ * См. web-backend/CODING_STANDARDS.md
  */
 public abstract class AbstractPosCacheRefreshService<S> {
 

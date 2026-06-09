@@ -4,7 +4,7 @@ import com.pos.domain.SaleType;
 import com.pos.entity.Product;
 import com.pos.entity.Store;
 import com.pos.entity.StoreStock;
-import com.pos.exception.BadRequestException;
+import com.pos.exception.PosExceptions;
 import com.pos.repository.StoreRepository;
 import com.pos.repository.StoreStockRepository;
 import com.pos.service.support.TenantAccessSupport;
@@ -55,7 +55,7 @@ public class StoreStockService {
             return;
         }
         if (store == null) {
-            throw new BadRequestException("Store is required for stock operations");
+            throw PosExceptions.badRequest("Store is required for stock operations");
         }
         BigDecimal requested = QuantityUtil.normalize(quantity);
         BigDecimal available = getQuantity(product.getId(), store.getId());
@@ -63,7 +63,7 @@ public class StoreStockService {
             String unit = product.getSaleType() == SaleType.WEIGHT
                 ? " " + (product.getUnitCode() != null ? product.getUnitCode().displayLabel() : "kg")
                 : "";
-            throw new BadRequestException(
+            throw PosExceptions.badRequest(
                 "Insufficient stock for: " + product.getName() + ". Available: " + available + unit
             );
         }
@@ -72,35 +72,35 @@ public class StoreStockService {
     public Store resolveStoreForProduct(Product product, Integer storeId) {
         if (storeId != null) {
             Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new BadRequestException("Store not found"));
+                .orElseThrow(() -> PosExceptions.badRequest("Store not found"));
             tenantAccess.assertCanAccessStore(store);
             if (product.getCompany() != null
                 && store.getCompany() != null
                 && !product.getCompany().getId().equals(store.getCompany().getId())) {
-                throw new BadRequestException("Store does not belong to product company");
+                throw PosExceptions.badRequest("Store does not belong to product company");
             }
             return store;
         }
         if (product.getCompany() == null) {
-            throw new BadRequestException("Product has no company");
+            throw PosExceptions.badRequest("Product has no company");
         }
         List<Store> stores = storeRepository.findByCompanyIdOrderByNameAsc(product.getCompany().getId());
         if (stores.isEmpty()) {
-            throw new BadRequestException("No stores configured for company");
+            throw PosExceptions.badRequest("No stores configured for company");
         }
         if (stores.size() == 1) {
             return stores.get(0);
         }
-        throw new BadRequestException("Укажите магазин (storeId)");
+        throw PosExceptions.badRequest("Укажите магазин (storeId)");
     }
 
     public void setQuantity(Product product, Store store, BigDecimal quantity) {
         if (store == null) {
-            throw new BadRequestException("Store is required for stock operations");
+            throw PosExceptions.badRequest("Store is required for stock operations");
         }
         BigDecimal q = QuantityUtil.normalize(quantity);
         if (q.signum() < 0) {
-            throw new BadRequestException("Quantity cannot be negative");
+            throw PosExceptions.badRequest("Quantity cannot be negative");
         }
         StoreStock stock = storeStockRepository.findByProductIdAndStoreId(product.getId(), store.getId())
             .orElseGet(() -> StoreStock.builder().product(product).store(store).quantity(BigDecimal.ZERO).build());
@@ -155,25 +155,25 @@ public class StoreStockService {
 
     public Store requireStoreForCompany(Integer companyId, Integer storeId) {
         if (companyId == null) {
-            throw new BadRequestException("Company is required");
+            throw PosExceptions.badRequest("Company is required");
         }
         if (storeId != null) {
             Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new BadRequestException("Store not found"));
+                .orElseThrow(() -> PosExceptions.badRequest("Store not found"));
             tenantAccess.assertCanAccessStore(store);
             if (store.getCompany() == null || !store.getCompany().getId().equals(companyId)) {
-                throw new BadRequestException("Store does not belong to your company");
+                throw PosExceptions.badRequest("Store does not belong to your company");
             }
             return store;
         }
         List<Store> stores = storeRepository.findByCompanyIdOrderByNameAsc(companyId);
         if (stores.isEmpty()) {
-            throw new BadRequestException("No stores configured for company");
+            throw PosExceptions.badRequest("No stores configured for company");
         }
         if (stores.size() == 1) {
             return stores.get(0);
         }
-        throw new BadRequestException("Укажите магазин (storeId)");
+        throw PosExceptions.badRequest("Укажите магазин (storeId)");
     }
 
     private void syncProductTotal(Product product) {

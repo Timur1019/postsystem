@@ -20,9 +20,10 @@ import com.pos.repository.report.SalesReportRepository;
 import com.pos.repository.report.StockReportRepository;
 import com.pos.repository.sale.SaleAggregateRepository;
 import com.pos.service.stock.StockReportService;
-import com.pos.service.stock.support.StockReportAggregateSupport;
 import com.pos.service.stock.support.StockReportRowMapper;
 import com.pos.service.support.TenantAccessSupport;
+import com.pos.util.TashkentPeriod;
+import com.pos.util.TextUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +34,6 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -54,8 +54,6 @@ import static com.pos.service.stock.support.StockReportAggregateSupport.unwrapAg
 @Transactional(readOnly = true)
 public class StockReportServiceImpl implements StockReportService {
 
-    private static final ZoneId ZONE = ZoneId.of("Asia/Tashkent");
-
     private final SaleAggregateRepository saleAggregateRepository;
     private final SalesReportRepository salesReportRepository;
     private final StockReportRepository stockReportRepository;
@@ -66,24 +64,29 @@ public class StockReportServiceImpl implements StockReportService {
     @Override
     public StockDashboardResponse dashboard(LocalDate from, LocalDate to, Integer storeId) {
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
-        Instant start = from.atStartOfDay(ZONE).toInstant();
-        Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
+        TashkentPeriod.InstantRange range = TashkentPeriod.dayRange(from, to);
 
         long receivedUnits = positiveSum(
             stockReportRepository.sumQuantityByTypeBetween(
-                StockMovementType.RESTOCK, start, end, storeId, companyId
+                StockMovementType.RESTOCK, range.startInclusive(), range.endExclusive(), storeId, companyId
             )
         );
         long writeOffUnits = absUnits(
             stockReportRepository.sumQuantityByTypeBetween(
-                StockMovementType.WRITE_OFF, start, end, storeId, companyId
+                StockMovementType.WRITE_OFF, range.startInclusive(), range.endExclusive(), storeId, companyId
             )
         );
-        BigDecimal receivedCost = nz(stockReportRepository.sumRestockCostBetween(start, end, storeId, companyId));
-        BigDecimal writeOffCost = nz(stockReportRepository.sumWriteOffCostBetween(start, end, storeId, companyId));
+        BigDecimal receivedCost = nz(stockReportRepository.sumRestockCostBetween(
+            range.startInclusive(), range.endExclusive(), storeId, companyId
+        ));
+        BigDecimal writeOffCost = nz(stockReportRepository.sumWriteOffCostBetween(
+            range.startInclusive(), range.endExclusive(), storeId, companyId
+        ));
 
         long soldUnits = 0;
-        for (Object[] row : saleAggregateRepository.dailySoldUnitsAggregates(start, end, storeId, companyId)) {
+        for (Object[] row : saleAggregateRepository.dailySoldUnitsAggregates(
+            range.startInclusive(), range.endExclusive(), storeId, companyId
+        )) {
             soldUnits += ((Number) row[1]).longValue();
         }
 
@@ -104,8 +107,12 @@ public class StockReportServiceImpl implements StockReportService {
             mergeDailyBreakdown(
                 from,
                 to,
-                stockReportRepository.dailyStockMovementAggregates(start, end, storeId, companyId),
-                saleAggregateRepository.dailySoldUnitsAggregates(start, end, storeId, companyId)
+                stockReportRepository.dailyStockMovementAggregates(
+                    range.startInclusive(), range.endExclusive(), storeId, companyId
+                ),
+                saleAggregateRepository.dailySoldUnitsAggregates(
+                    range.startInclusive(), range.endExclusive(), storeId, companyId
+                )
             )
         );
     }
@@ -119,10 +126,9 @@ public class StockReportServiceImpl implements StockReportService {
         String search,
         Pageable pageable
     ) {
-        String q = StringUtils.hasText(search) ? search.trim() : "";
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
         Page<Object[]> page = salesReportRepository.productSalesPage(
-            from, to, storeId, categoryId, q, companyId, pageable
+            from, to, storeId, categoryId, TextUtil.normalizeSearch(search), companyId, pageable
         );
         return PageResponse.from(page.map(rowMapper::toProductSalesRow));
     }
@@ -143,11 +149,11 @@ public class StockReportServiceImpl implements StockReportService {
         String search,
         Pageable pageable
     ) {
-        Instant start = from.atStartOfDay(ZONE).toInstant();
-        Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
-        String q = StringUtils.hasText(search) ? search.trim() : "";
+        TashkentPeriod.InstantRange range = TashkentPeriod.dayRange(from, to);
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
-        Page<Object[]> page = stockReportRepository.stockTurnoverPage(start, end, categoryId, q, companyId, pageable);
+        Page<Object[]> page = stockReportRepository.stockTurnoverPage(
+            range.startInclusive(), range.endExclusive(), categoryId, TextUtil.normalizeSearch(search), companyId, pageable
+        );
         return PageResponse.from(page.map(rowMapper::toTurnoverRow));
     }
 
@@ -160,15 +166,13 @@ public class StockReportServiceImpl implements StockReportService {
         String search,
         Pageable pageable
     ) {
-        Instant start = from.atStartOfDay(ZONE).toInstant();
-        Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
+        TashkentPeriod.InstantRange range = TashkentPeriod.dayRange(from, to);
         String type = StringUtils.hasText(movementType) && !"ALL".equalsIgnoreCase(movementType)
             ? movementType.trim().toUpperCase()
             : null;
-        String q = StringUtils.hasText(search) ? search.trim() : "";
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
         Page<StockMovement> page = stockReportRepository.findMovementJournal(
-            start, end, type, storeId, companyId, q, pageable
+            range.startInclusive(), range.endExclusive(), type, storeId, companyId, TextUtil.normalizeSearch(search), pageable
         );
         Map<UUID, String> receiptNumbers = loadReceiptNumbers(page.getContent());
         return PageResponse.from(page.map(m -> rowMapper.toMovementRow(m, receiptNumbers)));
@@ -181,11 +185,10 @@ public class StockReportServiceImpl implements StockReportService {
         Integer storeId,
         Pageable pageable
     ) {
-        Instant start = from.atStartOfDay(ZONE).toInstant();
-        Instant end = to.plusDays(1).atStartOfDay(ZONE).toInstant();
+        TashkentPeriod.InstantRange range = TashkentPeriod.dayRange(from, to);
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
         Page<StockReceipt> page = stockReceiptRepository.findReceiptsBetween(
-            start, end, storeId, companyId, pageable
+            range.startInclusive(), range.endExclusive(), storeId, companyId, pageable
         );
         return PageResponse.from(page.map(rowMapper::toReceiptSummary));
     }
@@ -223,13 +226,12 @@ public class StockReportServiceImpl implements StockReportService {
         String search,
         Pageable pageable
     ) {
-        LocalDate asOf = asOfDate != null ? asOfDate : LocalDate.now(ZONE);
+        LocalDate asOf = asOfDate != null ? asOfDate : TashkentPeriod.today();
         int days = Math.max(1, daysNoSale);
         LocalDate cutoff = asOf.minusDays(days);
-        String q = StringUtils.hasText(search) ? search.trim() : "";
         Integer companyId = tenantAccess.requireEffectiveCompanyId();
         Page<Object[]> page = stockReportRepository.deadStockPage(
-            asOf, cutoff, days, categoryId, q, companyId, pageable
+            asOf, cutoff, days, categoryId, TextUtil.normalizeSearch(search), companyId, pageable
         );
         return PageResponse.from(page.map(row -> rowMapper.toDeadStockRow(row, asOf)));
     }
@@ -241,9 +243,8 @@ public class StockReportServiceImpl implements StockReportService {
         boolean onlyWithStock,
         Pageable pageable
     ) {
-        String q = StringUtils.hasText(search) ? search.trim() : "";
         Page<Product> page = stockReportRepository.stockBalancesPage(
-            tenantAccess.requireEffectiveCompanyId(), categoryId, q, onlyWithStock, pageable
+            tenantAccess.requireEffectiveCompanyId(), categoryId, TextUtil.normalizeSearch(search), onlyWithStock, pageable
         );
         return PageResponse.from(page.map(rowMapper::toBalanceRow));
     }

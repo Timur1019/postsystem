@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +37,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest req) {
         return respond(HttpStatus.NOT_FOUND, ex, req);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNoResource(NoResourceFoundException ex, HttpServletRequest req) {
+        String path = req.getRequestURI() != null ? req.getRequestURI() : "";
+        String message = path.contains("swagger-ui") || path.contains("api-docs")
+            ? "Swagger отключён. Локально: SPRING_PROFILES_ACTIVE=local и пересборка backend"
+            : "Resource not found";
+        logClientError(ErrorCode.NOT_FOUND, message, req, Map.of("detail", ex.getMessage()), ex);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+            ApiErrorResponse.of(
+                HttpStatus.NOT_FOUND.value(),
+                ErrorCode.NOT_FOUND,
+                message,
+                req.getRequestURI(),
+                null
+            )
+        );
     }
 
     @ExceptionHandler(BadRequestException.class)

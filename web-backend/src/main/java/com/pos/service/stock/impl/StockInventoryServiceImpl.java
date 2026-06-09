@@ -12,8 +12,7 @@ import com.pos.entity.StockInventoryLine;
 import com.pos.entity.StockMovement;
 import com.pos.entity.Store;
 import com.pos.entity.User;
-import com.pos.exception.BadRequestException;
-import com.pos.exception.ResourceNotFoundException;
+import com.pos.exception.PosExceptions;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.StockInventoryRepository;
 import com.pos.repository.StockMovementRepository;
@@ -21,6 +20,7 @@ import com.pos.repository.StoreRepository;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.stock.StockInventoryService;
 import com.pos.service.stock.StoreStockService;
+import com.pos.service.stock.support.StockDocumentSupport;
 import com.pos.service.support.TenantAccessSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -54,17 +54,14 @@ public class StockInventoryServiceImpl implements StockInventoryService {
     private final StoreStockService storeStockService;
     private final TenantAccessSupport tenantAccess;
     private final CurrentUserProvider currentUserProvider;
+    private final StockDocumentSupport stockDocument;
 
     @Override
     public StockInventoryResponse create(CreateStockInventoryRequest request) {
-        if (request.lines() == null || request.lines().isEmpty()) {
-            throw new BadRequestException("Add at least one line");
-        }
+        stockDocument.requireLines(request.lines());
         User user = currentUserProvider.requireCurrentUser();
         Integer companyId = tenantAccess.effectiveCompanyIdOrNull();
-        if (companyId == null) {
-            throw new BadRequestException("Company context is required");
-        }
+        stockDocument.requireCompanyContext(companyId);
         Store store = storeStockService.requireStoreForCompany(companyId, request.storeId());
         String number = nextInventoryNumber();
         StockInventory inventory = stockInventoryRepository.save(StockInventory.builder()
@@ -83,11 +80,7 @@ public class StockInventoryServiceImpl implements StockInventoryService {
         List<StockInventoryLine> lines = new ArrayList<>();
 
         for (StockInventoryLineRequest lineReq : request.lines()) {
-            Product product = productRepository.findById(lineReq.productId())
-                .orElseThrow(() -> new BadRequestException("Product not found: " + lineReq.productId()));
-            if (!product.isActive()) {
-                throw new BadRequestException("Product is not active: " + product.getName());
-            }
+            Product product = stockDocument.requireActiveProduct(lineReq.productId());
             BigDecimal systemQty = storeStockService.getQuantity(product.getId(), store.getId());
             BigDecimal counted = QuantityUtil.normalize(lineReq.countedQuantity());
             BigDecimal diff = QuantityUtil.subtract(counted, systemQty);
@@ -129,7 +122,7 @@ public class StockInventoryServiceImpl implements StockInventoryService {
     @Transactional(readOnly = true)
     public StockInventoryResponse getById(UUID id) {
         StockInventory inventory = stockInventoryRepository.findDetailedById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Inventory not found"));
+            .orElseThrow(() -> PosExceptions.notFound("Inventory"));
         if (inventory.getStore() != null) {
             tenantAccess.assertCanAccessStore(inventory.getStore());
         }
@@ -165,7 +158,7 @@ public class StockInventoryServiceImpl implements StockInventoryService {
             return null;
         }
         return storeRepository.findById(storeId)
-            .orElseThrow(() -> new BadRequestException("Store not found"));
+            .orElseThrow(() -> PosExceptions.notFound("Store"));
     }
 
     private String trimToNull(String s) {

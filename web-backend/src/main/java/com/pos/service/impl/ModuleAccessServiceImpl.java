@@ -13,6 +13,7 @@ import com.pos.exception.ResourceNotFoundException;
 import com.pos.repository.UserModuleAccessRepository;
 import com.pos.repository.UserRepository;
 import com.pos.security.AdminModule;
+import com.pos.security.cache.AuthenticatedUserCache;
 import com.pos.service.ModuleAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class ModuleAccessServiceImpl implements ModuleAccessService {
 
     private final UserRepository userRepository;
     private final UserModuleAccessRepository userModuleAccessRepository;
+    private final AuthenticatedUserCache authenticatedUserCache;
 
     @Override
     public List<AdminModuleCatalogItem> catalog() {
@@ -83,6 +85,7 @@ public class ModuleAccessServiceImpl implements ModuleAccessService {
         userModuleAccessRepository.saveAll(rows);
         user.setModuleAccessCustom(true);
         userRepository.save(user);
+        authenticatedUserCache.evict(userId);
         return buildDetail(userRepository.findById(userId).orElseThrow());
     }
 
@@ -93,6 +96,7 @@ public class ModuleAccessServiceImpl implements ModuleAccessService {
         userModuleAccessRepository.deleteByUserId(userId);
         user.setModuleAccessCustom(false);
         userRepository.save(user);
+        authenticatedUserCache.evict(userId);
         return buildDetail(user);
     }
 

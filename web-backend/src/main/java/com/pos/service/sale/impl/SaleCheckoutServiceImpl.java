@@ -12,16 +12,15 @@ import com.pos.domain.StockMovementType;
 import com.pos.entity.StockMovement;
 import com.pos.entity.Store;
 import com.pos.entity.User;
-import com.pos.exception.BadRequestException;
-import com.pos.exception.ResourceNotFoundException;
+import com.pos.exception.PosExceptions;
 import com.pos.mapper.SaleMapper;
 import com.pos.repository.CashierShiftRepository;
 import com.pos.repository.CustomerRepository;
-import com.pos.repository.ProductRepository;
 import com.pos.repository.SaleRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.repository.UserRepository;
 import com.pos.service.sale.SaleCheckoutService;
+import com.pos.service.sale.support.CheckoutProductLoader;
 import com.pos.service.sale.support.SaleEnumParser;
 import com.pos.service.sale.support.SalePaymentResolver;
 import com.pos.service.sale.support.SaleReceiptNumberGenerator;
@@ -42,6 +41,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -51,7 +51,6 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
 
     private final SaleRepository saleRepository;
     private final CashierShiftRepository cashierShiftRepository;
-    private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final StockMovementRepository stockMovementRepository;
@@ -62,21 +61,24 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
     private final SaleReceiptNumberGenerator receiptNumberGenerator;
     private final StoreStockService storeStockService;
     private final TenantAccessSupport tenantAccess;
+    private final CheckoutProductLoader checkoutProductLoader;
 
     @Override
     public SaleResponse processSale(CreateSaleRequest req, UUID cashierId) {
         User cashier = userRepository.findByIdWithDetails(cashierId)
-            .orElseThrow(() -> new ResourceNotFoundException("Cashier not found"));
+            .orElseThrow(() -> PosExceptions.notFound("Cashier"));
 
         Store store = cashierSaleSupport.requireStoreForSale(cashier, req.storeId());
 
         CashierShift shift = cashierShiftRepository
             .findByCashierIdAndStoreIdAndStatus(cashier.getId(), store.getId(), CashierShift.ShiftStatus.OPEN)
-            .orElseThrow(() -> new BadRequestException("Смена не открыта. Откройте смену перед продажей."));
+            .orElseThrow(() -> PosExceptions.badRequest("Смена не открыта. Откройте смену перед продажей."));
 
         Customer customer = req.customerId() != null
             ? customerRepository.findById(req.customerId()).orElse(null)
             : null;
+
+        Map<UUID, Product> productsById = checkoutProductLoader.loadIndexed(req.items());
 
         List<SaleItem> items = new ArrayList<>();
         BigDecimal subtotal = BigDecimal.ZERO;
@@ -84,13 +86,7 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
         BigDecimal lineDiscountTotal = BigDecimal.ZERO;
 
         for (SaleItemRequest itemReq : req.items()) {
-            Product product = productRepository.findById(itemReq.productId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + itemReq.productId()));
-
-            if (!product.isActive()) {
-                throw new BadRequestException("Product is inactive: " + product.getName());
-            }
-            tenantAccess.assertProductBelongsToTenant(product);
+            Product product = productsById.get(itemReq.productId());
             BigDecimal lineQty = QuantityValidator.normalizeForProduct(product, itemReq.quantity());
             QuantityValidator.validate(product, lineQty);
             storeStockService.requireAvailable(product, store, lineQty);

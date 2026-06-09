@@ -2,6 +2,7 @@ package com.pos.security;
 
 import com.pos.entity.User;
 import com.pos.exception.ResourceNotFoundException;
+import com.pos.security.cache.AuthenticatedUserCache;
 import com.pos.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -16,6 +17,7 @@ import java.util.UUID;
 public class CurrentUserProvider {
 
     private final UserRepository userRepository;
+    private final AuthenticatedUserCache authenticatedUserCache;
 
     public User requireCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -25,7 +27,7 @@ public class CurrentUserProvider {
         if (auth != null && StringUtils.hasText(auth.getName())) {
             try {
                 UUID id = UUID.fromString(auth.getName());
-                return userRepository.findByIdWithDetails(id)
+                return authenticatedUserCache.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
             } catch (IllegalArgumentException ignored) {
                 return userRepository.findByUsernameWithDetails(auth.getName())

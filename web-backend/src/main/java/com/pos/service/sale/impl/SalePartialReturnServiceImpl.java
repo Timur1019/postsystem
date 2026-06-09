@@ -8,8 +8,7 @@ import com.pos.entity.Sale;
 import com.pos.entity.SaleItem;
 import com.pos.domain.StockMovementType;
 import com.pos.entity.StockMovement;
-import com.pos.exception.BadRequestException;
-import com.pos.exception.ResourceNotFoundException;
+import com.pos.exception.PosExceptions;
 import com.pos.mapper.SaleMapper;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.SaleRepository;
@@ -46,12 +45,12 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
     @Override
     public SaleResponse returnItems(UUID saleId, PartialReturnRequest request) {
         Sale sale = saleRepository.findById(saleId)
-            .orElseThrow(() -> new ResourceNotFoundException("Sale not found"));
+            .orElseThrow(() -> PosExceptions.notFound("Sale not found"));
 
         accessPolicy.assertCanVoid(sale);
 
         if (sale.getStatus() == Sale.SaleStatus.VOIDED) {
-            throw new BadRequestException("Чек уже полностью возвращён");
+            throw PosExceptions.badRequest("Чек уже полностью возвращён");
         }
 
         Map<UUID, SaleItem> itemsById = new HashMap<>();
@@ -63,7 +62,7 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
         for (PartialReturnLineRequest line : request.lines()) {
             SaleItem item = itemsById.get(line.saleItemId());
             if (item == null) {
-                throw new BadRequestException("Позиция чека не найдена: " + line.saleItemId());
+                throw PosExceptions.badRequest("Позиция чека не найдена: " + line.saleItemId());
             }
             BigDecimal returnQty = item.getProduct() != null
                 ? com.pos.util.QuantityValidator.normalizeForProduct(item.getProduct(), line.quantity())
@@ -76,7 +75,7 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
             }
             BigDecimal remaining = QuantityUtil.subtract(item.getQuantity(), item.getReturnedQuantity());
             if (returnQty.compareTo(remaining) > 0) {
-                throw new BadRequestException(
+                throw PosExceptions.badRequest(
                     "Нельзя вернуть больше, чем осталось по позиции: " + item.getProductName()
                 );
             }
@@ -87,7 +86,7 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
         }
 
         if (!anyReturned) {
-            throw new BadRequestException("Укажите количество для возврата");
+            throw PosExceptions.badRequest("Укажите количество для возврата");
         }
 
         appendReturnNote(sale, reason, allItemsFullyReturned(sale));

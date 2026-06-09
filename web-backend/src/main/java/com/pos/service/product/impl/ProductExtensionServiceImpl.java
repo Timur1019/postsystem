@@ -13,6 +13,7 @@ import com.pos.entity.RestaurantProductDetails;
 import com.pos.entity.RetailProductDetails;
 import com.pos.entity.ServiceProductDetails;
 import com.pos.service.product.ProductExtensionService;
+import com.pos.util.TextUtil;
 import com.pos.service.product.ProductTypeSupport;
 import org.springframework.stereotype.Service;
 
@@ -160,13 +161,13 @@ public class ProductExtensionServiceImpl implements ProductExtensionService {
             product.setRetailDetails(details);
         }
         if (req.clothingSizeRange() != null) {
-            details.setClothingSizeRange(trimOrNull(req.clothingSizeRange()));
+            details.setClothingSizeRange(TextUtil.trimOrNull(req.clothingSizeRange()));
         }
         if (req.clothingColor() != null) {
-            details.setClothingColor(trimOrNull(req.clothingColor()));
+            details.setClothingColor(TextUtil.trimOrNull(req.clothingColor()));
         }
         if (req.clothingGender() != null) {
-            details.setClothingGender(trimOrNull(req.clothingGender()));
+            details.setClothingGender(TextUtil.trimOrNull(req.clothingGender()));
         }
         if (req.pharmacyExpiryRequired() != null) {
             details.setPharmacyExpiryRequired(req.pharmacyExpiryRequired());
@@ -175,16 +176,8 @@ public class ProductExtensionServiceImpl implements ProductExtensionService {
             details.setPharmacyPrescriptionRequired(req.pharmacyPrescriptionRequired());
         }
         if (req.pharmacyDosageForm() != null) {
-            details.setPharmacyDosageForm(trimOrNull(req.pharmacyDosageForm()));
+            details.setPharmacyDosageForm(TextUtil.trimOrNull(req.pharmacyDosageForm()));
         }
-    }
-
-    private static String trimOrNull(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private void clearExtensions(Product product) {

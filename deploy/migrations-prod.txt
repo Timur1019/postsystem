@@ -1,5 +1,6 @@
-# Порядок применения SQL-миграций на production (deploy/migrate-db.sh)
-# Добавляйте сюда новые файлы из web-backend/src/main/resources/db/
+# LEGACY: порядок для deploy/migrate-db.sh (fallback без перезапуска backend).
+# Основной путь с PR-5: Liquibase → db/changelog/v2-incremental.xml при старте backend.
+# Новые миграции: SQL в db/ + changeset в v2-incremental.xml (этот файл — только для migrate-db.sh fallback).
 migration_manual_customer_orders.sql
 migration_manual_cash_register_configs.sql
 migration_manual_companies_stores_users.sql

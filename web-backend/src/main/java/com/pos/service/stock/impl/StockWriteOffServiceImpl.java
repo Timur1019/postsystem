@@ -9,13 +9,14 @@ import com.pos.entity.Product;
 import com.pos.entity.StockMovement;
 import com.pos.entity.Store;
 import com.pos.entity.User;
-import com.pos.exception.BadRequestException;
+import com.pos.exception.PosExceptions;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.repository.report.StockReportRepository;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.stock.StockWriteOffService;
 import com.pos.service.stock.StoreStockService;
+import com.pos.service.stock.support.StockDocumentSupport;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.QuantityUtil;
 import lombok.RequiredArgsConstructor;
@@ -43,24 +44,19 @@ public class StockWriteOffServiceImpl implements StockWriteOffService {
     private final StoreStockService storeStockService;
     private final CurrentUserProvider currentUserProvider;
     private final TenantAccessSupport tenantAccess;
+    private final StockDocumentSupport stockDocument;
 
     @Override
     public WriteOffRowResponse create(CreateWriteOffRequest request) {
         BigDecimal qty = QuantityUtil.normalize(request.quantity());
-        if (qty.signum() <= 0) {
-            throw new BadRequestException("Quantity must be greater than zero");
-        }
-        Product product = productRepository.findById(request.productId())
-            .orElseThrow(() -> new BadRequestException("Product not found"));
+        stockDocument.requirePositiveQuantity(qty);
+        Product product = stockDocument.requireActiveProduct(request.productId());
         tenantAccess.assertProductBelongsToTenant(product);
-        if (!product.isActive()) {
-            throw new BadRequestException("Product is not active");
-        }
         WriteOffReason reason;
         try {
             reason = WriteOffReason.parse(request.reason());
         } catch (IllegalArgumentException ex) {
-            throw new BadRequestException(ex.getMessage());
+            throw PosExceptions.badRequest(ex.getMessage());
         }
         Store store = storeStockService.resolveStoreForProduct(product, request.storeId());
         com.pos.util.QuantityValidator.validate(product, qty);

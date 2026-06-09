@@ -13,8 +13,7 @@ import com.pos.entity.StockReceiptLine;
 import com.pos.entity.Store;
 import com.pos.entity.Supplier;
 import com.pos.entity.User;
-import com.pos.exception.BadRequestException;
-import com.pos.exception.ResourceNotFoundException;
+import com.pos.exception.PosExceptions;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.repository.StockReceiptRepository;
@@ -23,6 +22,7 @@ import com.pos.repository.StoreRepository;
 import com.pos.security.CurrentUserProvider;
 import com.pos.service.stock.StockReceiptService;
 import com.pos.service.stock.StoreStockService;
+import com.pos.service.stock.support.StockDocumentSupport;
 import com.pos.service.support.ProductValueNormalizer;
 import com.pos.service.support.TenantAccessSupport;
 import com.pos.util.QuantityUtil;
@@ -58,17 +58,14 @@ public class StockReceiptServiceImpl implements StockReceiptService {
     private final StoreStockService storeStockService;
     private final TenantAccessSupport tenantAccess;
     private final CurrentUserProvider currentUserProvider;
+    private final StockDocumentSupport stockDocument;
 
     @Override
     public StockReceiptResponse create(CreateStockReceiptRequest request) {
-        if (request.lines() == null || request.lines().isEmpty()) {
-            throw new BadRequestException("Add at least one line");
-        }
+        stockDocument.requireLines(request.lines());
         User user = currentUserProvider.requireCurrentUser();
         Integer companyId = tenantAccess.effectiveCompanyIdOrNull();
-        if (companyId == null) {
-            throw new BadRequestException("Company context is required");
-        }
+        stockDocument.requireCompanyContext(companyId);
         Store store = storeStockService.requireStoreForCompany(companyId, request.storeId());
         Supplier supplier = resolveSupplier(request.supplierId());
 
@@ -89,15 +86,9 @@ public class StockReceiptServiceImpl implements StockReceiptService {
         List<StockReceiptLine> lines = new ArrayList<>();
 
         for (StockReceiptLineRequest lineReq : request.lines()) {
-            Product product = productRepository.findById(lineReq.productId())
-                .orElseThrow(() -> new BadRequestException("Product not found: " + lineReq.productId()));
-            if (!product.isActive()) {
-                throw new BadRequestException("Product is not active: " + product.getName());
-            }
+            Product product = stockDocument.requireActiveProduct(lineReq.productId());
             BigDecimal q = QuantityUtil.normalize(lineReq.quantity());
-            if (q.signum() <= 0) {
-                throw new BadRequestException("Quantity must be greater than zero");
-            }
+            stockDocument.requirePositiveQuantity(q);
             com.pos.util.QuantityValidator.validate(product, q);
 
             product.setCostPrice(lineReq.purchasePrice());
@@ -154,7 +145,7 @@ public class StockReceiptServiceImpl implements StockReceiptService {
     @Transactional(readOnly = true)
     public StockReceiptResponse getById(UUID id) {
         StockReceipt receipt = stockReceiptRepository.findDetailedById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Receipt not found"));
+            .orElseThrow(() -> PosExceptions.notFound("Receipt"));
         if (receipt.getStore() != null) {
             tenantAccess.assertCanAccessStore(receipt.getStore());
         }
@@ -191,7 +182,7 @@ public class StockReceiptServiceImpl implements StockReceiptService {
             return null;
         }
         return storeRepository.findById(storeId)
-            .orElseThrow(() -> new BadRequestException("Store not found"));
+            .orElseThrow(() -> PosExceptions.notFound("Store"));
     }
 
     private Supplier resolveSupplier(UUID supplierId) {
@@ -199,7 +190,7 @@ public class StockReceiptServiceImpl implements StockReceiptService {
             return null;
         }
         return supplierRepository.findById(supplierId)
-            .orElseThrow(() -> new BadRequestException("Supplier not found"));
+            .orElseThrow(() -> PosExceptions.notFound("Supplier"));
     }
 
     private String trimToNull(String s) {

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Применяет новые SQL-миграции к работающей БД (идемпотентно, с учётом в app_schema_migrations).
+# Fallback: применяет SQL-миграции без перезапуска backend.
+# Основной путь: Liquibase при старте Spring Boot (db/changelog/db.changelog-master.xml).
+# Оба механизма используют app_schema_migrations — дублирования не будет.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

@@ -1,7 +1,7 @@
 package com.pos.security;
 
 import com.pos.entity.User;
-import com.pos.repository.UserRepository;
+import com.pos.security.cache.AuthenticatedUserCache;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +23,7 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserRepository userRepository;
+    private final AuthenticatedUserCache authenticatedUserCache;
     private final CurrentUserProvider currentUserProvider;
 
     @Override
@@ -59,7 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        User user = userRepository.findByIdWithDetails(userId).orElse(null);
+        User user = authenticatedUserCache.findById(userId).orElse(null);
         if (user == null || !user.isActive()) {
             return;
         }

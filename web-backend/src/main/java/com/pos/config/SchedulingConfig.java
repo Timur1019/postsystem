@@ -8,7 +8,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Configuration
 @EnableScheduling
-@EnableConfigurationProperties(PosCacheProperties.class)
+@EnableConfigurationProperties({PosCacheProperties.class, SecurityCacheProperties.class})
 public class SchedulingConfig {
 
     /**

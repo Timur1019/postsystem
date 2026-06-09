@@ -4,28 +4,25 @@ import com.pos.dto.product.ProductResponse;
 import com.pos.dto.shared.PageResponse;
 import com.pos.entity.Product;
 import com.pos.entity.ProductBarcode;
-import com.pos.exception.BadRequestException;
-import com.pos.exception.ResourceNotFoundException;
-import com.pos.repository.CategoryRepository;
+import com.pos.exception.PosExceptions;
 import com.pos.repository.ProductBarcodeRepository;
 import com.pos.repository.ProductRepository;
-import com.pos.repository.report.StockReportRepository;
 import com.pos.repository.ProductStorePriceRepository;
-import com.pos.repository.StoreRepository;
+import com.pos.repository.report.StockReportRepository;
 import com.pos.repository.spec.ProductSpecifications;
 import com.pos.service.product.ProductQueryService;
 import com.pos.service.product.ProductResponseAssembler;
+import com.pos.service.product.support.ProductCatalogLoader;
 import com.pos.service.stock.StoreStockService;
-import com.pos.service.support.AbstractProductCatalogSupport;
 import com.pos.service.support.ProductLookupSupport;
 import com.pos.service.support.TenantAccessSupport;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -36,31 +33,18 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
-public class ProductQueryServiceImpl extends AbstractProductCatalogSupport implements ProductQueryService {
+@RequiredArgsConstructor
+public class ProductQueryServiceImpl implements ProductQueryService {
 
+    private final ProductRepository productRepository;
+    private final ProductLookupSupport productLookup;
+    private final ProductBarcodeRepository productBarcodeRepository;
+    private final ProductStorePriceRepository productStorePriceRepository;
+    private final ProductCatalogLoader catalogLoader;
     private final ProductResponseAssembler assembler;
     private final StoreStockService storeStockService;
     private final StockReportRepository stockReportRepository;
     private final TenantAccessSupport tenantAccess;
-
-    public ProductQueryServiceImpl(
-        ProductRepository productRepository,
-        ProductLookupSupport productLookup,
-        CategoryRepository categoryRepository,
-        ProductBarcodeRepository productBarcodeRepository,
-        ProductStorePriceRepository productStorePriceRepository,
-        StoreRepository storeRepository,
-        ProductResponseAssembler assembler,
-        StoreStockService storeStockService,
-        StockReportRepository stockReportRepository,
-        TenantAccessSupport tenantAccess
-    ) {
-        super(productRepository, productLookup, categoryRepository, productBarcodeRepository, productStorePriceRepository, storeRepository);
-        this.assembler = assembler;
-        this.storeStockService = storeStockService;
-        this.stockReportRepository = stockReportRepository;
-        this.tenantAccess = tenantAccess;
-    }
 
     @Override
     public PageResponse<ProductResponse> getProducts(
@@ -80,8 +64,7 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
             tenantAccess.effectiveCompanyIdOrNull(),
             search, categoryId, scope, storeId, ikpuStatus, markedProduct, soldIndividually, barcodeExact
         );
-        Page<Product> page = productRepository.findAll(spec, pageable);
-        return mapPage(page, storeId);
+        return mapPage(productRepository.findAll(spec, pageable), storeId);
     }
 
     @Override
@@ -95,13 +78,12 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
         Specification<Product> spec = ProductSpecifications.warehouseFilter(
             companyId, search, barcodeContains, markedProduct
         );
-        Page<Product> page = productRepository.findAll(spec, pageable);
-        return mapPage(page, null);
+        return mapPage(productRepository.findAll(spec, pageable), null);
     }
 
     @Override
     public ProductResponse getProduct(UUID id, Integer storeId) {
-        Product product = findDetailed(id);
+        Product product = catalogLoader.requireDetailed(id);
         tenantAccess.assertProductBelongsToTenant(product);
         return forStore(assembler.toResponse(product), product, storeId);
     }
@@ -114,8 +96,7 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
     @Override
     public ProductResponse getByBarcode(String barcode, Integer storeId) {
         Product product = validateBarcodeProduct(resolveByBarcode(barcode), storeId);
-        ProductResponse base = assembler.toResponse(product);
-        return forStore(base, product, storeId);
+        return forStore(assembler.toResponse(product), product, storeId);
     }
 
     @Override
@@ -128,18 +109,18 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
 
     private PageResponse<ProductResponse> mapPage(Page<Product> page, Integer storeId) {
         List<Product> content = page.getContent();
-        Map<UUID, Integer> storeCounts = loadStoreCounts(content);
+        Map<UUID, Integer> storeCounts = catalogLoader.loadStoreCounts(content);
         Map<UUID, Integer> dispatched = assembler.loadDispatchedCounts(content);
         if (storeId == null) {
             return PageResponse.from(page.map(p -> assembler.toResponse(p, storeCounts, dispatched)));
         }
-        Map<UUID, java.math.BigDecimal> storeQty = storeStockService.getQuantities(
+        Map<UUID, BigDecimal> storeQty = storeStockService.getQuantities(
             content.stream().map(Product::getId).toList(),
             storeId
         );
         return PageResponse.from(page.map(p -> {
             ProductResponse base = assembler.toResponse(p, storeCounts, dispatched);
-            java.math.BigDecimal qty = storeQty.getOrDefault(p.getId(), java.math.BigDecimal.ZERO);
+            BigDecimal qty = storeQty.getOrDefault(p.getId(), BigDecimal.ZERO);
             ProductResponse withQty = assembler.withStockQuantity(base, qty);
             BigDecimal price = productStorePriceRepository
                 .findByProduct_IdAndStore_Id(p.getId(), storeId)
@@ -153,7 +134,7 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
         if (storeId == null) {
             return base;
         }
-        java.math.BigDecimal qty = storeStockService.getQuantity(product.getId(), storeId);
+        BigDecimal qty = storeStockService.getQuantity(product.getId(), storeId);
         ProductResponse withQty = assembler.withStockQuantity(base, qty);
         BigDecimal price = productStorePriceRepository
             .findByProduct_IdAndStore_Id(product.getId(), storeId)
@@ -164,11 +145,11 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
 
     private Product validateBarcodeProduct(Product product, Integer storeId) {
         if (!product.isActive()) {
-            throw new BadRequestException("Product is not active");
+            throw PosExceptions.badRequest("Product is not active");
         }
         if (storeId != null
             && productStorePriceRepository.findByProduct_IdAndStore_Id(product.getId(), storeId).isEmpty()) {
-            throw new BadRequestException("Product is not available in this store");
+            throw PosExceptions.badRequest("Product is not available in this store");
         }
         return product;
     }
@@ -183,6 +164,6 @@ public class ProductQueryServiceImpl extends AbstractProductCatalogSupport imple
         }
         return productBarcodeRepository.findByBarcodeAndProductCompanyId(barcode, companyId)
             .map(ProductBarcode::getProduct)
-            .orElseThrow(() -> new ResourceNotFoundException("Product not found for barcode: " + barcode));
+            .orElseThrow(() -> PosExceptions.notFound("Product for barcode", barcode));
     }
 }

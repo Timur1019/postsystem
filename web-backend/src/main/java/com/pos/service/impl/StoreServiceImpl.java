@@ -3,6 +3,7 @@ package com.pos.service.impl;
 import com.pos.domain.BusinessType;
 import com.pos.dto.shared.PageResponse;
 import com.pos.util.BusinessTypeParser;
+import com.pos.util.TextUtil;
 import com.pos.dto.store.CreateStoreRequest;
 import com.pos.dto.store.StoreResponse;
 import com.pos.dto.store.UpdateStoreRequest;
@@ -105,9 +106,9 @@ public class StoreServiceImpl implements StoreService {
 
         Store store = Store.builder()
             .name(request.name().trim())
-            .code(trimOrNull(request.code()))
-            .address(trimOrNull(request.address()))
-            .phone(trimOrNull(request.phone()))
+            .code(TextUtil.trimOrNull(request.code()))
+            .address(TextUtil.trimOrNull(request.address()))
+            .phone(TextUtil.trimOrNull(request.phone()))
             .company(company)
             .businessType(businessType)
             .active(request.active() == null || request.active())
@@ -125,9 +126,9 @@ public class StoreServiceImpl implements StoreService {
         tenantAccess.assertCanAccessStore(store);
 
         if (request.name() != null) store.setName(request.name().trim());
-        if (request.code() != null) store.setCode(trimOrNull(request.code()));
-        if (request.address() != null) store.setAddress(trimOrNull(request.address()));
-        if (request.phone() != null) store.setPhone(trimOrNull(request.phone()));
+        if (request.code() != null) store.setCode(TextUtil.trimOrNull(request.code()));
+        if (request.address() != null) store.setAddress(TextUtil.trimOrNull(request.address()));
+        if (request.phone() != null) store.setPhone(TextUtil.trimOrNull(request.phone()));
         if (request.active() != null) store.setActive(request.active());
         if (request.businessType() != null) {
             store.setBusinessType(BusinessTypeParser.parseRequired(request.businessType()));
@@ -214,11 +215,6 @@ public class StoreServiceImpl implements StoreService {
     private Store requireStore(Integer id) {
         return storeRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
-    }
-
-    private static String trimOrNull(String value) {
-        if (!StringUtils.hasText(value)) return null;
-        return value.trim();
     }
 
     private static BusinessType resolveStoreBusinessType(String requestType, BusinessType companyDefault) {

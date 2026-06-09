@@ -2,7 +2,10 @@ package com.pos.util;
 
 import com.pos.exception.BadRequestException;
 import com.pos.exception.ConflictException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+
+import java.util.function.Supplier;
 
 /**
  * Maps JDBC / JPA errors to client-facing business exceptions.
@@ -46,6 +49,16 @@ public final class DbExceptionTranslator {
             return "Неверная компания, магазин или роль";
         }
         return "Ошибка БД: " + truncate(root, 280);
+    }
+
+    public static <T> T persist(Supplier<T> action) {
+        try {
+            return action.get();
+        } catch (BadRequestException | ConflictException ex) {
+            throw ex;
+        } catch (DataAccessException ex) {
+            throw toClientException(ex);
+        }
     }
 
     public static RuntimeException toClientException(Throwable ex) {

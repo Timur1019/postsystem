@@ -34,8 +34,13 @@ docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" build --pull
 echo "==> Запуск PostgreSQL..."
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d postgres
 
-echo "==> SQL-миграции..."
-bash deploy/migrate-db.sh
+if [[ "${RUN_LEGACY_MIGRATE:-}" == "1" ]]; then
+  echo "==> Legacy SQL-миграции (migrate-db.sh)..."
+  bash deploy/migrate-db.sh
+else
+  echo "==> Миграции БД: Liquibase при старте backend (db/changelog/)"
+  echo "    (fallback без рестарта: RUN_LEGACY_MIGRATE=1 bash deploy/deploy.sh)"
+fi
 
 echo "==> Проверка пароля БД..."
 if ! bash deploy/verify-db.sh; then
