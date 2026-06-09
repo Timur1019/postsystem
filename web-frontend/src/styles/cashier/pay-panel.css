@@ -1,0 +1,526 @@
+/* Cashier inline payment panel — methods, card types, narrow stacks */
+/* ── Оплата в левой колонке (без отдельной страницы) ── */
+.cashier-app .pos-pay-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  height: 100%;
+  padding: 10px;
+  background: #eef1f4;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+
+.cashier-app .pos-pay-panel__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+  border: 1px solid var(--pos-border);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgb(15 23 42 / 0.06);
+  overflow: hidden;
+}
+
+.cashier-app .pos-pay-panel__step-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--pos-border);
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.cashier-app .pos-pay-panel__step-title {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--pos-text);
+}
+
+.cashier-app .pos-pay-panel__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--pos-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.cashier-app .pos-pay-panel__icon-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.cashier-app .pos-pay-panel__icon-btn--spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.cashier-app .pos-pay-panel__scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.cashier-app .pos-pay-panel__step {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: min-content;
+  gap: 12px;
+}
+
+.cashier-app .pos-pay-panel__primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: auto;
+  flex-shrink: 0;
+  padding: 13px 16px;
+  border: none;
+  border-radius: var(--pos-radius);
+  background: var(--pos-green);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cashier-app .pos-pay-panel__primary:hover:not(:disabled) {
+  background: var(--pos-green-hover);
+}
+
+.cashier-app .pos-pay-panel__primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cashier-app .pos-pay-panel__spin {
+  animation: pos-spin 0.8s linear infinite;
+}
+
+.cashier-app .pos-pay-panel__error {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--pos-danger);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Стеки для узкой колонки */
+.cashier-app .pos-pay-receipt-types--stack,
+.cashier-app .pos-pay-method-cards--stack,
+.cashier-app .pos-pay-method-cards--register-stack,
+.cashier-app .pos-pay-card-types--stack,
+.cashier-app .pos-pay-mixed-cards--stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 14px;
+  font-size: 0.875rem;
+  border-radius: 12px;
+}
+
+.cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type.is-active .pos-pay-receipt-type__icon-wrap {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type__label {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-weight: 600;
+}
+
+.cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type__check {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--pos-green);
+}
+
+.cashier-app .pos-pay-receipt-types--stack .pos-pay-receipt-type.is-active {
+  border-color: var(--pos-green);
+  border-width: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgb(0 104 71 / 0.08);
+}
+
+.cashier-app .pos-pay-receipt-types--footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cashier-app .pos-pay-receipt-types--footer-grid .pos-pay-receipt-type {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+  min-height: 0;
+  padding: 10px 6px;
+  font-size: 0.75rem;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.cashier-app .pos-pay-receipt-types--footer-grid .pos-pay-receipt-type__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.cashier-app .pos-pay-receipt-types--footer-grid .pos-pay-receipt-type.is-active .pos-pay-receipt-type__icon-wrap {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-app .pos-pay-receipt-types--footer-grid .pos-pay-receipt-type__label {
+  flex: none;
+  min-width: 0;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.cashier-app .pos-pay-receipt-types--footer-grid .pos-pay-receipt-type__check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  flex-shrink: 0;
+  margin: 0;
+  color: var(--pos-green);
+}
+
+.cashier-app .pos-pay-receipt-types--footer-grid .pos-pay-receipt-type.is-active {
+  border-color: var(--pos-green);
+  border-width: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgb(0 104 71 / 0.08);
+}
+
+.pos-pay-deferred-summary {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--pos-border, #2a3548);
+  border-radius: 12px;
+  background: var(--pos-surface-elevated, #1c2433);
+}
+
+.pos-pay-deferred-summary__hint {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--pos-muted, #94a3b8);
+}
+
+.pos-pay-deferred-summary__amount {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pos-pay-deferred-summary__label {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pos-muted, #94a3b8);
+}
+
+.pos-pay-deferred-summary__value {
+  font-size: clamp(1.35rem, 3.5vw, 1.75rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--pos-money, #f5c842);
+  line-height: 1.1;
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-deferred-summary {
+  border-color: rgb(61 255 168 / 0.25);
+  background: rgb(61 255 168 / 0.06);
+}
+
+.cashier-app.cashier-app--light .pos-pay-deferred-summary {
+  background: #f8faf9;
+  border-color: var(--pos-border, #e5e7eb);
+}
+
+.cashier-app .pos-pay-method-cards--footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cashier-app .pos-pay-method-card--tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 0;
+  padding: 10px 6px;
+  border: 1px solid #e8ecea;
+  border-radius: 10px;
+  background: #fff;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.cashier-app .pos-pay-method-card--tile .pos-pay-method-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.cashier-app .pos-pay-method-card--tile .pos-pay-method-card__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.cashier-app .pos-pay-method-card--tile:hover {
+  border-color: var(--pos-green);
+  background: var(--pos-green-soft);
+}
+
+.cashier-app .pos-pay-card-types--footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cashier-app .pos-pay-card-type--tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 0;
+  padding: 10px 6px;
+  border: 1px solid #e8ecea;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.cashier-app .pos-pay-card-type--tile svg {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.cashier-app .pos-pay-card-type--tile:hover:not(:disabled) {
+  border-color: var(--pos-green);
+  background: var(--pos-green-soft);
+}
+
+.cashier-app .pos-pay-method-card {
+  display: flex;
+  width: 100%;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
+}
+
+.cashier-app .pos-pay-method-card--row,
+.cashier-app .pos-pay-method-card--register {
+  flex-direction: row;
+  align-items: center;
+  min-height: 58px;
+  padding: 14px 16px;
+  gap: 14px;
+  text-align: left;
+  border: 1px solid #e8ecea;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.cashier-app .pos-pay-method-card--row:hover,
+.cashier-app .pos-pay-method-card--register:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 0.08);
+}
+
+.cashier-app .pos-pay-method-card--row .pos-pay-method-card__icon,
+.cashier-app .pos-pay-method-card--register .pos-pay-method-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: none;
+}
+
+.cashier-app .pos-pay-method-card--row .pos-pay-method-card__label,
+.cashier-app .pos-pay-method-card--register .pos-pay-method-card__label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.cashier-app .pos-pay-method-card__arrow {
+  color: #9ca3af;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.cashier-app .pos-pay-method-cards--stack {
+  gap: 10px;
+}
+
+.cashier-app .pos-pay-card-type--row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid #e8ecea;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.cashier-app .pos-pay-card-type--row:hover:not(:disabled) {
+  border-color: var(--pos-green);
+  background: var(--pos-green-soft);
+}
+
+.cashier-app .pos-pay-card-types--stack {
+  gap: 10px;
+}
+
+.cashier-app .pos-pay-panel .pos-pay-amount-box__value {
+  font-size: 1.35rem;
+}
+
+.cashier-app .pos-pay-panel .pos-pay-cash__display {
+  font-size: 1.5rem;
+}
+
+.cashier-app .pos-pay-panel .pos-keypad__key {
+  min-height: 48px;
+  font-size: 1.1rem;
+}
+
+.cashier-app .pos-pay-panel .pos-keypad__quick-btn {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--pos-border);
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--pos-green);
+  cursor: pointer;
+}
+
+.cashier-app .pos-pay-panel .pos-keypad__quick {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cashier-app .pos-pay-panel .pos-pay-mixed-summary {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f9fafb;
+  border: 1px solid var(--pos-border);
+}
+
+.cashier-app .pos-pay-panel .pos-pay-mixed-summary__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.cashier-app .pos-pay-panel .pos-pay-mixed-summary__row--total {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--pos-border);
+  font-weight: 700;
+}
+
+.cashier-app .pos-pay-panel .pos-pay-card-type-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--pos-muted);
+}
+

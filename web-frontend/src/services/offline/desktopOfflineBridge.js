@@ -61,6 +61,11 @@ export async function offlineSyncShiftFromServer(payload) {
   return withOfflineTimeout(window.desktopCashier.offlineSyncShiftFromServer(payload));
 }
 
+export async function offlineCloseShift(payload) {
+  if (!isDesktopOfflineBridge()) return null;
+  return withOfflineTimeout(window.desktopCashier.offlineCloseShift(payload));
+}
+
 export async function offlineSaveSale(payload) {
   if (!isDesktopOfflineBridge()) return null;
   return withOfflineTimeout(window.desktopCashier.offlineSaveSale(payload));

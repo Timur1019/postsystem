@@ -1,0 +1,150 @@
+/* Light theme — shift modal (portal on body → html.cashier-theme--light) */
+html.cashier-theme--light .pos-pay-modal--shift-terminal {
+  --pos-green: #006847;
+  --pos-green-hover: #005538;
+  --pos-border: #e5e7eb;
+  --pos-text: #111827;
+  --pos-muted: #6b7280;
+
+  width: min(96vw, 520px) !important;
+  max-width: 520px !important;
+  padding: 0 !important;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--pos-border);
+  background: #fff;
+  color: var(--pos-text);
+  box-shadow: 0 16px 48px rgb(15 23 42 / 0.18);
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .cashier-shift-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(180deg, var(--pos-green-soft, #e8f5ef) 0%, #fff 100%);
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-pay-modal__title {
+  margin: 0;
+  flex: 1;
+  text-align: left;
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pos-green);
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-pay-modal__close {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--pos-muted);
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-pay-modal__close:hover {
+  border-color: rgb(248 113 113 / 0.45);
+  background: rgb(248 113 113 / 0.08);
+  color: #dc2626;
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .cashier-shift-modal__meta,
+html.cashier-theme--light .pos-pay-modal--shift-terminal .cashier-shift-modal__status {
+  margin: 0;
+  padding: 14px 18px 0;
+  text-align: left;
+  font-size: 0.875rem;
+  color: var(--pos-muted);
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .cashier-shift-modal__status {
+  padding-bottom: 10px;
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .cashier-shift-modal__status .is-open {
+  color: var(--pos-green);
+  font-weight: 700;
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .cashier-shift-modal__hint {
+  margin: 0 18px 16px;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .cashier-shift-modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 18px 18px;
+  margin: 0;
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-shift-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #f8fafc;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-shift-action:hover:not(:disabled) {
+  background: #0f172a;
+  border-color: var(--pos-green);
+  color: #fff;
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-shift-action--primary {
+  background: var(--pos-green);
+  border-color: var(--pos-green);
+  color: #fff;
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-shift-action--primary:hover:not(:disabled) {
+  background: var(--pos-green-hover);
+  border-color: var(--pos-green-hover);
+  color: #fff;
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-shift-action--danger {
+  background: linear-gradient(180deg, #dc2626 0%, #b91c1c 100%);
+  border-color: #f87171;
+  color: #fff;
+  box-shadow: 0 2px 10px rgb(185 28 28 / 0.2);
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-shift-action--danger:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  border-color: #fca5a5;
+  color: #fff;
+}
+
+html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-shift-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

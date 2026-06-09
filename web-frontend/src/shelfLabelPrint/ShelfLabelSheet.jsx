@@ -1,6 +1,6 @@
 import { fmtMoney } from '../utils/formatMoney';
 import ShelfLabelBarcode from './ShelfLabelBarcode';
-import '../styles/shelf-label-print.css';
+import '../styles/shared/shelf-label-print.css';
 
 export default function ShelfLabelSheet({
   variant,

@@ -1,0 +1,40 @@
+.module-access-filters__chip {
+  background: rgb(241 245 249);
+  color: rgb(71 85 105);
+}
+
+.dark .module-access-filters__chip {
+  background: rgb(30 41 59);
+  color: rgb(203 213 225);
+}
+
+.module-access-filters__chip--active {
+  background: rgb(16 185 129);
+  color: #fff;
+}
+
+.module-access-user-row--selected {
+  background: rgb(236 253 245);
+}
+
+.dark .module-access-user-row--selected {
+  background: rgb(2 44 34 / 0.4);
+}
+
+.module-access-group__action {
+  border-color: rgb(226 232 240);
+  color: rgb(71 85 105);
+}
+
+.dark .module-access-group__action {
+  border-color: rgb(51 65 85);
+  color: rgb(203 213 225);
+}
+
+.module-access-group__action:hover {
+  background: rgb(248 250 252);
+}
+
+.dark .module-access-group__action:hover {
+  background: rgb(30 41 59 / 0.5);
+}

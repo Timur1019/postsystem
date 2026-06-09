@@ -1,0 +1,243 @@
+/* Print media — thermal receipts, Z/X shift reports, overlay hiding */
+@media print {
+  /* Никогда не печатаем модалки/оверлеи */
+  .receipt-printing-overlay,
+  .pos-pay-overlay {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
+@media print {
+  body {
+    background: white !important;
+    color: #000 !important;
+  }
+  html.dark body {
+    background: white !important;
+    color: #000 !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  /* Обычная печать из браузера (Ctrl+P) — без чека */
+  @page {
+    margin: 3mm;
+    size: auto;
+  }
+
+  /* Фискальный чек: страница /receipt и модалка журнала продаж */
+  html.print-thermal-only {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html.print-thermal-only body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  html.print-thermal-only .receipt-page,
+  html.print-thermal-only .receipt-page__paper,
+  html.print-thermal-only .receipt-page__card {
+    width: var(--print-content-w, 72mm) !important;
+    max-width: var(--print-content-w, 72mm) !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: white !important;
+  }
+  html.print-thermal-only #receipt-print-area {
+    width: var(--print-content-w, 72mm) !important;
+    max-width: var(--print-content-w, 72mm) !important;
+    margin: 0 !important;
+    padding: var(--print-pad-y, 2mm) var(--print-pad-x, 3mm) !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background: white !important;
+    color: #000 !important;
+    font-size: var(--print-font-px, 13px) !important;
+    line-height: var(--print-line-height, 1.5) !important;
+  }
+  html.print-thermal-only #receipt-print-area * {
+    color: #000 !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+    -webkit-font-smoothing: auto !important;
+    -moz-osx-font-smoothing: auto !important;
+  }
+  html.print-thermal-only .receipt-muted,
+  html.print-thermal-only .receipt-subtitle {
+    color: #000 !important;
+  }
+  html.print-thermal-only .receipt-title {
+    font-size: 1.2em !important;
+    font-weight: 700 !important;
+  }
+  html.print-thermal-only .receipt-row--bold,
+  html.print-thermal-only .receipt-section-title,
+  html.print-thermal-only .receipt-meta-label {
+    font-weight: 700 !important;
+    color: #000 !important;
+  }
+  html.print-thermal-only .receipt-secondary {
+    font-weight: 600 !important;
+    color: #000 !important;
+  }
+  html.print-thermal-only .receipt-fiscal-sign {
+    font-weight: 700 !important;
+    text-decoration: underline;
+    color: #000 !important;
+  }
+  html.print-thermal-only .receipt-qr {
+    image-rendering: pixelated !important;
+    image-rendering: crisp-edges !important;
+  }
+  /* Подача бумаги вниз — чтобы драйвер POS-80 успел отрезать чек */
+  html.print-thermal-only #receipt-print-area::after,
+  html.print-thermal-modal #fiscal-print-shell::after,
+  html.electron-silent-print.print-thermal-only #receipt-print-area::after,
+  html.electron-silent-print.print-thermal-modal #fiscal-print-shell::after {
+    content: '';
+    display: block;
+    height: 20mm;
+    min-height: 20mm;
+  }
+  /* Термочек из модалки / X-Z отчёта: только .fiscal-print-scene, без UI приложения */
+  html.print-thermal-modal #root,
+  html.print-thermal-modal .pos-pay-overlay,
+  html.print-thermal-modal [data-sonner-toaster],
+  html.print-thermal-modal body > *:not(.fiscal-print-scene) {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  html.print-thermal-modal,
+  html.print-thermal-modal body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  html.print-thermal-modal body {
+    display: block !important;
+  }
+  html.print-thermal-modal .fiscal-print-scene,
+  html.print-thermal-modal .thermal-report-print-host,
+  html.print-thermal-modal .pos-sale-print-host {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    inset: auto !important;
+    left: auto !important;
+    top: auto !important;
+    z-index: auto !important;
+    opacity: 1 !important;
+    width: var(--print-content-w, 72mm) !important;
+    max-width: var(--print-content-w, 72mm) !important;
+    margin: 0 auto !important;
+    background: white !important;
+    padding: 0 !important;
+  }
+  html.print-thermal-modal .fiscal-print-dialog {
+    display: block !important;
+    visibility: visible !important;
+    width: var(--print-content-w, 72mm) !important;
+    max-width: var(--print-content-w, 72mm) !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  html.print-thermal-modal #fiscal-print-shell {
+    display: block !important;
+    visibility: visible !important;
+    width: var(--print-content-w, 72mm) !important;
+    max-width: var(--print-content-w, 72mm) !important;
+    margin: 0 !important;
+    padding: var(--print-pad-y, 2mm) var(--print-pad-x, 3mm) !important;
+    overflow: visible !important;
+    background: white !important;
+    color: #000 !important;
+    font-size: var(--print-font-px, 13px) !important;
+    line-height: var(--print-line-height, 1.5) !important;
+  }
+  html.print-thermal-modal #fiscal-print-shell * {
+    color: #000 !important;
+    visibility: visible !important;
+  }
+  html.print-thermal-modal #fiscal-print-shell .receipt-print-root {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Печать Z-отчёта (модалка) */
+  html.print-z-report-only #root {
+    display: none !important;
+  }
+  html.print-z-report-only body {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  html.print-z-report-only .z-report-print-scene {
+    position: static !important;
+    inset: auto !important;
+    width: var(--print-content-w, 72mm) !important;
+    max-width: var(--print-content-w, 72mm) !important;
+    margin: 0 !important;
+    background: white !important;
+    padding: 0 !important;
+  }
+  html.print-z-report-only .z-report-print-dialog {
+    width: var(--print-content-w, 72mm) !important;
+    max-width: var(--print-content-w, 72mm) !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-height: none !important;
+  }
+  html.print-z-report-only #z-report-print-shell {
+    padding: var(--print-pad-y, 3mm) var(--print-pad-x, 2mm) !important;
+    font-size: var(--print-font-px, 10px) !important;
+    line-height: var(--print-line-height, 1.35) !important;
+  }
+  html.print-z-report-only #z-report-print-shell * {
+    font-size: inherit !important;
+    line-height: inherit !important;
+  }
+
+  /* Печать X/Z-отчёта смены */
+  html.print-shift-report-only #root {
+    display: none !important;
+  }
+  html.print-shift-report-only body {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  html.print-shift-report-only #shift-report-print-shell {
+    position: static !important;
+    left: auto !important;
+    width: var(--print-content-w, 72mm) !important;
+    max-width: var(--print-content-w, 72mm) !important;
+    margin: 0 !important;
+    padding: var(--print-pad-y, 3mm) var(--print-pad-x, 2mm) !important;
+    font-size: var(--print-font-px, 10px) !important;
+    line-height: var(--print-line-height, 1.35) !important;
+    visibility: visible !important;
+    overflow: visible !important;
+  }
+  html.print-shift-report-only #shift-report-print-shell * {
+    font-size: inherit !important;
+    line-height: inherit !important;
+  }
+}

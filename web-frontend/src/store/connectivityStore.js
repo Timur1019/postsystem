@@ -3,9 +3,9 @@ import { offlineGetStatus, subscribeOfflineConnectivity } from '../services/offl
 import { useAuthStore } from './authStore';
 import { userHasCashierOfflineAccess } from '../utils/cashierOfflineAccess';
 
-/** Сразу offline при сбое probe; online — после одного успешного probe (источник истины — Electron). */
-const ONLINE_RECOVERY_STREAK = 1;
-const CONNECTIVITY_POLL_MS = 3_000;
+/** Сразу offline при сбое probe; online — после двух подряд успешных probe. */
+const ONLINE_RECOVERY_STREAK = 2;
+const CONNECTIVITY_POLL_MS = 10_000;
 let stableApiOnline = null;
 let onlineRecoveryStreak = 0;
 
@@ -128,8 +128,9 @@ let unsubscribeConnectivity;
 let browserConnectivityBound;
 
 function applyBrowserOfflineHint() {
+  // Desktop: Electron probe — единственный источник истины; navigator.onLine на Windows нестабилен.
+  if (typeof window !== 'undefined' && window.desktopCashier?.isDesktop) return;
   if (typeof navigator === 'undefined' || navigator.onLine) return;
-  if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return;
   const state = useConnectivityStore.getState();
   if (state.offlineMode && !state.apiOnline) return;
   useConnectivityStore.getState().applyStatus({ apiOnline: false });

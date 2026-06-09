@@ -26,7 +26,7 @@ import {
   REST_NAV,
 } from './layoutNavConfig';
 import { syncAuthSession } from '../../utils/syncAuthSession';
-import '../../styles/cashier-modals.css';
+import '../../styles/cashier/modals/index.css';
 
 export default function AppShellLayout() {
   const { t } = useTranslation();

@@ -1,0 +1,55 @@
+/* Pay rail — receipt type step */
+.pos-pay-receipt-types--register-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pos-pay-receipt-type--register {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 2px solid var(--pos-border, #2a3548);
+  border-radius: 12px;
+  background: var(--pos-surface-elevated, #1c2433);
+  color: var(--pos-text, #f1f5f9);
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+
+.pos-pay-receipt-type--register .pos-pay-receipt-type__icon-wrap {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #243044;
+}
+
+.pos-pay-receipt-type--register.is-active {
+  border-color: var(--pos-green, #3dffa8);
+  box-shadow: 0 0 0 1px rgb(61 255 168 / 0.3);
+}
+
+.pos-pay-receipt-type--register.is-active .pos-pay-receipt-type__icon-wrap {
+  background: #f8fafc;
+  color: var(--pos-green, #3dffa8);
+}
+
+.pos-pay-receipt-type--register .pos-pay-receipt-type__label {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pos-pay-receipt-type--register .pos-pay-receipt-type__check {
+  position: static;
+  color: var(--pos-green, #3dffa8);
+}
+

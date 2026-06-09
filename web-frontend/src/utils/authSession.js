@@ -2,6 +2,7 @@ import { queryClient } from '../lib/queryClient';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { useTenantDisplayStore } from '../store/tenantDisplayStore';
+import { resetConnectivityStabilizer } from '../store/connectivityStore';
 /** Сброс клиентского состояния при смене пользователя / компании. */
 export function resetClientSessionState() {
   queryClient.clear();
@@ -13,6 +14,7 @@ export function resetClientSessionState() {
 }
 
 export function logoutAndResetSession() {
+  resetConnectivityStabilizer();
   resetClientSessionState();
   useAuthStore.getState().logout();
 }

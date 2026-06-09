@@ -1,0 +1,17 @@
+/* Cashier shell — load order matters */
+@import './tokens.css';
+@import './shell/index.css';
+@import './register.css';
+@import './cart/index.css';
+@import './pay-panel.css';
+@import './catalog-panel/index.css';
+@import './my-sales/index.css';
+@import './terminal-theme/index.css';
+@import './light-theme/index.css';
+@import './pos-layout/index.css';
+@import './register-pay-rail/index.css';
+@import './responsive/index.css';
+@import './secondary-pages/index.css';
+@import './my-sales/terminal-overrides.css';
+@import './modals/index.css';
+@import '../shared/offline-banner.css';

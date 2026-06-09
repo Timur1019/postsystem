@@ -1,0 +1,140 @@
+/* Narrow viewport <800px and phone 320–520px */
+@media (max-width: 799px) {
+  .cashier-app {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .cashier-topbar {
+    min-height: auto;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .cashier-topbar .nav {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 2px;
+  }
+
+  .cashier-topbar .nav .nav-link {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .cashier-topbar--pos .cashier-topbar__row--main {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .cashier-app--desktop .cashier-topbar__brand-block {
+    max-width: 100%;
+  }
+
+  .cashier-topbar__actions {
+    margin-left: auto;
+  }
+
+  .pos-topbar-strip {
+    flex: 1 1 100%;
+    min-width: 100%;
+    order: 10;
+  }
+
+  .pos-topbar-strip--catalog {
+    justify-content: space-between;
+  }
+
+  .pos-topbar-strip--catalog .pos-topbar-views {
+    margin-left: auto;
+  }
+
+  .pos-topbar-nav__btn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+
+  .pos-order-panel__head,
+  .pos-catalog-panel__head {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .pos-catalog-panel__body {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .pos-catalog-toolbar {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .pos-category-nav {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* Узкий телефон / эмулятор ~320–520px */
+@media (max-width: 520px) {
+  .cashier-app {
+    --cashier-pad: 6px;
+    --cashier-gap: 8px;
+  }
+
+  .cashier-app main.flex-grow-1 {
+    padding: 6px !important;
+  }
+
+  .cashier-topbar {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .cashier-topbar > .d-flex:last-child {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+
+  .cashier-app .pos-catalog-panel__head,
+  .cashier-app .pos-category-nav,
+  .cashier-app .pos-catalog-panel__body,
+  .cashier-app .pos-catalog-toolbar {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .cashier-app .pos-search-bar__field {
+    height: 38px;
+    padding: 0 10px 0 12px;
+  }
+
+  .cashier-app .pos-search-bar__input {
+    font-size: 0.8125rem;
+  }
+
+  .cashier-app .pos-category-nav__pill {
+    padding: 6px 10px;
+    font-size: 0.6875rem;
+  }
+
+  .cashier-app .pos-product-card__name {
+    -webkit-line-clamp: 4;
+    font-size: 0.875rem;
+  }
+
+  .pos-product-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+

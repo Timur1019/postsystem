@@ -1,0 +1,116 @@
+/* Pay rail — cash step and keypad */
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-panel__body,
+.pos-pay-panel--register-rail.is-step-mixedCash .pos-pay-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-panel__step,
+.pos-pay-panel--register-rail.is-step-mixedCash .pos-pay-panel__step {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-cash-panel--terminal {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding: 6px 12px 0;
+  gap: 4px;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-cash__summary-row {
+  font-size: 0.8125rem;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-cash__hint {
+  font-size: 0.6875rem;
+  line-height: 1.25;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-cash__received-box {
+  padding: 8px 12px;
+  min-height: 58px;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-cash__received-value {
+  font-size: clamp(1.25rem, 3.2vw, 1.75rem);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-cash__change-row {
+  min-height: 44px;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-cash__change-row--ready strong {
+  font-size: clamp(1.1rem, 2.8vw, 1.5rem);
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-keypad,
+.pos-pay-panel--register-rail.is-step-mixedCash .pos-keypad {
+  flex: 0 0 auto;
+  min-height: 0;
+  margin-top: auto;
+  padding: 10px 12px 6px;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-keypad__grid {
+  flex: 0 0 auto;
+  grid-template-rows: repeat(4, minmax(48px, 54px));
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-keypad__key,
+.pos-pay-panel--register-rail.is-step-mixedCash .pos-keypad__key {
+  min-height: 0;
+  font-size: 1.5rem;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-keypad__key--action,
+.pos-pay-panel--register-rail.is-step-mixedCash .pos-keypad__key--action {
+  font-size: 0.75rem;
+  line-height: 1.1;
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-keypad__key--icon svg,
+.pos-pay-panel--register-rail.is-step-mixedCash .pos-keypad__key--icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-keypad__clear,
+.pos-pay-panel--register-rail.is-step-mixedCash .pos-keypad__clear {
+  min-height: 42px;
+  margin-bottom: 2px;
+  padding: 8px 10px;
+  font-size: 0.875rem;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-panel__actions-wrap,
+.pos-pay-panel--register-rail.is-step-mixedCash .pos-pay-panel__actions-wrap {
+  flex-shrink: 0;
+  padding: 8px 12px max(8px, env(safe-area-inset-bottom, 0px));
+  gap: 6px;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-panel__primary,
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-panel__back-check {
+  min-height: 44px;
+}
+

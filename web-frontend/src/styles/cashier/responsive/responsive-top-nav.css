@@ -1,0 +1,83 @@
+/* Top navigation and register/catalog tabs */
+@media (max-width: 799px) {
+  .cashier-app .cashier-sidebar {
+    display: none !important;
+  }
+
+  .cashier-app.cashier-app--sidebar-collapsed {
+    --cashier-sidebar-current-w: 0px;
+  }
+
+  .cashier-app .cashier-topbar--pos {
+    min-height: 40px;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .cashier-app main.flex-grow-1 {
+    padding: 8px !important;
+  }
+
+  .cashier-register__split--register .cashier-register__stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .cashier-register__split--register .cashier-register__actions-col {
+    max-height: min(42vh, 320px);
+    overflow-y: auto;
+  }
+}
+
+/* Вкладки «Касса» / «Товары» */
+.cashier-pos-tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 5px;
+  margin-bottom: var(--cashier-gap, 8px);
+  background: #eceef1;
+  border: 1px solid var(--pos-border, #d1d5db);
+  border-radius: var(--cashier-block-radius, var(--pos-radius-lg, 16px));
+}
+
+.cashier-pos-tabs__btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pos-muted, #6b7280);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.cashier-pos-tabs__btn.is-active {
+  background: #fff;
+  color: var(--pos-green, #006847);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
+}
+
+.cashier-pos-tabs__badge {
+  min-width: 1.25rem;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--pos-green, #006847);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.pos-topbar-nav__btn--back,
+.pos-topbar-nav__btn--catalog {
+  font-weight: 700;
+}
+

@@ -1,0 +1,295 @@
+/* Cashier my-sales — sales table, pills, pagination */
+/* Таблица «Мои продажи» */
+.cashier-sales-card {
+  background: #fff;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.cashier-sales-card__head {
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+  background: #f8f9fa;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.cashier-sales-table {
+  width: 100%;
+  margin: 0;
+  font-size: 0.875rem;
+  border-collapse: collapse;
+}
+
+.cashier-sales-table thead th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6c757d;
+  background: #f8f9fa;
+  border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+  white-space: nowrap;
+}
+
+.cashier-sales-table tbody td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.cashier-sales-table tbody tr {
+  cursor: pointer;
+}
+
+.cashier-sales-table tbody tr:hover {
+  background: #f1f3f5;
+}
+
+.cashier-sales-table__receipt {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+}
+
+.cashier-sales-table__amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cashier-sales-table__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cashier-sales-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cashier-sales-badge--voided {
+  background: #fde8e8;
+  color: #c92a2a;
+}
+
+.cashier-sales-badge--refunded {
+  background: #fff3bf;
+  color: #e67700;
+}
+
+/* Карточка таблицы */
+.cashier-sales-card {
+  border-radius: 12px;
+  border: 1px solid var(--pos-border, #e5e7eb);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 0.06);
+  overflow: hidden;
+}
+
+.cashier-sales-card__table {
+  overflow-x: auto;
+}
+
+.cashier-sales-table-wrap {
+  overflow-x: auto;
+}
+
+.cashier-sales-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8125rem;
+}
+
+.cashier-sales-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 12px;
+  background: #f3f4f6;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.cashier-sales-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.cashier-sales-table__row {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.cashier-sales-table__row:hover {
+  background: #f8faf9;
+}
+
+.cashier-sales-table__row:nth-child(even) {
+  background: #fafbfc;
+}
+
+.cashier-sales-table__row:nth-child(even):hover {
+  background: #f3f7f5;
+}
+
+.cashier-sales-table__empty {
+  text-align: center;
+  color: #9ca3af;
+  padding: 2.5rem 1rem !important;
+}
+
+.cashier-sales-table__receipt {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  color: #111827;
+}
+
+.cashier-sales-table__date {
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.cashier-sales-table__amount {
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--pos-green, #006847);
+}
+
+.cashier-sales-table__col-num {
+  text-align: right;
+}
+
+.cashier-sales-table__return {
+  border: none;
+  background: transparent;
+  color: #d97706;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cashier-sales-table__return:hover:not(:disabled) {
+  background: #fff7ed;
+}
+
+.cashier-sales-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cashier-sales-pill--cash {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.cashier-sales-pill--card {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.cashier-sales-pill--cashless {
+  background: #ecfeff;
+  color: #0e7490;
+}
+
+.cashier-sales-pill--mixed {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.cashier-sales-pill--mpesa {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.cashier-sales-pill--advance {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.cashier-sales-pill--credit {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.cashier-sales-badge--completed {
+  background: #e8f5ef;
+  color: #006847;
+}
+
+.cashier-sales-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cashier-sales-pagination__info {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.cashier-sales-pagination__sep {
+  margin: 0 6px;
+}
+
+.cashier-sales-pagination__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cashier-sales-pagination__btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.cashier-sales-pagination__btn:hover:not(:disabled) {
+  border-color: var(--pos-green, #006847);
+  color: var(--pos-green, #006847);
+}
+
+.cashier-sales-pagination__btn.is-active {
+  background: var(--pos-green, #006847);
+  border-color: var(--pos-green, #006847);
+  color: #fff;
+}
+
+.cashier-sales-pagination__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+

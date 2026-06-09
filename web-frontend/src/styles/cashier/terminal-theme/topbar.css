@@ -1,0 +1,149 @@
+/* Terminal theme — topbar */
+.cashier-app.cashier-app--terminal .cashier-topbar {
+  background: var(--pos-surface) !important;
+  border-bottom-color: var(--pos-border) !important;
+}
+
+.cashier-app.cashier-app--terminal .cashier-topbar__menu {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  color: var(--pos-muted);
+}
+
+.cashier-app.cashier-app--terminal .cashier-topbar__menu:hover {
+  background: var(--pos-green-soft);
+  border-color: rgb(61 255 168 / 0.3);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__trigger {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .cashier-desktop-menu:hover .cashier-desktop-menu__trigger,
+.cashier-app.cashier-app--terminal .cashier-desktop-menu.is-open .cashier-desktop-menu__trigger {
+  background: var(--pos-green-soft);
+  border-color: rgb(61 255 168 / 0.35);
+  box-shadow: 0 2px 14px rgb(61 255 168 / 0.15);
+}
+
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__panel {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 0.45);
+}
+
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__item {
+  color: var(--pos-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__item:hover,
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__item--primary:hover {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .cashier-desktop-menu__item--primary {
+  color: var(--pos-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-topbar__terminal-name {
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--pos-green);
+  line-height: 1.2;
+}
+
+.cashier-app.cashier-app--terminal .cashier-topbar__terminal-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--pos-muted);
+  background: var(--pos-surface-elevated);
+  border: 1px solid var(--pos-border);
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cashier-app.cashier-app--terminal .cashier-topbar__pos-title {
+  color: var(--pos-text);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.8125rem;
+}
+
+.cashier-app.cashier-app--terminal .cashier-topbar__app-name {
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .cashier-lang-switch {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-lang-switch__btn:hover:not(.is-active) {
+  color: var(--pos-text);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.cashier-app.cashier-app--terminal .cashier-lang-switch__btn.is-active {
+  background: var(--pos-green);
+  color: #0a1218;
+  box-shadow: 0 0 12px rgb(61 255 168 / 0.25);
+}
+
+.cashier-app.cashier-app--terminal .cashier-topbar__mobile-nav .nav-link {
+  color: var(--pos-muted);
+}
+
+.cashier-app.cashier-app--terminal .cashier-topbar__mobile-nav .nav-link.active {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-topbar-nav__btn,
+.cashier-app.cashier-app--terminal .pos-topbar-close,
+.cashier-app.cashier-app--terminal .pos-topbar-views__btn {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  color: var(--pos-muted);
+}
+
+.cashier-app.cashier-app--terminal .pos-topbar-nav__btn--catalog {
+  border-color: rgb(61 255 168 / 0.35);
+  color: var(--pos-green);
+  font-weight: 800;
+}
+
+.cashier-app.cashier-app--terminal .pos-topbar-nav__btn--register {
+  color: var(--pos-text);
+}
+
+.cashier-app.cashier-app--terminal .pos-topbar-nav__btn:hover,
+.cashier-app.cashier-app--terminal .pos-topbar-views__btn:hover {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-topbar-views__btn.is-active {
+  background: var(--pos-green);
+  color: #0a1218;
+}
+
+.cashier-app.cashier-app--terminal .pos-topbar-close:hover {
+  border-color: rgb(248 113 113 / 0.5);
+  background: rgb(248 113 113 / 0.12);
+  color: var(--pos-danger);
+}
+

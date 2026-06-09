@@ -1,0 +1,29 @@
+/* Light theme — order rail totals */
+.cashier-app.cashier-app--light .pos-order-rail__return,
+.cashier-app.cashier-app--light .pos-order-rail__btn {
+  background: #fff;
+  border-color: var(--pos-border);
+  color: var(--pos-text);
+}
+
+.cashier-app.cashier-app--light .pos-order-rail__btn--clear {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.cashier-app.cashier-app--light .pos-totals-block--order-rail {
+  background: #fff;
+  border-color: var(--pos-border);
+}
+
+.cashier-app.cashier-app--light .pos-totals-block--order-rail .pos-totals-block__hero-value,
+.cashier-app.cashier-app--light .pos-totals-block__row--disc span:last-child {
+  color: var(--pos-money);
+}
+
+.cashier-app.cashier-app--light .pos-order-rail__pay:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+}
+

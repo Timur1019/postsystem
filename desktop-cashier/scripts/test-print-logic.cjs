@@ -4,8 +4,8 @@
  * Запуск: npm run test:print  (из desktop-cashier/)
  */
 const assert = require('assert');
-const { paperWidthPx } = require('../electron/print-thermal.cjs');
-const { matchPrinterName } = require('../electron/printer-match.cjs');
+const { paperWidthPx } = require('../electron/printers/print-thermal.cjs');
+const { matchPrinterName } = require('../electron/printers/printer-match.cjs');
 
 let passed = 0;
 let failed = 0;

@@ -1,0 +1,82 @@
+/* Shift modal — open/close shift, Z-report preview */
+.pos-shift-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.125rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgb(226 232 240);
+  background: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pos-pay-modal--shift:not(.pos-pay-modal--shift-terminal) .pos-shift-action {
+  font-size: 1rem;
+  padding: 0.8rem 1.25rem;
+}
+
+.pos-shift-action:hover:not(:disabled) {
+  border-color: rgb(16 185 129);
+  color: rgb(4 120 87);
+}
+
+.pos-shift-action--primary {
+  border-color: var(--bs-success);
+  background: rgba(25, 135, 84, 0.08);
+  color: var(--bs-success);
+  font-weight: 600;
+}
+
+.pos-shift-action--primary:hover:not(:disabled) {
+  background: rgba(25, 135, 84, 0.15);
+}
+
+.shift-report-print-host {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 72mm;
+  max-width: 72mm;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.pos-shift-action--danger {
+  border-color: rgb(254 202 202);
+  color: rgb(185 28 28);
+  background: rgb(254 242 242);
+}
+
+.cashier-shift-report {
+  margin-top: 0.75rem;
+  padding: 1.125rem 1.25rem;
+  border-radius: 0.875rem;
+  background: rgb(248 250 252);
+  border: 1px solid rgb(226 232 240);
+}
+
+.cashier-shift-report__type {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(71 85 105);
+}
+
+.cashier-shift-report__grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem 1.25rem;
+  font-size: 1rem;
+}
+
+.pos-pay-modal--shift .cashier-shift-report__grid dd {
+  font-weight: 600;
+}
+
+.cashier-shift-report__grid dt {
+  color: rgb(100 116 139);
+}
+

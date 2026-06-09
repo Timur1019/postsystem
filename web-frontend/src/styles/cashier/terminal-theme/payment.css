@@ -1,0 +1,126 @@
+/* Terminal theme — payment panel and keypad */
+.cashier-app.cashier-app--terminal .pos-pay-panel__step-title {
+  color: var(--pos-money);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.875rem;
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-panel__body,
+.cashier-app.cashier-app--terminal .pos-pay-panel__step-head {
+  background: var(--pos-surface);
+  border-color: var(--pos-border);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-panel__icon-btn {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  color: var(--pos-text);
+}
+
+/* Keypad */
+.cashier-app.cashier-app--terminal .pos-keypad__key,
+.cashier-app.cashier-app--terminal .pos-keypad__quick-btn {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  color: var(--pos-text);
+}
+
+.cashier-app.cashier-app--terminal .pos-keypad__key:hover:not(:disabled),
+.cashier-app.cashier-app--terminal .pos-keypad__quick-btn:hover:not(:disabled) {
+  background: rgb(61 255 168 / 0.1);
+  border-color: rgb(61 255 168 / 0.35);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-keypad__clear {
+  color: var(--pos-danger);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-panel .pos-pay-cash__due {
+  background: var(--pos-surface-elevated);
+  border: 1px solid var(--pos-border);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-panel .pos-pay-cash__due-value {
+  color: var(--pos-money);
+  font-size: 1.75rem;
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-panel .pos-pay-cash__display {
+  background: var(--pos-surface-elevated);
+  border: 1px solid var(--pos-border);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-panel .pos-pay-cash__display--ok {
+  border-color: var(--pos-green);
+  box-shadow: 0 0 16px rgb(61 255 168 / 0.15);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-panel .pos-keypad__key,
+.cashier-app.cashier-app--terminal .pos-pay-panel .pos-keypad__quick-btn {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  color: var(--pos-text);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-panel .pos-keypad__quick-btn {
+  color: var(--pos-green);
+  font-weight: 800;
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-method-card--row,
+.cashier-app.cashier-app--terminal .pos-pay-method-card--tile,
+.cashier-app.cashier-app--terminal .pos-pay-card-type--tile,
+.cashier-app.cashier-app--terminal .pos-pay-card-type--row {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-method-card--row,
+.cashier-app.cashier-app--terminal .pos-pay-method-card--register {
+  border-left: 4px solid var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-method-card--row:hover,
+.cashier-app.cashier-app--terminal .pos-pay-method-card--register:hover,
+.cashier-app.cashier-app--terminal .pos-pay-method-card--tile:hover {
+  background: rgb(61 255 168 / 0.08);
+  border-color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-method-card--row .pos-pay-method-card__icon,
+.cashier-app.cashier-app--terminal .pos-pay-method-card--register .pos-pay-method-card__icon,
+.cashier-app.cashier-app--terminal .pos-pay-method-card--tile .pos-pay-method-card__icon {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-method-card--row .pos-pay-method-card__label,
+.cashier-app.cashier-app--terminal .pos-pay-method-card--register .pos-pay-method-card__label {
+  color: var(--pos-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-receipt-type,
+.cashier-app.cashier-app--terminal .pos-pay-receipt-types--footer-grid .pos-pay-receipt-type {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  color: var(--pos-text);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-receipt-types--footer-grid .pos-pay-receipt-type.is-active {
+  background: rgb(61 255 168 / 0.1);
+  border-color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-pay-panel__primary:not(:disabled) {
+  background: var(--pos-green);
+  color: #0a1218;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+

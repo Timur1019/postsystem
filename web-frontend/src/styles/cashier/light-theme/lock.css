@@ -1,0 +1,15 @@
+/* Light theme — lock overlay */
+.cashier-app.cashier-app--light .cashier-lock-overlay {
+  background: rgb(240 242 245 / 0.92);
+}
+
+.cashier-app.cashier-app--light .cashier-lock-overlay__card {
+  background: #fff;
+  border-color: var(--pos-border);
+  color: var(--pos-text);
+}
+
+.cashier-app.cashier-app--light .cashier-lock-overlay__icon {
+  color: var(--pos-green);
+}
+

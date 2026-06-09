@@ -1,0 +1,49 @@
+/* POS toast notification */
+.pos-item-added-toast-host {
+  max-width: min(92vw, 400px) !important;
+  padding: 14px 16px !important;
+  font-size: 1rem !important;
+  line-height: 1.4 !important;
+}
+
+.pos-item-added-toast {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pos-item-added-toast__name {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #0f172a;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.pos-item-added-toast__sum {
+  margin: 0;
+  align-self: flex-end;
+  font-size: 1.1875rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #006847;
+  white-space: nowrap;
+}
+
+html.cashier-theme--dark .pos-item-added-toast-host {
+  border-color: #2a3548 !important;
+  background: #1c2433 !important;
+  color: #f1f5f9 !important;
+}
+
+html.cashier-theme--dark .pos-item-added-toast__name {
+  color: #f1f5f9;
+}
+
+html.cashier-theme--dark .pos-item-added-toast__sum {
+  color: #3dffa8;
+}

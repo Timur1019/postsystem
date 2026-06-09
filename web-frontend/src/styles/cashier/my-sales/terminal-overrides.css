@@ -1,0 +1,328 @@
+/* Cashier my-sales — terminal theme orange panel overrides */
+/* —— Мои продажи — единый светло-оранжевый блок —— */
+.cashier-app.cashier-app--terminal .cashier-page h1.h5 {
+  color: var(--pos-text, #f1f5f9);
+}
+
+.cashier-app.cashier-app--terminal .cashier-page .text-muted {
+  color: var(--pos-muted, #94a3b8);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-filters-card,
+.cashier-app.cashier-app--terminal .cashier-sales-shift-stats,
+.cashier-app.cashier-app--terminal .cashier-sales-card {
+  background: var(--cashier-panel-surface);
+  border: 1px solid var(--cashier-panel-border);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.12);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-filters-card.is-active {
+  border-color: #fb923c;
+  box-shadow: 0 0 0 2px rgb(251 146 60 / 0.25);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-filters-card__head {
+  background: var(--cashier-panel-surface-2);
+  border-bottom: 1px solid var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-shift-stats {
+  background: var(--cashier-panel-surface);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-filters-card__title,
+.cashier-app.cashier-app--terminal .cashier-sales-shift-stats__title {
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-filters-card__badge {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-filters-card__reset {
+  background: #fff;
+  border-color: #fdba74;
+  color: var(--cashier-panel-muted);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-filters-card__reset:hover {
+  background: #ffedd5;
+  border-color: #fb923c;
+  color: #c2410c;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-filters__label,
+.cashier-app.cashier-app--terminal .cashier-sales-shift-stats__label {
+  color: var(--cashier-panel-muted);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-filters__input,
+.cashier-app.cashier-app--terminal .cashier-sales-filters__select {
+  background: #fff;
+  border-color: #fdba74;
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-filters__input:focus,
+.cashier-app.cashier-app--terminal .cashier-sales-filters__select:focus {
+  border-color: #ea580c;
+  box-shadow: 0 0 0 2px rgb(234 88 12 / 0.2);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-shift-stats__value {
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-shift-stats__value--sum {
+  color: #c2410c;
+  font-weight: 800;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-shift-stats__icon {
+  background: #ffedd5;
+  color: #c2410c;
+  border: 1px solid #fdba74;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-card {
+  overflow: hidden;
+}
+
+/* Единый фон таблицы (перебивает серые/тёмные стили bootstrap) */
+.cashier-app.cashier-app--terminal .cashier-sales-card .cashier-sales-table {
+  background: var(--cashier-panel-surface);
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__row:hover {
+  background: #ffedd5;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__row:nth-child(even) {
+  background: #fffbeb;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__row:nth-child(even):hover {
+  background: #ffedd5;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table thead th {
+  background: var(--cashier-panel-surface);
+  border-bottom: 1px solid var(--cashier-panel-border);
+  color: var(--cashier-panel-muted);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table tbody td {
+  background: var(--cashier-panel-surface);
+  border-bottom: 1px solid #fed7aa;
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__row:hover td {
+  background: #ffedd5;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__row:nth-child(even) td {
+  background: #fffbeb;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__row:nth-child(even):hover td {
+  background: #ffedd5;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__empty {
+  color: var(--cashier-panel-muted);
+  background: var(--cashier-panel-surface);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__receipt {
+  color: var(--cashier-panel-text);
+  font-weight: 700;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__date {
+  color: #92400e;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__amount {
+  color: #15803d;
+  font-weight: 800;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__return {
+  color: #c2410c;
+  font-weight: 700;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__return:hover:not(:disabled) {
+  background: #fed7aa;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-pill--cash {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-pill--card {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-pill--cashless {
+  background: #cffafe;
+  color: #0e7490;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-pill--mixed {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-pill--mpesa {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-badge--completed {
+  background: #bbf7d0;
+  color: #166534;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-badge--voided,
+.cashier-app.cashier-app--terminal .cashier-sales-badge--refunded {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-pagination {
+  background: var(--cashier-panel-surface);
+  border-top: 1px solid var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-pagination__info {
+  color: var(--cashier-panel-muted);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-pagination__btn {
+  background: #fff;
+  border-color: #fdba74;
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-pagination__btn:hover:not(:disabled) {
+  border-color: #ea580c;
+  color: #c2410c;
+  background: #ffedd5;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-pagination__btn.is-active {
+  background: #ea580c;
+  border-color: #c2410c;
+  color: #fff;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-mobile-list {
+  background: var(--cashier-panel-surface);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-mobile-card {
+  background: #fffbeb;
+  border: 1px solid var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-mobile-card:active {
+  background: #ffedd5;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-mobile-card__receipt {
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-mobile-card__amount {
+  color: #15803d;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-mobile-card__meta {
+  color: #92400e;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane {
+  background: var(--cashier-panel-surface);
+  border-color: var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__head {
+  background: var(--cashier-panel-surface-2);
+  border-bottom-color: var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__close {
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__close:hover {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__close-icon {
+  background: #fff;
+  border-color: var(--cashier-panel-border);
+  color: var(--cashier-panel-muted);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__body {
+  background: #fffbeb;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__footer {
+  background: var(--cashier-panel-surface-2);
+  border-top-color: var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__print {
+  border-color: var(--cashier-panel-border);
+  background: var(--cashier-panel-surface);
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__print:hover:not(:disabled) {
+  background: var(--cashier-panel-surface-2);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__return {
+  background: #ea580c;
+  color: #fff;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__return:hover:not(:disabled) {
+  background: #c2410c;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-receipt-pane__placeholder {
+  color: #92400e;
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-card__head {
+  background: var(--cashier-panel-surface-2);
+  border-bottom-color: var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-card__head-title {
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .cashier-sales-table__row.is-selected,
+.cashier-app.cashier-app--terminal .cashier-sales-mobile-card.is-selected {
+  background: #ffedd5 !important;
+  border-color: #fb923c;
+  box-shadow: inset 3px 0 0 #ea580c;
+}
+
+.cashier-app.cashier-app--terminal .alert-warning {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}

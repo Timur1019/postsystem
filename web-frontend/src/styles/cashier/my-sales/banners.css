@@ -1,0 +1,39 @@
+/* Cashier my-sales — shift closed / open banners */
+.pos-shift-closed-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #f5c2c7;
+  background: #f8d7da;
+  color: #842029;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.pos-shift-closed-banner__text {
+  flex: 1 1 12rem;
+}
+
+.pos-shift-closed-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cashier-sales-shift-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #a3cfbb;
+  background: #d1e7dd;
+  color: #0a3622;
+  font-size: 0.875rem;
+}

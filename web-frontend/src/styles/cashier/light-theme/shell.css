@@ -1,0 +1,107 @@
+/* Light theme — sidebar and topbar */
+.cashier-app.cashier-app--light .cashier-sidebar {
+  background: #fff;
+  border-right-color: var(--pos-border);
+}
+
+.cashier-app.cashier-app--light .cashier-sidebar__brand {
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--light .cashier-sidebar__store {
+  background: var(--pos-green-soft);
+  border-color: rgb(0 104 71 / 0.15);
+}
+
+.cashier-app.cashier-app--light .cashier-sidebar__nav .nav-link,
+.cashier-app.cashier-app--light .cashier-sidebar__nav-btn {
+  color: var(--pos-muted);
+}
+
+.cashier-app.cashier-app--light .cashier-sidebar__nav .nav-link:hover:not(.active),
+.cashier-app.cashier-app--light .cashier-sidebar__nav-btn:hover:not(:disabled) {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--light .cashier-sidebar__nav .nav-link.active {
+  background: var(--pos-green);
+  color: #fff;
+  box-shadow: inset 3px 0 0 rgb(0 0 0 / 0.12);
+}
+
+.cashier-app.cashier-app--light .cashier-sidebar__toggle,
+.cashier-app.cashier-app--light .cashier-sidebar__logout,
+.cashier-app.cashier-app--light .cashier-sidebar__lock {
+  background: #fff;
+  border-color: var(--pos-border);
+  color: var(--pos-muted);
+}
+
+.cashier-app.cashier-app--light .cashier-sidebar__toggle:hover,
+.cashier-app.cashier-app--light .cashier-sidebar__logout:hover,
+.cashier-app.cashier-app--light .cashier-sidebar__lock:hover {
+  background: var(--pos-green-soft);
+  border-color: rgb(0 104 71 / 0.25);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--light .cashier-topbar {
+  background: #fff !important;
+  border-bottom-color: var(--pos-border) !important;
+}
+
+.cashier-app.cashier-app--light .cashier-topbar__menu {
+  background: #fff;
+  border-color: var(--pos-border);
+  color: var(--pos-muted);
+}
+
+.cashier-app.cashier-app--light .cashier-topbar__menu:hover {
+  background: var(--pos-green-soft);
+  border-color: rgb(0 104 71 / 0.3);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--light .cashier-topbar__terminal-name,
+.cashier-app.cashier-app--light .cashier-topbar__app-name {
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--light .cashier-topbar__terminal-badge {
+  color: var(--pos-muted);
+  background: var(--pos-green-soft);
+  border-color: rgb(0 104 71 / 0.15);
+}
+
+.cashier-app.cashier-app--light .cashier-topbar__mobile-nav .nav-link {
+  color: var(--pos-muted);
+}
+
+.cashier-app.cashier-app--light .cashier-topbar__mobile-nav .nav-link.active {
+  background: var(--pos-green);
+  color: #fff;
+}
+
+.cashier-app.cashier-app--light .cashier-lang-switch {
+  background: #fff;
+  border-color: var(--pos-border);
+}
+
+.cashier-app.cashier-app--light .cashier-lang-switch__btn.is-active {
+  background: var(--pos-green);
+  color: #fff;
+}
+
+.cashier-app.cashier-app--light .cashier-theme-toggle {
+  background: #fff;
+  border-color: var(--pos-border);
+  color: var(--pos-muted);
+}
+
+.cashier-app.cashier-app--light .cashier-theme-toggle:hover {
+  background: var(--pos-green-soft);
+  border-color: rgb(0 104 71 / 0.3);
+  color: var(--pos-green);
+}
+

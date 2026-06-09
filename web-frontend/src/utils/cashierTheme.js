@@ -27,11 +27,16 @@ export function cashierThemeClassName(theme) {
   return theme === 'light' ? 'cashier-app--light' : 'cashier-app--terminal';
 }
 
-/** @param {CashierTheme} theme */
+/** @param {CashierTheme} theme — класс на html для порталов; color-scheme только внутри .cashier-app */
 export function syncCashierThemeDocument(theme) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   root.classList.remove('cashier-theme--light', 'cashier-theme--dark');
   root.classList.add(theme === 'light' ? 'cashier-theme--light' : 'cashier-theme--dark');
-  root.style.colorScheme = theme === 'light' ? 'light' : 'dark';
+}
+
+/** Сброс классов кассы при уходе с /cashier (админка остаётся светлой). */
+export function clearCashierThemeDocument() {
+  if (typeof document === 'undefined') return;
+  document.documentElement.classList.remove('cashier-theme--light', 'cashier-theme--dark');
 }

@@ -1,4 +1,4 @@
-/** Всегда светлая тема (переключатель убран). */
+/** Админка — всегда светлая. */
 export function syncRootTheme() {
   if (typeof document === 'undefined') return;
   document.documentElement.classList.remove('dark');

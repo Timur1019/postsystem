@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const localDb = require('./local-db.cjs');
+const localDb = require('./index.cjs');
 
 const IPC_TIMEOUT_MS = 12_000;
 
@@ -80,6 +80,10 @@ function registerOfflineIpc(getConfig, probeBackendOnlineQuick) {
 
   ipcMain.handle('offline:sync-shift-from-server', async (_e, payload) =>
     safeOffline(() => localDb.syncServerShiftToLocal(payload || {}), null),
+  );
+
+  ipcMain.handle('offline:close-shift', async (_e, payload) =>
+    safeOffline(() => localDb.closeLocalShift(payload || {}), { ok: false }),
   );
 
   ipcMain.handle('offline:save-sale', async (_e, payload) =>

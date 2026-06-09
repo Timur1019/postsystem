@@ -1,0 +1,61 @@
+/* Handbook page — terminal orange panels */
+/* —— Справочник —— */
+.cashier-app.cashier-app--terminal .handbook-page__header-icon {
+  background: var(--cashier-panel-surface-2);
+  color: var(--cashier-panel-muted);
+  border: 1px solid var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .handbook-page__title {
+  color: var(--pos-text, #f1f5f9);
+}
+
+.cashier-app.cashier-app--terminal .handbook-page__intro {
+  color: var(--pos-muted, #94a3b8);
+}
+
+.cashier-app.cashier-app--terminal .handbook-page__nav {
+  background: var(--cashier-panel-surface);
+  border-color: var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .handbook-page__group-label {
+  color: var(--cashier-panel-muted);
+}
+
+.cashier-app.cashier-app--terminal .handbook-page__nav-btn {
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .handbook-page__nav-btn:hover {
+  background: var(--cashier-panel-surface-2);
+}
+
+.cashier-app.cashier-app--terminal .handbook-page__nav-btn--active {
+  background: #fed7aa;
+  color: #9a3412;
+  font-weight: 700;
+}
+
+.cashier-app.cashier-app--terminal .handbook-page__content {
+  background: var(--cashier-panel-surface);
+  border-color: var(--cashier-panel-border);
+  box-shadow: 0 4px 24px rgb(0 0 0 / 0.25);
+}
+
+.cashier-app.cashier-app--terminal .handbook-page__content h2 {
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .handbook-page__summary,
+.cashier-app.cashier-app--terminal .handbook-page__list {
+  color: #78350f;
+}
+/* Справочник и поддержка — тот же оранжевый */
+.cashier-app.cashier-app--terminal .handbook-page__content,
+.cashier-app.cashier-app--terminal .handbook-page__nav,
+.cashier-app.cashier-app--terminal .support-card,
+.cashier-app.cashier-app--terminal .support-page__steps {
+  background: var(--cashier-panel-surface);
+  border-color: var(--cashier-panel-border);
+}

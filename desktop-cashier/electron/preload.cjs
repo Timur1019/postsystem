@@ -57,6 +57,7 @@ contextBridge.exposeInMainWorld('desktopCashier', {
   offlineOpenShift: (payload) => ipcRenderer.invoke('offline:open-shift', payload),
   offlineSyncShiftFromServer: (payload) =>
     ipcRenderer.invoke('offline:sync-shift-from-server', payload),
+  offlineCloseShift: (payload) => ipcRenderer.invoke('offline:close-shift', payload),
   offlineSaveSale: (payload) => ipcRenderer.invoke('offline:save-sale', payload),
   offlineListPendingSales: () => ipcRenderer.invoke('offline:list-pending-sales'),
   offlineListMySales: (opts) => ipcRenderer.invoke('offline:list-my-sales', opts || {}),

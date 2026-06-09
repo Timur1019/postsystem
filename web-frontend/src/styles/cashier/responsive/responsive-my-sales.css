@@ -1,0 +1,165 @@
+/* My sales page layout and filters */
+.cashier-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.cashier-page__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cashier-page__table-wrap {
+  overflow-x: auto;
+}
+
+@media (max-width: 767px) {
+  .cashier-page__table-wrap table {
+    min-width: 520px;
+  }
+}
+
+/* Фильтры «Мои продажи» */
+.cashier-sales-filters-card {
+  background: #fff;
+  border: 1px solid var(--pos-border, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgb(15 23 42 / 0.05);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.cashier-sales-filters-card.is-active {
+  border-color: rgb(0 104 71 / 0.35);
+  box-shadow: 0 0 0 3px rgb(0 104 71 / 0.08);
+}
+
+.cashier-sales-filters-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, #f8faf9 0%, #fff 100%);
+  border-bottom: 1px solid var(--pos-border, #e5e7eb);
+}
+
+.cashier-sales-filters-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--pos-text, #111827);
+}
+
+.cashier-sales-filters-card__badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--pos-green-soft, #e8f5ef);
+  color: var(--pos-green, #006847);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.cashier-sales-filters-card__reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.cashier-sales-filters-card__reset:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.cashier-sales-filters-card__body {
+  padding: 12px 14px 14px;
+}
+
+.cashier-sales-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px 12px;
+  align-items: end;
+}
+
+.cashier-sales-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cashier-sales-filters__label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin: 0;
+}
+
+.cashier-sales-filters__input,
+.cashier-sales-filters__select {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.8125rem;
+  color: var(--pos-text, #111827);
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.cashier-sales-filters__input:focus,
+.cashier-sales-filters__select:focus {
+  outline: none;
+  border-color: var(--pos-green, #006847);
+  box-shadow: 0 0 0 3px rgb(0 104 71 / 0.12);
+}
+
+.cashier-sales-filters__select {
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .cashier-sales-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cashier-sales-filters__field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.cashier-sales-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--bs-border-color, #dee2e6);
+  background: #f8f9fa;
+  font-size: 0.8125rem;
+}
+

@@ -1,0 +1,118 @@
+/* Pay rail — footer and method cards */
+.pos-pay-panel--register-rail .pos-pay-panel__footer-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__footer-row__primary {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__footer-row__primary .pos-pay-panel__primary {
+  width: 100%;
+  height: 100%;
+  min-height: 52px;
+}
+
+.pos-pay-panel--register-rail .pos-pay-print-toggle--footer {
+  flex: 0 0 clamp(7.5rem, 32%, 9.5rem);
+  width: auto;
+  max-width: 9.5rem;
+  margin: 0;
+  padding: 8px 10px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.pos-pay-panel--register-rail .pos-pay-print-toggle--footer .pos-pay-print-toggle__text {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__footer-row--toggle-only {
+  justify-content: flex-end;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__footer-row--toggle-only .pos-pay-print-toggle--footer {
+  max-width: 100%;
+  flex: 0 0 auto;
+  min-width: 7.5rem;
+}
+
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-panel__footer-row__primary .pos-pay-panel__primary,
+.pos-pay-panel--register-rail.is-step-mixedCash .pos-pay-panel__footer-row__primary .pos-pay-panel__primary {
+  min-height: 44px;
+}
+
+/* Способы оплаты: три одинаковые кнопки на всю ширину колонки */
+.pos-pay-panel--register-rail .pos-pay-method-cards--register-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.pos-pay-panel--register-rail .pos-pay-method-cards--terminal .pos-pay-method-card--register,
+.pos-pay-panel--register-rail .pos-pay-method-cards--terminal .pos-pay-method-card--row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  min-height: 64px;
+  padding: 14px 16px;
+  gap: 12px;
+  border: 1px solid var(--pos-border, #2a3548);
+  border-left: 4px solid var(--pos-green, #3dffa8);
+  border-radius: 12px;
+  background: var(--pos-surface-elevated, #1c2433);
+  color: var(--pos-text, #f1f5f9);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pos-pay-panel--register-rail .pos-pay-method-cards--terminal .pos-pay-method-card--register:hover,
+.pos-pay-panel--register-rail .pos-pay-method-cards--terminal .pos-pay-method-card--row:hover {
+  border-color: var(--pos-green, #3dffa8);
+  background: rgb(61 255 168 / 0.08);
+}
+
+.pos-pay-panel--register-rail .pos-pay-method-card--register .pos-pay-method-card__icon,
+.pos-pay-panel--register-rail .pos-pay-method-card--row .pos-pay-method-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--pos-green-soft, rgb(61 255 168 / 0.12));
+  color: var(--pos-green, #3dffa8);
+}
+
+.pos-pay-panel--register-rail .pos-pay-method-card--register .pos-pay-method-card__label,
+.pos-pay-panel--register-rail .pos-pay-method-card--row .pos-pay-method-card__label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.pos-pay-panel--register-rail .pos-pay-method-card--register .pos-pay-method-card__arrow,
+.pos-pay-panel--register-rail .pos-pay-method-card--row .pos-pay-method-card__arrow {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--pos-green, #3dffa8);
+  opacity: 0.85;
+}
+

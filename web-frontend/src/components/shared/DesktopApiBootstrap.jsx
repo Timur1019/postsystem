@@ -17,18 +17,7 @@ export default function DesktopApiBootstrap({ children }) {
   }, []);
 
   if (!ready) {
-    return (
-      <div
-        className="flex min-h-screen items-center justify-center bg-slate-100"
-        role="status"
-        aria-label="Loading"
-      >
-        <div
-          className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"
-          aria-hidden
-        />
-      </div>
-    );
+    return null;
   }
 
   return children;

@@ -1,0 +1,139 @@
+/* Terminal theme — catalog */
+.cashier-app.cashier-app--terminal .pos-search-bar__field {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+}
+
+.cashier-app.cashier-app--terminal .pos-search-bar__icon {
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-search-bar__input {
+  color: var(--pos-text);
+}
+
+.cashier-app.cashier-app--terminal .pos-search-bar__input::placeholder {
+  color: var(--pos-muted);
+}
+
+.cashier-app.cashier-app--terminal .pos-catalog-toolbar {
+  border-bottom-color: var(--pos-border);
+}
+
+.cashier-app.cashier-app--terminal .pos-catalog-toolbar__back {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-catalog-toolbar__title {
+  color: var(--pos-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.8125rem;
+}
+
+.cashier-app.cashier-app--terminal .pos-category-tile {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+}
+
+.cashier-app.cashier-app--terminal .pos-category-tile:hover {
+  border-color: rgb(61 255 168 / 0.45);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
+}
+
+.cashier-app.cashier-app--terminal .pos-category-tile--all {
+  background: linear-gradient(135deg, rgb(61 255 168 / 0.12) 0%, var(--pos-surface-elevated) 60%);
+  border-color: rgb(61 255 168 / 0.25);
+}
+
+.cashier-app.cashier-app--terminal .pos-category-tile__icon {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-category-nav__pill {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  color: var(--pos-muted);
+}
+
+.cashier-app.cashier-app--terminal .pos-category-nav__pill.is-active {
+  background: transparent;
+  border-color: transparent;
+  color: var(--pos-green);
+  box-shadow: inset 0 -3px 0 var(--pos-green);
+  border-radius: 0;
+}
+
+/* Product cards — terminal grid */
+.cashier-app.cashier-app--terminal .pos-product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 10px;
+}
+
+.cashier-app.cashier-app--terminal .pos-product-card {
+  min-height: 108px;
+  padding: 12px 12px 14px;
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+  border-radius: 12px;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.cashier-app.cashier-app--terminal .pos-product-card:hover {
+  border-color: var(--pos-green);
+  box-shadow: 0 0 0 1px rgb(61 255 168 / 0.35), 0 8px 24px rgb(0 0 0 / 0.4);
+  background: rgb(61 255 168 / 0.06);
+}
+
+.cashier-app.cashier-app--terminal .pos-product-card__price {
+  position: static;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--pos-muted);
+  text-align: right;
+}
+
+.cashier-app.cashier-app--terminal .pos-product-card__code {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-product-card__name {
+  display: block;
+  -webkit-line-clamp: 3;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pos-text);
+}
+
+.cashier-app.cashier-app--terminal .pos-product-row {
+  background: var(--pos-surface-elevated);
+  border-color: var(--pos-border);
+}
+
+.cashier-app.cashier-app--terminal .pos-product-row:hover {
+  border-color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-product-row__code {
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--terminal .pos-product-row__price {
+  color: var(--pos-money);
+}
+

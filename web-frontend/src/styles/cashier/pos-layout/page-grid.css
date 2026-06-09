@@ -1,0 +1,107 @@
+/* POS page grid — catalog | cart | pay */
+
+.cashier-register {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cashier-register__workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.cashier-register__stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cashier-gap, 10px);
+}
+
+.cashier-register__catalog-col,
+.cashier-register__order-col,
+.cashier-register__actions-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cashier-register__catalog-col > .pos-catalog-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.cashier-register__order-col > .pos-order-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.cashier-register__actions-col > .pos-order-rail {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+/* Каталог: только товары */
+.cashier-register__split--catalog .cashier-register__actions-col,
+.cashier-register__split--catalog .cashier-register__order-col {
+  display: none;
+}
+
+.cashier-register__split--catalog .cashier-register__catalog-col {
+  flex: 1 1 auto;
+}
+
+/* Чек: слева таблица, справа возврат / итоги / кнопки */
+.cashier-register__split--register .cashier-register__catalog-col {
+  display: none;
+}
+
+.cashier-register__split--register .cashier-register__stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, clamp(280px, 32vw, 400px));
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: var(--cashier-gap, 10px);
+}
+
+.cashier-register__split--register .cashier-register__actions-col,
+.cashier-register__split--register .cashier-register__order-col {
+  background: var(--pos-surface, #151b26);
+  border: 1px solid var(--pos-border, #2a3548);
+  border-radius: var(--cashier-block-radius, 14px);
+  box-shadow: 0 4px 24px rgb(0 0 0 / 0.35);
+}
+
+.cashier-register__split--register .cashier-register__order-col .pos-order-panel {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+@media (min-width: 800px) {
+  .cashier-register__split--catalog .cashier-register__catalog-col {
+    background: var(--pos-surface, #151b26);
+    border: 1px solid var(--pos-border, #2a3548);
+    border-radius: var(--cashier-block-radius, 14px);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.35);
+  }
+
+  .cashier-register__split--catalog .cashier-register__catalog-col > .pos-catalog-panel {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+}
+

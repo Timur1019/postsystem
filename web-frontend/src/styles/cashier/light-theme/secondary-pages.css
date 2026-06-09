@@ -1,0 +1,61 @@
+/* Light theme — secondary pages */
+.cashier-app.cashier-app--light {
+  --cashier-panel-surface: #fff;
+  --cashier-panel-surface-2: #f9fafb;
+  --cashier-panel-border: #e5e7eb;
+  --cashier-panel-text: #111827;
+  --cashier-panel-muted: #6b7280;
+}
+
+.cashier-app.cashier-app--light .handbook-page__nav-btn--active {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--light .handbook-page__summary,
+.cashier-app.cashier-app--light .handbook-page__list,
+.cashier-app.cashier-app--light .support-page__steps-list {
+  color: var(--pos-muted);
+}
+
+.cashier-app.cashier-app--light .support-card__link,
+.cashier-app.cashier-app--light .support-card__value {
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--light .cashier-sales-filters-card.is-active {
+  border-color: rgb(0 104 71 / 0.35);
+  box-shadow: 0 0 0 3px rgb(0 104 71 / 0.08);
+}
+
+.cashier-app.cashier-app--light .cashier-sales-filters-card__badge {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--light .cashier-sales-shift-stats__icon {
+  background: var(--pos-green);
+  color: #fff;
+  border: none;
+}
+
+.cashier-app.cashier-app--light .cashier-sales-shift-stats__value--sum {
+  color: var(--pos-green);
+}
+
+.cashier-app.cashier-app--light .cashier-sales-table__row:hover,
+.cashier-app.cashier-app--light .cashier-sales-table__row:hover td {
+  background: #f8faf9;
+}
+
+.cashier-app.cashier-app--light .cashier-sales-table__row:nth-child(even),
+.cashier-app.cashier-app--light .cashier-sales-table__row:nth-child(even) td {
+  background: #fafbfc;
+}
+
+.cashier-app.cashier-app--light .cashier-sales-pagination__btn.is-active {
+  background: var(--pos-green);
+  border-color: var(--pos-green);
+  color: #fff;
+}
+

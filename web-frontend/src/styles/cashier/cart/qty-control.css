@@ -1,0 +1,36 @@
+/* Qty control */
+.pos-qty-control {
+  display: inline-flex;
+  align-items: center;
+  background: #f3f4f6;
+  border: 1px solid var(--pos-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.pos-qty-control__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.pos-qty-control__btn:hover {
+  background: #e8eaed;
+  color: #374151;
+}
+
+.pos-qty-control__val {
+  min-width: 28px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #111827;
+}
+

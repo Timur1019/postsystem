@@ -1,0 +1,69 @@
+/* Support page — terminal orange panels */
+/* —— Поддержка —— */
+.cashier-app.cashier-app--terminal .support-page__header-icon {
+  background: var(--cashier-panel-surface-2);
+  color: var(--cashier-panel-muted);
+  border: 1px solid var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .support-page__title {
+  color: var(--pos-text, #f1f5f9);
+}
+
+.cashier-app.cashier-app--terminal .support-page__intro {
+  color: var(--pos-muted, #94a3b8);
+}
+
+.cashier-app.cashier-app--terminal .support-card {
+  background: var(--cashier-panel-surface);
+  border-color: var(--cashier-panel-border);
+  box-shadow: 0 4px 20px rgb(0 0 0 / 0.2);
+}
+
+.cashier-app.cashier-app--terminal .support-card__title {
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .support-card__hint {
+  color: #92400e;
+}
+
+.cashier-app.cashier-app--terminal .support-card__link,
+.cashier-app.cashier-app--terminal .support-card__value {
+  color: #c2410c;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.cashier-app.cashier-app--terminal .support-card__icon--phone {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.cashier-app.cashier-app--terminal .support-card__icon--telegram {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.cashier-app.cashier-app--terminal .support-card__bot-name {
+  color: var(--cashier-panel-muted);
+}
+
+.cashier-app.cashier-app--terminal .support-page__steps {
+  background: var(--cashier-panel-surface);
+  border-color: var(--cashier-panel-border);
+}
+
+.cashier-app.cashier-app--terminal .support-page__steps-title {
+  color: var(--cashier-panel-text);
+}
+
+.cashier-app.cashier-app--terminal .support-page__steps-list {
+  color: #78350f;
+}
+
+.cashier-app.cashier-app--terminal .support-page__empty {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}

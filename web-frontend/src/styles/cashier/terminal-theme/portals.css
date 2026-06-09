@@ -1,0 +1,227 @@
+/* Terminal theme — payment and return portals */
+.pos-pay-overlay {
+  background: rgb(8 12 18 / 0.82);
+  backdrop-filter: blur(4px);
+}
+
+/* Возврат по чеку (portal) — терминальная тема кассы */
+.pos-return-modal--terminal {
+  --pos-border: #2a3548;
+  --pos-green: #3dffa8;
+  --pos-green-hover: #2ee896;
+  --pos-muted: #94a3b8;
+  --pos-text: #f1f5f9;
+  --pos-money: #f5c842;
+  width: min(96vw, 540px);
+  max-height: min(92dvh, 44rem);
+  background: #151b26;
+  border: 1px solid var(--pos-border);
+  color: var(--pos-text);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 0.55);
+}
+
+.pos-return-modal--terminal.pos-return-modal--partial {
+  width: min(96vw, 44rem);
+  max-height: min(94dvh, 52rem);
+}
+
+.pos-return-modal--terminal.pos-return-modal--partial .pos-return-modal__lines.pos-return-modal__lines--select {
+  max-height: min(48dvh, 22rem);
+}
+
+.pos-return-modal--terminal.pos-return-modal--partial .pos-return-modal__preview-head {
+  background: rgb(61 255 168 / 0.08);
+  border: 1px solid var(--pos-border);
+}
+
+.pos-return-modal--terminal .pos-return-modal__header {
+  background: linear-gradient(180deg, rgb(61 255 168 / 0.12) 0%, #151b26 100%);
+  border-bottom: 1px solid var(--pos-border);
+}
+
+.pos-return-modal--terminal .pos-return-modal__header-icon {
+  background: var(--pos-green);
+  color: #0a1218;
+  box-shadow: 0 0 20px rgb(61 255 168 / 0.35);
+}
+
+.pos-return-modal--terminal .pos-return-modal__title {
+  color: var(--pos-green);
+}
+
+.pos-return-modal--terminal .pos-return-modal__hint {
+  color: var(--pos-muted);
+}
+
+.pos-return-modal--terminal .pos-return-modal__close {
+  color: var(--pos-text);
+}
+
+.pos-return-modal--terminal .pos-return-modal__close:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: #fff;
+}
+
+.pos-return-modal--terminal .pos-return-modal__body {
+  background: #151b26;
+}
+
+.pos-return-modal--terminal .pos-return-modal__label {
+  color: var(--pos-muted);
+}
+
+.pos-return-modal--terminal .pos-return-modal__input-icon {
+  color: var(--pos-muted);
+}
+
+.pos-return-modal--terminal .pos-return-modal__input,
+.pos-return-modal--terminal .pos-return-modal__textarea {
+  background: #1c2433;
+  border-color: var(--pos-border);
+  color: var(--pos-text);
+}
+
+.pos-return-modal--terminal .pos-return-modal__input::placeholder,
+.pos-return-modal--terminal .pos-return-modal__textarea::placeholder {
+  color: #64748b;
+}
+
+.pos-return-modal--terminal .pos-return-modal__input:focus,
+.pos-return-modal--terminal .pos-return-modal__textarea:focus {
+  border-color: rgb(61 255 168 / 0.55);
+  box-shadow: 0 0 0 3px rgb(61 255 168 / 0.15);
+}
+
+.pos-return-modal--terminal .pos-return-modal__find {
+  background: var(--pos-green);
+  color: #0a1218;
+}
+
+.pos-return-modal--terminal .pos-return-modal__find:hover:not(:disabled) {
+  background: var(--pos-green-hover);
+}
+
+.pos-return-modal--terminal .pos-return-modal__placeholder {
+  min-height: 140px;
+  margin-bottom: 16px;
+  padding: 32px 20px;
+  border: none;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.pos-return-modal--terminal .pos-return-modal__placeholder svg {
+  color: #94a3b8;
+}
+
+.pos-return-modal--terminal .pos-return-modal__placeholder p {
+  color: #64748b;
+}
+
+.pos-return-modal--terminal .pos-return-modal__preview {
+  background: #1c2433;
+  border: 1px solid rgb(61 255 168 / 0.25);
+}
+
+.pos-return-modal--terminal .pos-return-modal__preview-badge {
+  background: rgb(61 255 168 / 0.15);
+  color: var(--pos-green);
+}
+
+.pos-return-modal--terminal .pos-return-modal__preview-receipt,
+.pos-return-modal--terminal .pos-return-modal__preview-meta,
+.pos-return-modal--terminal .pos-return-modal__preview-currency,
+.pos-return-modal--terminal .pos-return-modal__preview-total-inline {
+  color: var(--pos-muted);
+}
+
+.pos-return-modal--terminal .pos-return-modal__preview-total {
+  color: var(--pos-money);
+}
+
+.pos-return-modal--terminal .pos-return-modal__select-all {
+  background: rgb(61 255 168 / 0.12);
+  border-color: rgb(61 255 168 / 0.35);
+  color: var(--pos-green);
+}
+
+.pos-return-modal--terminal .pos-return-modal__select-all:hover {
+  background: rgb(61 255 168 / 0.2);
+}
+
+.pos-return-modal--terminal .pos-return-modal__lines--select .pos-return-line-select {
+  background: #0f141c;
+  border-color: var(--pos-border);
+}
+
+.pos-return-modal--terminal .pos-return-modal__line-name {
+  color: var(--pos-text);
+}
+
+.pos-return-modal--terminal .pos-return-line-select__meta {
+  color: var(--pos-muted);
+}
+
+.pos-return-modal--terminal .pos-return-line-select__sum {
+  color: var(--pos-green);
+}
+
+.pos-return-modal--terminal .pos-return-qty-stepper {
+  background: #1c2433;
+  border-color: var(--pos-border);
+}
+
+.pos-return-modal--terminal .pos-return-qty-stepper__btn {
+  background: #243044;
+  color: var(--pos-text);
+  border-color: var(--pos-border);
+}
+
+.pos-return-modal--terminal .pos-return-qty-stepper__btn:hover:not(:disabled) {
+  background: rgb(61 255 168 / 0.15);
+  color: var(--pos-green);
+}
+
+.pos-return-modal--terminal .pos-return-qty-stepper__value {
+  background: #151b26;
+  color: var(--pos-text);
+}
+
+.pos-return-modal--terminal .pos-return-line-select__max {
+  background: rgb(245 200 66 / 0.1);
+  border-color: rgb(245 200 66 / 0.45);
+  color: var(--pos-money);
+}
+
+.pos-return-modal--terminal .pos-return-line-select__max:hover:not(:disabled) {
+  background: rgb(245 200 66 / 0.18);
+}
+
+.pos-return-modal--terminal .pos-return-modal__footer {
+  background: #eef1f5;
+  border-top: 1px solid #d8dee8;
+}
+
+.pos-return-modal--terminal .pos-return-modal__cancel {
+  background: #fff;
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+
+.pos-return-modal--terminal .pos-return-modal__cancel:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.pos-return-modal--terminal .pos-return-modal__submit {
+  background: linear-gradient(180deg, #5dffb0 0%, var(--pos-green) 100%);
+  color: #0a1218;
+  box-shadow: 0 4px 16px rgb(61 255 168 / 0.35);
+}
+
+.pos-return-modal--terminal .pos-return-modal__submit:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--pos-green) 0%, var(--pos-green-hover) 100%);
+}
+
+/* Payment modal overlay */

@@ -11,6 +11,14 @@
           document.documentElement.classList.remove('dark');
           document.documentElement.style.colorScheme = 'light';
           localStorage.removeItem('pos-theme');
+          if (location.pathname.indexOf('/cashier') === 0) {
+            var cashierTheme = localStorage.getItem('pos-cashier-theme');
+            if (cashierTheme !== 'light' && cashierTheme !== 'dark') cashierTheme = 'dark';
+            document.documentElement.classList.remove('cashier-theme--light', 'cashier-theme--dark');
+            document.documentElement.classList.add(
+              cashierTheme === 'light' ? 'cashier-theme--light' : 'cashier-theme--dark'
+            );
+          }
         } catch (e) {
           /* ignore */
         }

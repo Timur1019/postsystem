@@ -1,0 +1,202 @@
+/* Desktop Electron topbar — Aurent menu, store/shift badges */
+/* Electron / Windows: одна строка — Aurent + бейджи магазина и смены */
+.cashier-app--desktop .cashier-topbar--pos {
+  min-height: 52px;
+  padding: 8px 12px !important;
+}
+
+.cashier-app--desktop .cashier-topbar--pos .cashier-topbar__row--main {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.cashier-app--desktop .cashier-topbar__brand-block {
+  flex: 0 1 auto;
+  max-width: min(58vw, 560px);
+}
+
+/* Меню приложения Aurent (Electron, Windows) — рядом с названием, по наведению */
+.cashier-desktop-menu {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 1300;
+}
+
+.cashier-app--desktop .cashier-topbar--pos,
+.cashier-app--desktop .cashier-topbar--pos .cashier-topbar__row--main,
+.cashier-app--desktop .cashier-topbar__brand-block {
+  overflow: visible;
+}
+
+.cashier-desktop-menu__label {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.cashier-desktop-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--cashier-topbar-control-h, 40px);
+  min-height: var(--cashier-topbar-control-h, 40px);
+  padding: 0 12px;
+  border: 1px solid var(--pos-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--pos-green);
+  font-size: 0.9375rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+}
+
+.cashier-desktop-menu__chevron {
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.cashier-desktop-menu:hover .cashier-desktop-menu__trigger,
+.cashier-desktop-menu.is-open .cashier-desktop-menu__trigger {
+  background: var(--pos-green-soft);
+  border-color: rgb(0 104 71 / 0.35);
+  box-shadow: 0 2px 10px rgb(0 104 71 / 0.12);
+  color: var(--pos-green);
+}
+
+.cashier-desktop-menu:hover .cashier-desktop-menu__chevron,
+.cashier-desktop-menu.is-open .cashier-desktop-menu__chevron {
+  opacity: 1;
+  transform: rotate(180deg);
+}
+
+.cashier-desktop-menu__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1301;
+  display: flex;
+  flex-direction: column;
+  min-width: 240px;
+  padding: 6px;
+  border: 1px solid var(--pos-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgb(15 23 42 / 0.16);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease,
+    transform 0.15s ease;
+}
+
+/* Мостик для наведения с кнопки на список */
+.cashier-desktop-menu__panel::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 0;
+  right: 0;
+  height: 8px;
+}
+
+.cashier-desktop-menu:hover .cashier-desktop-menu__panel,
+.cashier-desktop-menu.is-open .cashier-desktop-menu__panel,
+.cashier-desktop-menu:focus-within .cashier-desktop-menu__panel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.cashier-desktop-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pos-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.cashier-desktop-menu__item:hover,
+.cashier-desktop-menu__item--primary:hover {
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+}
+
+.cashier-desktop-menu__item--primary {
+  font-weight: 700;
+}
+
+.cashier-desktop-menu__item--stacked {
+  align-items: flex-start;
+  min-height: 52px;
+}
+
+.cashier-desktop-menu__item--stacked svg {
+  margin-top: 2px;
+}
+
+.cashier-desktop-menu__item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cashier-desktop-menu__item-meta {
+  font-size: 11px;
+  color: var(--pos-muted, #64748b);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cashier-desktop-menu__item--danger:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.cashier-desktop-menu__sep {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--pos-border);
+}
+
+.cashier-topbar__pos-title {
+  font-size: 1rem;
+  color: var(--pos-text);
+  white-space: nowrap;
+}
+
+.cashier-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+

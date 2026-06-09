@@ -1,0 +1,58 @@
+/* Cashier design tokens — .cashier-app base + terminal/light CSS variables */
+
+.cashier-app {
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  line-height: 1.45;
+}
+
+/* Тёмная терминальная тема (по умолчанию) */
+.cashier-app.cashier-app--terminal {
+  --pos-green: #3dffa8;
+  --pos-green-hover: #2ee896;
+  --pos-green-soft: rgb(61 255 168 / 0.12);
+  --pos-bg: #0c1018;
+  --pos-surface: #151b26;
+  --pos-surface-elevated: #1c2433;
+  --pos-border: #2a3548;
+  --pos-text: #f1f5f9;
+  --pos-muted: #94a3b8;
+  --pos-money: #f5c842;
+  --pos-danger: #f87171;
+  --pos-radius: 10px;
+  --pos-radius-lg: 14px;
+  --cashier-block-radius: 14px;
+  --bs-primary: var(--pos-green);
+  --bs-success: var(--pos-green);
+  --bs-body-bg: var(--pos-bg);
+  --bs-border-color: var(--pos-border);
+  --bs-body-color: var(--pos-text);
+
+  color: var(--pos-text);
+  background: var(--pos-bg) !important;
+}
+
+/* Светлая тема кассы */
+.cashier-app.cashier-app--light {
+  --pos-green: #006847;
+  --pos-green-hover: #005538;
+  --pos-green-soft: #e8f5ef;
+  --pos-bg: #f0f2f5;
+  --pos-surface: #ffffff;
+  --pos-surface-elevated: #f8faf9;
+  --pos-border: #e5e7eb;
+  --pos-text: #111827;
+  --pos-muted: #6b7280;
+  --pos-money: #b45309;
+  --pos-danger: #dc2626;
+  --pos-radius: 10px;
+  --pos-radius-lg: 12px;
+  --cashier-block-radius: 12px;
+  --bs-primary: var(--pos-green);
+  --bs-success: var(--pos-green);
+  --bs-body-bg: var(--pos-bg);
+  --bs-border-color: var(--pos-border);
+  --bs-body-color: var(--pos-text);
+
+  color: var(--pos-text);
+  background: var(--pos-bg) !important;
+}

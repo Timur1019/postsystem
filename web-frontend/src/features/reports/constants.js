@@ -1,0 +1,9 @@
+export const REPORT_PAGE_SIZE_DEFAULT = 20;
+
+export const REPORT_PAGE_SIZE_COMPACT = 10;
+
+export const REPORT_PAGE_SIZE_WIDE = 30;
+
+export const STOCK_MOVEMENT_TYPES = ['ALL', 'RESTOCK', 'SALE', 'RETURN', 'WRITE_OFF', 'ADJUSTMENT'];
+
+export const DEAD_STOCK_DAYS_DEFAULT = 30;

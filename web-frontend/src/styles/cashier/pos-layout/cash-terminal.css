@@ -1,0 +1,122 @@
+/* Cash payment terminal block */
+.pos-pay-cash-panel--terminal {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 0;
+  gap: 10px;
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: var(--pos-text, #f1f5f9);
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__summary-row strong {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__received-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid rgb(61 255 168 / 0.35);
+  background: rgb(61 255 168 / 0.08);
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__received-label {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pos-green, #3dffa8);
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__received-value {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--pos-green, #3dffa8);
+  line-height: 1;
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__change-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: var(--pos-money, #f5c842);
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__change-row strong {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--pos-money, #f5c842);
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__change-row--ready strong {
+  font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+  line-height: 1.1;
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--pos-text-muted, #94a3b8);
+}
+
+.pos-pay-cash-panel--terminal .pos-pay-cash__shortfall {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--pos-danger, #f87171);
+}
+
+.pos-pay-cash-panel--terminal .pos-keypad {
+  flex: 0 0 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+.pos-pay-cash-panel--terminal .pos-keypad__grid {
+  flex: 0 0 auto;
+  grid-template-rows: repeat(4, minmax(40px, 44px));
+}
+
+.pos-pay-panel__back-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  border: none;
+  border-radius: 12px;
+  background: #b91c1c;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.pos-pay-panel__back-check:hover {
+  background: #dc2626;
+}
+
+

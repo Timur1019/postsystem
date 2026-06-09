@@ -1,0 +1,32 @@
+/* Receipt page layout and off-screen fiscal print host */
+/* Скрытый контейнер термочека (off-screen) */
+.fiscal-print-scene {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: var(--print-content-w, 72mm);
+  max-width: var(--print-content-w, 72mm);
+  pointer-events: none;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.fiscal-print-scene--offscreen {
+  opacity: 0;
+}
+
+.receipt-page {
+  overflow-x: hidden;
+}
+.receipt-page__paper {
+  width: var(--print-paper-w, 80mm);
+  max-width: var(--print-paper-w, 80mm);
+}
+.receipt-page__card {
+  overflow: hidden;
+  width: 100%;
+}
+.receipt-page--silent {
+  width: var(--print-paper-w, 80mm);
+}

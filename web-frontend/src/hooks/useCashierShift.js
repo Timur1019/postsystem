@@ -1,19 +1,24 @@
 import { useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cashierShiftApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { useConnectivityStore, useShouldUseOfflinePos } from '../store/connectivityStore';
+import {
+  useConnectivityStore,
+  useShouldUseOfflinePos,
+  shouldUseOfflinePos,
+  canFallbackToOfflineCheckout,
+} from '../store/connectivityStore';
 import {
   isDesktopOfflineBridge,
+  offlineCloseShift,
   offlineGetCurrentShift,
   offlineOpenShift,
   offlineSyncShiftFromServer,
 } from '../services/offline/desktopOfflineBridge';
 import { isApiNetworkError } from '../utils/apiNetworkError';
-import { canFallbackToOfflineCheckout } from '../store/connectivityStore';
 
-function shiftQueryKey(storeId, userId, offlineShift) {
-  return ['cashier-shift', storeId, userId, offlineShift ? 'offline' : 'online'];
+function shiftQueryKey(storeId, userId) {
+  return ['cashier-shift', storeId, userId];
 }
 
 function shiftMirrorPayload(shift, storeId, user, storeName) {
@@ -26,6 +31,15 @@ function shiftMirrorPayload(shift, storeId, user, storeName) {
   };
 }
 
+async function mirrorCloseShiftToLocal(storeId, user) {
+  if (!isDesktopOfflineBridge() || !user?.id || !storeId) return;
+  try {
+    await offlineCloseShift({ storeId, cashierId: user.id });
+  } catch {
+    // non-blocking
+  }
+}
+
 async function mirrorOnlineShiftToLocal(shift, storeId, user, storeName) {
   if (!isDesktopOfflineBridge() || !shift || shift.status !== 'OPEN' || !user?.id) return;
   try {
@@ -35,7 +49,7 @@ async function mirrorOnlineShiftToLocal(shift, storeId, user, storeName) {
   }
 }
 
-/** Текущая открытая смена из БД; null — смена не открыта. */
+/** Текущая открытая смена; null — смена не открыта. */
 export async function fetchCurrentCashierShift(storeId, user, offlineShift = false, storeName = '') {
   if (offlineShift) {
     if (!user?.id) return null;
@@ -47,7 +61,10 @@ export async function fetchCurrentCashierShift(storeId, user, offlineShift = fal
     await mirrorOnlineShiftToLocal(shift, storeId, user, storeName);
     return shift;
   } catch (e) {
-    if (e.response?.status === 404) return null;
+    if (e.response?.status === 404) {
+      await mirrorCloseShiftToLocal(storeId, user);
+      return null;
+    }
     if (
       isApiNetworkError(e) &&
       isDesktopOfflineBridge() &&
@@ -68,14 +85,18 @@ export function useCashierShift(storeId) {
   const qc = useQueryClient();
 
   const query = useQuery({
-    queryKey: shiftQueryKey(storeId, userId, offlineShift),
+    queryKey: shiftQueryKey(storeId, userId),
     queryFn: () =>
-      fetchCurrentCashierShift(storeId, user, offlineShift, localStoreName || ''),
+      fetchCurrentCashierShift(
+        storeId,
+        user,
+        shouldUseOfflinePos(),
+        localStoreName || '',
+      ),
     enabled: storeId != null && userId != null,
     retry: offlineShift ? false : 1,
     staleTime: 5_000,
     refetchOnWindowFocus: false,
-    placeholderData: keepPreviousData,
   });
 
   useEffect(() => {
@@ -88,12 +109,12 @@ export function useCashierShift(storeId) {
     let prevApiOnline = useConnectivityStore.getState().apiOnline;
     const unsub = useConnectivityStore.subscribe((state) => {
       if (state.apiOnline !== prevApiOnline) {
-        qc.invalidateQueries({ queryKey: ['cashier-shift', storeId] });
+        qc.invalidateQueries({ queryKey: shiftQueryKey(storeId, userId) });
         prevApiOnline = state.apiOnline;
       }
     });
     return unsub;
-  }, [storeId, qc]);
+  }, [storeId, userId, qc]);
 
   return query;
 }
@@ -142,6 +163,13 @@ export async function openCashierShift(storeId, user, offlineShift = false, stor
   }
 }
 
+/** Закрыть смену на сервере и в локальной SQLite (desktop). */
+export async function closeCashierShift(shiftId, storeId, user) {
+  const closedShift = await cashierShiftApi.close(shiftId).then((r) => r.data);
+  await mirrorCloseShiftToLocal(storeId, user);
+  return closedShift;
+}
+
 export function useOpenCashierShift(storeId) {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id;
@@ -152,9 +180,25 @@ export function useOpenCashierShift(storeId) {
   return useMutation({
     mutationFn: () => openCashierShift(storeId, user, offlineShift, localStoreName || ''),
     onSuccess: (data) => {
-      qc.setQueryData(shiftQueryKey(storeId, userId, offlineShift), data);
+      qc.setQueryData(shiftQueryKey(storeId, userId), data);
     },
   });
 }
 
-export { shiftQueryKey };
+export function useCloseCashierShift(storeId) {
+  const user = useAuthStore((s) => s.user);
+  const userId = user?.id;
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (shiftId) => closeCashierShift(shiftId, storeId, user),
+    onSuccess: (closedShift) => {
+      qc.setQueryData(shiftQueryKey(storeId, userId), null);
+      qc.invalidateQueries({ queryKey: ['z-reports'] });
+      qc.invalidateQueries({ queryKey: ['my-sales'] });
+      return closedShift;
+    },
+  });
+}
+
+export { shiftQueryKey, mirrorCloseShiftToLocal };

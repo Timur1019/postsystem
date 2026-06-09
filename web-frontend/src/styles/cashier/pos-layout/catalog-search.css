@@ -1,0 +1,66 @@
+/* Catalog search and category bar */
+.cashier-app .pos-catalog-panel {
+  border: none;
+  background: transparent;
+}
+
+.cashier-app .pos-search-bar__field {
+  background: var(--pos-surface-elevated, #1c2433);
+  border: 1px solid var(--pos-border, #2a3548);
+  border-radius: 12px;
+  height: 48px;
+}
+
+.cashier-app .pos-category-browse {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+.cashier-app.cashier-app--terminal .pos-category-tile--all {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  min-height: 72px;
+  padding: 14px 16px;
+  background: linear-gradient(90deg, rgb(61 255 168 / 0.1) 0%, var(--pos-surface-elevated, #1c2433) 55%);
+  border: 1px solid rgb(61 255 168 / 0.35);
+  border-radius: 12px;
+}
+
+.cashier-app.cashier-app--light .pos-category-tile--all {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  min-height: 72px;
+  padding: 14px 16px;
+  background: linear-gradient(90deg, var(--pos-green-soft) 0%, #fff 55%);
+  border: 1px solid rgb(0 104 71 / 0.2);
+  border-radius: 12px;
+}
+
+.cashier-app .pos-category-tile--all .pos-category-tile__hint {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--pos-muted, #94a3b8);
+}
+
+.cashier-app .pos-category-tile:not(.pos-category-tile--all) {
+  min-height: 100px;
+  justify-content: flex-end;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.cashier-app .pos-category-tile__name {
+  font-weight: 800;
+  font-size: 0.9375rem;
+}
+
+.cashier-app .pos-catalog-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+

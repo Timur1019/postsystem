@@ -1,0 +1,144 @@
+/* Pay rail — shell and header */
+
+.cashier-register__actions-col--pay {
+  min-width: 0;
+}
+
+.cashier-register__actions-col--pay > .pos-pay-panel--register-rail {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pos-pay-panel--register-rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: transparent;
+  color: var(--pos-text, #f1f5f9);
+}
+
+.pos-pay-register-rail__head {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--pos-border, #2a3548);
+  background: var(--pos-surface-elevated, #1c2433);
+}
+
+.pos-pay-register-rail__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--pos-border, #2a3548);
+  border-radius: 10px;
+  background: var(--pos-surface, #151b26);
+  color: var(--pos-text, #f1f5f9);
+  cursor: pointer;
+}
+
+.pos-pay-register-rail__back:hover {
+  border-color: rgb(61 255 168 / 0.4);
+  color: var(--pos-green, #3dffa8);
+}
+
+.pos-pay-register-rail__back--spacer,
+.pos-pay-register-rail__amount--spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.pos-pay-register-rail__title {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pos-muted, #94a3b8);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.pos-pay-panel--register-rail.is-step-method .pos-pay-register-rail__title,
+.pos-pay-panel--register-rail.is-step-cash .pos-pay-register-rail__title {
+  color: var(--pos-money, #f5c842);
+}
+
+.pos-pay-register-rail__amount {
+  font-size: 0.875rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--pos-money, #f5c842);
+  white-space: nowrap;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  background: #0c1018;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px;
+  position: relative;
+}
+
+
+.pos-pay-panel--register-rail .pos-pay-panel__step {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__actions-wrap {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--pos-border, #2a3548);
+  background: var(--pos-surface-elevated, #1c2433);
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__primary {
+  width: 100%;
+  min-height: 52px;
+  border: none;
+  border-radius: 12px;
+  background: var(--pos-green, #3dffa8);
+  color: #0a1218;
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__primary:disabled {
+  background: #3d4f3a;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.pos-pay-panel--register-rail .pos-pay-panel__back-check {
+  width: 100%;
+  min-height: 48px;
+}
+

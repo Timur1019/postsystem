@@ -1,0 +1,128 @@
+/* Product grid — column-width based layout */
+.pos-catalog-panel {
+  container-type: inline-size;
+  container-name: pos-catalog;
+}
+
+.pos-product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 118px), 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+
+@container pos-catalog (min-width: 420px) {
+  .pos-product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  }
+}
+
+@container pos-catalog (min-width: 640px) {
+  .pos-product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  }
+}
+
+@container pos-catalog (min-width: 900px) {
+  .pos-product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
+  }
+}
+
+/* Каталог и оболочка — компактный стандартный UI */
+.cashier-app .cashier-sidebar__brand {
+  font-size: 1.05rem;
+}
+
+.cashier-app .cashier-sidebar__store-name {
+  font-size: 0.8125rem;
+}
+
+.cashier-app .cashier-sidebar__nav .nav-link,
+.cashier-app .cashier-sidebar__nav-btn {
+  min-height: 40px;
+  font-size: 0.875rem;
+}
+
+.cashier-app .cashier-sidebar__logout {
+  min-height: 40px;
+  font-size: 0.875rem;
+}
+
+.cashier-app .cashier-topbar p {
+  font-size: 0.875rem;
+}
+
+.cashier-app .pos-catalog-panel__head {
+  padding: 12px 14px 10px;
+}
+
+.cashier-app .pos-search-bar__field {
+  height: 40px;
+  padding: 0 6px 0 12px;
+}
+
+.cashier-app .pos-search-bar__input {
+  font-size: 0.875rem;
+}
+
+.cashier-app .pos-search-bar__scan {
+  width: 34px;
+  height: 34px;
+}
+
+.cashier-app .pos-category-nav {
+  padding: 0 14px 10px;
+  gap: 6px;
+}
+
+.cashier-app .pos-category-nav__pill {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+}
+
+.cashier-app .pos-catalog-panel__body {
+  padding: 8px 16px 14px;
+}
+
+.cashier-app .pos-product-card {
+  min-height: 76px;
+  padding: 10px 12px 28px;
+}
+
+.cashier-app .pos-product-card__name {
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  -webkit-line-clamp: 2;
+}
+
+.cashier-app .pos-product-card__code {
+  font-size: 0.6875rem;
+}
+
+.cashier-app .pos-product-card__price {
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.cashier-app .pos-catalog-panel__hint,
+.cashier-app .pos-catalog-panel__empty {
+  font-size: 0.8125rem;
+}
+
+.cashier-app main.flex-grow-1 {
+  padding: var(--cashier-pad) !important;
+}
+
+.cashier-app main.flex-grow-1 > .cashier-register,
+.cashier-app main.flex-grow-1 > .cashier-page {
+  flex: 1;
+  min-height: 0;
+}
+
+.cashier-app main .handbook-page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+

@@ -1,0 +1,157 @@
+/* Pay rail — card type step */
+.pos-pay-panel--register-rail.is-step-cardType .pos-pay-panel__body,
+.pos-pay-panel--register-rail.is-step-mixedCard .pos-pay-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.pos-pay-panel--register-rail.is-step-cardType .pos-pay-panel__step,
+.pos-pay-panel--register-rail.is-step-mixedCard .pos-pay-panel__step {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pos-pay-panel--register-rail.is-step-cardType .pos-pay-panel__step--card-type {
+  justify-content: center;
+  padding: 8px 12px 12px;
+}
+
+.pos-pay-panel--register-rail.is-step-cardType .pos-pay-card-type-step__lead {
+  flex: 0 0 auto;
+  margin: 0 0 14px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--pos-muted, #94a3b8);
+}
+
+.pos-pay-panel--register-rail.is-step-cardType .pos-pay-card-types--register-stack {
+  flex: 0 0 auto;
+  width: 100%;
+  gap: 10px;
+  margin: auto 0;
+}
+
+.pos-pay-panel--register-rail.is-step-mixedCard .pos-pay-mixed-summary {
+  flex: 0 0 auto;
+  width: 100%;
+  margin: auto 0;
+  padding: 12px 14px;
+}
+
+.pos-pay-panel--register-rail.is-step-mixedCard .pos-pay-panel__actions-wrap {
+  flex-shrink: 0;
+  padding: 8px 12px max(8px, env(safe-area-inset-bottom, 0px));
+}
+
+.pos-pay-panel--register-rail.is-step-cardType .pos-pay-panel__actions-wrap:empty {
+  display: none;
+  padding: 0;
+  border: none;
+}
+
+.pos-pay-panel--register-rail .pos-pay-card-types--stack,
+.pos-pay-panel--register-rail .pos-pay-card-types--register-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pos-pay-panel--register-rail .pos-pay-card-type--row,
+.pos-pay-panel--register-rail .pos-pay-card-type--tile,
+.pos-pay-panel--register-rail .pos-pay-card-type--register {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 68px;
+  padding: 14px 16px;
+  border: 1px solid var(--pos-border, #2a3548);
+  border-left: 4px solid var(--pos-green, #3dffa8);
+  border-radius: 14px;
+  background: linear-gradient(145deg, var(--pos-surface-elevated, #1c2433) 0%, var(--pos-surface, #141b28) 100%);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.22);
+  color: var(--pos-text, #f1f5f9);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+.pos-pay-panel--register-rail .pos-pay-card-type--register .pos-pay-card-type__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgb(61 255 168 / 0.12);
+  border: 1px solid rgb(61 255 168 / 0.22);
+  color: var(--pos-green, #3dffa8);
+}
+
+.pos-pay-panel--register-rail .pos-pay-card-type--register .pos-pay-card-type__label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.pos-pay-panel--register-rail .pos-pay-card-type--register .pos-pay-card-type__arrow {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--pos-green, #3dffa8);
+  opacity: 0.8;
+}
+
+.pos-pay-panel--register-rail .pos-pay-card-type--row svg,
+.pos-pay-panel--register-rail .pos-pay-card-type--tile svg {
+  color: var(--pos-green, #3dffa8);
+  flex-shrink: 0;
+}
+
+.pos-pay-panel--register-rail .pos-pay-card-type--row:hover:not(:disabled),
+.pos-pay-panel--register-rail .pos-pay-card-type--tile:hover:not(:disabled),
+.pos-pay-panel--register-rail .pos-pay-card-type--register:hover:not(:disabled) {
+  background: rgb(61 255 168 / 0.08);
+  border-color: rgb(61 255 168 / 0.55);
+  box-shadow: 0 4px 18px rgb(61 255 168 / 0.14);
+}
+
+.pos-pay-panel--register-rail .pos-pay-card-type--register:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.pos-pay-panel--register-rail .pos-pay-card-type--register:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pos-pay-panel--register-rail .pos-pay-card-type-hint {
+  margin: 0 0 10px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--pos-money, #f5c842);
+}

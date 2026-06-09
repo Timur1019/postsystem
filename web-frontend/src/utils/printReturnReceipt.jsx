@@ -2,7 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n/config';
-import FiscalReceiptBody from '../components/receipt/FiscalReceiptBody';
+import { FiscalReceiptBody } from '../components/receipt';
 import { RECEIPT_PRINT_DOM } from '../config/receiptPrintConfig';
 import {
   isCashierEscposPrintAvailable,
