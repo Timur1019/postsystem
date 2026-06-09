@@ -4,8 +4,20 @@ import { useAuthStore } from '../store/authStore';
 import { logoutAndResetSession } from '../utils/authSession';
 import { isAuthPage, normalizeCompanyLoginCode, redirectToLogin } from '../utils/authLogin';
 import { isApiNetworkError } from '../utils/apiNetworkError';
-import { markApiOffline, refreshConnectivityStatus } from '../store/connectivityStore';
+import { refreshConnectivityStatus, useConnectivityStore } from '../store/connectivityStore';
 import { isDesktopOfflineBridge } from './offline/desktopOfflineBridge';
+
+let connectivityRefreshTimer;
+function scheduleConnectivityRefreshFromApi() {
+  if (!isDesktopOfflineBridge()) return;
+  if (connectivityRefreshTimer) return;
+  connectivityRefreshTimer = window.setTimeout(() => {
+    connectivityRefreshTimer = null;
+    if (!useConnectivityStore.getState().apiOnline) {
+      refreshConnectivityStatus();
+    }
+  }, 800);
+}
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
@@ -37,7 +49,10 @@ api.interceptors.request.use(
 
 // ---- Response interceptor: handle 401 / 403 (stale token, deleted user) ----
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    scheduleConnectivityRefreshFromApi();
+    return response;
+  },
   async (error) => {
     const original = error.config;
     const status = error.response?.status;
@@ -81,10 +96,6 @@ api.interceptors.response.use(
           redirectToLogin();
         }
       }
-    }
-    if (isApiNetworkError(error) && isDesktopOfflineBridge()) {
-      markApiOffline();
-      refreshConnectivityStatus();
     }
     return Promise.reject(error);
   }

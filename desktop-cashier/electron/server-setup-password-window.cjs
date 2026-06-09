@@ -38,7 +38,7 @@ function buildPasswordHtml(errorMessage = '') {
 </head>
 <body>
   <h1>Настройка сервера</h1>
-  <p>Введите пароль платформы. Его задаёт супер-администратор.</p>
+  <p>Введите пароль платформы (задаёт супер-администратор в «Безопасность»). Если не меняли — по умолчанию <strong>aurnt</strong>.</p>
   ${err}
   <form id="f">
     <label for="password">Пароль</label>
@@ -92,9 +92,13 @@ function showServerSetupPasswordWindow(cfg, { errorMessage = '' } = {}) {
     };
 
     const onSubmit = async (_event, password) => {
-      const valid = await verifyServerSetupPassword(cfg, password);
-      if (!valid) {
-        win.loadURL(buildPasswordHtml('Неверный пароль или нет связи с сервером.'));
+      const result = await verifyServerSetupPassword(cfg, password);
+      if (!result.ok) {
+        const message =
+          result.reason === 'invalid'
+            ? 'Неверный пароль. Проверьте ввод или уточните у супер-администратора.'
+            : 'Нет связи с сервером. Проверьте интернет, IP и порт в настройках сети.';
+        win.loadURL(buildPasswordHtml(message));
         return;
       }
       if (settled) return;

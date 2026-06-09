@@ -3,11 +3,16 @@ import { offlineGetStatus, subscribeOfflineConnectivity } from '../services/offl
 import { useAuthStore } from './authStore';
 import { userHasCashierOfflineAccess } from '../utils/cashierOfflineAccess';
 
-/** Сразу offline при сбое; online — только после нескольких успешных probe подряд (Windows/Wi‑Fi). */
-const ONLINE_RECOVERY_STREAK = 2;
-const CONNECTIVITY_POLL_MS = 4_000;
+/** Сразу offline при сбое probe; online — после одного успешного probe (источник истины — Electron). */
+const ONLINE_RECOVERY_STREAK = 1;
+const CONNECTIVITY_POLL_MS = 3_000;
 let stableApiOnline = null;
 let onlineRecoveryStreak = 0;
+
+export function resetConnectivityStabilizer() {
+  stableApiOnline = null;
+  onlineRecoveryStreak = 0;
+}
 
 function stabilizeApiOnline(rawOnline) {
   if (stableApiOnline === null) {
@@ -130,12 +135,6 @@ function applyBrowserOfflineHint() {
   useConnectivityStore.getState().applyStatus({ apiOnline: false });
 }
 
-/** Мгновенно перевести кассу в offline (API probe / axios ещё не успели). */
-export function markApiOffline() {
-  if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return;
-  useConnectivityStore.getState().applyStatus({ apiOnline: false });
-}
-
 export async function refreshConnectivityStatus() {
   applyBrowserOfflineHint();
   try {
@@ -143,7 +142,9 @@ export async function refreshConnectivityStatus() {
     useConnectivityStore.getState().applyStatus(status);
     return status;
   } catch {
-    markApiOffline();
+    if (typeof window !== 'undefined' && window.desktopCashier?.isDesktop) {
+      useConnectivityStore.getState().applyStatus({ apiOnline: false });
+    }
     return null;
   }
 }
