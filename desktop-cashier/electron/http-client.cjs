@@ -10,7 +10,7 @@ function createHttpAgent(isHttps) {
   return new http.Agent({ family });
 }
 
-function httpGet(url, { timeoutMs = 8000 } = {}) {
+function httpRequest(url, { timeoutMs = 8000, acceptStatus } = {}) {
   return new Promise((resolve) => {
     let parsed;
     try {
@@ -34,7 +34,7 @@ function httpGet(url, { timeoutMs = 8000 } = {}) {
       },
       (res) => {
         res.resume();
-        resolve(res.statusCode >= 200 && res.statusCode < 400);
+        resolve(acceptStatus(res.statusCode));
       },
     );
     req.on('error', () => resolve(false));
@@ -46,4 +46,20 @@ function httpGet(url, { timeoutMs = 8000 } = {}) {
   });
 }
 
-module.exports = { createHttpAgent, httpGet };
+/** 2xx/3xx — успешный ответ. */
+function httpGet(url, options = {}) {
+  return httpRequest(url, {
+    ...options,
+    acceptStatus: (code) => code >= 200 && code < 400,
+  });
+}
+
+/** Любой HTTP-ответ = сервер доступен (503 health DOWN всё равно значит, что API жив). */
+function httpReachable(url, options = {}) {
+  return httpRequest(url, {
+    ...options,
+    acceptStatus: (code) => Number.isFinite(code) && code > 0,
+  });
+}
+
+module.exports = { createHttpAgent, httpGet, httpReachable };

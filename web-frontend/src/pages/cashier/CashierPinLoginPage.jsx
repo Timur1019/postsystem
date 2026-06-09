@@ -14,6 +14,7 @@ import {
   cashierSessionMatchesCompany,
   normalizeCompanyLoginCode,
 } from '../../utils/authLogin';
+import { resolveAuthErrorMessage } from '../../utils/apiError';
 import { useCashierTouchLayout } from '../../hooks/useCashierTouchLayout';
 import '../../styles/cashier-pin-login.css';
 
@@ -114,12 +115,9 @@ export default function CashierPinLoginPage() {
         freshLoginRef.current = false;
       }, 4000);
     } catch (err) {
-      const apiMsg = err.response?.data?.message;
-      if (!err.response) {
-        toast.error(t('login.networkError'), { id: 'cashier-login-network' });
-      } else {
-        toast.error(apiMsg || t('login.failed'));
-      }
+      toast.error(resolveAuthErrorMessage(err, t), {
+        id: err.response ? 'cashier-login-api' : 'cashier-login-network',
+      });
       setPin('');
     } finally {
       setLoading(false);

@@ -12,6 +12,7 @@ import { useAuthStore } from '../store/authStore';
 import { resetClientSessionState } from '../utils/authSession';
 import LanguageSwitcher from '../components/shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../store/tenantDisplayStore';
+import { resolveAuthErrorMessage } from '../utils/apiError';
 import BrandMark from '../components/shared/BrandMark';
 import { isDesktopCashier, cashierLoginPath } from '../utils/authLogin';
 
@@ -80,14 +81,10 @@ export default function LoginPage() {
       const apiMsg = err.response?.data?.message;
       if (!err.response) {
         toast.error(t('login.networkError'), { id: 'login-network-error' });
-      } else if (apiMsg) {
-        const msg =
-          apiMsg === 'Invalid username or password'
-            ? t('login.badCredentials')
-            : apiMsg;
-        toast.error(msg);
+      } else if (apiMsg === 'Invalid username or password') {
+        toast.error(t('login.badCredentials'));
       } else {
-        toast.error(t('login.failed'));
+        toast.error(resolveAuthErrorMessage(err, t));
       }
     } finally {
       setLoading(false);

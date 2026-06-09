@@ -50,7 +50,7 @@ const { registerOfflineIpc } = require('./offline/ipc.cjs');
 const localDb = require('./offline/local-db.cjs');
 const { logStartup } = require('./startup-log.cjs');
 const { resolveWebDist } = require('./embedded-server.cjs');
-const { httpGet } = require('./http-client.cjs');
+const { httpGet, httpReachable } = require('./http-client.cjs');
 const { probeBackendOnlineQuick } = require('./connectivity-probe.cjs');
 
 const ALLOWED_PATH_PREFIXES = ['/login', '/cashier', '/receipt', '/users/barcode-print'];
@@ -443,7 +443,7 @@ function collectApiHealthUrls(cfg) {
 
 async function autoRepairBackendOrigin() {
   const directHealth = buildHealthUrl(config.backendOrigin);
-  if (await httpOk(directHealth)) {
+  if (await httpReachable(directHealth)) {
     logStartup('backend_ok', { backendOrigin: config.backendOrigin });
     return config;
   }
@@ -456,7 +456,7 @@ async function autoRepairBackendOrigin() {
   const urls = collectApiHealthUrls(config);
   for (const url of urls) {
     if (url === directHealth) continue;
-    if (!(await httpOk(url))) continue;
+    if (!(await httpReachable(url))) continue;
     const origin = url.replace(/\/api\/v1\/actuator\/health\/?$/i, '').replace(/\/$/, '');
     try {
       const u = new URL(origin.startsWith('http') ? origin : `http://${origin}`);
@@ -483,10 +483,10 @@ async function autoRepairBackendOrigin() {
 async function probeApiHealth(cfg) {
   const urls = collectApiHealthUrls(cfg);
   for (const url of urls) {
-    if (await httpOk(url)) {
-      logStartup('health_ok', { url });
-      return { ok: true, url };
-    }
+    if (!(await httpReachable(url, { timeoutMs: 8000 }))) continue;
+    const healthy = await httpOk(url);
+    logStartup(healthy ? 'health_ok' : 'health_degraded', { url, healthy });
+    return { ok: true, url, healthy };
   }
   logStartup('health_failed_all', { tried: urls.slice(0, 6), backendOrigin: cfg.backendOrigin });
   return { ok: false, tried: urls };
