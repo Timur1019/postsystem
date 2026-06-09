@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Loader } from 'lucide-react';
@@ -40,15 +40,17 @@ export default function CashierPinLoginPage() {
   const [pin, setPin] = useState('');
   const [companyCode, setCompanyCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const freshLoginRef = useRef(false);
   const touchLayout = useCashierTouchLayout();
 
   useEffect(() => {
     if (!hasHydrated || !token || user?.role !== 'CASHIER') return;
+    if (freshLoginRef.current) return;
 
     let cancelled = false;
     (async () => {
       const expectedCode = await resolveCashierCompanyCode(searchParams);
-      if (cancelled) return;
+      if (cancelled || freshLoginRef.current) return;
       if (!cashierSessionMatchesCompany(user, expectedCode)) {
         logout();
         setPin('');
@@ -106,7 +108,11 @@ export default function CashierPinLoginPage() {
         companyLoginCode: loginCode || profile.companyLoginCode,
       });
       if (loginCode) persistCompanyLoginCode(loginCode);
+      freshLoginRef.current = true;
       navigate('/cashier/pos', { replace: true });
+      window.setTimeout(() => {
+        freshLoginRef.current = false;
+      }, 4000);
     } catch (err) {
       const apiMsg = err.response?.data?.message;
       if (!err.response) {

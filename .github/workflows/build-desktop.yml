@@ -1,6 +1,6 @@
 name: Build Desktop Cashier
 
-# CI rebuild trigger: 2026-06-09
+# CI rebuild trigger: 2026-06-09 v1.0.69
 
 on:
   push:

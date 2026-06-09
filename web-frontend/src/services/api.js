@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import { logoutAndResetSession } from '../utils/authSession';
-import { isAuthPage, redirectToLogin } from '../utils/authLogin';
+import { isAuthPage, normalizeCompanyLoginCode, redirectToLogin } from '../utils/authLogin';
 import { isApiNetworkError } from '../utils/apiNetworkError';
 import { markApiOffline, refreshConnectivityStatus } from '../store/connectivityStore';
 import { isDesktopOfflineBridge } from './offline/desktopOfflineBridge';
@@ -59,12 +59,23 @@ api.interceptors.response.use(
       try {
         const res = await axios.post(`${api.defaults.baseURL}/auth/refresh`, null, {
           headers: { Authorization: `Bearer ${token}` },
+          timeout: api.defaults.timeout ?? 15_000,
         });
         const { token: newToken, ...profile } = res.data;
-        useAuthStore.getState().setAuth(newToken, profile);
+        const prevUser = useAuthStore.getState().user;
+        const companyLoginCode =
+          normalizeCompanyLoginCode(profile.companyLoginCode)
+          || normalizeCompanyLoginCode(prevUser?.companyLoginCode);
+        useAuthStore.getState().setAuth(newToken, {
+          ...profile,
+          ...(companyLoginCode ? { companyLoginCode } : {}),
+        });
         original.headers.Authorization = `Bearer ${newToken}`;
         return api(original);
-      } catch {
+      } catch (refreshErr) {
+        if (isApiNetworkError(refreshErr)) {
+          return Promise.reject(error);
+        }
         logoutAndResetSession();
         if (!isAuthPage(window.location.pathname)) {
           redirectToLogin();
