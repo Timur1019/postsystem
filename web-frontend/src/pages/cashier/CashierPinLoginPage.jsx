@@ -18,7 +18,7 @@ import { useCashierTouchLayout } from '../../hooks/useCashierTouchLayout';
 import '../../styles/cashier-pin-login.css';
 
 const PIN_LOGIN_HERO_URL =
-  'https://www.milanweek.ru/wp-content/uploads/2018/12/Supermercato-.jpg';
+  'https://www.retail.ru/upload/medialibrary/f3d/20220224_SHOP_41.JPG';
 
 const PIN_MIN = 4;
 const PIN_MAX = 6;
