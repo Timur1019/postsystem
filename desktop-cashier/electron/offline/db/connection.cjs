@@ -11,22 +11,27 @@ let dbPath;
 const DB_INIT_TIMEOUT_MS = 15_000;
 
 function resolveSqlWasmFile(file) {
-  const fileName = path.basename(file);
-  const candidates = [
-    path.join(process.resourcesPath, 'sql.js', fileName),
-    path.join(process.resourcesPath, fileName),
-    path.join(__dirname, '..', '..', '..', 'node_modules', 'sql.js', 'dist', fileName),
-    path.join(app.getAppPath(), 'node_modules', 'sql.js', 'dist', fileName),
-    path.join(
-      process.resourcesPath,
-      'app.asar.unpacked',
-      'node_modules',
-      'sql.js',
-      'dist',
-      fileName,
-    ),
-    path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', fileName),
-  ];
+  const fileName = path.basename(file || 'sql-wasm.wasm');
+  const candidates = [];
+  const push = (p) => {
+    if (p) candidates.push(p);
+  };
+
+  if (process.resourcesPath) {
+    push(path.join(process.resourcesPath, 'sql.js', fileName));
+    push(path.join(process.resourcesPath, fileName));
+    push(
+      path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'sql.js', 'dist', fileName),
+    );
+  }
+
+  push(path.join(__dirname, '..', '..', '..', 'node_modules', 'sql.js', 'dist', fileName));
+  try {
+    push(path.join(app.getAppPath(), 'node_modules', 'sql.js', 'dist', fileName));
+  } catch {
+    // outside Electron main
+  }
+  push(path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', fileName));
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) return candidate;
   }

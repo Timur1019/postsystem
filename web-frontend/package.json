@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src --ext .js,.jsx"
+    "lint": "eslint src --ext .js,.jsx",
+    "verify:offline": "node scripts/verify-offline-checkout.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.3",

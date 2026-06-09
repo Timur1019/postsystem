@@ -62,7 +62,14 @@ async function openLocalShift({ storeId, cashierId, cashierName, storeName }) {
     `INSERT INTO local_shifts(
       client_shift_id, store_id, cashier_id, cashier_name, store_name, opened_at, status
     ) VALUES (?, ?, ?, ?, ?, ?, 'OPEN')`,
-    [clientShiftId, Number(storeId), String(cashierId), cashierName || '', storeName || ''],
+    [
+      clientShiftId,
+      Number(storeId),
+      String(cashierId),
+      cashierName || '',
+      storeName || '',
+      openedAt,
+    ],
   );
   persistDb();
   return mapLocalShift(await getOpenShift({ storeId, cashierId }));

@@ -1,6 +1,6 @@
 {
   "name": "masterpiece-pos-cashier-desktop",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "private": true,
   "description": "Desktop shell for Aurent cashier (same UI as web)",
   "main": "electron/main.cjs",
@@ -18,6 +18,7 @@
     "test:print": "node scripts/test-print-logic.cjs",
     "test:escpos": "node scripts/test-escpos-build.cjs",
     "test:tspl": "node scripts/test-tspl-build.cjs",
+    "test:offline": "node scripts/test-offline-checkout.cjs",
     "verify:win-unpacked": "node scripts/verify-windows-unpacked.cjs"
   },
   "build": {
