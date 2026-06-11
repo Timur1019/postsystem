@@ -1,12 +1,12 @@
 import { Trash2 } from 'lucide-react';
-import { BaseSelect } from '../../../../components/ui';
+import { ProductLookupSelect } from '../../../../components/product-lookup';
 import { STOCK_DOC_INPUT_CLS } from '../../utils/stockDocumentFormUtils';
 import StockDocumentAddLineButton from './StockDocumentAddLineButton';
 
 export default function StockTransferLinesEditor({
   t,
   lines,
-  catalog,
+  fromStoreId,
   updateLine,
   addLine,
   removeLine,
@@ -15,17 +15,12 @@ export default function StockTransferLinesEditor({
     <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
       {lines.map((line, idx) => (
         <div key={idx} className="grid gap-2 sm:grid-cols-[1fr_6rem_auto]">
-          <BaseSelect
+          <ProductLookupSelect
             value={line.productId}
-            onChange={(e) => updateLine(idx, { productId: e.target.value })}
+            storeId={fromStoreId}
+            disabled={!fromStoreId}
             placeholder={t('stockReports.pickProduct')}
-            options={[
-              { value: '', label: t('stockReports.pickProduct') },
-              ...catalog.map((pr) => ({
-                value: String(pr.id),
-                label: `${pr.name} — ${pr.stockQuantity} ${t('stockReports.unitsSuffix')}`,
-              })),
-            ]}
+            onChange={(e) => updateLine(idx, { productId: e.target.value })}
           />
           <input
             type="number"

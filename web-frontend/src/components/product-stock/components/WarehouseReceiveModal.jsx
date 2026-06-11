@@ -10,6 +10,7 @@ import { useCompanyStores } from '../../../hooks/useCompanyStores';
 import { formatQty, parseQtyInput, roundQty } from '../../../utils/quantityFormat';
 import { getUnitConfig } from '../../../utils/unitConfig';
 import { BaseSelect } from '../../../components/ui';
+import { ProductLookupSelect } from '../../../components/product-lookup';
 import UnitConversionHelper from '../../../components/shared/UnitConversionHelper';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm
@@ -48,13 +49,6 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
     setStorageLocation('');
   }, [open, initialProduct?.id]);
 
-  const { data: catalog } = useQuery({
-    queryKey: ['products', 'warehouse-catalog'],
-    queryFn: () => productApi.getAll({ page: 0, size: 500, activeOnly: true }).then((r) => r.data),
-    enabled: open,
-  });
-
-  const products = catalog?.content ?? [];
   const lockedProduct = !!initialProduct?.id;
 
   const { data: selectedProduct } = useQuery({
@@ -198,17 +192,18 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
 
           <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:items-start">
             <div className="sm:col-span-2">
-              <BaseSelect
+              <ProductLookupSelect
                 label={t('stockModule.modal.product')}
                 required
                 value={productId}
-                onChange={(e) => setProductId(e.target.value)}
-                disabled={lockedProduct}
+                storeId={effectiveStoreId}
+                disabled={lockedProduct || (needsStorePick && !effectiveStoreId)}
                 placeholder={t('stockModule.modal.productPh')}
-                options={[
-                  { value: '', label: t('stockModule.modal.productPh') },
-                  ...products.map((p) => ({ value: String(p.id), label: p.name })),
-                ]}
+                onChange={(e) => setProductId(e.target.value)}
+                onProductSelect={(product) => {
+                  if (product) setProductId(String(product.id));
+                  else setProductId('');
+                }}
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('stockModule.modal.productHint')}</p>
             </div>

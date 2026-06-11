@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { productApi, storeApi, warehouseApi } from '../../../api';
+import { storeApi, warehouseApi } from '../../../api';
 import { emptyTransferLine } from '../utils/stockDocumentFormUtils';
 
 export function useStockTransferCreatePage() {
@@ -13,17 +13,11 @@ export function useStockTransferCreatePage() {
   const [toStoreId, setToStoreId] = useState('');
   const [lines, setLines] = useState([emptyTransferLine()]);
 
-  const productsQuery = useQuery({
-    queryKey: ['products-trf-pick'],
-    queryFn: () => productApi.getAll({ page: 0, size: 500, activeOnly: true }).then((r) => r.data),
-  });
-
   const storesQuery = useQuery({
     queryKey: ['stores'],
     queryFn: () => storeApi.getAll().then((r) => r.data),
   });
 
-  const catalog = productsQuery.data?.content ?? [];
   const stores = storesQuery.data ?? [];
 
   const mutation = useMutation({
@@ -70,7 +64,6 @@ export function useStockTransferCreatePage() {
     setToStoreId,
     lines,
     stores,
-    catalog,
     isPending: mutation.isPending,
     updateLine,
     addLine,

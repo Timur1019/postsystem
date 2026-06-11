@@ -38,9 +38,6 @@ export default function WriteOffsReportPage() {
       <WriteOffsReportModals
         writeOffOpen={r.writeOffOpen}
         pickProduct={r.pickProduct}
-        productSearch={r.productSearch}
-        onSearchChange={r.setProductSearch}
-        productCandidates={r.productCandidates}
         onSelectProduct={r.selectProduct}
         onClose={r.closeWriteOff}
         storeId={r.numericStoreId}

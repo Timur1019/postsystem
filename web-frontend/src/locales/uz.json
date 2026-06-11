@@ -30,6 +30,9 @@
     "loadError": "Ma'lumotlarni yuklab bo'lmadi",
     "saveError": "Saqlab bo'lmadi"
   },
+  "productLookup": {
+    "minChars": "Qidirish uchun yana {{count}} belgi kiriting"
+  },
   "nav": {
     "dashboard": "Asosiy",
     "aiAssistant": "AI-assistent",

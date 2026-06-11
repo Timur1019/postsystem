@@ -1,12 +1,12 @@
 import { Trash2 } from 'lucide-react';
-import { BaseSelect } from '../../../../components/ui';
+import { ProductLookupSelect } from '../../../../components/product-lookup';
 import { STOCK_DOC_INPUT_CLS } from '../../utils/stockDocumentFormUtils';
 import StockDocumentAddLineButton from './StockDocumentAddLineButton';
 
 export default function StockReceiptLinesEditor({
   t,
   lines,
-  catalog,
+  storeId,
   onProductPick,
   updateLine,
   addLine,
@@ -21,14 +21,17 @@ export default function StockReceiptLinesEditor({
       {lines.map((line, idx) => (
         <div key={idx} className="grid gap-2 rounded-lg border border-slate-200 p-3 dark:border-slate-700 sm:grid-cols-12">
           <div className="sm:col-span-5">
-            <BaseSelect
+            <ProductLookupSelect
               value={line.productId}
-              onChange={(e) => onProductPick(idx, e.target.value)}
+              storeId={storeId}
+              disabled={!storeId}
               placeholder={t('stockReports.pickProduct')}
-              options={[
-                { value: '', label: t('stockReports.pickProduct') },
-                ...catalog.map((p) => ({ value: String(p.id), label: p.name })),
-              ]}
+              showStockInList={false}
+              onChange={(e) => updateLine(idx, { productId: e.target.value })}
+              onProductSelect={(product) => {
+                if (product) onProductPick(idx, product);
+                else updateLine(idx, { productId: '', purchasePrice: '', unitSellingPrice: '' });
+              }}
             />
           </div>
           <div className="sm:col-span-2">

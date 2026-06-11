@@ -36,6 +36,9 @@
     "disable": "Отключить",
     "enable": "Включить"
   },
+  "productLookup": {
+    "minChars": "Введите ещё {{count}} символ(а) для поиска"
+  },
   "nav": {
     "dashboard": "Обзор",
     "aiAssistant": "ИИ-ассистент",

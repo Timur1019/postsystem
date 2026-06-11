@@ -18,7 +18,7 @@ export default function StockReceiptCreatePage() {
     lines,
     stores,
     needsStorePick,
-    catalog,
+    effectiveStoreId,
     supplierList,
     isPending,
     updateLine,
@@ -54,7 +54,7 @@ export default function StockReceiptCreatePage() {
       <StockReceiptLinesEditor
         t={t}
         lines={lines}
-        catalog={catalog}
+        storeId={effectiveStoreId}
         onProductPick={onProductPick}
         updateLine={updateLine}
         addLine={addLine}
