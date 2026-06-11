@@ -166,7 +166,7 @@
 }
 
 .cashier-app.cashier-app--light .pos-pay-cash-panel--terminal .pos-pay-cash__hint {
-  color: var(--pos-text-muted);
+  color: var(--pos-muted);
 }
 
 .cashier-app.cashier-app--light .pos-pay-cash-panel--terminal .pos-pay-cash__shortfall {

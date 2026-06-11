@@ -14,13 +14,14 @@ import { POS_CATALOG_ONLINE_TIMEOUT_MS } from '../../../../services/offline/posC
 import { clampPayAmount, round2 } from '../../../../utils/taxAmounts';
 import { saleApi } from '../../../../services/api';
 import { useCartStore } from '../../../../store/cartStore';
-import { canFallbackToOfflineCheckout, useConnectivityStore } from '../../../../store/connectivityStore';
-import { isApiUnreachableError } from '../../../../utils/apiNetworkError';
 import {
-  processOfflineCheckout,
+  canFallbackToOfflineCheckout,
   shouldPreferLocalCheckout,
   shouldRetryOnlineAfterOfflineFailure,
-} from '../../../../services/offline/offlineCheckoutService';
+  useConnectivityStore,
+} from '../../../../store/connectivityStore';
+import { isApiUnreachableError } from '../../../../utils/apiNetworkError';
+import { processOfflineCheckout } from '../../../../services/offline/offlineCheckoutService';
 import { useAuthStore } from '../../../../store/authStore';
 
 export function usePosCheckout({
@@ -57,11 +58,11 @@ export function usePosCheckout({
     mutationFn: async (payment) => {
       const items = useCartStore.getState().items;
 
-      if (shouldPreferLocalCheckout()) {
+      if (shouldPreferLocalCheckout(storeId)) {
         try {
           return await runOfflineCheckout(payment, items);
         } catch (offlineErr) {
-          if (!shouldRetryOnlineAfterOfflineFailure(offlineErr)) {
+          if (!shouldRetryOnlineAfterOfflineFailure(offlineErr, storeId)) {
             throw offlineErr;
           }
         }
@@ -80,6 +81,8 @@ export function usePosCheckout({
             cashAmount: payment.cashAmount,
             cardAmount: payment.cardAmount,
             amountTendered: payment.amountTendered,
+            customerId: payment.customerId || undefined,
+            advanceAmount: payment.advanceAmount || undefined,
             items: getCheckoutLineItems(),
             orderDiscountAmount: getCheckoutOrderDiscountAmount(),
             orderDiscountPercent: getCheckoutOrderDiscountPercent(),
@@ -87,7 +90,7 @@ export function usePosCheckout({
           onlineTimeout ? { timeout: onlineTimeout } : undefined,
         );
       } catch (err) {
-        if (isApiUnreachableError(err) && canFallbackToOfflineCheckout()) {
+        if (isApiUnreachableError(err) && canFallbackToOfflineCheckout(storeId)) {
           return runOfflineCheckout(payment, items);
         }
         throw err;
@@ -146,6 +149,10 @@ export function usePosCheckout({
         toast.error(t('offline.saleSaveFailed'));
         return;
       }
+      if (isApiUnreachableError(e) && isDesktopOfflineBridge() && !canFallbackToOfflineCheckout(storeId)) {
+        toast.error(t('offline.openShiftNeedsCatalog'));
+        return;
+      }
       const msg = e.response?.data?.message ?? e.message ?? t('pos.saleFailed');
       toast.error(msg, { id: 'pos-checkout-error' });
     },
@@ -153,6 +160,14 @@ export function usePosCheckout({
 
   const handleConfirmPayment = (payment) => {
     if (checkoutMutation.isPending) return;
+    if ((payment.receiptType === 'CREDIT' || payment.receiptType === 'ADVANCE') && !payment.customerId) {
+      toast.error(
+        payment.receiptType === 'ADVANCE'
+          ? t('pos.advanceCustomerRequired')
+          : t('pos.creditCustomerRequired'),
+      );
+      return;
+    }
     const payTotal = round2(total);
     if (payment.paymentMethod === 'MIXED' && payment.cashAmount != null) {
       const cash = clampPayAmount(payment.cashAmount, payTotal);

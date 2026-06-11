@@ -1,4 +1,5 @@
 import { Eye } from 'lucide-react';
+import { BaseSelect } from '../../../../components/ui';
 import { templateLabel } from '../../utils/emailUtils';
 
 export default function PlatformEmailPreviewPanel({
@@ -25,26 +26,25 @@ export default function PlatformEmailPreviewPanel({
       </div>
       <div className="platform-email-card__body">
         <div className="platform-email-field">
-          <label htmlFor="email-template-type">{t('platform.email.templateType')}</label>
           {templatesError ? (
             <p className="platform-email-hint text-red-500">{t('platform.email.templatesLoadFailed')}</p>
           ) : null}
-          <select
+          <BaseSelect
             id="email-template-type"
+            label={t('platform.email.templateType')}
             value={templateType}
             disabled={!templates.length}
             onChange={(e) => onTemplateChange(e.target.value)}
-          >
-            {templates.length === 0 ? (
-              <option value="">{t('common.loading')}</option>
-            ) : (
-              templates.map((tpl) => (
-                <option key={tpl.type} value={tpl.type}>
-                  {templateLabel(t, tpl)}
-                </option>
-              ))
-            )}
-          </select>
+            placeholder={t('common.loading')}
+            options={
+              templates.length === 0
+                ? [{ value: '', label: t('common.loading') }]
+                : templates.map((tpl) => ({
+                    value: tpl.type,
+                    label: templateLabel(t, tpl),
+                  }))
+            }
+          />
         </div>
 
         {activeTemplate ? (

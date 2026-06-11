@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { productApi, warehouseApi } from '../../../api';
+import { warehouseApi } from '../../../api';
 import { invalidateProductCaches } from '../../../utils/productCache';
 import { useCompanyStores } from '../../../hooks/useCompanyStores';
 import { emptyInventoryLine } from '../utils/stockDocumentFormUtils';
@@ -22,22 +22,6 @@ export function useStockInventoryCreatePage() {
   }, [onlyStore]);
 
   const effectiveStoreId = resolveStoreId(storeId);
-
-  const productsQuery = useQuery({
-    queryKey: ['products-inv-pick', effectiveStoreId],
-    queryFn: () =>
-      productApi
-        .getAll({
-          page: 0,
-          size: 500,
-          activeOnly: true,
-          ...(effectiveStoreId ? { storeId: effectiveStoreId } : {}),
-        })
-        .then((r) => r.data),
-    enabled: !needsStorePick || !!effectiveStoreId,
-  });
-
-  const catalog = productsQuery.data?.content ?? [];
 
   const mutation = useMutation({
     mutationFn: (body) => warehouseApi.createInventory(body),
@@ -89,7 +73,7 @@ export function useStockInventoryCreatePage() {
     lines,
     stores,
     needsStorePick,
-    catalog,
+    effectiveStoreId,
     isPending: mutation.isPending,
     updateLine,
     addLine,

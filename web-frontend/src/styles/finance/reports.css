@@ -1,0 +1,78 @@
+.finance-report-summary {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.75rem;
+  background: white;
+  padding: 0.25rem 1.25rem 1rem;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.06);
+}
+
+.finance-report-summary__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid rgb(241 245 249);
+  font-size: 0.9375rem;
+}
+
+.finance-report-summary__row span:first-child {
+  color: rgb(71 85 105);
+}
+
+.finance-report-summary__row strong {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.finance-report-summary__row--income strong { color: rgb(22 163 74); }
+.finance-report-summary__row--expense strong { color: rgb(220 38 38); }
+.finance-report-summary__row--profit strong { color: rgb(37 99 235); }
+
+.finance-report-breakdown {
+  margin-top: 0.5rem;
+}
+
+.finance-report-breakdown__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0 0.75rem;
+}
+
+.finance-report-breakdown h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: rgb(15 23 42);
+}
+
+.finance-report-breakdown__table {
+  border: 1px solid rgb(241 245 249);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.finance-report-breakdown__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid rgb(241 245 249);
+}
+
+.finance-report-breakdown__row:last-child {
+  border-bottom: none;
+}
+
+.finance-report-breakdown__row:nth-child(odd) {
+  background: rgb(248 250 252);
+}
+
+.finance-report-breakdown__row span:last-child {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgb(51 65 85);
+}

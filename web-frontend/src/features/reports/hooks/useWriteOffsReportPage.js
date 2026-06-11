@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { productApi, stockReportApi } from '../../../api';
+import { stockReportApi } from '../../../api';
 import { REPORT_PAGE_SIZE_DEFAULT } from '../constants';
 import { useReportDateRange } from './useReportDateRange';
 import { useReportPagination } from './useReportPagination';
@@ -12,7 +12,6 @@ export function useWriteOffsReportPage() {
   const [storeId, setStoreId] = useState('');
   const [writeOffOpen, setWriteOffOpen] = useState(false);
   const [pickProduct, setPickProduct] = useState(null);
-  const [productSearch, setProductSearch] = useState('');
   const { data: stores = [] } = useReportStores();
 
   const params = useMemo(
@@ -33,13 +32,6 @@ export function useWriteOffsReportPage() {
     placeholderData: keepPreviousData,
   });
 
-  const productPickQuery = useQuery({
-    queryKey: ['write-off-pick', productSearch],
-    queryFn: () =>
-      productApi.getAll({ search: productSearch.trim(), page: 0, size: 8, activeOnly: true }).then((r) => r.data),
-    enabled: writeOffOpen && productSearch.trim().length >= 2,
-  });
-
   const handleStoreChange = (value) => {
     setStoreId(value);
     resetPage();
@@ -48,7 +40,6 @@ export function useWriteOffsReportPage() {
   const openWriteOff = () => {
     setWriteOffOpen(true);
     setPickProduct(null);
-    setProductSearch('');
   };
 
   const closeWriteOff = () => {
@@ -80,9 +71,6 @@ export function useWriteOffsReportPage() {
     handleStoreChange,
     writeOffOpen,
     pickProduct,
-    productSearch,
-    setProductSearch,
-    productCandidates: productPickQuery.data?.content ?? [],
     openWriteOff,
     closeWriteOff,
     selectProduct,

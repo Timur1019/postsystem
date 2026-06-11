@@ -4,19 +4,23 @@ import BaseButton from './BaseButton';
 
 const SIZE_CLS = {
   sm: 'max-w-md',
-  md: 'max-w-lg',
-  lg: 'max-w-2xl',
-  xl: 'max-w-4xl',
+  md: 'max-w-xl',
+  lg: 'max-w-3xl',
+  xl: 'max-w-5xl',
 };
 
 export default function BaseModal({
+  open = true,
   title,
   onClose,
   children,
   footer,
-  size = 'sm',
+  size = 'md',
   className,
+  bodyClassName,
 }) {
+  if (!open) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div
@@ -52,7 +56,7 @@ export default function BaseModal({
             )}
           </div>
         )}
-        <div className="p-4">{children}</div>
+        <div className={clsx('p-5', bodyClassName)}>{children}</div>
         {footer && (
           <div className="flex justify-end gap-2 border-t border-slate-200 px-4 py-3 dark:border-slate-800">
             {footer}

@@ -161,7 +161,7 @@ export function usePosCartHandlers({
       if (!trimmed || !storeId || scanningRef.current || payOpen || returnOpen) return false;
       scanningRef.current = true;
       try {
-        if (shouldUseLocalPosCatalog()) {
+        if (shouldUseLocalPosCatalog(storeId)) {
           const product = await offlineGetProductByBarcode(trimmed);
           if (product) {
             addProductToCart(product);
@@ -179,7 +179,7 @@ export function usePosCartHandlers({
         if (
           isApiUnreachableError(e) &&
           isDesktopOfflineBridge() &&
-          canFallbackToOfflineCheckout()
+          canFallbackToOfflineCheckout(storeId)
         ) {
           const product = await offlineGetProductByBarcode(trimmed);
           if (product) {

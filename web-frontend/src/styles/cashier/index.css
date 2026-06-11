@@ -4,6 +4,7 @@
 @import './register.css';
 @import './cart/index.css';
 @import './pay-panel.css';
+@import './pos-credit-customer.css';
 @import './catalog-panel/index.css';
 @import './my-sales/index.css';
 @import './terminal-theme/index.css';

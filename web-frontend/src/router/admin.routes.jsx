@@ -35,6 +35,16 @@ import {
   StockInventoriesReportPage,
   StockTransfersReportPage,
   ProductLifecycleReportPage,
+  FinanceDashboardPage,
+  FinanceAccountsPage,
+  FinanceIncomesPage,
+  FinanceExpensesPage,
+  FinanceReportsPage,
+  FinanceCategoriesPage,
+  FinanceDebtsPage,
+  FinanceTransfersPage,
+  FinanceAuditPage,
+  FinanceSyncPage,
   CashRegistersListPage,
   ZReportsPage,
   CashRegisterTransferPage,
@@ -316,6 +326,87 @@ export const adminRoutes = (
         </ProtectedRoute>
       )}
     />
+    <Route
+      path="finance/dashboard"
+      element={(
+        <ProtectedRoute requiredRole="MANAGER" module="financeDashboard">
+          <FinanceDashboardPage />
+        </ProtectedRoute>
+      )}
+    />
+    <Route
+      path="finance/incomes"
+      element={(
+        <ProtectedRoute requiredRole="MANAGER" module="financeIncomes">
+          <FinanceIncomesPage />
+        </ProtectedRoute>
+      )}
+    />
+    <Route
+      path="finance/debts"
+      element={(
+        <ProtectedRoute requiredRole="MANAGER" module="financeDebts">
+          <FinanceDebtsPage />
+        </ProtectedRoute>
+      )}
+    />
+    <Route
+      path="finance/expenses"
+      element={(
+        <ProtectedRoute requiredRole="MANAGER" module="financeExpenses">
+          <FinanceExpensesPage />
+        </ProtectedRoute>
+      )}
+    />
+    <Route
+      path="finance/accounts"
+      element={(
+        <ProtectedRoute requiredRole="MANAGER" module="financeAccounts">
+          <FinanceAccountsPage />
+        </ProtectedRoute>
+      )}
+    />
+    <Route
+      path="finance/transfers"
+      element={(
+        <ProtectedRoute requiredRole="MANAGER" module="financeTransfers">
+          <FinanceTransfersPage />
+        </ProtectedRoute>
+      )}
+    />
+    <Route
+      path="finance/reports"
+      element={(
+        <ProtectedRoute requiredRole="MANAGER" module="financeReports">
+          <FinanceReportsPage />
+        </ProtectedRoute>
+      )}
+    />
+    <Route
+      path="finance/audit"
+      element={(
+        <ProtectedRoute requiredRole="MANAGER" module="financeAudit">
+          <FinanceAuditPage />
+        </ProtectedRoute>
+      )}
+    />
+    <Route
+      path="finance/categories"
+      element={(
+        <ProtectedRoute requiredRole="ADMIN" module="financeCategories">
+          <FinanceCategoriesPage />
+        </ProtectedRoute>
+      )}
+    />
+    <Route
+      path="finance/sync"
+      element={(
+        <ProtectedRoute requiredRole="ADMIN" module="financeSync">
+          <FinanceSyncPage />
+        </ProtectedRoute>
+      )}
+    />
+    <Route path="finance" element={<Navigate to="/finance/dashboard" replace />} />
     <Route
       path="cash-registers/list"
       element={(

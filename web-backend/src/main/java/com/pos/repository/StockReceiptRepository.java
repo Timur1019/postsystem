@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,4 +47,21 @@ public interface StockReceiptRepository extends JpaRepository<StockReceipt, UUID
         WHERE r.id = :id
         """)
     Optional<StockReceipt> findDetailedById(@Param("id") UUID id);
+
+    @Query("""
+        SELECT r FROM StockReceipt r
+        JOIN FETCH r.store st
+        JOIN FETCH st.company
+        LEFT JOIN FETCH r.supplier
+        LEFT JOIN FETCH r.createdBy
+        WHERE r.createdAt >= :start AND r.createdAt < :end
+          AND r.totalCost > 0
+          AND (:companyId IS NULL OR st.company.id = :companyId)
+        ORDER BY r.createdAt ASC
+        """)
+    List<StockReceipt> findForFinanceBackfill(
+        @Param("start") Instant start,
+        @Param("end") Instant end,
+        @Param("companyId") Integer companyId
+    );
 }

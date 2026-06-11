@@ -1,11 +1,12 @@
 import { Trash2 } from 'lucide-react';
+import { ProductLookupSelect } from '../../../../components/product-lookup';
 import { STOCK_DOC_INPUT_CLS } from '../../utils/stockDocumentFormUtils';
 import StockDocumentAddLineButton from './StockDocumentAddLineButton';
 
 export default function StockReceiptLinesEditor({
   t,
   lines,
-  catalog,
+  storeId,
   onProductPick,
   updateLine,
   addLine,
@@ -20,16 +21,18 @@ export default function StockReceiptLinesEditor({
       {lines.map((line, idx) => (
         <div key={idx} className="grid gap-2 rounded-lg border border-slate-200 p-3 dark:border-slate-700 sm:grid-cols-12">
           <div className="sm:col-span-5">
-            <select
-              className={STOCK_DOC_INPUT_CLS}
+            <ProductLookupSelect
               value={line.productId}
-              onChange={(e) => onProductPick(idx, e.target.value)}
-            >
-              <option value="">{t('stockReports.pickProduct')}</option>
-              {catalog.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+              storeId={storeId}
+              disabled={!storeId}
+              placeholder={t('stockReports.pickProduct')}
+              showStockInList={false}
+              onChange={(e) => updateLine(idx, { productId: e.target.value })}
+              onProductSelect={(product) => {
+                if (product) onProductPick(idx, product);
+                else updateLine(idx, { productId: '', purchasePrice: '', unitSellingPrice: '' });
+              }}
+            />
           </div>
           <div className="sm:col-span-2">
             <input

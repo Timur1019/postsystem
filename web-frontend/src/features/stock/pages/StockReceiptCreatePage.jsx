@@ -13,10 +13,12 @@ export default function StockReceiptCreatePage() {
     setStoreId,
     notes,
     setNotes,
+    paymentType,
+    setPaymentType,
     lines,
     stores,
     needsStorePick,
-    catalog,
+    effectiveStoreId,
     supplierList,
     isPending,
     updateLine,
@@ -45,12 +47,14 @@ export default function StockReceiptCreatePage() {
         needsStorePick={needsStorePick}
         notes={notes}
         onNotesChange={(e) => setNotes(e.target.value)}
+        paymentType={paymentType}
+        onPaymentTypeChange={(e) => setPaymentType(e.target.value)}
       />
 
       <StockReceiptLinesEditor
         t={t}
         lines={lines}
-        catalog={catalog}
+        storeId={effectiveStoreId}
         onProductPick={onProductPick}
         updateLine={updateLine}
         addLine={addLine}

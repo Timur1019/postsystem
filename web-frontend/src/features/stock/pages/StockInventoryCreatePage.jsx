@@ -14,7 +14,7 @@ export default function StockInventoryCreatePage() {
     lines,
     stores,
     needsStorePick,
-    catalog,
+    effectiveStoreId,
     isPending,
     updateLine,
     addLine,
@@ -43,7 +43,7 @@ export default function StockInventoryCreatePage() {
       <StockInventoryLinesEditor
         t={t}
         lines={lines}
-        catalog={catalog}
+        storeId={effectiveStoreId}
         updateLine={updateLine}
         addLine={addLine}
         removeLine={removeLine}

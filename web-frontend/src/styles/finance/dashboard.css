@@ -1,0 +1,137 @@
+.finance-page--dashboard {
+  gap: 1.5rem;
+}
+
+.finance-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.finance-kpi {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: white;
+  padding: 1.125rem 1.25rem;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.06);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.finance-kpi:hover {
+  box-shadow: 0 4px 12px rgb(15 23 42 / 0.08);
+}
+
+.finance-kpi__title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(100 116 139);
+}
+
+.finance-kpi__value {
+  margin: 0.5rem 0 0;
+  font-size: 1.375rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.finance-kpi--income .finance-kpi__value { color: rgb(22 163 74); }
+.finance-kpi--expense .finance-kpi__value { color: rgb(220 38 38); }
+.finance-kpi--profit .finance-kpi__value { color: rgb(37 99 235); }
+.finance-kpi--neutral .finance-kpi__value { color: rgb(15 23 42); }
+
+.finance-dashboard-panels {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.finance-dashboard-panels > * {
+  min-height: 0;
+}
+
+@media (max-width: 1100px) {
+  .finance-dashboard-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+.finance-integration-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.875rem;
+}
+
+.finance-integration-kpi {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: linear-gradient(180deg, rgb(248 250 252) 0%, #fff 100%);
+  padding: 1rem 1.125rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.finance-integration-kpi__label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgb(100 116 139);
+}
+
+.finance-integration-kpi__value {
+  margin: 0.5rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: rgb(15 23 42);
+}
+
+.finance-integration-kpi__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: rgb(148 163 184);
+}
+
+.finance-top-expenses {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: white;
+  padding: 1.125rem 1.25rem;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.06);
+}
+
+.finance-top-expenses__title {
+  margin: 0 0 0.875rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgb(15 23 42);
+}
+
+.finance-top-expenses__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finance-top-expenses__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid rgb(241 245 249);
+  font-size: 0.875rem;
+}
+
+.finance-top-expenses__item:last-child {
+  border-bottom: none;
+}
+
+.finance-top-expenses__amount {
+  color: rgb(220 38 38);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

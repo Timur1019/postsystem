@@ -4,9 +4,6 @@ import WriteOffProductPickerModal from '../WriteOffProductPickerModal';
 export default function WriteOffsReportModals({
   writeOffOpen,
   pickProduct,
-  productSearch,
-  onSearchChange,
-  productCandidates,
   onSelectProduct,
   onClose,
   storeId,
@@ -15,13 +12,7 @@ export default function WriteOffsReportModals({
   return (
     <>
       {writeOffOpen && !pickProduct && (
-        <WriteOffProductPickerModal
-          productSearch={productSearch}
-          onSearchChange={onSearchChange}
-          candidates={productCandidates}
-          onSelect={onSelectProduct}
-          onClose={onClose}
-        />
+        <WriteOffProductPickerModal storeId={storeId} onSelect={onSelectProduct} onClose={onClose} />
       )}
 
       {pickProduct && (

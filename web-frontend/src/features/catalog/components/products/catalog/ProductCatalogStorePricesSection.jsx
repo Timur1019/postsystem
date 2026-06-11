@@ -1,4 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react';
+import { BaseSelect } from '../../../../../components/ui';
 import { inputCls } from './productCatalogFormUi';
 
 export default function ProductCatalogStorePricesSection({
@@ -19,9 +20,8 @@ export default function ProductCatalogStorePricesSection({
         {storeRows.map((row, idx) => (
           <div key={idx} className="flex gap-2 items-end">
             <div className="flex-1">
-              <label className="text-xs text-slate-600 dark:text-slate-500">{t('productCatalog.store')}</label>
-              <select
-                className={inputCls}
+              <BaseSelect
+                label={t('productCatalog.store')}
                 value={row.storeId}
                 onChange={(e) => {
                   const v = e.target.value;
@@ -37,14 +37,12 @@ export default function ProductCatalogStorePricesSection({
                     })
                   );
                 }}
-              >
-                <option value="">{t('productCatalog.storePlaceholder')}</option>
-                {stores.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                placeholder={t('productCatalog.storePlaceholder')}
+                options={[
+                  { value: '', label: t('productCatalog.storePlaceholder') },
+                  ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+                ]}
+              />
             </div>
             <div className="w-36">
               <label className="text-xs text-slate-600 dark:text-slate-500">

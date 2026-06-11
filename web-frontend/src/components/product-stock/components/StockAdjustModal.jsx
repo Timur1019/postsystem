@@ -11,6 +11,7 @@ import { productApi } from '../../../api';
 import { invalidateProductCaches } from '../../../utils/productCache';
 import { useCompanyStores } from '../../../hooks/useCompanyStores';
 import { getUnitConfig } from '../../../utils/unitConfig';
+import { BaseSelect } from '../../../components/ui';
 import UnitConversionHelper from '../../../components/shared/UnitConversionHelper';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm
@@ -100,22 +101,17 @@ export default function StockAdjustModal({ product, onClose, onSaved }) {
 
         <form onSubmit={handleSubmit((data) => mutate(data))} className="space-y-4 p-5">
           {needsStorePick ? (
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
-                {t('stockReports.colStore')}
-              </label>
-              <select
-                className={inputCls}
-                value={storeId}
-                onChange={(e) => setStoreId(e.target.value)}
-                required
-              >
-                <option value="">{t('stockModal.pickStore')}</option>
-                {stores.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
+            <BaseSelect
+              label={t('stockReports.colStore')}
+              required
+              value={storeId}
+              onChange={(e) => setStoreId(e.target.value)}
+              placeholder={t('stockModal.pickStore')}
+              options={[
+                { value: '', label: t('stockModal.pickStore') },
+                ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+              ]}
+            />
           ) : null}
 
           <div>
@@ -141,16 +137,15 @@ export default function StockAdjustModal({ product, onClose, onSaved }) {
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
-              {t('stockModal.movement')}
-            </label>
-            <select className={inputCls} {...register('movementType')}>
-              <option value="RESTOCK">{t('stockModal.restock')}</option>
-              <option value="ADJUSTMENT">{t('stockModal.adjustment')}</option>
-              <option value="RETURN">{t('stockModal.return')}</option>
-            </select>
-          </div>
+          <BaseSelect
+            label={t('stockModal.movement')}
+            {...register('movementType')}
+            options={[
+              { value: 'RESTOCK', label: t('stockModal.restock') },
+              { value: 'ADJUSTMENT', label: t('stockModal.adjustment') },
+              { value: 'RETURN', label: t('stockModal.return') },
+            ]}
+          />
 
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">

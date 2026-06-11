@@ -1,3 +1,4 @@
+import { BaseSelect } from '../../../../../components/ui';
 import { inputCls, ProductCatalogField } from './productCatalogFormUi';
 
 function fieldName(key) {
@@ -51,14 +52,17 @@ export default function ProductCatalogDynamicFieldsSection({
           if (field.fieldType === 'LIST') {
             return (
               <ProductCatalogField key={field.id ?? field.fieldKey} label={field.label} required={field.required} error={error}>
-                <select {...register(name, rules)} className={inputCls}>
-                  <option value="">{t('productModal.noneCategory')}</option>
-                  {(field.options ?? []).map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <BaseSelect
+                  {...register(name, rules)}
+                  placeholder={t('productModal.noneCategory')}
+                  options={[
+                    { value: '', label: t('productModal.noneCategory') },
+                    ...(field.options ?? []).map((opt) => ({
+                      value: opt.value,
+                      label: opt.label,
+                    })),
+                  ]}
+                />
               </ProductCatalogField>
             );
           }

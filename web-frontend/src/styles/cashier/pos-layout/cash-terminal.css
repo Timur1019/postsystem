@@ -74,7 +74,7 @@
   margin: 0;
   font-size: 0.75rem;
   line-height: 1.35;
-  color: var(--pos-text-muted, #94a3b8);
+  color: var(--pos-muted, #94a3b8);
 }
 
 .pos-pay-cash-panel--terminal .pos-pay-cash__shortfall {

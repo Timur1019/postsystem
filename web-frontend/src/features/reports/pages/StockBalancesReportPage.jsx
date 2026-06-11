@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { stockReportApi } from '../../../api';
+import { BaseSelect } from '../../../components/ui';
 import TablePagination from '../../../components/shared/TablePagination';
 import { fmtMoney } from '../../../utils/formatMoney';
 import ReportExportButton from '../components/ReportExportButton';
@@ -28,14 +29,15 @@ export default function StockBalancesReportPage() {
           placeholder={t('common.search')}
           className="min-w-[10rem] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
         />
-        <select
+        <BaseSelect
           value={r.categoryId}
           onChange={(e) => r.handleCategoryChange(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-        >
-          <option value="">{t('stockReports.allCategories')}</option>
-          {r.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+          placeholder={t('stockReports.allCategories')}
+          options={[
+            { value: '', label: t('stockReports.allCategories') },
+            ...r.categories.map((c) => ({ value: String(c.id), label: c.name })),
+          ]}
+        />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={r.onlyWithStock} onChange={(e) => r.handleOnlyWithStockChange(e.target.checked)} />
           {t('stockReports.onlyWithStock')}

@@ -1,4 +1,5 @@
 import { Loader, Eye, EyeOff } from 'lucide-react';
+import { BaseSelect } from '../../../../components/ui';
 import { userFormInputCls } from '../../utils/userFormModalUtils';
 
 export default function UserFormModalFields({
@@ -132,42 +133,41 @@ export default function UserFormModalFields({
       ) : null}
       {isPlatform && (
         <div>
-          <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{t('users.colCompany')} *</label>
-          <select
+          <BaseSelect
+            label={t('users.colCompany')}
+            required
             value={companyId}
             onChange={(e) => {
               setCompanyId(e.target.value);
               if (!isEdit) setStoreIds(new Set());
             }}
-            className={userFormInputCls}
             disabled={isEdit}
-          >
-            <option value="">{t('stores.selectCompany')}</option>
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            placeholder={t('stores.selectCompany')}
+            options={[
+              { value: '', label: t('stores.selectCompany') },
+              ...companies.map((c) => ({ value: String(c.id), label: c.name })),
+            ]}
+          />
         </div>
       )}
       {(isPlatform || fieldOn('role')) ? (
         <div>
-          <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{t('users.role')}</label>
-          <select {...register('role')} className={userFormInputCls}>
-            {isPlatform ? (
-              <>
-                <option value="ADMIN">{t('users.roleAdmin')}</option>
-                <option value="MANAGER">{t('users.roleManager')}</option>
-                <option value="CASHIER">{t('users.roleCashier')}</option>
-              </>
-            ) : (
-              <>
-                <option value="MANAGER">{t('users.roleManager')}</option>
-                <option value="CASHIER">{t('users.roleCashier')}</option>
-              </>
-            )}
-          </select>
+          <BaseSelect
+            label={t('users.role')}
+            {...register('role')}
+            options={
+              isPlatform
+                ? [
+                    { value: 'ADMIN', label: t('users.roleAdmin') },
+                    { value: 'MANAGER', label: t('users.roleManager') },
+                    { value: 'CASHIER', label: t('users.roleCashier') },
+                  ]
+                : [
+                    { value: 'MANAGER', label: t('users.roleManager') },
+                    { value: 'CASHIER', label: t('users.roleCashier') },
+                  ]
+            }
+          />
         </div>
       ) : null}
       {(isPlatform || fieldOn('stores')) ? (

@@ -23,12 +23,14 @@ export default function AppSidebar(props) {
     showGoods,
     showStock,
     showOrders,
+    showFinance,
     showRegisters,
     showReports,
     showUsers,
     inGoodsSection,
     inStockSection,
     inOrdersSection,
+    inFinanceSection,
     inRegistersSection,
     inReportsSection,
     inReportsSalesSection,
@@ -37,6 +39,7 @@ export default function AppSidebar(props) {
     goodsOpen,
     stockOpen,
     ordersOpen,
+    financeOpen,
     registersOpen,
     reportsOpen,
     reportsSalesOpen,
@@ -45,6 +48,7 @@ export default function AppSidebar(props) {
     setGoodsOpen,
     setStockOpen,
     setOrdersOpen,
+    setFinanceOpen,
     setRegistersOpen,
     setReportsOpen,
     setReportsSalesOpen,
@@ -53,6 +57,7 @@ export default function AppSidebar(props) {
     goodsNav,
     stockNav,
     ordersNav,
+    financeNav,
     registersNav,
     showReportsSales,
     showReportsStock,
@@ -165,6 +170,23 @@ export default function AppSidebar(props) {
                 />
               ) : (
                 <SidebarGroupCompact t={t} items={ordersNav} />
+              )
+            : null}
+
+          {showFinance
+            ? navLabelsVisible ? (
+                <SidebarGroupExpanded
+                  t={t}
+                  label={t('nav.financeGroup')}
+                  icon={ICONS.Calculator}
+                  isOpen={financeOpen}
+                  onToggle={() => setFinanceOpen((o) => !o)}
+                  isActive={inFinanceSection}
+                  items={financeNav}
+                  subLinkClass={subLinkClass}
+                />
+              ) : (
+                <SidebarGroupCompact t={t} items={financeNav} />
               )
             : null}
 

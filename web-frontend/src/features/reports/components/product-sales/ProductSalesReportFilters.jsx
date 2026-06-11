@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import { inputCls } from '../../../../components/ui';
+import { BaseSelect, inputCls } from '../../../../components/ui';
 import ReportDateBar from '../../../../components/shared/ReportDateBar';
 import ReportStoreSelect from '../ReportStoreSelect';
 
@@ -32,16 +32,16 @@ export default function ProductSalesReportFilters({
           />
         </div>
         <ReportStoreSelect stores={stores} value={storeId} onChange={onStoreChange} />
-        <select
+        <BaseSelect
           value={categoryId}
           onChange={(e) => onCategoryChange(e.target.value)}
-          className={inputCls + ' w-auto min-w-[10rem]'}
-        >
-          <option value="">{t('stockReports.allCategories')}</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+          className="w-auto min-w-[10rem]"
+          placeholder={t('stockReports.allCategories')}
+          options={[
+            { value: '', label: t('stockReports.allCategories') },
+            ...categories.map((c) => ({ value: String(c.id), label: c.name })),
+          ]}
+        />
       </div>
     </>
   );

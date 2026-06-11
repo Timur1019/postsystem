@@ -22,19 +22,10 @@
   border: 1px solid #d1e7dd;
 }
 
-.dark .pos-return-modal--partial .pos-return-modal__preview-head {
-  background: rgb(6 78 59 / 0.2);
-  border-color: rgb(51 65 85);
-}
-
 .pos-return-modal--partial .pos-return-modal__preview-receipt {
   font-size: 1rem;
   font-weight: 700;
   color: #0f172a;
-}
-
-.dark .pos-return-modal--partial .pos-return-modal__preview-receipt {
-  color: #f8fafc;
 }
 
 .pos-return-modal--partial .pos-return-modal__preview-total-inline {
@@ -47,10 +38,6 @@
   font-weight: 600;
   color: #0f172a;
   line-height: 1.4;
-}
-
-.dark .pos-return-modal--partial .pos-return-modal__line-name {
-  color: #f1f5f9;
 }
 
 .pos-return-modal--partial .pos-return-modal__textarea {
@@ -86,11 +73,6 @@
   border-radius: 12px;
   background: #f8fafc;
   border-bottom: none;
-}
-
-.dark .pos-return-modal__lines--select .pos-return-line-select {
-  background: rgb(30 41 59);
-  border-color: rgb(51 65 85);
 }
 
 .pos-return-line-select__top {
@@ -143,11 +125,6 @@
   box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
 }
 
-.dark .pos-return-qty-stepper {
-  background: rgb(15 23 42);
-  border-color: rgb(71 85 105);
-}
-
 .pos-return-qty-stepper__btn {
   display: inline-flex;
   align-items: center;
@@ -170,19 +147,6 @@
 
 .pos-return-qty-stepper__btn--plus {
   border-left: 1px solid #e2e8f0;
-}
-
-.dark .pos-return-qty-stepper__btn {
-  background: rgb(51 65 85);
-  color: #f8fafc;
-}
-
-.dark .pos-return-qty-stepper__btn--minus {
-  border-right-color: rgb(71 85 105);
-}
-
-.dark .pos-return-qty-stepper__btn--plus {
-  border-left-color: rgb(71 85 105);
 }
 
 .pos-return-qty-stepper__btn:hover:not(:disabled) {
@@ -211,11 +175,6 @@
   line-height: 1;
   color: #0f172a;
   background: #fff;
-}
-
-.dark .pos-return-qty-stepper__value {
-  color: #f8fafc;
-  background: rgb(15 23 42);
 }
 
 .pos-return-line-select__max {
@@ -325,36 +284,20 @@
   text-transform: uppercase;
 }
 
-.dark .pos-order-table th {
-  background: rgb(30 41 59);
-}
-
 .pos-order-table td {
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid rgb(241 245 249);
   cursor: pointer;
 }
 
-.dark .pos-order-table td {
-  border-color: rgb(30 41 59);
-}
-
 .pos-order-table__row--active td {
   background: rgb(236 253 245);
-}
-
-.dark .pos-order-table__row--active td {
-  background: rgb(6 78 59 / 0.35);
 }
 
 .pos-order-table__name {
   display: block;
   font-weight: 500;
   color: rgb(15 23 42);
-}
-
-.dark .pos-order-table__name {
-  color: white;
 }
 
 .pos-order-table__sku {
@@ -412,10 +355,6 @@
   font-weight: 700;
   color: rgb(15 23 42);
   margin: 0.5rem 0 1rem;
-}
-
-.dark .pos-order-totals__grand {
-  color: white;
 }
 
 .pos-order-pay-btn {

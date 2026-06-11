@@ -1,5 +1,5 @@
 import { Percent } from 'lucide-react';
-import { inputCls } from '../../../../../../utils/productImportUtils';
+import { BaseSelect } from '../../../../../../components/ui';
 
 export default function ProductImportPreviewControls({
   t,
@@ -65,18 +65,16 @@ export default function ProductImportPreviewControls({
           {t('products.import.defaultCategory')}
         </p>
         <div className="flex gap-2">
-          <select
+          <BaseSelect
+            className="flex-1"
             value={defaultCategoryId}
             onChange={(e) => setDefaultCategoryId(e.target.value)}
-            className={inputCls}
-          >
-            <option value="">{t('products.import.noCategory')}</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            placeholder={t('products.import.noCategory')}
+            options={[
+              { value: '', label: t('products.import.noCategory') },
+              ...categories.map((c) => ({ value: String(c.id), label: c.name })),
+            ]}
+          />
           <button
             type="button"
             onClick={applyDefaultCategoryToAll}
@@ -93,18 +91,16 @@ export default function ProductImportPreviewControls({
           {t('products.import.defaultStore')}
         </p>
         <div className="flex gap-2">
-          <select
+          <BaseSelect
+            className="flex-1"
             value={defaultStoreId}
             onChange={(e) => setDefaultStoreId(e.target.value)}
-            className={inputCls}
-          >
-            <option value="">{t('products.import.noStore')}</option>
-            {stores.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+            placeholder={t('products.import.noStore')}
+            options={[
+              { value: '', label: t('products.import.noStore') },
+              ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+            ]}
+          />
           <button
             type="button"
             onClick={applyDefaultStoreToAll}

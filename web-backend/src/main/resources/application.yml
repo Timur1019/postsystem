@@ -94,6 +94,14 @@ app:
     login-url: ${MAIL_LOGIN_URL:http://localhost/login?admin=1}
     super-admin-login-recipients: ${MAIL_SUPER_ADMIN_LOGIN_RECIPIENTS:aripov1219@gmail.com,maxmudov71707@gmail.com}
     send-credentials-on-create: ${MAIL_SEND_CREDENTIALS_ON_CREATE:true}
+  finance:
+    enabled: ${FINANCE_SERVICE_ENABLED:true}
+    base-url: ${FINANCE_SERVICE_URL:http://localhost:8082/api/v1}
+    internal-api-key: ${FINANCE_INTERNAL_API_KEY:finance-internal-dev-key-change-in-prod}
+    connect-timeout-ms: 5000
+    read-timeout-ms: 15000
+    sync-batch-size: 50
+    sync-retry-ms: 30000
   ai:
     enabled: ${AI_ASSISTANT_ENABLED:true}
     provider: ${AI_ASSISTANT_PROVIDER:deepseek}

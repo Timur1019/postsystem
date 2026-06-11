@@ -1,5 +1,6 @@
 import { Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { BaseSelect } from '../../../../components/ui';
 import OrderAddWizardModal from './OrderAddWizardModal';
 
 export default function OrderAddWizardDetails({
@@ -69,29 +70,24 @@ export default function OrderAddWizardDetails({
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200"
             />
           </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
-              {t('orders.wizard.assignCourier')}
-            </span>
-            <select
+          <div>
+            <BaseSelect
+              label={t('orders.wizard.assignCourier')}
               value={form.courierId}
               onChange={(e) => setForm((f) => ({ ...f, courierId: e.target.value }))}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            >
-              <option value="">{t('orders.filterDash')}</option>
-              {couriers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.fullName}
-                </option>
-              ))}
-            </select>
+              placeholder={t('orders.filterDash')}
+              options={[
+                { value: '', label: t('orders.filterDash') },
+                ...couriers.map((c) => ({ value: String(c.id), label: c.fullName })),
+              ]}
+            />
             {couriers.length === 0 ? (
               <p className="mt-1 flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
                 <span aria-hidden>⚠</span>
                 {t('orders.noCourierUsers')}
               </p>
             ) : null}
-          </label>
+          </div>
         </div>
 
         <div className="space-y-4">

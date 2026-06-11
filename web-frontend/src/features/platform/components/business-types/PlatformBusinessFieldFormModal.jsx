@@ -1,5 +1,5 @@
 import { ToggleLeft, ToggleRight } from 'lucide-react';
-import { BaseButton, BaseInput, BaseModal, inputCls } from '../../../../components/ui';
+import { BaseButton, BaseInput, BaseModal, BaseSelect, inputCls } from '../../../../components/ui';
 import { BUSINESS_TYPE_FIELD_TYPES } from '../../utils/businessTypeUtils';
 
 export default function PlatformBusinessFieldFormModal({
@@ -31,17 +31,14 @@ export default function PlatformBusinessFieldFormModal({
           value={form.label}
           onChange={(e) => onFieldChange({ label: e.target.value })}
         />
-        <select
-          className={inputCls}
+        <BaseSelect
           value={form.fieldType}
           onChange={(e) => onFieldChange({ fieldType: e.target.value })}
-        >
-          {BUSINESS_TYPE_FIELD_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
+          options={BUSINESS_TYPE_FIELD_TYPES.map((type) => ({
+            value: type,
+            label: type,
+          }))}
+        />
         <div className="flex flex-wrap gap-4 text-sm">
           <label className="flex items-center gap-2">
             <input

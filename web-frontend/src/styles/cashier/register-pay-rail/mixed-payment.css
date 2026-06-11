@@ -211,8 +211,10 @@
 }
 
 .pos-pay-panel--register-rail .pos-pay-mixed-progress__fill {
+  width: var(--mixed-progress, 0%);
   height: 100%;
   background: var(--pos-green, #3dffa8);
+  transition: width 0.2s ease;
 }
 
 .pos-pay-panel--register-rail .pos-keypad__key {

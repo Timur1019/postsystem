@@ -1,12 +1,10 @@
 import {
-  canFallbackToOfflineCheckout,
-  isConnectivityOfflineLike,
+  hasLocalPosCatalog,
   refreshConnectivityStatus,
-  shouldUseOfflinePos,
+  shouldPreferLocalCheckout,
+  shouldRetryOnlineAfterOfflineFailure,
   useConnectivityStore,
 } from '../../store/connectivityStore';
-import { userHasCashierOfflineAccess } from '../../utils/cashierOfflineAccess';
-import { useAuthStore } from '../../store/authStore';
 import { isDesktopOfflineBridge, offlineCompleteCheckout } from './desktopOfflineBridge';
 import {
   buildOfflineCheckoutPayload,
@@ -31,19 +29,9 @@ function withCheckoutTimeout(promise) {
   ]);
 }
 
-/** Desktop + локальный каталог или офлайн → сначала локальная продажа. */
-export function shouldPreferLocalCheckout() {
-  if (!isDesktopOfflineBridge()) return false;
-  if (!userHasCashierOfflineAccess(useAuthStore.getState().user)) return false;
-  const state = useConnectivityStore.getState();
-  if (state.canSellOffline) return true;
-  return isConnectivityOfflineLike(state);
-}
-
-/** @deprecated use shouldPreferLocalCheckout */
-export function shouldRunOfflineCheckoutFirst() {
-  if (!shouldPreferLocalCheckout()) return false;
-  return shouldUseOfflinePos();
+/** @deprecated use shouldPreferLocalCheckout from connectivityStore */
+export function shouldRunOfflineCheckoutFirst(storeId = null) {
+  return shouldPreferLocalCheckout(storeId);
 }
 
 export async function processOfflineCheckout({
@@ -57,6 +45,10 @@ export async function processOfflineCheckout({
   items,
 }) {
   if (!isDesktopOfflineBridge()) {
+    throw new Error('OFFLINE_SALE_SAVE_FAILED');
+  }
+
+  if (!hasLocalPosCatalog(useConnectivityStore.getState(), storeId)) {
     throw new Error('OFFLINE_SALE_SAVE_FAILED');
   }
 
@@ -78,6 +70,7 @@ export async function processOfflineCheckout({
     clientSaleId,
     receiptNumber,
     payment,
+    customerName: payment.customerName,
     storeId,
     storeName: storeName || cachedShift?.storeName || '',
     cashierName: user?.fullName || user?.username || cachedShift?.cashierName || '',
@@ -111,20 +104,4 @@ export async function processOfflineCheckout({
   return { data: { ...response, receiptNumber: saved.receiptNumber || response.receiptNumber } };
 }
 
-const OFFLINE_CHECKOUT_NO_ONLINE_RETRY = new Set([
-  'offline_ipc_timeout',
-  'offline_checkout_timeout',
-  'OFFLINE_SALE_SAVE_FAILED',
-  'offline_sale_save_failed',
-  'OFFLINE_SHIFT_REQUIRED',
-]);
-
-/** После сбоя локального чекаутa не уходить в онлайн при обрыве сети. */
-export function shouldRetryOnlineAfterOfflineFailure(offlineErr) {
-  const msg = String(offlineErr?.message || '');
-  if (OFFLINE_CHECKOUT_NO_ONLINE_RETRY.has(msg)) return false;
-  if (shouldPreferLocalCheckout()) return false;
-  const state = useConnectivityStore.getState();
-  if (isConnectivityOfflineLike(state)) return false;
-  return Boolean(state.apiOnline && !state.offlineMode && !shouldUseOfflinePos());
-}
+export { shouldPreferLocalCheckout, shouldRetryOnlineAfterOfflineFailure };

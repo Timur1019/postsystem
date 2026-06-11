@@ -66,27 +66,6 @@
   gap: 10px;
 }
 
-.pos-topbar-close {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--pos-border, #d1d5db);
-  border-radius: 10px;
-  background: #fff;
-  color: #6b7280;
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
-}
-
-.pos-topbar-close:hover {
-  border-color: #fca5a5;
-  background: #fef2f2;
-  color: #b91c1c;
-}
-
 .pos-topbar-folders {
   display: flex;
   flex: 1 1 auto;

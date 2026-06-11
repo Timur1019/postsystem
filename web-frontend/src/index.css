@@ -1,5 +1,7 @@
 /* Global entry — admin modules first, then Tailwind */
 @import './styles/admin/index.css';
+@import './styles/shared/base-select.css';
+@import './styles/shared/product-lookup-select.css';
 
 @tailwind base;
 @tailwind components;

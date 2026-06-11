@@ -20,6 +20,7 @@ import com.pos.repository.StockReceiptRepository;
 import com.pos.repository.SupplierRepository;
 import com.pos.repository.StoreRepository;
 import com.pos.security.CurrentUserProvider;
+import com.pos.service.finance.FinancePurchaseIntegrationService;
 import com.pos.service.stock.StockReceiptService;
 import com.pos.service.stock.StoreStockService;
 import com.pos.service.stock.support.StockDocumentSupport;
@@ -59,6 +60,7 @@ public class StockReceiptServiceImpl implements StockReceiptService {
     private final TenantAccessSupport tenantAccess;
     private final CurrentUserProvider currentUserProvider;
     private final StockDocumentSupport stockDocument;
+    private final FinancePurchaseIntegrationService financePurchaseIntegrationService;
 
     @Override
     public StockReceiptResponse create(CreateStockReceiptRequest request) {
@@ -137,6 +139,7 @@ public class StockReceiptServiceImpl implements StockReceiptService {
         receipt.setTotalQuantity(totalQty);
         receipt.setTotalCost(totalCost);
         stockReceiptRepository.save(receipt);
+        financePurchaseIntegrationService.onPurchaseCompleted(receipt, request.paymentType());
 
         return toResponse(stockReceiptRepository.findDetailedById(receiptId).orElseThrow());
     }

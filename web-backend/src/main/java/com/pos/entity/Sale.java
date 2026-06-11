@@ -94,6 +94,10 @@ public class Sale {
     @Builder.Default
     private BigDecimal cardAmount = BigDecimal.ZERO;
 
+    @Column(name = "advance_amount", precision = 18, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal advanceAmount = BigDecimal.ZERO;
+
     @Column(name = "amount_tendered", precision = 18, scale = 2)
     private BigDecimal amountTendered;
 

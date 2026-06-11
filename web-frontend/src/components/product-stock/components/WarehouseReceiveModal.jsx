@@ -9,6 +9,8 @@ import { invalidateProductCaches } from '../../../utils/productCache';
 import { useCompanyStores } from '../../../hooks/useCompanyStores';
 import { formatQty, parseQtyInput, roundQty } from '../../../utils/quantityFormat';
 import { getUnitConfig } from '../../../utils/unitConfig';
+import { BaseSelect } from '../../../components/ui';
+import { ProductLookupSelect } from '../../../components/product-lookup';
 import UnitConversionHelper from '../../../components/shared/UnitConversionHelper';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm
@@ -47,13 +49,6 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
     setStorageLocation('');
   }, [open, initialProduct?.id]);
 
-  const { data: catalog } = useQuery({
-    queryKey: ['products', 'warehouse-catalog'],
-    queryFn: () => productApi.getAll({ page: 0, size: 500, activeOnly: true }).then((r) => r.data),
-    enabled: open,
-  });
-
-  const products = catalog?.content ?? [];
   const lockedProduct = !!initialProduct?.id;
 
   const { data: selectedProduct } = useQuery({
@@ -180,42 +175,36 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
           ) : null}
           {needsStorePick ? (
             <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:items-start">
-              <label className={`${labelCls} sm:pt-2`}>
-                <span className="text-red-600">*</span> {t('stockReports.colStore')}
-              </label>
-              <select
-                className={inputCls}
+              <BaseSelect
+                className="sm:col-span-2"
+                label={t('stockReports.colStore')}
+                required
                 value={storeId}
                 onChange={(e) => setStoreId(e.target.value)}
-                required
-              >
-                <option value="">{t('stockModal.pickStore')}</option>
-                {stores.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
+                placeholder={t('stockModal.pickStore')}
+                options={[
+                  { value: '', label: t('stockModal.pickStore') },
+                  ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+                ]}
+              />
             </div>
           ) : null}
 
           <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:items-start">
-            <label className={`${labelCls} sm:pt-2`}>
-              <span className="text-red-600">*</span> {t('stockModule.modal.product')}
-            </label>
-            <div className="">
-              <select
+            <div className="sm:col-span-2">
+              <ProductLookupSelect
+                label={t('stockModule.modal.product')}
                 required
-                className={inputCls}
                 value={productId}
+                storeId={effectiveStoreId}
+                disabled={lockedProduct || (needsStorePick && !effectiveStoreId)}
+                placeholder={t('stockModule.modal.productPh')}
                 onChange={(e) => setProductId(e.target.value)}
-                disabled={lockedProduct}
-              >
-                <option value="">{t('stockModule.modal.productPh')}</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                onProductSelect={(product) => {
+                  if (product) setProductId(String(product.id));
+                  else setProductId('');
+                }}
+              />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('stockModule.modal.productHint')}</p>
             </div>
           </div>
@@ -267,12 +256,18 @@ export default function WarehouseReceiveModal({ open, onClose, initialProduct, o
           </div>
 
           <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:items-center">
-            <label className={labelCls}>{t('stockModule.modal.vat')}</label>
-            <select className={inputCls} value={vat} onChange={(e) => setVat(e.target.value)}>
-              <option value="">{t('stockModule.modal.vatUnset')}</option>
-              <option value="0">{t('stockModule.modal.vat0')}</option>
-              <option value="12">{t('stockModule.modal.vat12')}</option>
-            </select>
+            <BaseSelect
+              className="sm:col-span-2"
+              label={t('stockModule.modal.vat')}
+              value={vat}
+              onChange={(e) => setVat(e.target.value)}
+              placeholder={t('stockModule.modal.vatUnset')}
+              options={[
+                { value: '', label: t('stockModule.modal.vatUnset') },
+                { value: '0', label: t('stockModule.modal.vat0') },
+                { value: '12', label: t('stockModule.modal.vat12') },
+              ]}
+            />
           </div>
 
           <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:items-center">

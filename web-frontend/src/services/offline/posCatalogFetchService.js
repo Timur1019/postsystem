@@ -1,6 +1,10 @@
 import { categoryApi, productApi } from '../../api';
 import { POS_PRODUCT_PAGE_SIZE } from '../../features/cashier/components/pos/posCatalogConstants';
-import { shouldUseLocalPosCatalog } from '../../store/connectivityStore';
+import {
+  canUseOfflineCatalogFallback,
+  shouldUseLocalPosCatalog,
+} from '../../store/connectivityStore';
+import { shouldUseLocalPosCatalog as shouldUseLocalPosCatalogRule } from './connectivityRules';
 import { isApiUnreachableError } from '../../utils/apiNetworkError';
 import {
   isDesktopOfflineBridge,
@@ -9,8 +13,8 @@ import {
 } from './desktopOfflineBridge';
 import { POS_CATALOG_ONLINE_TIMEOUT_MS } from './posCatalogConstants';
 
-export function getPosCatalogMode() {
-  return shouldUseLocalPosCatalog() ? 'offline' : 'online';
+export function getPosCatalogMode(storeId) {
+  return shouldUseLocalPosCatalog(storeId) ? 'offline' : 'online';
 }
 
 function onlineCatalogRequestConfig(signal) {
@@ -20,8 +24,8 @@ function onlineCatalogRequestConfig(signal) {
   };
 }
 
-export async function fetchPosCategories({ signal } = {}) {
-  if (shouldUseLocalPosCatalog()) {
+export async function fetchPosCategories({ storeId, signal } = {}) {
+  if (shouldUseLocalPosCatalog(storeId)) {
     return offlineListCategories();
   }
   try {
@@ -29,7 +33,7 @@ export async function fetchPosCategories({ signal } = {}) {
     return res.data;
   } catch (err) {
     if (signal?.aborted) throw err;
-    if (isDesktopOfflineBridge() && isApiUnreachableError(err)) {
+    if (isDesktopOfflineBridge() && isApiUnreachableError(err) && canUseOfflineCatalogFallback(storeId)) {
       return offlineListCategories();
     }
     throw err;
@@ -60,7 +64,7 @@ export async function fetchPosProductsPage({
   signal,
 }) {
   const trimmedSearch = search?.trim() || '';
-  if (shouldUseLocalPosCatalog()) {
+  if (shouldUseLocalPosCatalog(storeId)) {
     const content = await offlineSearchProducts({
       search: trimmedSearch,
       categoryId,
@@ -84,7 +88,7 @@ export async function fetchPosProductsPage({
     return res.data;
   } catch (err) {
     if (signal?.aborted) throw err;
-    if (isDesktopOfflineBridge() && isApiUnreachableError(err)) {
+    if (isDesktopOfflineBridge() && isApiUnreachableError(err) && canUseOfflineCatalogFallback(storeId)) {
       const content = await offlineSearchProducts({
         search: trimmedSearch,
         categoryId,
@@ -97,8 +101,8 @@ export async function fetchPosProductsPage({
   }
 }
 
-export function getPosProductsNextPageParam(lastPage, lastPageParam) {
-  const useLocal = shouldUseLocalPosCatalog();
+export function getPosProductsNextPageParam(lastPage, lastPageParam, storeId = null) {
+  const useLocal = shouldUseLocalPosCatalog(storeId);
   const next = (lastPage?.number ?? 0) + 1;
   const total = lastPage?.totalPages ?? 0;
   return next < total ? (useLocal ? lastPageParam + POS_PRODUCT_PAGE_SIZE : next) : undefined;
@@ -112,8 +116,16 @@ export function resolvePosCatalogSource({
   bootstrapReady,
   canSellOffline,
   productCount,
+  catalogStoreId,
+  storeId,
 }) {
-  if (!isDesktop || !offlineAllowed) return 'online';
-  if (bootstrapReady || canSellOffline || productCount > 0) return 'offline';
-  return offlineLike ? 'offline' : 'online';
+  return shouldUseLocalPosCatalogRule({
+    isDesktop,
+    offlineAllowed,
+    offlineLike,
+    state: { bootstrapReady, canSellOffline, productCount, storeId: catalogStoreId },
+    storeId,
+  })
+    ? 'offline'
+    : 'online';
 }

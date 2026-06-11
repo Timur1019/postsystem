@@ -1,10 +1,10 @@
-import { Link, Navigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 import LanguageSwitcher from '../../../components/shared/LanguageSwitcher';
 import { useTenantDisplayStore } from '../../../store/tenantDisplayStore';
 import LoginBranding from '../components/LoginBranding';
 import LoginForm from '../components/LoginForm';
-import LoginFooterLinks from '../components/LoginFooterLinks';
+import LoginHeaderLinks from '../components/LoginHeaderLinks';
+import LoginFooter from '../components/LoginFooter';
 import { useLoginPage } from '../hooks/useLoginPage';
 
 export default function LoginPage() {
@@ -27,20 +27,10 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-slate-100 p-4 sm:p-6">
+      <LoginHeaderLinks t={t} cashierLoginPath={cashierLoginPath} isDesktop={isDesktop} />
       <div className="absolute top-4 right-4">
         <LanguageSwitcher />
       </div>
-      {isDesktop ? (
-        <div className="absolute top-4 left-4">
-          <Link
-            to={cashierLoginPath()}
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
-          >
-            <ArrowLeft size={16} />
-            {t('cashierLogin.backToCashier', { defaultValue: 'Вход кассира' })}
-          </Link>
-        </div>
-      ) : null}
       <div className="w-full max-w-md">
         <LoginBranding appName={displayAppName()} subtitle={t('login.subtitle')} />
         <LoginForm
@@ -51,7 +41,7 @@ export default function LoginPage() {
           loading={loading}
           onSubmit={onSubmit}
         />
-        <LoginFooterLinks t={t} cashierLoginPath={cashierLoginPath} isDesktop={isDesktop} />
+        <LoginFooter t={t} />
       </div>
     </div>
   );

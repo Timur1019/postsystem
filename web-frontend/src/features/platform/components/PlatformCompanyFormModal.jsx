@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { BaseButton, BaseInput, BaseModal, inputCls } from '../../../components/ui';
+import { BaseButton, BaseInput, BaseModal, BaseSelect } from '../../../components/ui';
 
 export default function PlatformCompanyFormModal({
   open,
@@ -67,20 +67,15 @@ export default function PlatformCompanyFormModal({
       />
 
       <div className="mb-1">
-        <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
-          {t('platform.field_businessType')}
-        </label>
-        <select
-          className={inputCls}
+        <BaseSelect
+          label={t('platform.field_businessType')}
           value={form.businessType}
           onChange={(e) => onFieldChange('businessType', e.target.value)}
-        >
-          {businessTypes.map((bt) => (
-            <option key={bt.code} value={bt.code}>
-              {t(`productTemplates.businessTypes.${bt.code}`)}
-            </option>
-          ))}
-        </select>
+          options={businessTypes.map((bt) => ({
+            value: bt.code,
+            label: t(`productTemplates.businessTypes.${bt.code}`),
+          }))}
+        />
         <p className="mt-1 text-xs text-slate-500">{t('platform.field_businessTypeHint')}</p>
       </div>
     </BaseModal>

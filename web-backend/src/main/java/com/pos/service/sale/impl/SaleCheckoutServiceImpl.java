@@ -15,7 +15,7 @@ import com.pos.entity.User;
 import com.pos.exception.PosExceptions;
 import com.pos.mapper.SaleMapper;
 import com.pos.repository.CashierShiftRepository;
-import com.pos.repository.CustomerRepository;
+import com.pos.service.sale.support.CreditSaleCustomerSupport;
 import com.pos.repository.SaleRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.repository.UserRepository;
@@ -25,6 +25,10 @@ import com.pos.service.sale.support.SaleEnumParser;
 import com.pos.service.sale.support.SalePaymentResolver;
 import com.pos.service.sale.support.SaleReceiptNumberGenerator;
 import com.pos.service.sale.support.SaleVatCalculator;
+import com.pos.service.finance.FinanceAdvancePaymentIntegrationService;
+import com.pos.service.finance.FinanceAdvanceSaleIntegrationService;
+import com.pos.service.finance.FinanceCreditSaleIntegrationService;
+import com.pos.service.finance.FinanceSaleIntegrationService;
 import com.pos.service.salesledger.SalesLedgerCacheService;
 import com.pos.service.stock.StoreStockService;
 import com.pos.service.support.CashierSaleSupport;
@@ -52,7 +56,7 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
     private final SaleRepository saleRepository;
     private final CashierShiftRepository cashierShiftRepository;
     private final UserRepository userRepository;
-    private final CustomerRepository customerRepository;
+    private final CreditSaleCustomerSupport creditSaleCustomerSupport;
     private final StockMovementRepository stockMovementRepository;
     private final CashierSaleSupport cashierSaleSupport;
     private final SaleMapper saleMapper;
@@ -62,6 +66,10 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
     private final StoreStockService storeStockService;
     private final TenantAccessSupport tenantAccess;
     private final CheckoutProductLoader checkoutProductLoader;
+    private final FinanceSaleIntegrationService financeSaleIntegrationService;
+    private final FinanceCreditSaleIntegrationService financeCreditSaleIntegrationService;
+    private final FinanceAdvanceSaleIntegrationService financeAdvanceSaleIntegrationService;
+    private final FinanceAdvancePaymentIntegrationService financeAdvancePaymentIntegrationService;
 
     @Override
     public SaleResponse processSale(CreateSaleRequest req, UUID cashierId) {
@@ -74,9 +82,8 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
             .findByCashierIdAndStoreIdAndStatus(cashier.getId(), store.getId(), CashierShift.ShiftStatus.OPEN)
             .orElseThrow(() -> PosExceptions.badRequest("Смена не открыта. Откройте смену перед продажей."));
 
-        Customer customer = req.customerId() != null
-            ? customerRepository.findById(req.customerId()).orElse(null)
-            : null;
+        Sale.ReceiptType receiptType = SaleEnumParser.receiptType(req.receiptType());
+        Customer customer = creditSaleCustomerSupport.resolveForCheckout(req.customerId(), receiptType);
 
         Map<UUID, Product> productsById = checkoutProductLoader.loadIndexed(req.items());
 
@@ -89,7 +96,9 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
             Product product = productsById.get(itemReq.productId());
             BigDecimal lineQty = QuantityValidator.normalizeForProduct(product, itemReq.quantity());
             QuantityValidator.validate(product, lineQty);
-            storeStockService.requireAvailable(product, store, lineQty);
+            if (receiptType != Sale.ReceiptType.ADVANCE) {
+                storeStockService.requireAvailable(product, store, lineQty);
+            }
 
             BigDecimal lineDiscount = itemReq.discount() != null ? itemReq.discount() : BigDecimal.ZERO;
             BigDecimal unitPrice = resolveCheckoutUnitPrice(itemReq, product, store.getId());
@@ -115,7 +124,9 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
             taxTotal = taxTotal.add(taxAmt);
             lineDiscountTotal = lineDiscountTotal.add(lineDiscount);
 
-            storeStockService.decrease(product, store, lineQty);
+            if (receiptType != Sale.ReceiptType.ADVANCE) {
+                storeStockService.decrease(product, store, lineQty);
+            }
         }
 
         BigDecimal grossTotal = subtotal.add(taxTotal).setScale(2, RoundingMode.HALF_UP);
@@ -125,12 +136,12 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
         BigDecimal discountTotal = lineDiscountTotal.add(orderDiscount).setScale(2, RoundingMode.HALF_UP);
         lineDiscountTotal = lineDiscountTotal.setScale(2, RoundingMode.HALF_UP);
 
-        Sale.ReceiptType receiptType = SaleEnumParser.receiptType(req.receiptType());
+        BigDecimal advanceAmount = normalizeAdvanceAmount(req.advanceAmount(), receiptType, customer, total);
+
         Sale.CardType cardType = SaleEnumParser.cardType(req.cardType());
         Sale.PaymentMethod paymentMethod = Sale.PaymentMethod.valueOf(req.paymentMethod());
         SalePaymentResolver.PaymentAmounts amounts;
-        if (receiptType == Sale.ReceiptType.ADVANCE || receiptType == Sale.ReceiptType.CREDIT) {
-            // Аванс / кредит — долг или предоплата, без наличных и карты в смене.
+        if (receiptType == Sale.ReceiptType.CREDIT) {
             amounts = new SalePaymentResolver.PaymentAmounts(
                 BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
                 BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
@@ -139,7 +150,9 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
             );
             cardType = null;
         } else {
-            amounts = paymentResolver.resolve(paymentMethod, total, req);
+            BigDecimal payable = total.subtract(advanceAmount).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+            amounts = paymentResolver.resolve(paymentMethod, payable, req);
+            validatePaymentTotals(total, advanceAmount, amounts);
             if (paymentMethod == Sale.PaymentMethod.CASHLESS) {
                 cardType = null;
             } else if (paymentMethod == Sale.PaymentMethod.CARD && cardType == null) {
@@ -165,6 +178,7 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
             .paymentMethod(paymentMethod)
             .cashAmount(amounts.cash())
             .cardAmount(amounts.card())
+            .advanceAmount(advanceAmount)
             .receiptType(receiptType)
             .cardType(cardType)
             .amountTendered(amounts.tendered())
@@ -177,18 +191,31 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
         sale.setItems(items);
 
         Sale saved = saleRepository.save(sale);
-        for (SaleItem item : saved.getItems()) {
-            stockMovementRepository.save(StockMovement.builder()
-                .product(item.getProduct())
-                .store(store)
-                .movementType(StockMovementType.SALE)
-                .quantity(item.getQuantity().negate())
-                .referenceId(saved.getId())
-                .createdBy(cashier)
-                .notes("Продажа " + saved.getReceiptNumber())
-                .build());
+        if (saved.getReceiptType() != Sale.ReceiptType.ADVANCE) {
+            for (SaleItem item : saved.getItems()) {
+                stockMovementRepository.save(StockMovement.builder()
+                    .product(item.getProduct())
+                    .store(store)
+                    .movementType(StockMovementType.SALE)
+                    .quantity(item.getQuantity().negate())
+                    .referenceId(saved.getId())
+                    .createdBy(cashier)
+                    .notes("Продажа " + saved.getReceiptNumber())
+                    .build());
+            }
         }
         salesLedgerCacheService.onSaleChanged(saved);
+        if (saved.getReceiptType() == Sale.ReceiptType.CREDIT) {
+            financeCreditSaleIntegrationService.onCreditSaleCompleted(saved);
+        } else if (saved.getReceiptType() == Sale.ReceiptType.ADVANCE) {
+            financeSaleIntegrationService.onSaleCompleted(saved);
+            financeAdvanceSaleIntegrationService.onAdvanceSaleCompleted(saved);
+        } else {
+            financeSaleIntegrationService.onSaleCompleted(saved);
+            if (saved.getAdvanceAmount() != null && saved.getAdvanceAmount().signum() > 0) {
+                financeAdvancePaymentIntegrationService.onSaleAdvanceApplied(saved);
+            }
+        }
         LogUtil.info(SaleCheckoutServiceImpl.class, "Sale completed: id={}, receipt={}", saved.getId(), saved.getReceiptNumber());
         return saleMapper.toResponse(saved);
     }
@@ -206,6 +233,42 @@ public class SaleCheckoutServiceImpl implements SaleCheckoutService {
         }
         BigDecimal capped = amount.min(grossTotal.max(BigDecimal.ZERO));
         return capped.max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static BigDecimal normalizeAdvanceAmount(
+        BigDecimal amount,
+        Sale.ReceiptType receiptType,
+        Customer customer,
+        BigDecimal total
+    ) {
+        if (amount == null || amount.signum() <= 0) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+        if (receiptType != Sale.ReceiptType.SALE) {
+            throw PosExceptions.badRequest("Аванс доступен только для обычной продажи");
+        }
+        if (customer == null) {
+            throw PosExceptions.badRequest("Для оплаты авансом укажите покупателя");
+        }
+        BigDecimal normalized = amount.setScale(2, RoundingMode.HALF_UP);
+        if (normalized.compareTo(total) > 0) {
+            throw PosExceptions.badRequest("Сумма аванса больше суммы чека");
+        }
+        return normalized;
+    }
+
+    private static void validatePaymentTotals(
+        BigDecimal total,
+        BigDecimal advanceAmount,
+        SalePaymentResolver.PaymentAmounts amounts
+    ) {
+        BigDecimal paid = advanceAmount
+            .add(amounts.cash())
+            .add(amounts.card())
+            .setScale(2, RoundingMode.HALF_UP);
+        if (paid.compareTo(total) != 0) {
+            throw PosExceptions.badRequest("Сумма оплаты не совпадает с итогом чека");
+        }
     }
 
     private static BigDecimal resolveOrderDiscountPercent(

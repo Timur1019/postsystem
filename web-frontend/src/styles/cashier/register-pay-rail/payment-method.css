@@ -12,6 +12,90 @@
   color: var(--pos-money, #f5c842);
 }
 
+.pos-pay-advance-step__customer {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--pos-muted);
+}
+
+.pos-pay-advance-step__balance {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--pos-radius);
+  background: var(--pos-green-soft);
+  border: 1px solid var(--pos-border);
+  font-size: 0.875rem;
+  color: var(--pos-text);
+}
+
+.pos-pay-advance-step__balance strong {
+  font-size: 1rem;
+  color: var(--pos-green);
+}
+
+.pos-pay-advance-step__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--pos-muted);
+}
+
+.pos-pay-advance-step__field input {
+  border: 1px solid var(--pos-border);
+  border-radius: var(--pos-radius);
+  padding: 0.625rem 0.875rem;
+  font-size: 1rem;
+  background: var(--pos-surface);
+  color: var(--pos-text);
+}
+
+.pos-pay-advance-step__field input:focus {
+  outline: none;
+  border-color: var(--pos-green);
+  box-shadow: 0 0 0 3px var(--pos-green-soft);
+}
+
+.pos-pay-advance-step__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.pos-pay-advance-step__quick button {
+  border: 1px solid var(--pos-border);
+  border-radius: var(--pos-radius);
+  background: var(--pos-surface);
+  color: var(--pos-text);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pos-pay-advance-step__quick button:hover {
+  background: var(--pos-green-soft);
+  border-color: var(--pos-green);
+}
+
+.pos-pay-advance-step__remainder {
+  margin: 1rem 0 0;
+  font-size: 0.875rem;
+  color: var(--pos-muted);
+}
+
+.pos-pay-advance-step__remainder--ok {
+  color: var(--pos-green);
+  font-weight: 600;
+}
+
 .pos-pay-panel--register-rail .pos-pay-method-step__due-value {
   font-size: 1.5rem;
   font-weight: 800;
@@ -26,9 +110,9 @@
   width: 100%;
   margin: 0 0 14px;
   padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(61, 255, 168, 0.35);
-  background: rgba(61, 255, 168, 0.08);
+  border-radius: var(--pos-radius);
+  border: 1px solid var(--pos-border);
+  background: var(--pos-green-soft);
   cursor: pointer;
   user-select: none;
 }
@@ -45,14 +129,14 @@
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  border: 2px solid rgba(148, 163, 184, 0.55);
-  background: rgba(15, 23, 42, 0.35);
+  border: 2px solid var(--pos-border);
+  background: var(--pos-surface);
   position: relative;
 }
 
 .pos-pay-panel--register-rail .pos-pay-print-toggle__input:checked + .pos-pay-print-toggle__box {
-  border-color: var(--pos-green, #3dffa8);
-  background: rgba(61, 255, 168, 0.25);
+  border-color: var(--pos-green);
+  background: var(--pos-green-soft);
 }
 
 .pos-pay-panel--register-rail .pos-pay-print-toggle__input:checked + .pos-pay-print-toggle__box::after {
@@ -75,7 +159,7 @@
 .pos-pay-panel--register-rail .pos-pay-print-toggle__text {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--pos-text);
   line-height: 1.3;
 }
 

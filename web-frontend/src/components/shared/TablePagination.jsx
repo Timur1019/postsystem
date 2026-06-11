@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BaseSelect } from '../ui';
 
 export const TABLE_PAGE_SIZE_OPTIONS = [10, 14, 20, 50];
 
@@ -48,7 +49,8 @@ export default function TablePagination({
         {onPageSizeChange ? (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-slate-500 dark:text-slate-500">{t('cashRegisters.pageSizePrefix')}</span>
-            <select
+            <BaseSelect
+              size="sm"
               value={pageSize}
               onChange={(e) => {
                 const nextSize = Number(e.target.value);
@@ -57,14 +59,8 @@ export default function TablePagination({
                   onPageSizeChange(nextSize);
                 }
               }}
-              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            >
-              {pageSizeOptions.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
+              options={pageSizeOptions.map((n) => ({ value: String(n), label: String(n) }))}
+            />
           </div>
         ) : null}
       </div>
@@ -74,7 +70,7 @@ export default function TablePagination({
           type="button"
           disabled={page === 0}
           onClick={() => onPageChange(page - 1)}
-          className="rounded px-2 py-1 text-xs text-slate-600 hover:text-slate-900 disabled:opacity-40 dark:text-slate-400 dark:hover:text-slate-200"
+          className="rounded px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 disabled:opacity-40 dark:text-slate-400 dark:hover:text-slate-200"
         >
           {t('common.prev')}
         </button>
@@ -83,7 +79,7 @@ export default function TablePagination({
             <button
               type="button"
               onClick={() => onPageChange(0)}
-              className="min-w-[2rem] rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
+              className="min-w-[2.5rem] rounded border border-slate-300 px-2.5 py-1.5 text-sm dark:border-slate-600"
             >
               1
             </button>
@@ -96,7 +92,7 @@ export default function TablePagination({
             type="button"
             onClick={() => totalPages > 1 && onPageChange(i)}
             disabled={totalPages <= 1 && i !== page}
-            className={`min-w-[2rem] rounded border px-2 py-1 text-xs ${
+            className={`min-w-[2.5rem] rounded border px-2.5 py-1.5 text-sm ${
               page === i
                 ? 'border-emerald-600 bg-emerald-50 font-semibold text-emerald-800 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-200'
                 : 'border-slate-300 dark:border-slate-600'
@@ -111,7 +107,7 @@ export default function TablePagination({
             <button
               type="button"
               onClick={() => onPageChange(totalPages - 1)}
-              className="min-w-[2rem] rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
+              className="min-w-[2.5rem] rounded border border-slate-300 px-2.5 py-1.5 text-sm dark:border-slate-600"
             >
               {totalPages}
             </button>
@@ -121,7 +117,7 @@ export default function TablePagination({
           type="button"
           disabled={page >= totalPages - 1 || totalPages === 0}
           onClick={() => onPageChange(page + 1)}
-          className="rounded px-2 py-1 text-xs text-slate-600 hover:text-slate-900 disabled:opacity-40 dark:text-slate-400 dark:hover:text-slate-200"
+          className="rounded px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 disabled:opacity-40 dark:text-slate-400 dark:hover:text-slate-200"
         >
           {t('common.next')}
         </button>

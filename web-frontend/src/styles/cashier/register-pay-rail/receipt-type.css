@@ -36,7 +36,7 @@
 }
 
 .pos-pay-receipt-type--register.is-active .pos-pay-receipt-type__icon-wrap {
-  background: #f8fafc;
+  background: var(--pos-green-soft, rgb(61 255 168 / 0.15));
   color: var(--pos-green, #3dffa8);
 }
 

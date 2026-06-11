@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { productApi, supplierApi, warehouseApi } from '../../../api';
+import { supplierApi, warehouseApi } from '../../../api';
 import { invalidateProductCaches } from '../../../utils/productCache';
 import { useCompanyStores } from '../../../hooks/useCompanyStores';
 import { emptyReceiptLine } from '../utils/stockDocumentFormUtils';
@@ -15,6 +15,7 @@ export function useStockReceiptCreatePage() {
   const [supplierId, setSupplierId] = useState('');
   const [storeId, setStoreId] = useState('');
   const [notes, setNotes] = useState('');
+  const [paymentType, setPaymentType] = useState('CASH');
   const [lines, setLines] = useState([emptyReceiptLine()]);
   const { stores, onlyStore, needsStorePick, resolveStoreId } = useCompanyStores();
 
@@ -24,26 +25,11 @@ export function useStockReceiptCreatePage() {
 
   const effectiveStoreId = resolveStoreId(storeId);
 
-  const productsQuery = useQuery({
-    queryKey: ['products-receipt-pick', effectiveStoreId],
-    queryFn: () =>
-      productApi
-        .getAll({
-          page: 0,
-          size: 500,
-          activeOnly: true,
-          ...(effectiveStoreId ? { storeId: effectiveStoreId } : {}),
-        })
-        .then((r) => r.data),
-    enabled: !needsStorePick || !!effectiveStoreId,
-  });
-
   const suppliersQuery = useQuery({
     queryKey: ['suppliers-all'],
     queryFn: () => supplierApi.getAll({ page: 0, size: 200 }).then((r) => r.data),
   });
 
-  const catalog = productsQuery.data?.content ?? [];
   const supplierList = suppliersQuery.data?.content ?? [];
 
   const mutation = useMutation({
@@ -60,11 +46,10 @@ export function useStockReceiptCreatePage() {
     setLines((prev) => prev.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
   };
 
-  const onProductPick = (idx, productId) => {
-    const product = catalog.find((x) => x.id === productId);
+  const onProductPick = (idx, product) => {
     if (!product) return;
     updateLine(idx, {
-      productId,
+      productId: product.id,
       purchasePrice: String(product.costPrice ?? ''),
       unitSellingPrice: String(product.sellingPrice ?? ''),
     });
@@ -84,6 +69,7 @@ export function useStockReceiptCreatePage() {
       supplierId: supplierId || undefined,
       storeId: sid,
       notes: notes.trim() || undefined,
+      paymentType,
       lines: lines
         .filter((l) => l.productId)
         .map((l) => ({
@@ -97,6 +83,10 @@ export function useStockReceiptCreatePage() {
       toast.error(t('stockReports.receiptNeedLines'));
       return;
     }
+    if (paymentType === 'CREDIT' && !supplierId) {
+      toast.error(t('stockReports.receiptCreditNeedsSupplier'));
+      return;
+    }
     mutation.mutate(payload);
   };
 
@@ -108,10 +98,12 @@ export function useStockReceiptCreatePage() {
     setStoreId,
     notes,
     setNotes,
+    paymentType,
+    setPaymentType,
     lines,
     stores,
     needsStorePick,
-    catalog,
+    effectiveStoreId,
     supplierList,
     isPending: mutation.isPending,
     updateLine,

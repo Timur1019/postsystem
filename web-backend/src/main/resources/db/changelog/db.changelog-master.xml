@@ -7,5 +7,6 @@
 
     <include file="v1-baseline.xml" relativeToChangelogFile="true"/>
     <include file="v2-incremental.xml" relativeToChangelogFile="true"/>
+    <include file="v3-sale-advance-amount.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

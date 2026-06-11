@@ -71,6 +71,7 @@ export const ICONS = {
 export const GOODS_ROUTES = ['/products', '/categories'];
 export const STOCK_ROUTES = ['/stock/products', '/stock/receipts/new', '/stock/inventories/new', '/stock/transfers/new', '/stock/suppliers'];
 export const ORDER_ROUTES = ['/orders/list'];
+export const FINANCE_ROUTES = ['/finance/dashboard', '/finance/incomes', '/finance/expenses', '/finance/accounts', '/finance/reports', '/finance/categories'];
 export const REGISTER_ROUTES = ['/cash-registers/list', '/cash-registers/z-reports', '/cash-registers/transfer', '/cash-registers/config'];
 export const USER_ROUTES = ['/users/list', '/users/printer-settings', '/users/branding-settings', '/users/barcode-print'];
 
@@ -116,6 +117,19 @@ export const REPORT_STOCK_CHILDREN = [
   { to: '/reports/stock/write-offs', key: 'reportsStockWriteOffs', icon: ICONS.TrendingDown, moduleId: 'reportsStockWriteOffs' },
   { to: '/reports/stock/inventories', key: 'reportsStockInventories', icon: ICONS.ClipboardList, moduleId: 'reportsStockInventories' },
   { to: '/reports/stock/transfers', key: 'reportsStockTransfers', icon: ICONS.Truck, moduleId: 'reportsStockTransfers' },
+];
+
+export const FINANCE_CHILDREN = [
+  { to: '/finance/dashboard', key: 'financeDashboard', icon: ICONS.LayoutDashboard, moduleId: 'financeDashboard' },
+  { to: '/finance/incomes', key: 'financeIncomes', icon: ICONS.TrendingUp, moduleId: 'financeIncomes' },
+  { to: '/finance/debts', key: 'financeDebts', icon: ICONS.Users, moduleId: 'financeDebts' },
+  { to: '/finance/expenses', key: 'financeExpenses', icon: ICONS.TrendingDown, moduleId: 'financeExpenses' },
+  { to: '/finance/accounts', key: 'financeAccounts', icon: ICONS.Building2, moduleId: 'financeAccounts' },
+  { to: '/finance/transfers', key: 'financeTransfers', icon: ICONS.ArrowRightLeft, moduleId: 'financeTransfers' },
+  { to: '/finance/reports', key: 'financeReports', icon: ICONS.BarChart2, moduleId: 'financeReports' },
+  { to: '/finance/audit', key: 'financeAudit', icon: ICONS.FileText, moduleId: 'financeAudit' },
+  { to: '/finance/categories', key: 'financeCategories', icon: ICONS.Tags, moduleId: 'financeCategories' },
+  { to: '/finance/sync', key: 'financeSync', icon: ICONS.RotateCcw, moduleId: 'financeSync' },
 ];
 
 export const REGISTER_CHILDREN = [

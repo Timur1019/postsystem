@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { format as fmtDate } from 'date-fns';
 import { Plus } from 'lucide-react';
 import { stockReportApi } from '../../../api';
+import { BaseSelect } from '../../../components/ui';
 import TablePagination from '../../../components/shared/TablePagination';
 import ReportDateBar from '../../../components/shared/ReportDateBar';
 import ReportExportButton from '../components/ReportExportButton';
@@ -33,14 +34,24 @@ export default function StockTransfersReportPage() {
       </div>
       <div className="flex flex-wrap gap-3">
         <ReportDateBar from={r.from} to={r.to} onFrom={r.setFrom} onTo={r.setTo} />
-        <select value={r.fromStoreId} onChange={(e) => r.handleFromStoreChange(e.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
-          <option value="">{t('stockReports.fromStore')}</option>
-          {r.stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-        <select value={r.toStoreId} onChange={(e) => r.handleToStoreChange(e.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
-          <option value="">{t('stockReports.toStore')}</option>
-          {r.stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
+        <BaseSelect
+          value={r.fromStoreId}
+          onChange={(e) => r.handleFromStoreChange(e.target.value)}
+          placeholder={t('stockReports.fromStore')}
+          options={[
+            { value: '', label: t('stockReports.fromStore') },
+            ...r.stores.map((s) => ({ value: String(s.id), label: s.name })),
+          ]}
+        />
+        <BaseSelect
+          value={r.toStoreId}
+          onChange={(e) => r.handleToStoreChange(e.target.value)}
+          placeholder={t('stockReports.toStore')}
+          options={[
+            { value: '', label: t('stockReports.toStore') },
+            ...r.stores.map((s) => ({ value: String(s.id), label: s.name })),
+          ]}
+        />
       </div>
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <table className="w-full text-sm">

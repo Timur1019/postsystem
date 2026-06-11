@@ -1,6 +1,7 @@
 // src/components/stock/StockProductsFiltersDrawer.jsx
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { BaseSelect } from '../../../components/ui';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm
                   focus:outline-none focus:ring-2 focus:ring-emerald-500
@@ -32,14 +33,17 @@ export default function StockProductsFiltersDrawer({ open, onClose, filters, onC
             <label className="mb-1 block text-xs text-slate-600 dark:text-slate-400">{t('stockModule.filters.barcode')}</label>
             <input className={inputCls} value={filters.barcode} onChange={(e) => set('barcode', e.target.value)} />
           </div>
-          <div>
-            <label className="mb-1 block text-xs text-slate-600 dark:text-slate-400">{t('stockModule.filters.marked')}</label>
-            <select className={inputCls} value={filters.markedProduct} onChange={(e) => set('markedProduct', e.target.value)}>
-              <option value="">{t('stockModule.filters.markedAny')}</option>
-              <option value="true">{t('stockModule.filters.markedYes')}</option>
-              <option value="false">{t('stockModule.filters.markedNo')}</option>
-            </select>
-          </div>
+          <BaseSelect
+            label={t('stockModule.filters.marked')}
+            value={filters.markedProduct}
+            onChange={(e) => set('markedProduct', e.target.value)}
+            placeholder={t('stockModule.filters.markedAny')}
+            options={[
+              { value: '', label: t('stockModule.filters.markedAny') },
+              { value: 'true', label: t('stockModule.filters.markedYes') },
+              { value: 'false', label: t('stockModule.filters.markedNo') },
+            ]}
+          />
         </div>
         <div className="flex gap-2 border-t border-slate-200 p-4 dark:border-slate-800">
           <button

@@ -10,6 +10,7 @@ import com.pos.mapper.SaleMapper;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.SaleRepository;
 import com.pos.repository.StockMovementRepository;
+import com.pos.service.finance.FinanceReturnIntegrationService;
 import com.pos.service.sale.SaleAccessPolicy;
 import com.pos.service.sale.SaleVoidService;
 import com.pos.service.salesledger.SalesLedgerCacheService;
@@ -35,6 +36,7 @@ public class SaleVoidServiceImpl implements SaleVoidService {
     private final SalesLedgerCacheService salesLedgerCacheService;
     private final SaleAccessPolicy accessPolicy;
     private final StoreStockService storeStockService;
+    private final FinanceReturnIntegrationService financeReturnIntegrationService;
 
     @Override
     public SaleResponse voidSale(UUID id, String reason) {
@@ -49,6 +51,8 @@ public class SaleVoidServiceImpl implements SaleVoidService {
 
         String r = reason != null ? reason : "";
         boolean anyRemaining = false;
+        UUID returnEventId = UUID.randomUUID();
+        BigDecimal refundAmount = BigDecimal.ZERO;
 
         for (var item : sale.getItems()) {
             BigDecimal remaining = QuantityUtil.subtract(item.getQuantity(), item.getReturnedQuantity());
@@ -63,6 +67,7 @@ public class SaleVoidServiceImpl implements SaleVoidService {
             productRepository.save(product);
 
             item.setReturnedQuantity(item.getQuantity());
+            refundAmount = refundAmount.add(SalePartialReturnServiceImpl.lineReturnAmount(item, remaining));
 
             stockMovementRepository.save(StockMovement.builder()
                 .product(product)
@@ -85,6 +90,7 @@ public class SaleVoidServiceImpl implements SaleVoidService {
 
         Sale saved = saleRepository.save(sale);
         salesLedgerCacheService.onSaleChanged(saved);
+        financeReturnIntegrationService.onRefundCompleted(saved, returnEventId, refundAmount);
         LogUtil.info(SaleVoidServiceImpl.class, "Sale voided: id={}, receipt={}", saved.getId(), saved.getReceiptNumber());
         return saleMapper.toResponse(saved);
     }

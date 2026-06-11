@@ -74,12 +74,6 @@
   padding: 1.75rem 2rem 2rem;
 }
 
-
-.dark .pos-pay-modal {
-  background: rgb(15 23 42);
-  border: 1px solid rgb(51 65 85);
-}
-
 .pos-pay-modal__close {
   position: absolute;
   top: 1rem;
@@ -98,10 +92,6 @@
 .pos-pay-modal--shift:not(.pos-pay-modal--shift-terminal) .pos-pay-modal__title {
   font-size: 1.5rem;
   margin-bottom: 0.75rem;
-}
-
-.dark .pos-pay-modal__title {
-  color: rgb(110 231 183);
 }
 
 .pos-pay-modal__amount {
@@ -253,6 +243,13 @@
   border-radius: 0.5rem;
   border: 1px solid rgb(226 232 240);
   margin-bottom: 0.75rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pos-pay-cash-input:focus {
+  outline: none;
+  border-color: rgb(16 185 129);
+  box-shadow: 0 0 0 3px rgb(16 185 129 / 0.15);
 }
 
 .pos-pay-change {
@@ -260,10 +257,6 @@
   margin-bottom: 0.875rem;
   font-size: 0.9375rem;
   color: rgb(4 120 87);
-}
-
-.dark .pos-pay-change {
-  color: rgb(110 231 183);
 }
 
 .pos-pay-cash__due {
@@ -277,10 +270,6 @@
   font-size: 0.9375rem;
 }
 
-.dark .pos-pay-cash__due {
-  background: rgb(6 78 59 / 0.35);
-}
-
 .pos-pay-cash__due-label {
   color: rgb(100 116 139);
   font-weight: 500;
@@ -290,10 +279,6 @@
   font-weight: 700;
   font-size: 1.25rem;
   color: rgb(4 120 87);
-}
-
-.dark .pos-pay-cash__due-value {
-  color: rgb(110 231 183);
 }
 
 .pos-pay-cash__display {
@@ -317,17 +302,6 @@
 .pos-pay-cash__display--ok {
   border-color: rgb(16 185 129);
   background: rgb(236 253 245);
-}
-
-.dark .pos-pay-cash__display {
-  background: rgb(30 41 59);
-  border-color: rgb(51 65 85);
-  color: rgb(248 250 252);
-}
-
-.dark .pos-pay-cash__display--ok {
-  border-color: rgb(52 211 153);
-  background: rgb(6 78 59 / 0.4);
 }
 
 .pos-pay-cash__currency {
@@ -383,27 +357,6 @@
   margin-top: -0.125rem;
 }
 
-.dark .pos-pay-steps__dot {
-  background: rgb(71 85 105);
-}
-
-.dark .pos-pay-steps__dot--active {
-  background: rgb(110 231 183);
-  box-shadow: 0 0 0 3px rgb(110 231 183 / 0.15);
-}
-
-.dark .pos-pay-steps__line {
-  background: rgb(71 85 105);
-}
-
-.dark .pos-pay-steps__line--active {
-  background: rgb(110 231 183);
-}
-
-.dark .pos-pay-steps__label {
-  color: rgb(148 163 184);
-}
-
 .pos-pay-mixed-summary {
   background: rgb(236 253 245);
   border: 1px solid rgb(167 243 208);
@@ -442,31 +395,9 @@
   font-weight: 600;
 }
 
-.dark .pos-pay-mixed-summary {
-  background: rgb(6 78 59 / 0.35);
-  border-color: rgb(6 95 70);
-}
-
-.dark .pos-pay-mixed-summary__row {
-  color: rgb(203 213 225);
-}
-
-.dark .pos-pay-mixed-summary__row strong {
-  color: rgb(110 231 183);
-}
-
-.dark .pos-pay-mixed-summary__row--total {
-  border-top-color: rgb(6 95 70);
-}
-
 .pos-pay-cash__display--card.pos-pay-cash__display--ok {
   border-color: rgb(59 130 246);
   background: rgb(239 246 255);
-}
-
-.dark .pos-pay-cash__display--card.pos-pay-cash__display--ok {
-  border-color: rgb(96 165 250);
-  background: rgb(30 58 138 / 0.35);
 }
 
 .pos-pay-mixed-hint {
@@ -481,10 +412,6 @@
   font-weight: 500;
 }
 
-.dark .pos-pay-mixed-hint--warn {
-  color: rgb(252 165 165);
-}
-
 .pos-pay-mixed-remainder {
   text-align: center;
   margin: 0.5rem 0 0.875rem;
@@ -497,14 +424,6 @@
   font-weight: 700;
 }
 
-.dark .pos-pay-mixed-remainder {
-  color: rgb(148 163 184);
-}
-
-.dark .pos-pay-mixed-remainder strong {
-  color: rgb(147 197 253);
-}
-
 .pos-pay-mixed-card-amount-label {
   display: block;
   text-align: center;
@@ -512,10 +431,6 @@
   font-weight: 600;
   color: rgb(71 85 105);
   margin-bottom: 0.5rem;
-}
-
-.dark .pos-pay-mixed-card-amount-label {
-  color: rgb(148 163 184);
 }
 
 .pos-pay-cash__display--readonly {
@@ -549,16 +464,6 @@
 .pos-keypad__quick-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.dark .pos-keypad__quick-btn {
-  border-color: rgb(6 95 70);
-  background: rgb(6 78 59 / 0.5);
-  color: rgb(110 231 183);
-}
-
-.dark .pos-keypad__quick-btn:hover:not(:disabled) {
-  background: rgb(6 95 70 / 0.6);
 }
 
 .pos-keypad__grid {
@@ -615,18 +520,6 @@
   align-items: center;
   justify-content: center;
   color: rgb(71 85 105);
-}
-
-.dark .pos-keypad__key {
-  background: rgb(30 41 59);
-  border-color: rgb(51 65 85);
-  color: rgb(248 250 252);
-}
-
-.dark .pos-keypad__key--action {
-  background: rgb(6 78 59 / 0.45);
-  border-color: rgb(52 211 153 / 0.35);
-  color: rgb(110 231 183);
 }
 
 .pos-keypad__clear {

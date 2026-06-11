@@ -68,7 +68,7 @@ export async function fetchCurrentCashierShift(storeId, user, offlineShift = fal
     if (
       isApiUnreachableError(e) &&
       isDesktopOfflineBridge() &&
-      canFallbackToOfflineCheckout() &&
+      canFallbackToOfflineCheckout(storeId) &&
       user?.id
     ) {
       return offlineGetCurrentShift({ storeId, cashierId: user.id });
@@ -147,7 +147,7 @@ export async function openCashierShift(storeId, user, offlineShift = false, stor
     if (
       isApiUnreachableError(e) &&
       isDesktopOfflineBridge() &&
-      canFallbackToOfflineCheckout() &&
+      canFallbackToOfflineCheckout(storeId) &&
       user?.id
     ) {
       const shift = await offlineOpenShift({

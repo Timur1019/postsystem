@@ -13,7 +13,6 @@ export default function StockTransferCreatePage() {
     setToStoreId,
     lines,
     stores,
-    catalog,
     isPending,
     updateLine,
     addLine,
@@ -42,7 +41,7 @@ export default function StockTransferCreatePage() {
       <StockTransferLinesEditor
         t={t}
         lines={lines}
-        catalog={catalog}
+        fromStoreId={fromStoreId}
         updateLine={updateLine}
         addLine={addLine}
         removeLine={removeLine}

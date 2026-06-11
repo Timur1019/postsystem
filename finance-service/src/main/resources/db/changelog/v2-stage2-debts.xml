@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="finance-006-customer-receivable" author="pos">
+        <createTable tableName="customer_receivable_entries">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="company_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="customer_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="customer_name" type="VARCHAR(255)"/>
+            <column name="store_id" type="INT"/>
+            <column name="entry_type" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="DECIMAL(19,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sale_id" type="UUID"/>
+            <column name="income_id" type="UUID"/>
+            <column name="source_id" type="VARCHAR(64)"/>
+            <column name="comment" type="VARCHAR(1000)"/>
+            <column name="transaction_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+        </createTable>
+        <createIndex tableName="customer_receivable_entries" indexName="idx_cust_recv_company_customer">
+            <column name="company_id"/>
+            <column name="customer_id"/>
+        </createIndex>
+        <createIndex tableName="customer_receivable_entries" indexName="idx_cust_recv_source" unique="true">
+            <column name="company_id"/>
+            <column name="source_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="finance-007-supplier-payable" author="pos">
+        <createTable tableName="supplier_payable_entries">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="company_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="supplier_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="supplier_name" type="VARCHAR(255)"/>
+            <column name="store_id" type="INT"/>
+            <column name="entry_type" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="DECIMAL(19,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="receipt_id" type="UUID"/>
+            <column name="expense_id" type="UUID"/>
+            <column name="source_id" type="VARCHAR(64)"/>
+            <column name="comment" type="VARCHAR(1000)"/>
+            <column name="transaction_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+        </createTable>
+        <createIndex tableName="supplier_payable_entries" indexName="idx_sup_pay_company_supplier">
+            <column name="company_id"/>
+            <column name="supplier_id"/>
+        </createIndex>
+        <createIndex tableName="supplier_payable_entries" indexName="idx_sup_pay_source" unique="true">
+            <column name="company_id"/>
+            <column name="source_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="finance-008-income-customer-id" author="pos">
+        <addColumn tableName="incomes">
+            <column name="customer_id" type="UUID"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

@@ -10,5 +10,6 @@ public record CreateStockReceiptRequest(
     UUID supplierId,
     Integer storeId,
     String notes,
+    String paymentType,
     @NotEmpty @Valid List<StockReceiptLineRequest> lines
 ) {}

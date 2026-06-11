@@ -38,6 +38,16 @@ const ROUTE_MAP = [
   { test: (p) => p.startsWith('/cash-registers/z-reports'), id: 'registersZReports' },
   { test: (p) => p.startsWith('/cash-registers/transfer'), id: 'registersTransfer' },
   { test: (p) => p.startsWith('/cash-registers/config'), id: 'registersConfig' },
+  { test: (p) => p.startsWith('/finance/dashboard'), id: 'financeDashboard' },
+  { test: (p) => p.startsWith('/finance/debts'), id: 'financeDebts' },
+  { test: (p) => p.startsWith('/finance/incomes'), id: 'financeIncomes' },
+  { test: (p) => p.startsWith('/finance/expenses'), id: 'financeExpenses' },
+  { test: (p) => p.startsWith('/finance/accounts'), id: 'financeAccounts' },
+  { test: (p) => p.startsWith('/finance/transfers'), id: 'financeTransfers' },
+  { test: (p) => p.startsWith('/finance/reports'), id: 'financeReports' },
+  { test: (p) => p.startsWith('/finance/audit'), id: 'financeAudit' },
+  { test: (p) => p.startsWith('/finance/categories'), id: 'financeCategories' },
+  { test: (p) => p.startsWith('/finance/sync'), id: 'financeSync' },
   { test: (p) => p.startsWith('/stores'), id: 'stores' },
   { test: (p) => p.startsWith('/users/barcode-print'), id: 'usersBarcodePrint' },
   { test: (p) => p.startsWith('/users/printer-settings'), id: 'usersPrinterSettings' },
@@ -47,7 +57,7 @@ const ROUTE_MAP = [
 ];
 
 export const HANDBOOK_GROUPS = {
-  admin: ['main', 'goods', 'stock', 'orders', 'registers', 'reportsSales', 'reportsStock', 'settings', 'cashier'],
+  admin: ['main', 'goods', 'stock', 'orders', 'finance', 'registers', 'reportsSales', 'reportsStock', 'settings', 'cashier'],
   cashier: ['cashier'],
 };
 
@@ -93,6 +103,16 @@ export const ADMIN_MODULE_IDS = [
   { id: 'usersBrandingSettings', group: 'settings', roles: ['ADMIN'] },
   { id: 'usersBarcodePrint', group: 'settings', roles: ['ADMIN'] },
   { id: 'checkout', group: 'main', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'financeDashboard', group: 'finance', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'financeDebts', group: 'finance', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'financeIncomes', group: 'finance', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'financeExpenses', group: 'finance', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'financeAccounts', group: 'finance', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'financeTransfers', group: 'finance', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'financeReports', group: 'finance', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'financeAudit', group: 'finance', roles: ['ADMIN', 'MANAGER'] },
+  { id: 'financeCategories', group: 'finance', roles: ['ADMIN'] },
+  { id: 'financeSync', group: 'finance', roles: ['ADMIN'] },
 ];
 
 export const CASHIER_MODULE_IDS = [

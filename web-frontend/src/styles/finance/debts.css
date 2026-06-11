@@ -1,0 +1,13 @@
+.finance-debts__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.375rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.finance-debts__name {
+  font-weight: 600;
+  color: rgb(15 23 42);
+}

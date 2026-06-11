@@ -1,3 +1,4 @@
+import { BaseSelect } from '../../../../../components/ui';
 import { templateShowsConstructionField } from '../../../../../config/productCatalogTemplateRegistry';
 import { stockUnitsForSaleType } from '../../../../../utils/unitConfig';
 import {
@@ -45,54 +46,63 @@ export default function ProductCatalogGeneralSection({
           <input {...register('name')} className={inputCls} />
         </ProductCatalogField>
         <ProductCatalogField label={t('productModal.category')} error={errors.categoryId?.message}>
-          <select {...register('categoryId')} className={inputCls}>
-            <option value="">{t('productModal.noneCategory')}</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <BaseSelect
+            {...register('categoryId')}
+            placeholder={t('productModal.noneCategory')}
+            options={[
+              { value: '', label: t('productModal.noneCategory') },
+              ...categories.map((c) => ({ value: String(c.id), label: c.name })),
+            ]}
+          />
         </ProductCatalogField>
         {showTypeSelectors ? (
           <>
             {universalMode || isEdit ? (
               <ProductCatalogField label={t('productCatalog.productType')} required error={errors.productType?.message}>
-                <select {...register('productType')} className={inputCls}>
-                  <option value="RETAIL">{t('productCatalog.productTypeRetail')}</option>
-                  <option value="MATERIAL">{t('productCatalog.productTypeMaterial')}</option>
-                  <option value="DISH">{t('productCatalog.productTypeDish')}</option>
-                  <option value="SERVICE">{t('productCatalog.productTypeService')}</option>
-                </select>
+                <BaseSelect
+                  {...register('productType')}
+                  options={[
+                    { value: 'RETAIL', label: t('productCatalog.productTypeRetail') },
+                    { value: 'MATERIAL', label: t('productCatalog.productTypeMaterial') },
+                    { value: 'DISH', label: t('productCatalog.productTypeDish') },
+                    { value: 'SERVICE', label: t('productCatalog.productTypeService') },
+                  ]}
+                />
               </ProductCatalogField>
             ) : null}
             <ProductCatalogField label={t('productCatalog.saleType')} required error={errors.saleType?.message}>
-              <select {...register('saleType')} className={inputCls}>
-                <option value="PIECE">{t('productCatalog.saleTypePiece')}</option>
-                <option value="WEIGHT">{t('productCatalog.saleTypeWeight')}</option>
-                <option value="SERVICE">{t('productCatalog.saleTypeService')}</option>
-              </select>
+              <BaseSelect
+                {...register('saleType')}
+                options={[
+                  { value: 'PIECE', label: t('productCatalog.saleTypePiece') },
+                  { value: 'WEIGHT', label: t('productCatalog.saleTypeWeight') },
+                  { value: 'SERVICE', label: t('productCatalog.saleTypeService') },
+                ]}
+              />
             </ProductCatalogField>
             <ProductCatalogField label={t('productCatalog.unitCode')} required error={errors.unitCode?.message}>
-              <select {...register('unitCode')} className={inputCls}>
-                {unitOptions.map((u) => (
-                  <option key={u.code} value={u.code}>
-                    {u.labelRu ? `${u.label} — ${u.labelRu}` : u.label}
-                  </option>
-                ))}
-              </select>
+              <BaseSelect
+                {...register('unitCode')}
+                options={unitOptions.map((u) => ({
+                  value: u.code,
+                  label: u.labelRu ? `${u.label} — ${u.labelRu}` : u.label,
+                }))}
+              />
             </ProductCatalogField>
           </>
         ) : null}
         {showAdvancedUnits ? (
           <>
             <ProductCatalogField label={t('productCatalog.quantityScale')} error={errors.quantityScale?.message}>
-              <select {...register('quantityScale')} className={inputCls}>
-                <option value={0}>0</option>
-                <option value={1}>1</option>
-                <option value={2}>2</option>
-                <option value={3}>3</option>
-              </select>
+              <BaseSelect
+                {...register('quantityScale')}
+                options={[
+                  { value: '0', label: '0' },
+                  { value: '1', label: '1' },
+                  { value: '2', label: '2' },
+                  { value: '3', label: '3' },
+                ]}
+              />
             </ProductCatalogField>
             <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300 md:col-span-2">
               <input type="checkbox" {...register('allowFraction')} className="rounded border-slate-400 dark:border-slate-600" />
@@ -163,22 +173,22 @@ export default function ProductCatalogGeneralSection({
       {showOwnerVat ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <ProductCatalogField label={t('productCatalog.ownerType')} required error={errors.ownerType?.message}>
-            <select {...register('ownerType')} className={inputCls}>
-              {OWNER_TYPES.map((o) => (
-                <option key={o} value={o}>
-                  {t(`productCatalog.owner.${o}`, o)}
-                </option>
-              ))}
-            </select>
+            <BaseSelect
+              {...register('ownerType')}
+              options={OWNER_TYPES.map((o) => ({
+                value: o,
+                label: t(`productCatalog.owner.${o}`, o),
+              }))}
+            />
           </ProductCatalogField>
           <ProductCatalogField label={t('productCatalog.vat')} error={errors.taxRate?.message}>
-            <select {...register('taxRate', { valueAsNumber: true })} className={inputCls}>
-              {VAT_OPTIONS.map((v) => (
-                <option key={v} value={v}>
-                  {v}%
-                </option>
-              ))}
-            </select>
+            <BaseSelect
+              {...register('taxRate', { valueAsNumber: true })}
+              options={VAT_OPTIONS.map((v) => ({
+                value: String(v),
+                label: `${v}%`,
+              }))}
+            />
           </ProductCatalogField>
           <ProductCatalogField label={t('productCatalog.commissionTin')} error={errors.commissionTin?.message}>
             <input {...register('commissionTin')} maxLength={9} className={inputCls} />

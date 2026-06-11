@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { BaseSelect } from '../ui';
 import { getUnitConfig } from '../../utils/unitConfig';
 import {
   coilLengthToMeters,
@@ -48,21 +49,18 @@ export default function UnitConversionHelper({
 
       {alternatives.length > 0 ? (
         <div className="flex flex-wrap items-end gap-2">
-          <label className="flex min-w-[7rem] flex-1 flex-col gap-1">
-            <span className="text-amber-800/80 dark:text-amber-300/80">{t('unitConversion.altUnit')}</span>
-            <select
+          <div className="flex min-w-[7rem] flex-1 flex-col">
+            <BaseSelect
+              label={t('unitConversion.altUnit')}
               value={altCode}
               onChange={(e) => setAltCode(e.target.value)}
-              className="rounded-md border border-amber-200 bg-white px-2 py-1.5 text-sm dark:border-amber-800 dark:bg-slate-900"
-            >
-              <option value="">{t('unitConversion.pickUnit')}</option>
-              {alternatives.map((a) => (
-                <option key={a.fromCode} value={a.fromCode}>
-                  {a.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              placeholder={t('unitConversion.pickUnit')}
+              options={[
+                { value: '', label: t('unitConversion.pickUnit') },
+                ...alternatives.map((a) => ({ value: a.fromCode, label: a.label })),
+              ]}
+            />
+          </div>
           <label className="flex w-24 flex-col gap-1">
             <span className="text-amber-800/80 dark:text-amber-300/80">{t('unitConversion.qty')}</span>
             <input

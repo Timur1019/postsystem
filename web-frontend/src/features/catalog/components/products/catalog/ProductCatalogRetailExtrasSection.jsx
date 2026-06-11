@@ -1,3 +1,4 @@
+import { BaseSelect } from '../../../../../components/ui';
 import {
   templateShowsClothingField,
   templateShowsPharmacyField,
@@ -36,14 +37,17 @@ export default function ProductCatalogRetailExtrasSection({
           ) : null}
           {templateShowsClothingField(template, 'gender') || !template ? (
             <ProductCatalogField label={t('productCatalog.clothingGender')} error={errors.clothingGender?.message}>
-              <select {...register('clothingGender')} className={inputCls}>
-                <option value="">{t('productModal.noneCategory')}</option>
-                {GENDER_OPTIONS.map((g) => (
-                  <option key={g} value={g}>
-                    {t(`productCatalog.clothingGender.${g}`)}
-                  </option>
-                ))}
-              </select>
+              <BaseSelect
+                {...register('clothingGender')}
+                placeholder={t('productModal.noneCategory')}
+                options={[
+                  { value: '', label: t('productModal.noneCategory') },
+                  ...GENDER_OPTIONS.map((g) => ({
+                    value: g,
+                    label: t(`productCatalog.clothingGender.${g}`),
+                  })),
+                ]}
+              />
             </ProductCatalogField>
           ) : null}
         </div>

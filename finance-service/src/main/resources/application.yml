@@ -1,0 +1,46 @@
+server:
+  port: ${FINANCE_SERVER_PORT:8082}
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: finance-service
+  datasource:
+    url: ${FINANCE_DB_URL:jdbc:postgresql://localhost:5434/finance_db}
+    username: ${FINANCE_DB_USERNAME:finance_user}
+    password: ${FINANCE_DB_PASSWORD:finance_password}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+app:
+  timezone: ${APP_TIMEZONE:Asia/Tashkent}
+  jwt:
+    secret: ${JWT_SECRET:change-me-use-at-least-32-chars-for-hs256!!}
+  internal:
+    api-key: ${FINANCE_INTERNAL_API_KEY:finance-internal-dev-key-change-in-prod}
+  cors:
+    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: INFO
+    com.pos.finance: INFO
