@@ -145,7 +145,7 @@ async function syncServerShiftToLocal({ shift, storeId, cashierId, cashierName, 
   return mapLocalShift(await getOpenShift({ storeId, cashierId }));
 }
 
-async function bumpShiftTotals(clientShiftId, saleResponse) {
+async function bumpShiftTotals(clientShiftId, saleResponse, { persist = true } = {}) {
   const db = await getDb();
   db.run(
     `UPDATE local_shifts SET
@@ -161,7 +161,7 @@ async function bumpShiftTotals(clientShiftId, saleResponse) {
       clientShiftId,
     ],
   );
-  persistDb();
+  if (persist) persistDb();
 }
 
 module.exports = {

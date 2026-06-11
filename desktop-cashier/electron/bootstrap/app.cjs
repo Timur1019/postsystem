@@ -84,12 +84,17 @@ async function bootstrapApp() {
   }
 
   applyAppIcon();
+
+  try {
+    logStartup('offline_db_prewarm_start');
+    await localDb.getDb();
+    logStartup('offline_db_prewarm_ok');
+  } catch (err) {
+    logStartup('offline_db_prewarm_failed', { message: err?.message || String(err) });
+  }
+
   logStartup('create_window', { cashierUrl: state.getConfig()?.cashierUrl });
   createMainWindow();
-  localDb
-    .getDb()
-    .then(() => logStartup('offline_db_prewarm_ok'))
-    .catch((err) => logStartup('offline_db_prewarm_failed', { message: err?.message || String(err) }));
   startConnectivityBroadcast();
 
   setupAutoUpdater({

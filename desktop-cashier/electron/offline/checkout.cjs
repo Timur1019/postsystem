@@ -1,3 +1,4 @@
+const { persistDb } = require('./db/connection.cjs');
 const localDb = require('./index.cjs');
 
 /**
@@ -45,19 +46,24 @@ async function completeLocalCheckout({
   }
 
   const clientShiftId = shift.id || shift.clientShiftId;
-  const saved = await localDb.saveLocalSale({
-    clientShiftId,
-    payload,
-    response,
-  });
+  const saved = await localDb.saveLocalSale(
+    {
+      clientShiftId,
+      payload,
+      response,
+    },
+    { persist: false },
+  );
 
   if (!saved?.clientSaleId) {
     throw new Error('OFFLINE_SALE_SAVE_FAILED');
   }
 
   if (stockLines.length) {
-    await localDb.decreaseLocalStockBatch(stockLines);
+    await localDb.decreaseLocalStockBatch(stockLines, { persist: false });
   }
+
+  persistDb();
 
   return {
     ...saved,

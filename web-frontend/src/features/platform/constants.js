@@ -3,6 +3,7 @@ export const MODULE_ACCESS_GROUP_ORDER = [
   'goods',
   'stock',
   'orders',
+  'finance',
   'registers',
   'reportsSales',
   'reportsStock',

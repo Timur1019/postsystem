@@ -16,9 +16,10 @@ async function importBootstrap(payload) {
     db.run('DELETE FROM products');
     db.run('DELETE FROM categories');
 
-    if (payload?.storeId != null) setMeta('storeId', String(payload.storeId));
-    if (payload?.storeName) setMeta('storeName', payload.storeName);
-    if (payload?.syncedAt) setMeta('lastCatalogSyncAt', payload.syncedAt);
+    const metaOpts = { persist: false };
+    if (payload?.storeId != null) setMeta('storeId', String(payload.storeId), metaOpts);
+    if (payload?.storeName) setMeta('storeName', payload.storeName, metaOpts);
+    if (payload?.syncedAt) setMeta('lastCatalogSyncAt', payload.syncedAt, metaOpts);
 
     for (const cat of payload?.categories || []) {
       db.run('INSERT INTO categories(id, name, payload_json) VALUES(?, ?, ?)', [
@@ -62,7 +63,7 @@ async function importBootstrap(payload) {
       }
     }
 
-    setMeta('bootstrapReady', '1');
+    setMeta('bootstrapReady', '1', { persist: false });
     db.run('COMMIT');
     persistDb();
     return {
@@ -146,7 +147,7 @@ async function decreaseLocalStock(productId, quantity) {
   await decreaseLocalStockBatch([{ productId, quantity }]);
 }
 
-async function decreaseLocalStockBatch(lines = []) {
+async function decreaseLocalStockBatch(lines = [], { persist = true } = {}) {
   if (!lines.length) return;
   const db = await getDb();
   for (const line of lines) {
@@ -156,7 +157,7 @@ async function decreaseLocalStockBatch(lines = []) {
       [Number(line.quantity), Number(line.quantity), String(line.productId)],
     );
   }
-  persistDb();
+  if (persist) persistDb();
 }
 
 module.exports = {
