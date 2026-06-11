@@ -35,9 +35,9 @@ public class ReturnIntegrationServiceImpl implements ReturnIntegrationService {
         if (request.refundAmount() == null || request.refundAmount().signum() <= 0) {
             return;
         }
-        if (expenseRepository.findByCompanyIdAndSourceTypeAndSourceIdAndDeletedFalse(
+        if (expenseRepository.existsByCompanyIdAndSourceTypeAndSourceIdAndDeletedFalse(
             request.companyId(), ExpenseSourceType.REFUND, request.returnEventId().toString()
-        ).isPresent()) {
+        )) {
             LogUtil.info(ReturnIntegrationServiceImpl.class, "Refund expense already recorded: event={}", request.returnEventId());
             return;
         }

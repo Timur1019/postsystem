@@ -32,9 +32,10 @@ public class SaleIntegrationServiceImpl implements SaleIntegrationService {
 
     @Override
     public void recordSaleIncome(SaleIncomeRequest request) {
-        if (incomeRepository.findByCompanyIdAndSourceTypeAndSourceIdAndDeletedFalse(
-            request.companyId(), IncomeSourceType.SALE, request.saleId().toString()
-        ).isPresent()) {
+        String saleSourceId = request.saleId().toString();
+        if (incomeRepository.existsByCompanyIdAndSourceTypeAndSourceIdAndDeletedFalse(
+            request.companyId(), IncomeSourceType.SALE, saleSourceId
+        )) {
             LogUtil.info(SaleIntegrationServiceImpl.class, "Sale income already recorded: saleId={}", request.saleId());
             return;
         }
@@ -42,18 +43,25 @@ public class SaleIntegrationServiceImpl implements SaleIntegrationService {
         IncomeCategory salesCategory = bootstrapSupport.requireSalesCategory(request.companyId());
         LocalDate txDate = request.transactionDate() != null ? request.transactionDate() : LocalDate.now();
 
-        if (request.cashAmount().signum() > 0) {
-            recordPart(request, salesCategory, txDate, request.cashAmount(), PaymentMethod.CASH, AccountType.CASH);
+        BigDecimal cashAmount = nullSafe(request.cashAmount());
+        BigDecimal cardAmount = nullSafe(request.cardAmount());
+        BigDecimal totalAmount = nullSafe(request.totalAmount());
+
+        if (cashAmount.signum() > 0) {
+            recordPart(request, salesCategory, txDate, cashAmount, PaymentMethod.CASH, AccountType.CASH, saleSourceId);
         }
-        if (request.cardAmount().signum() > 0) {
-            recordPart(request, salesCategory, txDate, request.cardAmount(), PaymentMethod.CARD, AccountType.CARD);
+        if (cardAmount.signum() > 0) {
+            recordPart(request, salesCategory, txDate, cardAmount, PaymentMethod.CARD, AccountType.CARD, saleSourceId);
         }
-        if (request.cashAmount().signum() == 0 && request.cardAmount().signum() == 0
-            && request.totalAmount().signum() > 0) {
+        if (cashAmount.signum() == 0 && cardAmount.signum() == 0 && totalAmount.signum() > 0) {
             PaymentMethod method = mapPaymentMethod(request.paymentMethod());
             AccountType accountType = method == PaymentMethod.CARD ? AccountType.CARD : AccountType.CASH;
-            recordPart(request, salesCategory, txDate, request.totalAmount(), method, accountType);
+            recordPart(request, salesCategory, txDate, totalAmount, method, accountType, saleSourceId);
         }
+    }
+
+    private static BigDecimal nullSafe(BigDecimal value) {
+        return value != null ? value : BigDecimal.ZERO;
     }
 
     private void recordPart(
@@ -62,7 +70,8 @@ public class SaleIntegrationServiceImpl implements SaleIntegrationService {
         LocalDate txDate,
         BigDecimal amount,
         PaymentMethod paymentMethod,
-        AccountType accountType
+        AccountType accountType,
+        String saleSourceId
     ) {
         FinancialAccount account = accountResolver.resolveOrCreate(request.companyId(), request.storeId(), accountType);
         Income income = Income.builder()
@@ -74,7 +83,7 @@ public class SaleIntegrationServiceImpl implements SaleIntegrationService {
             .paymentMethod(paymentMethod)
             .incomeCategory(category)
             .sourceType(IncomeSourceType.SALE)
-            .sourceId(request.saleId().toString())
+            .sourceId(saleSourceId)
             .comment("Продажа " + request.receiptNumber())
             .transactionDate(txDate)
             .deleted(false)
