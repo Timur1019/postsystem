@@ -2,6 +2,9 @@ const localDb = require('../offline/index.cjs');
 const { probeBackendOnlineQuick } = require('./probe.cjs');
 const state = require('../bootstrap/state.cjs');
 
+const BROADCAST_INTERVAL_MS = 1_500;
+let broadcastActive = false;
+
 async function broadcastConnectivity() {
   const mainWindow = state.getMainWindow();
   const config = state.getConfig();
@@ -25,16 +28,26 @@ async function broadcastConnectivity() {
   }
 }
 
+function scheduleNextBroadcast() {
+  if (!broadcastActive) return;
+  const timer = setTimeout(async () => {
+    await broadcastConnectivity();
+    scheduleNextBroadcast();
+  }, BROADCAST_INTERVAL_MS);
+  state.setConnectivityTimer(timer);
+}
+
 function startConnectivityBroadcast() {
-  if (state.getConnectivityTimer()) return;
-  broadcastConnectivity();
-  state.setConnectivityTimer(setInterval(broadcastConnectivity, 1_500));
+  if (broadcastActive) return;
+  broadcastActive = true;
+  broadcastConnectivity().finally(() => scheduleNextBroadcast());
 }
 
 function stopConnectivityBroadcast() {
+  broadcastActive = false;
   const timer = state.getConnectivityTimer();
   if (timer) {
-    clearInterval(timer);
+    clearTimeout(timer);
     state.setConnectivityTimer(null);
   }
 }

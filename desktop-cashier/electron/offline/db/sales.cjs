@@ -2,18 +2,18 @@ const crypto = require('crypto');
 const { getDb, persistDb, rowsFromStmt, parseJson, getMeta, setMeta } = require('./connection.cjs');
 const { bumpShiftTotals } = require('./shifts.cjs');
 
-function nextOfflineReceiptNumber() {
+function nextOfflineReceiptNumber({ persist = true } = {}) {
   const day = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const key = `receiptSeq:${day}`;
   const next = Number(getMeta(key) || '0') + 1;
-  setMeta(key, String(next));
+  setMeta(key, String(next), { persist });
   return `OFF-${day}-${String(next).padStart(4, '0')}`;
 }
 
-async function saveLocalSale({ clientShiftId, payload, response }) {
+async function saveLocalSale({ clientShiftId, payload, response }, { persist = true } = {}) {
   const db = await getDb();
   const clientSaleId = response.id || crypto.randomUUID();
-  const receiptNumber = response.receiptNumber || nextOfflineReceiptNumber();
+  const receiptNumber = response.receiptNumber || nextOfflineReceiptNumber({ persist });
   const createdAt = response.createdAt || new Date().toISOString();
   db.run(
     `INSERT INTO local_sales(
@@ -29,8 +29,8 @@ async function saveLocalSale({ clientShiftId, payload, response }) {
       createdAt,
     ],
   );
-  await bumpShiftTotals(clientShiftId, response);
-  persistDb();
+  await bumpShiftTotals(clientShiftId, response, { persist });
+  if (persist) persistDb();
   return { clientSaleId, receiptNumber, createdAt };
 }
 

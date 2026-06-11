@@ -71,9 +71,16 @@ function withDbTimeout(promise, label = 'offline-db') {
 
 function persistDb() {
   if (!db) return;
-  const data = db.export();
-  fs.mkdirSync(path.dirname(dbFilePath()), { recursive: true });
-  fs.writeFileSync(dbFilePath(), Buffer.from(data));
+  try {
+    const data = db.export();
+    const finalPath = dbFilePath();
+    const tmpPath = `${finalPath}.tmp`;
+    fs.mkdirSync(path.dirname(finalPath), { recursive: true });
+    fs.writeFileSync(tmpPath, Buffer.from(data));
+    fs.renameSync(tmpPath, finalPath);
+  } catch (err) {
+    console.error('[offline-db] persist failed:', err?.message || err);
+  }
 }
 
 function rowsFromStmt(stmt) {
@@ -103,12 +110,12 @@ function getMeta(key) {
   return row?.value ?? null;
 }
 
-function setMeta(key, value) {
+function setMeta(key, value, { persist = true } = {}) {
   db.run(
     'INSERT INTO meta(key, value) VALUES(?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
     [key, String(value ?? '')],
   );
-  persistDb();
+  if (persist) persistDb();
 }
 
 function ensureDeviceId() {

@@ -2,7 +2,7 @@ const { ipcMain } = require('electron');
 const localDb = require('./index.cjs');
 const { completeLocalCheckout } = require('./checkout.cjs');
 
-const IPC_TIMEOUT_MS = 12_000;
+const IPC_TIMEOUT_MS = 16_000;
 const CHECKOUT_IPC_TIMEOUT_MS = 8_000;
 
 async function safeOffline(fn, fallback) {
