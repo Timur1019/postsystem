@@ -60,7 +60,8 @@ public enum AdminModule {
     FINANCE_TRANSFERS("financeTransfers", "finance", Set.of("ADMIN", "MANAGER")),
     FINANCE_REPORTS("financeReports", "finance", Set.of("ADMIN", "MANAGER")),
     FINANCE_AUDIT("financeAudit", "finance", Set.of("ADMIN", "MANAGER")),
-    FINANCE_CATEGORIES("financeCategories", "finance", Set.of("ADMIN"));
+    FINANCE_CATEGORIES("financeCategories", "finance", Set.of("ADMIN")),
+    FINANCE_SYNC("financeSync", "finance", Set.of("ADMIN"));
 
     private final String key;
     private final String group;

@@ -1081,6 +1081,7 @@
       "goods": "Tovarlar",
       "stock": "Ombor",
       "orders": "Buyurtmalar",
+      "finance": "Moliya",
       "registers": "Kassalar",
       "reportsSales": "Hisobotlar — sotuv",
       "reportsStock": "Hisobotlar — ombor",
@@ -2215,6 +2216,7 @@
     "allModules": "Barcha bo'limlar",
     "groups": {
       "main": "Umumiy",
+      "finance": "Moliya",
       "goods": "Tovarlar",
       "stock": "Ombor",
       "orders": "Buyurtmalar",
@@ -2613,6 +2615,96 @@
         "details": [
           "Tovarni tanlash va to'lov o'rtasidagi oraliq bosqich.",
           "Konfiguratsiyangizda marshrut dolzarbligini tekshiring."
+        ]
+      },
+      "financeDashboard": {
+        "title": "Moliya — boshqaruv paneli",
+        "summary": "Kompaniya pullari bo'yicha umumiy ko'rinish: hisob qoldiqlari, tushumlar, xarajatlar va qarzlar.",
+        "details": [
+          "Tanlangan davr uchun asosiy moliyaviy ko'rsatkichlarni ko'rsatadi.",
+          "Kassa va hisob qoldiqlari har bir operatsiyadan keyin yangilanadi.",
+          "Administrator va menejerga ochiq."
+        ]
+      },
+      "financeDebts": {
+        "title": "Qarzlar",
+        "summary": "Debitor va kreditor qarzlarni yuritish: kim sizga qarz va siz kimga qarzsiz.",
+        "details": [
+          "Kontragent, summa va qaytarish muddati bilan qarz yaratish.",
+          "Hisobga bog'langan qisman va to'liq so'ndirish.",
+          "Har bir qarz bo'yicha to'lovlar tarixi."
+        ]
+      },
+      "financeIncomes": {
+        "title": "Tushumlar",
+        "summary": "Pul tushumlarini ro'yxatga olish: savdo tushumi, boshqa daromadlar, to'ldirishlar.",
+        "details": [
+          "Tushum hisob va daromad kategoriyasiga bog'lanadi.",
+          "Kassadagi savdolar sinxronizatsiya orqali avtomatik tushishi mumkin.",
+          "Davr, hisob va kategoriya bo'yicha filtrlar."
+        ]
+      },
+      "financeExpenses": {
+        "title": "Xarajatlar",
+        "summary": "Kompaniya xarajatlarini yuritish: ijara, oylik, xaridlar va boshqalar.",
+        "details": [
+          "Xarajat tanlangan hisobdan yechiladi va kategoriyaga bog'lanadi.",
+          "Izoh va operatsiya sanasi qo'llab-quvvatlanadi.",
+          "Kategoriyalar bo'yicha tahlil hisobotlarda mavjud."
+        ]
+      },
+      "financeAccounts": {
+        "title": "Kassalar va hisoblar",
+        "summary": "Kompaniyaning pul hisoblari: naqd kassalar, bank hisoblari, kartalar.",
+        "details": [
+          "Valyuta va boshlang'ich qoldiq bilan hisob yaratish.",
+          "Qoldiq operatsiyalar bo'yicha avtomatik qayta hisoblanadi.",
+          "Hisobni o'chirish mumkin, tarix saqlanadi."
+        ]
+      },
+      "financeTransfers": {
+        "title": "O'tkazmalar",
+        "summary": "Hisoblar o'rtasida pul ko'chirish: inkassatsiya, maydalash, kartani to'ldirish.",
+        "details": [
+          "O'tkazma bitta operatsiyada bir hisobni kamaytirib, ikkinchisini oshiradi.",
+          "Sana, summa va izoh bilan o'tkazmalar tarixi.",
+          "Ikkala hisob qoldig'i darhol yangilanadi."
+        ]
+      },
+      "financeReports": {
+        "title": "Moliyaviy hisobotlar",
+        "summary": "Pul harakati bo'yicha hisobotlar: kategoriyalar kesimida daromad va xarajatlar.",
+        "details": [
+          "Tanlangan davr uchun tushum va xarajatlarni solishtirish.",
+          "Kategoriyalar va hisoblar bo'yicha taqsimot.",
+          "Foydalilikni nazorat qilish uchun ishlating."
+        ]
+      },
+      "financeAudit": {
+        "title": "Operatsiyalar jurnali",
+        "summary": "Moliyaviy amallarning to'liq jurnali: kim, qachon va nimani o'zgartirgan.",
+        "details": [
+          "Operatsiyalarni yaratish, o'zgartirish va o'chirish qayd etiladi.",
+          "Bahsli vaziyatlarni tahlil qilishga yordam beradi.",
+          "Administrator va menejerga ochiq."
+        ]
+      },
+      "financeCategories": {
+        "title": "Moliya kategoriyalari",
+        "summary": "Operatsiyalarni tasniflash uchun daromad va xarajat kategoriyalari ma'lumotnomasi.",
+        "details": [
+          "Tushum va xarajatlar uchun alohida kategoriyalar.",
+          "Operatsiyalar va hisobotlarda ishlatiladi.",
+          "Faqat administratorga ochiq."
+        ]
+      },
+      "financeSync": {
+        "title": "Moliya sinxronizatsiyasi",
+        "summary": "Kassalardagi savdolarni moliya moduliga avtomatik yuklash.",
+        "details": [
+          "Smena savdolari tanlangan hisob tushumlariga tushadi.",
+          "Davr bo'yicha sinxronizatsiyani qo'lda ishga tushirish mumkin.",
+          "Faqat administratorga ochiq."
         ]
       },
       "cashierPos": {
