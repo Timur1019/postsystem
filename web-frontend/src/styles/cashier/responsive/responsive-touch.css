@@ -39,10 +39,10 @@
 }
 
 .cashier-app.cashier-app--touch .pos-order-panel--register .pos-qty-control__btn {
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
-  min-height: 42px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .cashier-app.cashier-app--touch .pos-cart-table__remove-btn,

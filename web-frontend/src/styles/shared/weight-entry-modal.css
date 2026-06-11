@@ -262,3 +262,35 @@
 .weight-entry-modal__btn--block {
   width: 100%;
 }
+
+@media (max-width: 520px) {
+  .weight-entry-modal {
+    padding: 0.75rem;
+  }
+
+  .weight-entry-modal__panel {
+    padding: 1.25rem 1.25rem 1.5rem;
+    border-radius: 12px;
+  }
+
+  .weight-entry-modal__title {
+    font-size: 1.25rem;
+  }
+
+  .weight-entry-modal__input {
+    min-height: 56px;
+    font-size: 1.5rem;
+  }
+
+  .weight-entry-modal__scale-value {
+    font-size: 2.25rem;
+  }
+
+  .weight-entry-modal__actions {
+    margin-top: 1.25rem;
+  }
+
+  .weight-entry-modal__btn {
+    flex: 1 1 auto;
+  }
+}

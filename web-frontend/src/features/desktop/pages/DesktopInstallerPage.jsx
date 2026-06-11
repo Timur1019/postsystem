@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '../../../components/shared/LanguageSwitcher';
-import DesktopInstallerHeader from '../components/DesktopInstallerHeader';
-import DesktopInstallerBrandCards from '../components/DesktopInstallerBrandCards';
+import DesktopInstallerNav from '../components/DesktopInstallerNav';
+import DesktopInstallerHero from '../components/DesktopInstallerHero';
 import DesktopInstallerFirstRunGuide from '../components/DesktopInstallerFirstRunGuide';
 import { useDesktopInstallerPage } from '../hooks/useDesktopInstallerPage';
 
@@ -11,29 +10,29 @@ export default function DesktopInstallerPage() {
   const { manifest, version, releasedAt, isLoading, isError } = useDesktopInstallerPage();
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="absolute top-4 right-4 z-10">
-        <LanguageSwitcher />
-      </div>
+    <div className="min-h-screen bg-white">
+      <DesktopInstallerNav t={t} />
 
-      <DesktopInstallerHeader
-        t={t}
-        isLoading={isLoading}
-        version={version}
-        releasedAt={releasedAt}
-        isError={isError}
-      />
+      <main>
+        <DesktopInstallerHero
+          t={t}
+          manifest={manifest}
+          version={version}
+          releasedAt={releasedAt}
+          isLoading={isLoading}
+          isError={isError}
+        />
 
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
-        <DesktopInstallerBrandCards t={t} manifest={manifest} />
-        <DesktopInstallerFirstRunGuide t={t} />
+        <div className="mx-auto max-w-3xl px-4 py-10 sm:py-12">
+          <DesktopInstallerFirstRunGuide t={t} />
 
-        <p className="mt-8 text-center text-sm text-slate-600">
-          {t('installer.alreadyHaveAccount')}{' '}
-          <Link to="/login" className="font-semibold text-emerald-600 hover:text-emerald-700">
-            {t('installer.goToLogin')}
-          </Link>
-        </p>
+          <p className="mt-8 text-center text-sm text-slate-600">
+            {t('installer.alreadyHaveAccount')}{' '}
+            <Link to="/login" className="font-semibold text-emerald-600 hover:text-emerald-700">
+              {t('installer.goToLogin')}
+            </Link>
+          </p>
+        </div>
       </main>
     </div>
   );

@@ -50,7 +50,7 @@ export default function PosPaymentMixedCashStep({
           <span>{mixedPercent}%</span>
         </div>
         <div className="pos-pay-mixed-progress__bar">
-          <div className="pos-pay-mixed-progress__fill" style={{ width: `${mixedPercent}%` }} />
+          <div className="pos-pay-mixed-progress__fill" style={{ '--mixed-progress': `${mixedPercent}%` }} />
         </div>
       </div>
       {cashExceeds && <p className="pos-pay-panel__error">{t('pos.mixedCashExceeds')}</p>}

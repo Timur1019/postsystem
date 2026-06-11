@@ -51,6 +51,16 @@ export const DeadStockReportPage = lazy(() => import('../features/reports/pages/
 export const StockInventoriesReportPage = lazy(() => import('../features/reports/pages/StockInventoriesReportPage'));
 export const StockTransfersReportPage = lazy(() => import('../features/reports/pages/StockTransfersReportPage'));
 export const ProductLifecycleReportPage = lazy(() => import('../features/reports/pages/ProductLifecycleReportPage'));
+export const FinanceDashboardPage = lazy(() => import('../features/finance/pages/FinanceDashboardPage'));
+export const FinanceAccountsPage = lazy(() => import('../features/finance/pages/FinanceAccountsPage'));
+export const FinanceIncomesPage = lazy(() => import('../features/finance/pages/FinanceIncomesPage'));
+export const FinanceExpensesPage = lazy(() => import('../features/finance/pages/FinanceExpensesPage'));
+export const FinanceReportsPage = lazy(() => import('../features/finance/pages/FinanceReportsPage'));
+export const FinanceCategoriesPage = lazy(() => import('../features/finance/pages/FinanceCategoriesPage'));
+export const FinanceDebtsPage = lazy(() => import('../features/finance/pages/FinanceDebtsPage'));
+export const FinanceTransfersPage = lazy(() => import('../features/finance/pages/FinanceTransfersPage'));
+export const FinanceAuditPage = lazy(() => import('../features/finance/pages/FinanceAuditPage'));
+export const FinanceSyncPage = lazy(() => import('../features/finance/pages/FinanceSyncPage'));
 export const CashRegistersListPage = lazy(() => import('../features/cash-registers/pages/CashRegistersListPage'));
 export const ZReportsPage = lazy(() => import('../features/cash-registers/pages/ZReportsPage'));
 export const CashRegisterTransferPage = lazy(() => import('../features/cash-registers/pages/CashRegisterTransferPage'));

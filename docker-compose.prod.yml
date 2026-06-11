@@ -37,6 +37,55 @@ services:
     networks:
       - pos-net
 
+  finance-db:
+    image: postgres:15-alpine
+    container_name: aurent-finance-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${FINANCE_DB_NAME:-finance_db}
+      POSTGRES_USER: ${FINANCE_DB_USER:-finance_user}
+      POSTGRES_PASSWORD: ${FINANCE_DB_PASSWORD:?Set FINANCE_DB_PASSWORD in .env}
+      TZ: ${TZ:-Asia/Tashkent}
+    volumes:
+      - finance_pg_data:/var/lib/postgresql/data
+    ports:
+      - '127.0.0.1:5435:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${FINANCE_DB_USER:-finance_user} -d ${FINANCE_DB_NAME:-finance_db}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - pos-net
+
+  finance-service:
+    build:
+      context: ./finance-service
+      dockerfile: Dockerfile
+    container_name: aurent-finance-service
+    restart: unless-stopped
+    depends_on:
+      finance-db:
+        condition: service_healthy
+    environment:
+      FINANCE_DB_URL: jdbc:postgresql://finance-db:5432/${FINANCE_DB_NAME:-finance_db}
+      FINANCE_DB_USERNAME: ${FINANCE_DB_USER:-finance_user}
+      FINANCE_DB_PASSWORD: ${FINANCE_DB_PASSWORD:?Set FINANCE_DB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (min 32 chars)}
+      FINANCE_INTERNAL_API_KEY: ${FINANCE_INTERNAL_API_KEY:?Set FINANCE_INTERNAL_API_KEY in .env}
+      FINANCE_SERVER_PORT: "8082"
+      TZ: ${TZ:-Asia/Tashkent}
+    ports:
+      - '127.0.0.1:8082:8082'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8082/api/v1/swagger-ui.html >/dev/null 2>&1 || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+    networks:
+      - pos-net
+
   backend:
     build:
       context: ./web-backend
@@ -45,6 +94,8 @@ services:
     restart: unless-stopped
     depends_on:
       postgres:
+        condition: service_healthy
+      finance-service:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -77,6 +128,9 @@ services:
       MAIL_SUPER_ADMIN_LOGIN_RECIPIENTS: ${MAIL_SUPER_ADMIN_LOGIN_RECIPIENTS:-aripov1219@gmail.com,maxmudov71707@gmail.com}
       MAIL_SEND_CREDENTIALS_ON_CREATE: ${MAIL_SEND_CREDENTIALS_ON_CREATE:-true}
       MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+      FINANCE_SERVICE_ENABLED: ${FINANCE_SERVICE_ENABLED:-true}
+      FINANCE_SERVICE_URL: http://finance-service:8082/api/v1
+      FINANCE_INTERNAL_API_KEY: ${FINANCE_INTERNAL_API_KEY:?Set FINANCE_INTERNAL_API_KEY in .env}
       HIKARI_MAX_POOL_SIZE: ${HIKARI_MAX_POOL_SIZE:-25}
       HIKARI_MIN_IDLE: ${HIKARI_MIN_IDLE:-8}
       TOMCAT_MAX_THREADS: ${TOMCAT_MAX_THREADS:-100}
@@ -137,5 +191,6 @@ networks:
 
 volumes:
   pos_pg_data:
+  finance_pg_data:
   backend_uploads:
   backend_logs:

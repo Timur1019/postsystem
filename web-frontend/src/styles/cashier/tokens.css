@@ -18,6 +18,7 @@
   --pos-muted: #94a3b8;
   --pos-money: #f5c842;
   --pos-danger: #f87171;
+  --pos-on-green: #0a1218;
   --pos-radius: 10px;
   --pos-radius-lg: 14px;
   --cashier-block-radius: 14px;
@@ -44,6 +45,7 @@
   --pos-muted: #6b7280;
   --pos-money: #b45309;
   --pos-danger: #dc2626;
+  --pos-on-green: #ffffff;
   --pos-radius: 10px;
   --pos-radius-lg: 12px;
   --cashier-block-radius: 12px;

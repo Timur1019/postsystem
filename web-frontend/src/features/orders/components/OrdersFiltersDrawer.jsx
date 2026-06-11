@@ -1,5 +1,6 @@
 // src/components/orders/OrdersFiltersDrawer.jsx
 import { useTranslation } from 'react-i18next';
+import { BaseSelect } from '../../../components/ui';
 
 export default function OrdersFiltersDrawer({
   open,
@@ -63,34 +64,32 @@ export default function OrdersFiltersDrawer({
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             />
           </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-slate-500">{t('orders.filterCourier')}</span>
-            <select
+          <div>
+            <BaseSelect
+              label={t('orders.filterCourier')}
               value={filters.courierId}
               onChange={(e) => set('courierId', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            >
-              <option value="">{t('orders.filterDash')}</option>
-            </select>
+              placeholder={t('orders.filterDash')}
+              options={[{ value: '', label: t('orders.filterDash') }]}
+            />
             <p className="mt-1 flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
               <span aria-hidden>⚠</span>
               {t('orders.noCourierUsers')}
             </p>
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-slate-500">{t('orders.filterStatus')}</span>
-            <select
-              value={filters.status}
-              onChange={(e) => set('status', e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            >
-              <option value="">{t('orders.filterDash')}</option>
-              <option value="NEW">{t('orders.statusNew')}</option>
-              <option value="DELIVERED">{t('orders.statusDelivered')}</option>
-              <option value="DONE">{t('orders.statusDone')}</option>
-              <option value="CANCELLED">{t('orders.statusCancelled')}</option>
-            </select>
-          </label>
+          </div>
+          <BaseSelect
+            label={t('orders.filterStatus')}
+            value={filters.status}
+            onChange={(e) => set('status', e.target.value)}
+            placeholder={t('orders.filterDash')}
+            options={[
+              { value: '', label: t('orders.filterDash') },
+              { value: 'NEW', label: t('orders.statusNew') },
+              { value: 'DELIVERED', label: t('orders.statusDelivered') },
+              { value: 'DONE', label: t('orders.statusDone') },
+              { value: 'CANCELLED', label: t('orders.statusCancelled') },
+            ]}
+          />
           <div>
             <span className="mb-1 block text-xs text-slate-500">{t('orders.filterCreatedRange')}</span>
             <div className="flex gap-2">

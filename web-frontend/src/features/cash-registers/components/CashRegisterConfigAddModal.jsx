@@ -7,6 +7,7 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { BaseSelect } from '../../../components/ui';
 import { cashRegisterConfigApi } from '../../../services/api';
 import '../../../styles/cash-registers/config.css';
 
@@ -214,19 +215,20 @@ export default function CashRegisterConfigAddModal({ open, onClose, onSaved }) {
                     {t('cashRegisters.configCategoriesLabel')}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <select
-                      className={`${inputCls} min-w-0 flex-1`}
+                    <BaseSelect
+                      className="min-w-0 flex-1"
                       value={pickCategoryId}
                       onChange={(e) => setPickCategoryId(e.target.value)}
                       disabled={availableCategories.length === 0}
-                    >
-                      <option value="">{t('cashRegisters.configSelectCategory')}</option>
-                      {availableCategories.map((c) => (
-                        <option key={c.id} value={String(c.id)}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder={t('cashRegisters.configSelectCategory')}
+                      options={[
+                        { value: '', label: t('cashRegisters.configSelectCategory') },
+                        ...availableCategories.map((c) => ({
+                          value: String(c.id),
+                          label: c.name,
+                        })),
+                      ]}
+                    />
                     <button
                       type="button"
                       onClick={addPickedCategory}

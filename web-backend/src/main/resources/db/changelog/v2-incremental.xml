@@ -395,4 +395,14 @@
         </insert>
     </changeSet>
 
+    <changeSet id="v2-040-finance_sync_outbox" author="pos">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM app_schema_migrations WHERE filename = 'migration_manual_finance_sync_outbox.sql'</sqlCheck>
+        </preConditions>
+        <sqlFile path="db/migration_manual_finance_sync_outbox.sql" relativeToChangelogFile="false" splitStatements="false"/>
+        <insert tableName="app_schema_migrations">
+            <column name="filename" value="migration_manual_finance_sync_outbox.sql"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

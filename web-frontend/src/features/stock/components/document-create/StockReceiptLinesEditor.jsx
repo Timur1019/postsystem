@@ -1,4 +1,5 @@
 import { Trash2 } from 'lucide-react';
+import { BaseSelect } from '../../../../components/ui';
 import { STOCK_DOC_INPUT_CLS } from '../../utils/stockDocumentFormUtils';
 import StockDocumentAddLineButton from './StockDocumentAddLineButton';
 
@@ -20,16 +21,15 @@ export default function StockReceiptLinesEditor({
       {lines.map((line, idx) => (
         <div key={idx} className="grid gap-2 rounded-lg border border-slate-200 p-3 dark:border-slate-700 sm:grid-cols-12">
           <div className="sm:col-span-5">
-            <select
-              className={STOCK_DOC_INPUT_CLS}
+            <BaseSelect
               value={line.productId}
               onChange={(e) => onProductPick(idx, e.target.value)}
-            >
-              <option value="">{t('stockReports.pickProduct')}</option>
-              {catalog.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+              placeholder={t('stockReports.pickProduct')}
+              options={[
+                { value: '', label: t('stockReports.pickProduct') },
+                ...catalog.map((p) => ({ value: String(p.id), label: p.name })),
+              ]}
+            />
           </div>
           <div className="sm:col-span-2">
             <input

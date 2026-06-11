@@ -15,6 +15,7 @@ export function useStockReceiptCreatePage() {
   const [supplierId, setSupplierId] = useState('');
   const [storeId, setStoreId] = useState('');
   const [notes, setNotes] = useState('');
+  const [paymentType, setPaymentType] = useState('CASH');
   const [lines, setLines] = useState([emptyReceiptLine()]);
   const { stores, onlyStore, needsStorePick, resolveStoreId } = useCompanyStores();
 
@@ -84,6 +85,7 @@ export function useStockReceiptCreatePage() {
       supplierId: supplierId || undefined,
       storeId: sid,
       notes: notes.trim() || undefined,
+      paymentType,
       lines: lines
         .filter((l) => l.productId)
         .map((l) => ({
@@ -97,6 +99,10 @@ export function useStockReceiptCreatePage() {
       toast.error(t('stockReports.receiptNeedLines'));
       return;
     }
+    if (paymentType === 'CREDIT' && !supplierId) {
+      toast.error(t('stockReports.receiptCreditNeedsSupplier'));
+      return;
+    }
     mutation.mutate(payload);
   };
 
@@ -108,6 +114,8 @@ export function useStockReceiptCreatePage() {
     setStoreId,
     notes,
     setNotes,
+    paymentType,
+    setPaymentType,
     lines,
     stores,
     needsStorePick,

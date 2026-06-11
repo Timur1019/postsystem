@@ -1,0 +1,36 @@
+---
+description: Java backend coding standards — modular monolith, composition, DTO, PosException
+globs: web-backend/**/*.java
+alwaysApply: false
+---
+
+# Backend Java — Team Standards
+
+Read `web-backend/CODING_STANDARDS.md` for full rules. Summary:
+
+## Must
+- Controller: orchestration only, return DTO, Swagger `@Operation` + `@StandardApiResponses`
+- Service: interface + impl; Facade delegates; Handler = one use-case
+- Shared logic: `@Component` in `{domain}/support/` (TenantAccessSupport, *LookupSupport, *Validator)
+- Errors: `PosExceptions.*` or `PosException` subclasses — never raw RuntimeException
+- Logs: `LogUtil.info/warn/error` — no private Logger in services
+- Mapping: MapStruct with `PosMapperConfig` — no BaseMapper
+- Tenant: `TenantAccessSupport` — no duplicated company checks
+- DB schema: Liquibase changelog — ddl-auto validate only
+- Max ~300 lines per service, ~200 per handler — split if larger
+
+## Must NOT
+- `extends AbstractXxxSupport` for shared deps (use composition)
+- `BaseCrudService`, `BaseMapper`, `BaseController`
+- Entity in API response
+- Repository or business logic in controller
+- Static business logic
+- Manual SQL without changelog
+
+## New feature order
+DTO → Liquibase → Entity → Repository → Mapper → Support/Handler → Service → Controller → Test
+
+## Reference implementations
+- Facade: `ProductServiceImpl`, `SaleServiceImpl`
+- Support: `TenantAccessSupport`, `ProductLookupSupport`
+- Cache abstract (only approved): `AbstractPosCacheRefreshService`

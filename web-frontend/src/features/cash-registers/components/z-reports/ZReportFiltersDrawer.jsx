@@ -1,6 +1,7 @@
 // src/components/z-reports/ZReportFiltersDrawer.jsx
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { BaseSelect } from '../../../../components/ui';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm
                   focus:outline-none focus:ring-2 focus:ring-emerald-500
@@ -28,17 +29,16 @@ export default function ZReportFiltersDrawer({ open, onClose, filters, onChange,
           </button>
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('zReports.filterStore')}</label>
-            <select className={inputCls} value={filters.storeId} onChange={(e) => set('storeId', e.target.value)}>
-              <option value="">{t('products.filters.any')}</option>
-              {stores.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <BaseSelect
+            label={t('zReports.filterStore')}
+            value={filters.storeId}
+            onChange={(e) => set('storeId', e.target.value)}
+            placeholder={t('products.filters.any')}
+            options={[
+              { value: '', label: t('products.filters.any') },
+              ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+            ]}
+          />
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('zReports.filterClosedRange')}</label>
             <div className="grid grid-cols-2 gap-2">

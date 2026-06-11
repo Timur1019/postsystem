@@ -12,5 +12,6 @@
 
     <modules>
         <module>web-backend</module>
+        <module>finance-service</module>
     </modules>
 </project>

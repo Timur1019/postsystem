@@ -6,6 +6,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { productApi, stockReportApi } from '../../../api';
+import { BaseSelect } from '../../../components/ui';
 import { useCompanyStores } from '../../../hooks/useCompanyStores';
 
 const inputCls =
@@ -73,38 +74,34 @@ export default function WriteOffModal({ product, storeId: storeIdProp, onClose, 
         </p>
         <form className="mt-4 space-y-3" onSubmit={handleSubmit((d) => mutation.mutate(d))}>
           {needsStorePick && storeIdProp == null ? (
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
-                {t('stockReports.colStore')}
-              </label>
-              <select
-                className={inputCls}
-                value={storeId}
-                onChange={(e) => setStoreId(e.target.value)}
-                required
-              >
-                <option value="">{t('stockModal.pickStore')}</option>
-                {stores.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
+            <BaseSelect
+              label={t('stockReports.colStore')}
+              required
+              value={storeId}
+              onChange={(e) => setStoreId(e.target.value)}
+              placeholder={t('stockModal.pickStore')}
+              options={[
+                { value: '', label: t('stockModal.pickStore') },
+                ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+              ]}
+            />
           ) : null}
           <div>
             <label className="mb-1 block text-xs font-medium">{t('stockReports.writeOffQty')}</label>
             <input type="number" min={1} className={inputCls} {...register('quantity')} />
             {errors.quantity && <p className="mt-1 text-xs text-red-600">{errors.quantity.message}</p>}
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium">{t('stockReports.writeOffReason')}</label>
-            <select className={inputCls} {...register('reason')}>
-              <option value="DEFECT">{t('stockReports.reasonDefect')}</option>
-              <option value="EXPIRED">{t('stockReports.reasonExpired')}</option>
-              <option value="DAMAGE">{t('stockReports.reasonDamage')}</option>
-              <option value="SHORTAGE">{t('stockReports.reasonShortage')}</option>
-              <option value="OTHER">{t('stockReports.reasonOther')}</option>
-            </select>
-          </div>
+          <BaseSelect
+            label={t('stockReports.writeOffReason')}
+            {...register('reason')}
+            options={[
+              { value: 'DEFECT', label: t('stockReports.reasonDefect') },
+              { value: 'EXPIRED', label: t('stockReports.reasonExpired') },
+              { value: 'DAMAGE', label: t('stockReports.reasonDamage') },
+              { value: 'SHORTAGE', label: t('stockReports.reasonShortage') },
+              { value: 'OTHER', label: t('stockReports.reasonOther') },
+            ]}
+          />
           <div>
             <label className="mb-1 block text-xs font-medium">{t('stockReports.writeOffNotes')}</label>
             <textarea rows={2} className={inputCls} {...register('notes')} />

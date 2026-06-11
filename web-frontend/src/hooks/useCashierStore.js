@@ -34,7 +34,8 @@ export function useCashierStore() {
     retry: skipOnlineStore ? false : 2,
   });
 
-  const storeName = store?.name ?? localStoreName ?? null;
+  const assignedStoreName = user?.storeNames?.[0] ?? null;
+  const storeName = store?.name ?? localStoreName ?? assignedStoreName ?? null;
 
   return {
     storeId,

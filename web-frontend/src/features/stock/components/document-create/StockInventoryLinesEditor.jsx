@@ -1,4 +1,5 @@
 import { Trash2 } from 'lucide-react';
+import { BaseSelect } from '../../../../components/ui';
 import { STOCK_DOC_INPUT_CLS } from '../../utils/stockDocumentFormUtils';
 import StockDocumentAddLineButton from './StockDocumentAddLineButton';
 
@@ -17,16 +18,18 @@ export default function StockInventoryLinesEditor({
         const product = catalog.find((x) => x.id === line.productId);
         return (
           <div key={idx} className="grid gap-2 rounded-lg border border-slate-100 p-3 dark:border-slate-800 sm:grid-cols-[1fr_8rem_8rem_auto]">
-            <select
+            <BaseSelect
               value={line.productId}
               onChange={(e) => updateLine(idx, { productId: e.target.value })}
-              className={STOCK_DOC_INPUT_CLS}
-            >
-              <option value="">{t('stockReports.pickProduct')}</option>
-              {catalog.map((pr) => (
-                <option key={pr.id} value={pr.id}>{pr.name} ({pr.sku})</option>
-              ))}
-            </select>
+              placeholder={t('stockReports.pickProduct')}
+              options={[
+                { value: '', label: t('stockReports.pickProduct') },
+                ...catalog.map((pr) => ({
+                  value: String(pr.id),
+                  label: `${pr.name} (${pr.sku})`,
+                })),
+              ]}
+            />
             <div className="text-xs text-slate-500 self-center">
               {product ? t('stockReports.systemQty', { qty: product.stockQuantity }) : '—'}
             </div>

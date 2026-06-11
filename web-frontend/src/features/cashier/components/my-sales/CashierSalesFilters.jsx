@@ -1,4 +1,5 @@
 import { Filter, X } from 'lucide-react';
+import { BaseSelect } from '../../../../components/ui';
 import { hasActiveCashierSalesFilters } from './cashierSalesFilterUtils';
 
 export default function CashierSalesFilters({ filters, onPatch, onReset, filtering, t }) {
@@ -63,38 +64,38 @@ export default function CashierSalesFilters({ filters, onPatch, onReset, filteri
             />
           </div>
           <div className="cashier-sales-filters__field">
-            <label className="cashier-sales-filters__label" htmlFor="sales-filter-payment">
-              {t('pos.payment')}
-            </label>
-            <select
+            <BaseSelect
               id="sales-filter-payment"
               className="cashier-sales-filters__select"
+              label={t('pos.payment')}
               value={filters.paymentMethod}
               onChange={(e) => onPatch({ paymentMethod: e.target.value })}
-            >
-              <option value="">{t('pos.salesFilterAll')}</option>
-              <option value="CASH">{t('pos.payCash')}</option>
-              <option value="CARD">{t('pos.payCard')}</option>
-              <option value="CASHLESS">{t('pos.payCashless')}</option>
-              <option value="MIXED">{t('pos.payMixed')}</option>
-              <option value="MPESA">M-Pesa</option>
-            </select>
+              placeholder={t('pos.salesFilterAll')}
+              options={[
+                { value: '', label: t('pos.salesFilterAll') },
+                { value: 'CASH', label: t('pos.payCash') },
+                { value: 'CARD', label: t('pos.payCard') },
+                { value: 'CASHLESS', label: t('pos.payCashless') },
+                { value: 'MIXED', label: t('pos.payMixed') },
+                { value: 'MPESA', label: 'M-Pesa' },
+              ]}
+            />
           </div>
           <div className="cashier-sales-filters__field">
-            <label className="cashier-sales-filters__label" htmlFor="sales-filter-status">
-              {t('pos.salesFilterStatus')}
-            </label>
-            <select
+            <BaseSelect
               id="sales-filter-status"
               className="cashier-sales-filters__select"
+              label={t('pos.salesFilterStatus')}
               value={filters.status}
               onChange={(e) => onPatch({ status: e.target.value })}
-            >
-              <option value="">{t('pos.salesFilterAll')}</option>
-              <option value="COMPLETED">{t('pos.statusCompleted')}</option>
-              <option value="VOIDED">{t('pos.statusVoided')}</option>
-              <option value="REFUNDED">{t('pos.statusRefunded')}</option>
-            </select>
+              placeholder={t('pos.salesFilterAll')}
+              options={[
+                { value: '', label: t('pos.salesFilterAll') },
+                { value: 'COMPLETED', label: t('pos.statusCompleted') },
+                { value: 'VOIDED', label: t('pos.statusVoided') },
+                { value: 'REFUNDED', label: t('pos.statusRefunded') },
+              ]}
+            />
           </div>
         </div>
         {filtering ? (

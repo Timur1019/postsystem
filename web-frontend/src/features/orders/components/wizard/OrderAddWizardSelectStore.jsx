@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { BaseSelect } from '../../../../components/ui';
 import OrderAddWizardModal from './OrderAddWizardModal';
 
 export default function OrderAddWizardSelectStore({ stores, value, onChange, onCancel, onNext }) {
@@ -29,25 +30,19 @@ export default function OrderAddWizardSelectStore({ stores, value, onChange, onC
         </>
       }
     >
-      <label className="block">
-        <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
-          <span className="text-red-500">*</span> {t('orders.wizard.storeLabel')}
-        </span>
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-        >
-          <option value="">{t('orders.filterDash')}</option>
-          {stores
+      <BaseSelect
+        label={t('orders.wizard.storeLabel')}
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={t('orders.filterDash')}
+        options={[
+          { value: '', label: t('orders.filterDash') },
+          ...stores
             .filter((s) => s.active !== false)
-            .map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-        </select>
-      </label>
+            .map((s) => ({ value: String(s.id), label: s.name })),
+        ]}
+      />
     </OrderAddWizardModal>
   );
 }

@@ -11,6 +11,8 @@ import {
   GOODS_ROUTES,
   STOCK_ROUTES,
   ORDER_ROUTES,
+  FINANCE_ROUTES,
+  FINANCE_CHILDREN,
   REGISTER_ROUTES,
   USER_ROUTES,
   REPORT_ROUTES,
@@ -48,6 +50,7 @@ export default function AppShellLayout() {
   useEffect(() => {
     syncAuthSession();
   }, []);
+  const [financeOpen, setFinanceOpen] = useState(true);
   const [registersOpen, setRegistersOpen] = useState(true);
   const [usersOpen, setUsersOpen] = useState(true);
   const [ordersOpen, setOrdersOpen] = useState(true);
@@ -56,6 +59,7 @@ export default function AppShellLayout() {
   const goodsNav = filterByModule(GOODS_CHILDREN);
   const stockNav = filterByModule(STOCK_CHILDREN);
   const ordersNav = filterByModule(ORDER_CHILDREN);
+  const financeNav = filterByModule(FINANCE_CHILDREN);
   const registersNav = filterByModule(REGISTER_CHILDREN);
   const reportsSalesNav = filterByModule(REPORT_SALES_CHILDREN);
   const reportsStockNav = filterByModule(REPORT_STOCK_CHILDREN);
@@ -89,6 +93,7 @@ export default function AppShellLayout() {
       setReportsSalesOpen(true);
       setReportsStockOpen(true);
     }
+    if (FINANCE_ROUTES.includes(location.pathname)) setFinanceOpen(true);
     if (REGISTER_ROUTES.includes(location.pathname)) setRegistersOpen(true);
     if (USER_ROUTES.includes(location.pathname)) setUsersOpen(true);
     if (ORDER_ROUTES.includes(location.pathname)) setOrdersOpen(true);
@@ -145,12 +150,14 @@ export default function AppShellLayout() {
         showGoods={goodsNav.length > 0}
         showStock={stockNav.length > 0}
         showOrders={ordersNav.length > 0}
+        showFinance={financeNav.length > 0}
         showRegisters={registersNav.length > 0}
         showReports={reportsSalesNav.length > 0 || reportsStockNav.length > 0}
         showUsers={usersNav.length > 0}
         inGoodsSection={GOODS_ROUTES.includes(location.pathname)}
         inStockSection={STOCK_ROUTES.includes(location.pathname)}
         inOrdersSection={ORDER_ROUTES.includes(location.pathname)}
+        inFinanceSection={FINANCE_ROUTES.includes(location.pathname)}
         inRegistersSection={REGISTER_ROUTES.includes(location.pathname)}
         inReportsSection={REPORT_ROUTES.includes(location.pathname)}
         inReportsSalesSection={REPORT_SALES_ROUTES.includes(location.pathname)}
@@ -159,6 +166,7 @@ export default function AppShellLayout() {
         goodsOpen={goodsOpen}
         stockOpen={stockOpen}
         ordersOpen={ordersOpen}
+        financeOpen={financeOpen}
         registersOpen={registersOpen}
         reportsOpen={reportsOpen}
         reportsSalesOpen={reportsSalesOpen}
@@ -167,6 +175,7 @@ export default function AppShellLayout() {
         setGoodsOpen={setGoodsOpen}
         setStockOpen={setStockOpen}
         setOrdersOpen={setOrdersOpen}
+        setFinanceOpen={setFinanceOpen}
         setRegistersOpen={setRegistersOpen}
         setReportsOpen={setReportsOpen}
         setReportsSalesOpen={setReportsSalesOpen}
@@ -175,6 +184,7 @@ export default function AppShellLayout() {
         goodsNav={goodsNav}
         stockNav={stockNav}
         ordersNav={ordersNav}
+        financeNav={financeNav}
         registersNav={registersNav}
         showReportsSales={reportsSalesNav.length > 0}
         showReportsStock={reportsStockNav.length > 0}

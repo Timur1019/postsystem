@@ -1,10 +1,10 @@
 import { Store } from 'lucide-react';
+import { BaseSelect } from '../../../../../components/ui';
 import {
   isUniversalStoreType,
   listTemplatesForBusinessType,
   resolveBusinessTypeForTemplates,
 } from '../../../../../config/productCatalogTemplateRegistry';
-import { inputCls } from './productCatalogFormUi';
 
 const ADVANCED_TEMPLATE_VALUE = '__advanced__';
 
@@ -33,23 +33,15 @@ export default function ProductCatalogStoreContextSection({
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs text-slate-600 dark:text-slate-500">
-            {t('productCatalog.store')}
-          </label>
-          <select
-            className={inputCls}
+          <BaseSelect
+            label={t('productCatalog.store')}
             value={selectedStore?.id ?? ''}
             onChange={(e) => {
               const store = stores.find((s) => String(s.id) === e.target.value);
               if (store) onStoreChange(store);
             }}
-          >
-            {stores.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+            options={stores.map((s) => ({ value: String(s.id), label: s.name }))}
+          />
         </div>
         <div>
           <label className="mb-1 block text-xs text-slate-600 dark:text-slate-500">
@@ -61,26 +53,20 @@ export default function ProductCatalogStoreContextSection({
         </div>
         {showTemplateSelect ? (
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs text-slate-600 dark:text-slate-500">
-              {t('productTemplates.templateLabel')}
-            </label>
-            <select
-              className={inputCls}
+            <BaseSelect
+              label={t('productTemplates.templateLabel')}
               value={templateValue}
               onChange={(e) => onTemplateChange?.(e.target.value)}
-            >
-              <option value="" disabled>
-                {t('productTemplates.templatePlaceholder')}
-              </option>
-              {templates.map((tpl) => (
-                <option key={tpl.code} value={tpl.code}>
-                  {t(`productTemplates.${tpl.code}.title`)}
-                </option>
-              ))}
-              <option value={ADVANCED_TEMPLATE_VALUE}>
-                {t('productTemplates.advancedForm')}
-              </option>
-            </select>
+              placeholder={t('productTemplates.templatePlaceholder')}
+              options={[
+                { value: '', label: t('productTemplates.templatePlaceholder'), disabled: true },
+                ...templates.map((tpl) => ({
+                  value: tpl.code,
+                  label: t(`productTemplates.${tpl.code}.title`),
+                })),
+                { value: ADVANCED_TEMPLATE_VALUE, label: t('productTemplates.advancedForm') },
+              ]}
+            />
           </div>
         ) : null}
       </div>

@@ -9,7 +9,10 @@ export default function PosPaymentFlowFooterPrimary({
   cardRemainder,
   receiptType,
   t,
-  onSubmitDeferred,
+  onProceedFromDeferred,
+  onSubmitCreditWithCustomer,
+  onSubmitAdvanceAmount,
+  creditCustomerSelected,
   onProceedFromMixedCash,
   onProceedFromMixedCard,
   onSubmitCash,
@@ -21,10 +24,37 @@ export default function PosPaymentFlowFooterPrimary({
         type="button"
         className="pos-pay-panel__primary"
         disabled={isPending}
-        onClick={onSubmitDeferred}
+        onClick={onProceedFromDeferred}
       >
         {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
         <span>{t('pos.completeReceiptType', { type: t(`pos.receiptType.${receiptType}`) })}</span>
+      </button>
+    );
+  }
+  if (step === 'creditCustomer') {
+    const isAdvanceReceipt = receiptType === 'ADVANCE';
+    return (
+      <button
+        type="button"
+        className="pos-pay-panel__primary"
+        disabled={isPending || !creditCustomerSelected}
+        onClick={onSubmitCreditWithCustomer}
+      >
+        {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
+        <span>{isAdvanceReceipt ? t('pos.continueAdvancePay') : t('pos.continuePay')}</span>
+      </button>
+    );
+  }
+  if (step === 'advanceAmount') {
+    return (
+      <button
+        type="button"
+        className="pos-pay-panel__primary"
+        disabled={isPending}
+        onClick={onSubmitAdvanceAmount}
+      >
+        {isPending ? <Loader size={18} className="pos-pay-panel__spin" /> : <Check size={18} />}
+        <span>{t('pos.continuePay')}</span>
       </button>
     );
   }

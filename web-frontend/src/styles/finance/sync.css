@@ -1,0 +1,81 @@
+.finance-sync-backfill {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  background: #fff;
+  border: 1px solid rgb(226 232 240);
+}
+
+.finance-sync-backfill__title,
+.finance-sync-outbox__title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgb(15 23 42);
+}
+
+.finance-sync-backfill__hint {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: rgb(100 116 139);
+}
+
+.finance-sync-outbox__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.finance-sync-outbox__status {
+  min-width: 12rem;
+}
+
+.finance-sync-event {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.finance-sync-event strong {
+  font-size: 0.8125rem;
+  color: rgb(15 23 42);
+}
+
+.finance-sync-event span {
+  font-size: 0.75rem;
+  color: rgb(100 116 139);
+  word-break: break-all;
+}
+
+.finance-sync-status {
+  display: inline-flex;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.finance-sync-status--sent {
+  background: rgb(236 253 245);
+  color: rgb(5 150 105);
+}
+
+.finance-sync-status--failed {
+  background: rgb(254 242 242);
+  color: rgb(220 38 38);
+}
+
+.finance-sync-status--pending {
+  background: rgb(254 249 195);
+  color: rgb(161 98 7);
+}
+
+.finance-sync-error {
+  max-width: 16rem;
+  font-size: 0.75rem;
+  color: rgb(100 116 139);
+  word-break: break-word;
+}

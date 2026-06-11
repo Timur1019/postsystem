@@ -1,5 +1,6 @@
 export { default as BaseButton } from './BaseButton';
 export { default as BaseInput } from './BaseInput';
+export { default as BaseSelect } from './BaseSelect';
 export { default as BaseModal } from './BaseModal';
 export { default as BaseTable } from './BaseTable';
 export { default as PageLayout } from './PageLayout';

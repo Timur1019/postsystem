@@ -22,11 +22,20 @@ export const CARD_TYPES = [
 export const PAY_METHODS = [
   { id: 'cash', icon: Banknote, labelKey: 'pos.payCash', action: 'cash' },
   { id: 'card', icon: CreditCard, labelKey: 'pos.payCard', action: 'card' },
+  { id: 'advance', icon: Coins, labelKey: 'pos.payAdvance', action: 'advance' },
   { id: 'cashless', icon: QrCode, labelKey: 'pos.payCashless', action: 'cashless' },
   { id: 'mixed', icon: Split, labelKey: 'pos.payMixed', action: 'mixed' },
 ];
 
-export const STEPS_WITH_PRINT_TOGGLE = new Set(['cash', 'mixedCash', 'mixedCard', 'cardType', 'receipt']);
+export const STEPS_WITH_PRINT_TOGGLE = new Set([
+  'cash',
+  'mixedCash',
+  'mixedCard',
+  'cardType',
+  'receipt',
+  'creditCustomer',
+  'advanceAmount',
+]);
 
 export const isDeferredReceiptType = (type) => type === 'ADVANCE' || type === 'CREDIT';
 

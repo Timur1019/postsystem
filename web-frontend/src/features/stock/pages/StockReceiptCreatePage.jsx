@@ -13,6 +13,8 @@ export default function StockReceiptCreatePage() {
     setStoreId,
     notes,
     setNotes,
+    paymentType,
+    setPaymentType,
     lines,
     stores,
     needsStorePick,
@@ -45,6 +47,8 @@ export default function StockReceiptCreatePage() {
         needsStorePick={needsStorePick}
         notes={notes}
         onNotesChange={(e) => setNotes(e.target.value)}
+        paymentType={paymentType}
+        onPaymentTypeChange={(e) => setPaymentType(e.target.value)}
       />
 
       <StockReceiptLinesEditor

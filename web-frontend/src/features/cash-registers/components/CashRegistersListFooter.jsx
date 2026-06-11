@@ -1,3 +1,5 @@
+import { BaseSelect } from '../../../components/ui';
+
 export default function CashRegistersListFooter({
   t,
   fromN,
@@ -16,20 +18,15 @@ export default function CashRegistersListFooter({
       <span>{t('products.recordsRange', { from: fromN, to: toN, total })}</span>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-slate-500 dark:text-slate-500">{t('cashRegisters.pageSizePrefix')}</span>
-        <select
+        <BaseSelect
+          size="sm"
           value={pageSize}
           onChange={(e) => {
             onPageSizeChange(Number(e.target.value));
             onPageChange(0);
           }}
-          className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-        >
-          {pageSizeOptions.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
+          options={pageSizeOptions.map((n) => ({ value: String(n), label: String(n) }))}
+        />
       </div>
       <div className="flex flex-wrap items-center justify-end gap-1 sm:flex-1">
         <button

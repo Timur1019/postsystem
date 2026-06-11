@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { keepPreviousData, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ALL_CATEGORY_ID } from '../usePosCatalogPanel';
 import { markApiUnreachable, useConnectivityStore } from '../../../../store/connectivityStore';
 import {
@@ -22,7 +22,7 @@ export function usePosProductsCatalog({ storeId }) {
   const [search, setSearch] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(ALL_CATEGORY_ID);
   const [catalogBrowse, setCatalogBrowse] = useState('categories');
-  const catalogMode = getPosCatalogMode();
+  const catalogMode = getPosCatalogMode(storeId);
   const apiOnline = useConnectivityStore((s) => s.apiOnline);
   const bootstrapReady = useConnectivityStore((s) => s.bootstrapReady);
   const productCount = useConnectivityStore((s) => s.productCount);
@@ -73,12 +73,11 @@ export function usePosProductsCatalog({ storeId }) {
     isLoading: categoriesLoading,
     isError: categoriesError,
   } = useQuery({
-    queryKey: ['pos-categories', catalogMode],
-    queryFn: ({ signal }) => fetchPosCategories({ signal }),
+    queryKey: ['pos-categories', storeId, catalogMode],
+    queryFn: ({ signal }) => fetchPosCategories({ storeId, signal }),
     enabled: !!storeId,
     retry: catalogMode === 'offline' ? false : 1,
     staleTime: catalogMode === 'offline' ? Infinity : 0,
-    placeholderData: keepPreviousData,
   });
 
   const {
@@ -108,11 +107,10 @@ export function usePosProductsCatalog({ storeId }) {
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, _pages, lastPageParam) =>
-      getPosProductsNextPageParam(lastPage, lastPageParam),
+      getPosProductsNextPageParam(lastPage, lastPageParam, storeId),
     enabled: productsEnabled,
     retry: catalogMode === 'offline' ? false : 1,
     staleTime: catalogMode === 'offline' ? Infinity : 0,
-    placeholderData: keepPreviousData,
   });
 
   const products = productsPages?.pages.flatMap((page) => page?.content ?? []) ?? [];

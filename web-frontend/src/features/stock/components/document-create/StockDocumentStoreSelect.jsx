@@ -1,4 +1,4 @@
-import { STOCK_DOC_INPUT_CLS } from '../../utils/stockDocumentFormUtils';
+import { BaseSelect } from '../../../../components/ui';
 
 export default function StockDocumentStoreSelect({
   label,
@@ -10,19 +10,16 @@ export default function StockDocumentStoreSelect({
   required,
 }) {
   return (
-    <div>
-      <label className="mb-1 block text-xs font-medium">{label}</label>
-      <select
-        className={STOCK_DOC_INPUT_CLS}
-        value={value}
-        onChange={onChange}
-        required={required ?? needsStorePick}
-      >
-        <option value="">{emptyLabel}</option>
-        {stores.map((s) => (
-          <option key={s.id} value={s.id}>{s.name}</option>
-        ))}
-      </select>
-    </div>
+    <BaseSelect
+      label={label}
+      required={required ?? needsStorePick}
+      value={value}
+      onChange={onChange}
+      placeholder={emptyLabel}
+      options={[
+        { value: '', label: emptyLabel },
+        ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+      ]}
+    />
   );
 }

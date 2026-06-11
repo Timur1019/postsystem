@@ -1,6 +1,0 @@
-/* Register page — narrow viewport grid */
-@media (max-width: 1024px) {
-  .pos-page--register {
-    grid-template-columns: 1fr;
-  }
-}

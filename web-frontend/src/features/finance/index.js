@@ -1,0 +1,9 @@
+export { default as FinanceDashboardPage } from './pages/FinanceDashboardPage';
+export { default as FinanceAccountsPage } from './pages/FinanceAccountsPage';
+export { default as FinanceIncomesPage } from './pages/FinanceIncomesPage';
+export { default as FinanceExpensesPage } from './pages/FinanceExpensesPage';
+export { default as FinanceReportsPage } from './pages/FinanceReportsPage';
+export { default as FinanceCategoriesPage } from './pages/FinanceCategoriesPage';
+export { default as FinanceDebtsPage } from './pages/FinanceDebtsPage';
+export { default as FinanceTransfersPage } from './pages/FinanceTransfersPage';
+export { default as FinanceAuditPage } from './pages/FinanceAuditPage';

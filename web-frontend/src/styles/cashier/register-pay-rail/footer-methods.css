@@ -49,7 +49,7 @@
 
 .pos-pay-panel--register-rail.is-step-cash .pos-pay-panel__footer-row__primary .pos-pay-panel__primary,
 .pos-pay-panel--register-rail.is-step-mixedCash .pos-pay-panel__footer-row__primary .pos-pay-panel__primary {
-  min-height: 44px;
+  min-height: 48px;
 }
 
 /* Способы оплаты: три одинаковые кнопки на всю ширину колонки */

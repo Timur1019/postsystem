@@ -47,6 +47,7 @@ public class ProductStorePriceApplier {
         for (ProductStorePriceRequest row : requested.values()) {
             Store store = storeRepository.findById(row.storeId())
                 .orElseThrow(() -> PosExceptions.notFound("Store", row.storeId()));
+            assertStoreBelongsToProductCompany(product, store);
             product.getStorePrices().add(ProductStorePrice.builder()
                 .product(product)
                 .store(store)
@@ -79,6 +80,17 @@ public class ProductStorePriceApplier {
     /**
      * Если в запросе нет цен по магазинам — обновляет строки, совпадавшие со старой ценой продажи или себестоимостью.
      */
+    private void assertStoreBelongsToProductCompany(Product product, Store store) {
+        if (product.getCompany() == null || store.getCompany() == null) {
+            return;
+        }
+        if (!product.getCompany().getId().equals(store.getCompany().getId())) {
+            throw PosExceptions.badRequest(
+                "Store " + store.getId() + " does not belong to product company"
+            );
+        }
+    }
+
     public void syncWithSellingPrice(Product product, BigDecimal oldSelling, BigDecimal newSelling) {
         if (newSelling == null || product.getStorePrices() == null) {
             return;

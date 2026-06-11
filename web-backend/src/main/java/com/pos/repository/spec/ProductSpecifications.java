@@ -101,7 +101,11 @@ public final class ProductSpecifications {
                 sq.select(cb.literal(1L));
                 sq.where(
                     cb.equal(spRoot.get("product").get("id"), root.get("id")),
-                    cb.equal(spRoot.get("store").get("id"), storeId)
+                    cb.equal(spRoot.get("store").get("id"), storeId),
+                    cb.equal(
+                        root.get("company").get("id"),
+                        spRoot.get("store").get("company").get("id")
+                    )
                 );
                 parts.add(cb.exists(sq));
             }

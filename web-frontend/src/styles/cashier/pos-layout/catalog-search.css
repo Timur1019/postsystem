@@ -9,6 +9,12 @@
   border: 1px solid var(--pos-border, #2a3548);
   border-radius: 12px;
   height: 48px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cashier-app .pos-search-bar__field:focus-within {
+  border-color: var(--pos-green);
+  box-shadow: 0 0 0 3px var(--pos-green-soft);
 }
 
 .cashier-app .pos-category-browse {

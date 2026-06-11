@@ -51,7 +51,16 @@ public enum AdminModule {
     CASHIER_POS("cashierPos", "cashier", Set.of("CASHIER", "ADMIN", "MANAGER")),
     CASHIER_SALES("cashierSales", "cashier", Set.of("CASHIER", "ADMIN", "MANAGER")),
     /** Офлайн-режим на desktop-кассе; по умолчанию никому — только через SUPER_ADMIN. */
-    CASHIER_OFFLINE("cashierOffline", "cashier", Set.of());
+    CASHIER_OFFLINE("cashierOffline", "cashier", Set.of()),
+    FINANCE_DASHBOARD("financeDashboard", "finance", Set.of("ADMIN", "MANAGER")),
+    FINANCE_DEBTS("financeDebts", "finance", Set.of("ADMIN", "MANAGER")),
+    FINANCE_INCOMES("financeIncomes", "finance", Set.of("ADMIN", "MANAGER")),
+    FINANCE_EXPENSES("financeExpenses", "finance", Set.of("ADMIN", "MANAGER")),
+    FINANCE_ACCOUNTS("financeAccounts", "finance", Set.of("ADMIN", "MANAGER")),
+    FINANCE_TRANSFERS("financeTransfers", "finance", Set.of("ADMIN", "MANAGER")),
+    FINANCE_REPORTS("financeReports", "finance", Set.of("ADMIN", "MANAGER")),
+    FINANCE_AUDIT("financeAudit", "finance", Set.of("ADMIN", "MANAGER")),
+    FINANCE_CATEGORIES("financeCategories", "finance", Set.of("ADMIN"));
 
     private final String key;
     private final String group;

@@ -1,0 +1,208 @@
+.cashier-app .pos-pay-credit-customer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.cashier-app .pos-pay-credit-customer__hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--pos-muted);
+}
+
+.cashier-app .pos-pay-credit-customer__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 42px;
+  border: 1px solid var(--pos-border);
+  border-radius: var(--pos-radius);
+  background: var(--pos-surface-elevated);
+  color: var(--pos-muted);
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cashier-app .pos-pay-credit-customer__search:focus-within {
+  border-color: var(--pos-green);
+  box-shadow: 0 0 0 3px var(--pos-green-soft);
+}
+
+.cashier-app .pos-pay-credit-customer__search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.9375rem;
+  color: var(--pos-text);
+  outline: none;
+}
+
+.cashier-app .pos-pay-credit-customer__create-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 6px 10px;
+  border: 1px dashed var(--pos-border);
+  border-radius: 8px;
+  background: var(--pos-surface);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--pos-green);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.cashier-app .pos-pay-credit-customer__create-toggle:hover {
+  border-color: var(--pos-green);
+  background: var(--pos-green-soft);
+}
+
+.cashier-app .pos-pay-credit-customer__create {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--pos-border);
+  border-radius: var(--pos-radius);
+  background: var(--pos-surface-elevated);
+  flex-shrink: 0;
+}
+
+.cashier-app .pos-pay-credit-customer__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--pos-muted);
+}
+
+.cashier-app .pos-pay-credit-customer__field input {
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--pos-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: var(--pos-surface);
+  color: var(--pos-text);
+}
+
+.cashier-app .pos-pay-credit-customer__field input:focus {
+  outline: none;
+  border-color: var(--pos-green);
+  box-shadow: 0 0 0 3px var(--pos-green-soft);
+}
+
+.cashier-app .pos-pay-credit-customer__create-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  border: none;
+  border-radius: 8px;
+  background: var(--pos-green);
+  color: var(--pos-on-green);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cashier-app .pos-pay-credit-customer__create-btn:hover:not(:disabled) {
+  background: var(--pos-green-hover);
+}
+
+.cashier-app .pos-pay-credit-customer__create-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cashier-app .pos-pay-credit-customer__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.cashier-app .pos-pay-credit-customer__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--pos-border);
+  border-radius: var(--pos-radius);
+  background: var(--pos-surface);
+  color: var(--pos-text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.cashier-app .pos-pay-credit-customer__item:hover {
+  border-color: var(--pos-green);
+  background: var(--pos-green-soft);
+}
+
+.cashier-app .pos-pay-credit-customer__item.is-active {
+  border-color: var(--pos-green);
+  box-shadow: 0 0 0 1px var(--pos-green);
+  background: var(--pos-green-soft);
+}
+
+.cashier-app .pos-pay-credit-customer__item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--pos-green-soft);
+  color: var(--pos-green);
+  flex-shrink: 0;
+}
+
+.cashier-app .pos-pay-credit-customer__item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cashier-app .pos-pay-credit-customer__item-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--pos-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cashier-app .pos-pay-credit-customer__item-meta {
+  font-size: 0.8125rem;
+  color: var(--pos-muted);
+}
+
+.cashier-app .pos-pay-credit-customer__state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 12px;
+  font-size: 0.875rem;
+  color: var(--pos-muted);
+  text-align: center;
+}
+
+.cashier-app .pos-pay-credit-customer__state--error {
+  color: var(--pos-danger);
+}

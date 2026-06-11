@@ -1,6 +1,7 @@
 // src/components/reports/SalesLedgerFiltersDrawer.jsx
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { BaseSelect } from '../../../components/ui';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm
                   focus:outline-none focus:ring-2 focus:ring-emerald-500
@@ -37,41 +38,43 @@ export default function SalesLedgerFiltersDrawer({
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           <div>
-            <label className="mb-1 block text-xs text-slate-600 dark:text-slate-400">{t('salesLedger.filters.store')}</label>
-            <select className={inputCls} value={filters.storeId} onChange={(e) => set('storeId', e.target.value)}>
-              <option value="">{t('products.filters.any')}</option>
-              {stores.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            <BaseSelect
+              label={t('salesLedger.filters.store')}
+              value={filters.storeId}
+              onChange={(e) => set('storeId', e.target.value)}
+              placeholder={t('products.filters.any')}
+              options={[
+                { value: '', label: t('products.filters.any') },
+                ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+              ]}
+            />
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">{t('salesLedger.filters.storeHint')}</p>
           </div>
-          <div>
-            <label className="mb-1 block text-xs text-slate-600 dark:text-slate-400">{t('salesLedger.filters.paymentStatus')}</label>
-            <select
-              className={inputCls}
-              value={filters.paymentSettlement}
-              onChange={(e) => set('paymentSettlement', e.target.value)}
-            >
-              <option value="ALL">{t('salesLedger.filters.payAll')}</option>
-              <option value="FULL">{t('salesLedger.filters.payFull')}</option>
-              <option value="CREDIT">{t('salesLedger.filters.payCredit')}</option>
-              <option value="ADVANCE">{t('salesLedger.filters.payAdvance')}</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-slate-600 dark:text-slate-400">{t('salesLedger.filters.paymentMethod')}</label>
-            <select className={inputCls} value={filters.paymentMethod} onChange={(e) => set('paymentMethod', e.target.value)}>
-              <option value="">{t('products.filters.any')}</option>
-              <option value="CASH">{t('sales.paymentCash')}</option>
-              <option value="CARD">{t('sales.paymentCard')}</option>
-              <option value="CASHLESS">{t('sales.paymentCashless')}</option>
-              <option value="MPESA">{t('sales.paymentMpesa')}</option>
-              <option value="MIXED">{t('salesLedger.filters.mixed')}</option>
-            </select>
-          </div>
+          <BaseSelect
+            label={t('salesLedger.filters.paymentStatus')}
+            value={filters.paymentSettlement}
+            onChange={(e) => set('paymentSettlement', e.target.value)}
+            options={[
+              { value: 'ALL', label: t('salesLedger.filters.payAll') },
+              { value: 'FULL', label: t('salesLedger.filters.payFull') },
+              { value: 'CREDIT', label: t('salesLedger.filters.payCredit') },
+              { value: 'ADVANCE', label: t('salesLedger.filters.payAdvance') },
+            ]}
+          />
+          <BaseSelect
+            label={t('salesLedger.filters.paymentMethod')}
+            value={filters.paymentMethod}
+            onChange={(e) => set('paymentMethod', e.target.value)}
+            placeholder={t('products.filters.any')}
+            options={[
+              { value: '', label: t('products.filters.any') },
+              { value: 'CASH', label: t('sales.paymentCash') },
+              { value: 'CARD', label: t('sales.paymentCard') },
+              { value: 'CASHLESS', label: t('sales.paymentCashless') },
+              { value: 'MPESA', label: t('sales.paymentMpesa') },
+              { value: 'MIXED', label: t('salesLedger.filters.mixed') },
+            ]}
+          />
           <div>
             <label className="mb-1 block text-xs text-slate-600 dark:text-slate-400">{t('salesLedger.filters.saleId')}</label>
             <input className={inputCls} value={filters.saleId} onChange={(e) => set('saleId', e.target.value)} />

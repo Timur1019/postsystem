@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { BaseSelect } from '../../../../components/ui';
 import { BUSINESS_TYPES } from '../../../../config/productCatalogTemplateRegistry';
 import { useCompanyBusinessType } from '../../../../hooks/useCompanyBusinessType';
 
@@ -79,33 +80,34 @@ export default function StoreFormModal({
           </button>
         </div>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 p-5">
-          {showCompanySelect && (
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('stores.colCompany')}</label>
-              <select {...register('companyId')} className={inputCls}>
-                <option value="">{t('stores.selectCompany')}</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          {showCompanySelect ? (
+            <BaseSelect
+              label={t('stores.colCompany')}
+              {...register('companyId')}
+              placeholder={t('stores.selectCompany')}
+              options={[
+                { value: '', label: t('stores.selectCompany') },
+                ...companies.map((c) => ({ value: String(c.id), label: c.name })),
+              ]}
+            />
+          ) : null}
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('stores.colName')} *</label>
             <input {...register('name')} className={inputCls} />
             {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name.message}</p>}
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('stores.colBusinessType')} *</label>
-            <select {...register('businessType')} className={inputCls}>
-              {BUSINESS_TYPES.map((bt) => (
-                <option key={bt.code} value={bt.code}>
-                  {t(`productTemplates.businessTypes.${bt.code}`)}
-                </option>
-              ))}
-            </select>
+            <BaseSelect
+              label={t('stores.colBusinessType')}
+              required
+              {...register('businessType')}
+              error={errors.businessType?.message}
+              options={BUSINESS_TYPES.map((bt) => ({
+                value: bt.code,
+                label: t(`productTemplates.businessTypes.${bt.code}`),
+              }))}
+            />
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('stores.businessTypeHint')}</p>
-            {errors.businessType && <p className="mt-1 text-xs text-red-400">{errors.businessType.message}</p>}
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('stores.colAddress')}</label>

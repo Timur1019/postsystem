@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { userHasCashierOfflineAccess } from '../utils/cashierOfflineAccess';
 import { useCashierStore } from './useCashierStore';
@@ -11,9 +11,11 @@ import {
 import {
   CATALOG_STALE_CHECK_MS,
   SALES_SYNC_INTERVAL_MS,
+  isCatalogStoreMismatch,
   runCatalogSyncIfNeeded,
   runSalesSyncOnly,
 } from '../services/offline/offlineSyncService';
+import { offlineGetStatus } from '../services/offline/desktopOfflineBridge';
 import { isDesktopOfflineBridge } from '../services/offline/desktopOfflineBridge';
 
 export function useOfflineConnectivity() {
@@ -21,6 +23,7 @@ export function useOfflineConnectivity() {
   const user = useAuthStore((s) => s.user);
   const offlineAllowed = userHasCashierOfflineAccess(user);
   const { storeId } = useCashierStore();
+  const prevStoreIdRef = useRef(storeId);
   const apiOnline = useConnectivityStore((s) => s.apiOnline);
   const offlineMode = useConnectivityStore((s) => s.offlineMode);
   const pendingSales = useConnectivityStore((s) => s.pendingSales);
@@ -39,10 +42,22 @@ export function useOfflineConnectivity() {
 
     let cancelled = false;
 
+    const storeChanged = prevStoreIdRef.current !== storeId;
+    prevStoreIdRef.current = storeId;
+
     const runInitialSync = async () => {
       useConnectivityStore.getState().setSyncing(true);
       try {
-        await runCatalogSyncIfNeeded(storeId, { force: false });
+        let forceCatalog = storeChanged;
+        if (!forceCatalog) {
+          try {
+            const status = await offlineGetStatus();
+            forceCatalog = isCatalogStoreMismatch(status.storeId, storeId);
+          } catch {
+            forceCatalog = false;
+          }
+        }
+        await runCatalogSyncIfNeeded(storeId, { force: forceCatalog });
         await runSalesSyncOnly();
         if (!cancelled) {
           useConnectivityStore.getState().setSyncResult({ ok: true });

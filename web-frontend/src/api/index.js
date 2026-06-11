@@ -5,6 +5,7 @@ export { syncApi } from './sync.api';
 export { productApi } from './product.api';
 export { categoryApi } from './category.api';
 export { supplierApi } from './supplier.api';
+export { customerApi } from './customer.api';
 export { tasnifApi } from './tasnif.api';
 export { storeApi } from './store.api';
 export { companyApi } from './company.api';
@@ -24,6 +25,8 @@ export { warehouseApi } from './warehouse.api';
 export { tenantDisplayApi } from './tenantDisplay.api';
 export { companyBusinessTypeApi } from './companyBusinessType.api';
 export { unitsApi } from './units.api';
+export { financeApi } from './finance.api';
+export { financeSyncApi } from './financeSync.api';
 
 export { platformModuleAccessApi } from './platform/moduleAccess.api';
 export { platformEmailApi } from './platform/email.api';

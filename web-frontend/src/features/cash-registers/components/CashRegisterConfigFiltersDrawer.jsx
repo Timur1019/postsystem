@@ -1,6 +1,7 @@
 // src/components/cash-registers/CashRegisterConfigFiltersDrawer.jsx
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { BaseSelect } from '../../../components/ui';
 
 const inputCls = `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm
                   focus:outline-none focus:ring-2 focus:ring-emerald-500
@@ -37,32 +38,26 @@ export default function CashRegisterConfigFiltersDrawer({
           </button>
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
-              {t('cashRegisters.configFilterStore')}
-            </label>
-            <select className={inputCls} value={filters.storeId} onChange={(e) => set('storeId', e.target.value)}>
-              <option value="">{t('cashRegisters.configFilterAll')}</option>
-              {stores.map((s) => (
-                <option key={s.id} value={String(s.id)}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
-              {t('cashRegisters.configFilterSerial')}
-            </label>
-            <select className={inputCls} value={filters.equipmentSerial} onChange={(e) => set('equipmentSerial', e.target.value)}>
-              <option value="">{t('cashRegisters.configFilterAll')}</option>
-              {serials.map((sn) => (
-                <option key={sn} value={sn}>
-                  {sn}
-                </option>
-              ))}
-            </select>
-          </div>
+          <BaseSelect
+            label={t('cashRegisters.configFilterStore')}
+            value={filters.storeId}
+            onChange={(e) => set('storeId', e.target.value)}
+            placeholder={t('cashRegisters.configFilterAll')}
+            options={[
+              { value: '', label: t('cashRegisters.configFilterAll') },
+              ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+            ]}
+          />
+          <BaseSelect
+            label={t('cashRegisters.configFilterSerial')}
+            value={filters.equipmentSerial}
+            onChange={(e) => set('equipmentSerial', e.target.value)}
+            placeholder={t('cashRegisters.configFilterAll')}
+            options={[
+              { value: '', label: t('cashRegisters.configFilterAll') },
+              ...serials.map((sn) => ({ value: sn, label: sn })),
+            ]}
+          />
         </div>
         <div className="flex gap-2 border-t border-slate-200 p-4 dark:border-slate-800">
           <button

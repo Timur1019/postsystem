@@ -1,3 +1,4 @@
+import { BaseSelect } from '../../../../../../components/ui';
 import {
   formatImportMoney,
   inputCls,
@@ -91,36 +92,34 @@ export default function ProductImportPreviewTable({
                   </td>
                   <td className="px-2 py-2">
                     {isNew && ed ? (
-                      <select
+                      <BaseSelect
+                        size="sm"
+                        className="min-w-[8rem]"
                         value={ed.categoryId ?? ''}
                         onChange={(e) => setRowCategory(r.rowNum, e.target.value)}
-                        className="min-w-[8rem] rounded border border-slate-300 px-1 py-1 text-xs dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-                      >
-                        <option value="">{t('products.import.noCategory')}</option>
-                        {categories.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder={t('products.import.noCategory')}
+                        options={[
+                          { value: '', label: t('products.import.noCategory') },
+                          ...categories.map((c) => ({ value: String(c.id), label: c.name })),
+                        ]}
+                      />
                     ) : (
                       '—'
                     )}
                   </td>
                   <td className="px-2 py-2">
                     {isNew && ed ? (
-                      <select
+                      <BaseSelect
+                        size="sm"
+                        className="min-w-[8rem]"
                         value={ed.storeId ?? ''}
                         onChange={(e) => setRowStore(r.rowNum, e.target.value)}
-                        className="min-w-[8rem] rounded border border-slate-300 px-1 py-1 text-xs dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-                      >
-                        <option value="">{t('products.import.noStore')}</option>
-                        {stores.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder={t('products.import.noStore')}
+                        options={[
+                          { value: '', label: t('products.import.noStore') },
+                          ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+                        ]}
+                      />
                     ) : (
                       '—'
                     )}

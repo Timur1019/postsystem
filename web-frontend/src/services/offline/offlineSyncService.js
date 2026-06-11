@@ -1,4 +1,5 @@
 import { syncApi } from '../api';
+import { isCatalogStoreMismatch } from './connectivityRules';
 import {
   offlineGetStatus,
   offlineImportBootstrap,
@@ -23,6 +24,8 @@ export function isCatalogStale(lastCatalogSyncAt) {
   return Date.now() - ts >= CATALOG_MAX_AGE_MS;
 }
 
+export { isCatalogStoreMismatch } from './connectivityRules';
+
 export async function pullCatalogBootstrap(storeId) {
   const res = await syncApi.bootstrap(storeId);
   const data = res.data;
@@ -35,8 +38,10 @@ export async function pullCatalogBootstrap(storeId) {
 export async function refreshCatalogBootstrap(storeId, { force = false } = {}) {
   if (!isDesktopOfflineBridge()) return { skipped: true, reason: 'not-desktop' };
 
-  if (!force) {
-    const status = await offlineGetStatus();
+  const status = await offlineGetStatus();
+  const storeMismatch = isCatalogStoreMismatch(status.storeId, storeId);
+
+  if (!force && !storeMismatch) {
     if (!isCatalogStale(status.lastCatalogSyncAt)) {
       return {
         skipped: true,

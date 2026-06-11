@@ -1,0 +1,99 @@
+.finance-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}
+
+.finance-form__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(71 85 105);
+}
+
+.finance-form__label--checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.finance-form__label--checkbox input {
+  width: 1rem;
+  height: 1rem;
+}
+
+.finance-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-top: 0.25rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid rgb(241 245 249);
+}
+
+.finance-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.75rem;
+  background: rgb(248 250 252);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.finance-filters__field {
+  flex: 0 1 200px;
+  min-width: 160px;
+  max-width: 220px;
+}
+
+.finance-filters__field--wide {
+  flex: 1 1 240px;
+  max-width: 280px;
+}
+
+.finance-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.finance-inline-form__field {
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+
+.finance-modal {
+  width: 100%;
+  max-width: 36rem;
+}
+
+.finance-modal--wide {
+  max-width: 42rem;
+}
+
+.finance-modal__body {
+  padding: 1.25rem 1.5rem !important;
+}
+
+.finance-pagination {
+  font-size: 0.875rem;
+}
+
+.finance-pagination button,
+.finance-pagination .base-select__trigger {
+  min-height: 2.25rem;
+  font-size: 0.875rem;
+}

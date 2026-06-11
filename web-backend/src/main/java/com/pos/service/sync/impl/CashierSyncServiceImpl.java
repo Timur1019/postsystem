@@ -22,12 +22,15 @@ import com.pos.entity.User;
 import com.pos.exception.BadRequestException;
 import com.pos.exception.ResourceNotFoundException;
 import com.pos.repository.CashierShiftRepository;
-import com.pos.repository.CustomerRepository;
+import com.pos.service.sale.support.CreditSaleCustomerSupport;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.SaleRepository;
 import com.pos.repository.StockMovementRepository;
 import com.pos.repository.UserRepository;
 import com.pos.service.CategoryService;
+import com.pos.service.finance.FinanceAdvanceSaleIntegrationService;
+import com.pos.service.finance.FinanceCreditSaleIntegrationService;
+import com.pos.service.finance.FinanceSaleIntegrationService;
 import com.pos.service.product.ProductQueryService;
 import com.pos.service.sale.support.SaleEnumParser;
 import com.pos.service.sale.support.SalePaymentResolver;
@@ -65,12 +68,15 @@ public class CashierSyncServiceImpl implements CashierSyncService {
     private final SaleRepository saleRepository;
     private final CashierShiftRepository cashierShiftRepository;
     private final ProductRepository productRepository;
-    private final CustomerRepository customerRepository;
+    private final CreditSaleCustomerSupport creditSaleCustomerSupport;
     private final StockMovementRepository stockMovementRepository;
     private final SalesLedgerCacheService salesLedgerCacheService;
     private final SalePaymentResolver paymentResolver;
     private final SaleReceiptNumberGenerator receiptNumberGenerator;
     private final StoreStockService storeStockService;
+    private final FinanceSaleIntegrationService financeSaleIntegrationService;
+    private final FinanceCreditSaleIntegrationService financeCreditSaleIntegrationService;
+    private final FinanceAdvanceSaleIntegrationService financeAdvanceSaleIntegrationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -78,6 +84,7 @@ public class CashierSyncServiceImpl implements CashierSyncService {
         User cashier = userRepository.findByIdWithDetails(cashierId)
             .orElseThrow(() -> new ResourceNotFoundException("Cashier not found"));
         Store store = cashierSaleSupport.requireStoreForSale(cashier, storeId);
+        assertStoreMatchesCashierCompany(cashier, store);
 
         List<CategoryResponse> categories = categoryService.findAll();
         List<ProductResponse> products = new ArrayList<>();
@@ -166,9 +173,8 @@ public class CashierSyncServiceImpl implements CashierSyncService {
         Store store = cashierSaleSupport.requireStoreForSale(cashier, req.storeId());
         CashierShift shift = resolveShiftForOfflineSync(cashier, store, item.shiftOpenedAt());
 
-        Customer customer = req.customerId() != null
-            ? customerRepository.findById(req.customerId()).orElse(null)
-            : null;
+        Sale.ReceiptType receiptType = SaleEnumParser.receiptType(req.receiptType());
+        Customer customer = creditSaleCustomerSupport.resolveForCheckout(req.customerId(), receiptType);
 
         List<SaleItem> items = new ArrayList<>();
         BigDecimal subtotal = BigDecimal.ZERO;
@@ -205,7 +211,9 @@ public class CashierSyncServiceImpl implements CashierSyncService {
             subtotal = subtotal.add(netLine);
             taxTotal = taxTotal.add(taxAmt);
             lineDiscountTotal = lineDiscountTotal.add(lineDiscount);
-            storeStockService.decrease(product, store, lineQty);
+            if (receiptType != Sale.ReceiptType.ADVANCE) {
+                storeStockService.decrease(product, store, lineQty);
+            }
         }
 
         BigDecimal grossTotal = subtotal.add(taxTotal).setScale(2, RoundingMode.HALF_UP);
@@ -219,14 +227,24 @@ public class CashierSyncServiceImpl implements CashierSyncService {
         BigDecimal discountTotal = lineDiscountTotal.add(orderDiscount).setScale(2, RoundingMode.HALF_UP);
         lineDiscountTotal = lineDiscountTotal.setScale(2, RoundingMode.HALF_UP);
 
-        Sale.ReceiptType receiptType = SaleEnumParser.receiptType(req.receiptType());
         Sale.CardType cardType = SaleEnumParser.cardType(req.cardType());
         Sale.PaymentMethod paymentMethod = Sale.PaymentMethod.valueOf(req.paymentMethod());
-        SalePaymentResolver.PaymentAmounts amounts = paymentResolver.resolve(paymentMethod, total, req);
-        if (paymentMethod == Sale.PaymentMethod.CARD && cardType == null) {
-            cardType = Sale.CardType.HUMO;
-        } else if (amounts.card().signum() > 0 && cardType == null) {
-            cardType = Sale.CardType.HUMO;
+        SalePaymentResolver.PaymentAmounts amounts;
+        if (receiptType == Sale.ReceiptType.CREDIT) {
+            amounts = new SalePaymentResolver.PaymentAmounts(
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+            );
+            cardType = null;
+        } else {
+            amounts = paymentResolver.resolve(paymentMethod, total, req);
+            if (paymentMethod == Sale.PaymentMethod.CARD && cardType == null) {
+                cardType = Sale.CardType.HUMO;
+            } else if (amounts.card().signum() > 0 && cardType == null) {
+                cardType = Sale.CardType.HUMO;
+            }
         }
 
         String notes = req.notes();
@@ -268,18 +286,28 @@ public class CashierSyncServiceImpl implements CashierSyncService {
         sale.setItems(items);
 
         Sale saved = saleRepository.save(sale);
-        for (SaleItem saleItem : saved.getItems()) {
-            stockMovementRepository.save(StockMovement.builder()
-                .product(saleItem.getProduct())
-                .store(store)
-                .movementType(StockMovementType.SALE)
-                .quantity(saleItem.getQuantity().negate())
-                .referenceId(saved.getId())
-                .createdBy(cashier)
-                .notes("Продажа " + saved.getReceiptNumber() + " (offline sync)")
-                .build());
+        if (saved.getReceiptType() != Sale.ReceiptType.ADVANCE) {
+            for (SaleItem saleItem : saved.getItems()) {
+                stockMovementRepository.save(StockMovement.builder()
+                    .product(saleItem.getProduct())
+                    .store(store)
+                    .movementType(StockMovementType.SALE)
+                    .quantity(saleItem.getQuantity().negate())
+                    .referenceId(saved.getId())
+                    .createdBy(cashier)
+                    .notes("Продажа " + saved.getReceiptNumber() + " (offline sync)")
+                    .build());
+            }
         }
         salesLedgerCacheService.onSaleChanged(saved);
+        if (saved.getReceiptType() == Sale.ReceiptType.CREDIT) {
+            financeCreditSaleIntegrationService.onCreditSaleCompleted(saved);
+        } else if (saved.getReceiptType() == Sale.ReceiptType.ADVANCE) {
+            financeSaleIntegrationService.onSaleCompleted(saved);
+            financeAdvanceSaleIntegrationService.onAdvanceSaleCompleted(saved);
+        } else {
+            financeSaleIntegrationService.onSaleCompleted(saved);
+        }
         LogUtil.info(
             CashierSyncServiceImpl.class,
             "Offline sale synced: clientSaleId={}, receipt={}",
@@ -293,6 +321,15 @@ public class CashierSyncServiceImpl implements CashierSyncService {
             "CREATED",
             null
         );
+    }
+
+    private void assertStoreMatchesCashierCompany(User cashier, Store store) {
+        if (cashier.getCompany() == null || store.getCompany() == null) {
+            return;
+        }
+        if (!cashier.getCompany().getId().equals(store.getCompany().getId())) {
+            throw new BadRequestException("Store does not belong to cashier company");
+        }
     }
 
     private CashierShift resolveShiftForOfflineSync(User cashier, Store store, Instant shiftOpenedAt) {

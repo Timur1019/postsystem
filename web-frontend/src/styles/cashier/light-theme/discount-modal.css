@@ -137,7 +137,6 @@
 }
 
 .cashier-app.cashier-app--light .pos-topbar-nav__btn,
-.cashier-app.cashier-app--light .pos-topbar-close,
 .cashier-app.cashier-app--light .pos-topbar-views__btn {
   background: #fff;
   border-color: var(--pos-border);

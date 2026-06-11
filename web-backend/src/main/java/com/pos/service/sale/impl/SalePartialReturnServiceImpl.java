@@ -13,6 +13,7 @@ import com.pos.mapper.SaleMapper;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.SaleRepository;
 import com.pos.repository.StockMovementRepository;
+import com.pos.service.finance.FinanceReturnIntegrationService;
 import com.pos.service.sale.SaleAccessPolicy;
 import com.pos.service.sale.SalePartialReturnService;
 import com.pos.service.salesledger.SalesLedgerCacheService;
@@ -41,6 +42,7 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
     private final SalesLedgerCacheService salesLedgerCacheService;
     private final SaleAccessPolicy accessPolicy;
     private final StoreStockService storeStockService;
+    private final FinanceReturnIntegrationService financeReturnIntegrationService;
 
     @Override
     public SaleResponse returnItems(UUID saleId, PartialReturnRequest request) {
@@ -58,6 +60,8 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
 
         String reason = request.reason() != null ? request.reason().trim() : "";
         boolean anyReturned = false;
+        UUID returnEventId = UUID.randomUUID();
+        BigDecimal refundAmount = BigDecimal.ZERO;
 
         for (PartialReturnLineRequest line : request.lines()) {
             SaleItem item = itemsById.get(line.saleItemId());
@@ -82,6 +86,7 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
 
             item.setReturnedQuantity(QuantityUtil.add(item.getReturnedQuantity(), returnQty));
             restoreStock(sale, item, returnQty, reason);
+            refundAmount = refundAmount.add(lineReturnAmount(item, returnQty));
             anyReturned = true;
         }
 
@@ -99,6 +104,7 @@ public class SalePartialReturnServiceImpl implements SalePartialReturnService {
 
         Sale saved = saleRepository.save(sale);
         salesLedgerCacheService.onSaleChanged(saved);
+        financeReturnIntegrationService.onRefundCompleted(saved, returnEventId, refundAmount);
         LogUtil.info(
             SalePartialReturnServiceImpl.class,
             "Partial return: sale={}, receipt={}, status={}",

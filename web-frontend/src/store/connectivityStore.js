@@ -4,6 +4,16 @@ import {
   offlineGetStatus,
   subscribeOfflineConnectivity,
 } from '../services/offline/desktopOfflineBridge';
+import {
+  buildConnectivityContext,
+  canFallbackToOfflineCheckout as canFallbackToOfflineCheckoutRule,
+  canUseOfflineCatalogFallback as canUseOfflineCatalogFallbackRule,
+  hasLocalPosCatalog as hasLocalPosCatalogRule,
+  isConnectivityOfflineLike as isConnectivityOfflineLikeRule,
+  shouldPreferLocalCheckout as shouldPreferLocalCheckoutRule,
+  shouldRetryOnlineAfterOfflineFailure as shouldRetryOnlineAfterOfflineFailureRule,
+  shouldUseLocalPosCatalog as shouldUseLocalPosCatalogRule,
+} from '../services/offline/connectivityRules';
 import { useAuthStore } from './authStore';
 import { userHasCashierOfflineAccess } from '../utils/cashierOfflineAccess';
 
@@ -39,24 +49,46 @@ function stabilizeApiOnline(rawOnline) {
   return true;
 }
 
-export function isConnectivityOfflineLike(state) {
-  const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-  return Boolean(state?.offlineMode || !state?.apiOnline || browserOffline);
+export function isConnectivityOfflineLike(state = useConnectivityStore.getState()) {
+  return isConnectivityOfflineLikeRule(state);
 }
 
-export function canUseOfflineCheckout(state = useConnectivityStore.getState()) {
-  return (
-    userHasCashierOfflineAccess(useAuthStore.getState().user) &&
-    isConnectivityOfflineLike(state) &&
-    Boolean(state.canSellOffline)
-  );
+function cashierConnectivityContext(
+  storeId = null,
+  state = useConnectivityStore.getState(),
+) {
+  return buildConnectivityContext({
+    isDesktop: isDesktopOfflineBridge(),
+    offlineAllowed: userHasCashierOfflineAccess(useAuthStore.getState().user),
+    state,
+    storeId,
+  });
+}
+
+export function canUseOfflineCheckout(
+  storeId = null,
+  state = useConnectivityStore.getState(),
+) {
+  return shouldPreferLocalCheckoutRule(cashierConnectivityContext(storeId, state));
 }
 
 /** Локальный каталог готов — можно сохранить продажу офлайн при сетевом сбое. */
-export function canFallbackToOfflineCheckout(state = useConnectivityStore.getState()) {
-  if (!userHasCashierOfflineAccess(useAuthStore.getState().user)) return false;
-  if (state.canSellOffline) return true;
-  return isDesktopOfflineBridge() && isConnectivityOfflineLike(state);
+export function canFallbackToOfflineCheckout(
+  storeId = null,
+  state = useConnectivityStore.getState(),
+) {
+  return canFallbackToOfflineCheckoutRule(cashierConnectivityContext(storeId, state));
+}
+
+export function shouldPreferLocalCheckout(storeId = null) {
+  return shouldPreferLocalCheckoutRule(cashierConnectivityContext(storeId));
+}
+
+export function shouldRetryOnlineAfterOfflineFailure(offlineErr, storeId = null) {
+  return shouldRetryOnlineAfterOfflineFailureRule(
+    offlineErr,
+    cashierConnectivityContext(storeId),
+  );
 }
 
 export const useConnectivityStore = create((set, get) => ({
@@ -70,6 +102,7 @@ export const useConnectivityStore = create((set, get) => ({
   lastSyncAt: null,
   lastCatalogSyncAt: null,
   productCount: 0,
+  storeId: null,
   storeName: null,
   lastSyncError: null,
   deviceId: null,
@@ -105,6 +138,12 @@ export const useConnectivityStore = create((set, get) => ({
         status.productCount !== undefined
           ? Number(status.productCount ?? 0)
           : prev.productCount,
+      storeId:
+        status.storeId !== undefined
+          ? status.storeId != null
+            ? Number(status.storeId)
+            : null
+          : prev.storeId,
       storeName:
         status.storeName !== undefined ? status.storeName || null : prev.storeName,
       deviceId: status.deviceId !== undefined ? status.deviceId || null : prev.deviceId,
@@ -132,10 +171,11 @@ let refreshTimer;
 let unsubscribeConnectivity;
 let browserConnectivityBound;
 
-/** Локальный SQLite-каталог уже загружен на desktop. */
-export function hasLocalPosCatalog(state = useConnectivityStore.getState()) {
-  return Boolean(state.bootstrapReady || state.canSellOffline || state.productCount > 0);
+/** Локальный SQLite-каталог уже загружен на desktop для текущего магазина. */
+export function hasLocalPosCatalog(state = useConnectivityStore.getState(), storeId = null) {
+  return hasLocalPosCatalogRule(state, storeId);
 }
+
 
 /** Мгновенно пометить API недоступным (axios 502, navigator offline, proxy error). */
 export function markApiUnreachable() {
@@ -213,13 +253,18 @@ export function shouldUseOfflinePos() {
   return offlineMode || !apiOnline || browserOffline;
 }
 
-export function shouldUseLocalPosCatalog() {
-  if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return false;
-  const state = useConnectivityStore.getState();
-  const offlineAllowed = userHasCashierOfflineAccess(useAuthStore.getState().user);
-  if (!offlineAllowed) return false;
-  if (hasLocalPosCatalog(state)) return true;
-  return isConnectivityOfflineLike(state);
+/**
+ * Локальный SQLite-каталог только при обрыве сети и совпадении магазина.
+ * Онлайн — всегда API, даже если bootstrap уже загружен.
+ */
+export function shouldUseLocalPosCatalog(storeId = null) {
+  if (typeof window === 'undefined' || !isDesktopOfflineBridge()) return false;
+  return shouldUseLocalPosCatalogRule(cashierConnectivityContext(storeId));
+}
+
+/** Fallback на SQLite после сбоя онлайн-запроса каталога. */
+export function canUseOfflineCatalogFallback(storeId = null) {
+  return canUseOfflineCatalogFallbackRule(cashierConnectivityContext(storeId));
 }
 
 export function useShouldUseOfflinePos() {
@@ -233,16 +278,21 @@ export function useShouldUseOfflinePos() {
   return offlineLike;
 }
 
-export function useShouldUseLocalPosCatalog() {
+export function useShouldUseLocalPosCatalog(storeId) {
   const user = useAuthStore((s) => s.user);
   const bootstrapReady = useConnectivityStore((s) => s.bootstrapReady);
   const canSellOffline = useConnectivityStore((s) => s.canSellOffline);
   const productCount = useConnectivityStore((s) => s.productCount);
+  const catalogStoreId = useConnectivityStore((s) => s.storeId);
   const apiOnline = useConnectivityStore((s) => s.apiOnline);
   const offlineMode = useConnectivityStore((s) => s.offlineMode);
   if (typeof window === 'undefined' || !window.desktopCashier?.isDesktop) return false;
   if (!userHasCashierOfflineAccess(user)) return false;
-  if (bootstrapReady || canSellOffline || productCount > 0) return true;
   const browserOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-  return offlineMode || !apiOnline || browserOffline;
+  const offlineLike = offlineMode || !apiOnline || browserOffline;
+  if (!offlineLike) return false;
+  return hasLocalPosCatalog(
+    { bootstrapReady, canSellOffline, productCount, storeId: catalogStoreId },
+    storeId,
+  );
 }

@@ -17,6 +17,48 @@ services:
       timeout: 5s
       retries: 10
 
+  finance-db:
+    image: postgres:15-alpine
+    container_name: masterpiece-finance-db
+    environment:
+      POSTGRES_DB: finance_db
+      POSTGRES_USER: finance_user
+      POSTGRES_PASSWORD: finance_password
+    ports:
+      - "5434:5432"
+    volumes:
+      - finance_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finance_user -d finance_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  finance-service:
+    build:
+      context: ./finance-service
+      dockerfile: Dockerfile
+    container_name: masterpiece-finance-service
+    depends_on:
+      finance-db:
+        condition: service_healthy
+    environment:
+      FINANCE_DB_URL: jdbc:postgresql://finance-db:5432/finance_db
+      FINANCE_DB_USERNAME: finance_user
+      FINANCE_DB_PASSWORD: finance_password
+      JWT_SECRET: change-me-use-at-least-32-chars-for-hs256!!
+      FINANCE_INTERNAL_API_KEY: finance-internal-dev-key-change-in-prod
+      FINANCE_SERVER_PORT: "8082"
+      TZ: ${TZ:-Asia/Tashkent}
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/api/v1/swagger-ui.html >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
   backend:
     build:
       context: ./web-backend
@@ -24,6 +66,8 @@ services:
     container_name: masterpiece-pos-backend
     depends_on:
       postgres:
+        condition: service_healthy
+      finance-service:
         condition: service_healthy
     environment:
       # local — Swagger включён (см. application-local.yml). Prod: docker-compose.prod.yml
@@ -39,6 +83,9 @@ services:
       AI_ASSISTANT_API_KEY: ${AI_ASSISTANT_API_KEY:-}
       MAIL_ENABLED: "false"
       MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+      FINANCE_SERVICE_URL: http://finance-service:8082/api/v1
+      FINANCE_INTERNAL_API_KEY: finance-internal-dev-key-change-in-prod
+      TZ: ${TZ:-Asia/Tashkent}
     ports:
       - "8080:8080"
 
@@ -58,3 +105,4 @@ services:
 
 volumes:
   pos_pg_data:
+  finance_pg_data:

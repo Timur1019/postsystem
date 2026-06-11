@@ -25,5 +25,7 @@ public record CreateSaleRequest(
     /** Скидка на весь чек (сумма), после скидок по строкам. */
     @DecimalMin("0") BigDecimal orderDiscountAmount,
     /** Скидка на чек, % (опционально, для отчётов). */
-    @DecimalMin("0") BigDecimal orderDiscountPercent
+    @DecimalMin("0") BigDecimal orderDiscountPercent,
+    /** Оплата с аванса клиента (для SALE с customerId). */
+    @DecimalMin("0") BigDecimal advanceAmount
 ) {}

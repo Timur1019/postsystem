@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { format as fmtDate } from 'date-fns';
+import { BaseSelect } from '../../../components/ui';
 import TablePagination from '../../../components/shared/TablePagination';
 import ReportDateBar from '../../../components/shared/ReportDateBar';
 import ReportStoreSelect from '../components/ReportStoreSelect';
@@ -23,15 +24,14 @@ export default function StockMovementsPage() {
           placeholder={t('common.search')}
           className="min-w-[10rem] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
         />
-        <select
+        <BaseSelect
           value={r.movementType}
           onChange={(e) => r.handleMovementTypeChange(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-        >
-          {r.movementTypes.map((tp) => (
-            <option key={tp} value={tp}>{t(`stockReports.movementTypes.${tp}`, { defaultValue: tp })}</option>
-          ))}
-        </select>
+          options={r.movementTypes.map((tp) => ({
+            value: tp,
+            label: t(`stockReports.movementTypes.${tp}`, { defaultValue: tp }),
+          }))}
+        />
         <ReportStoreSelect stores={r.stores} value={r.storeId} onChange={r.handleStoreChange} />
       </div>
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">

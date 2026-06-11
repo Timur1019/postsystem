@@ -1,4 +1,4 @@
-import { INSTALLER_MANIFEST_URL } from '../../../config/desktopInstallerBrands';
+export const INSTALLER_MANIFEST_URL = '/downloads/desktop/manifest.json';
 
 export async function fetchInstallerManifest() {
   const res = await fetch(INSTALLER_MANIFEST_URL, { cache: 'no-store' });

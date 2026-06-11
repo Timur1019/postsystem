@@ -104,9 +104,9 @@ html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-shift-action {
   min-height: 48px;
   padding: 12px 16px;
   border-radius: 12px;
-  border: 1px solid #334155;
-  background: #1e293b;
-  color: #f8fafc;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
   font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -114,9 +114,9 @@ html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-shift-action {
 }
 
 html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-shift-action:hover:not(:disabled) {
-  background: #0f172a;
+  background: var(--pos-green-soft, #e8f5ef);
   border-color: var(--pos-green);
-  color: #fff;
+  color: var(--pos-green);
 }
 
 html.cashier-theme--light .pos-pay-modal--shift-terminal .pos-shift-action--primary {

@@ -8,6 +8,8 @@ import PosPaymentMixedCashStep from './payment/PosPaymentMixedCashStep';
 import PosPaymentMixedCardStep from './payment/PosPaymentMixedCardStep';
 import PosPaymentCardTypeStep from './payment/PosPaymentCardTypeStep';
 import PosPaymentFlowFooterPrimary from './payment/PosPaymentFlowFooterPrimary';
+import PosPaymentCreditCustomerStep from './payment/PosPaymentCreditCustomerStep';
+import PosPaymentAdvanceAmountStep from './payment/PosPaymentAdvanceAmountStep';
 import { usePosPaymentFlow } from '../hooks/usePosPaymentFlow';
 
 export default function PosPaymentFlow({
@@ -40,7 +42,10 @@ export default function PosPaymentFlow({
       cardRemainder={p.cardRemainder}
       receiptType={p.receiptType}
       t={p.t}
-      onSubmitDeferred={p.submitDeferred}
+      onProceedFromDeferred={p.proceedFromDeferred}
+      onSubmitCreditWithCustomer={p.submitCreditWithCustomer}
+      onSubmitAdvanceAmount={p.submitAdvanceAmount}
+      creditCustomerSelected={Boolean(p.creditCustomer.selectedId)}
       onProceedFromMixedCash={p.proceedFromMixedCash}
       onProceedFromMixedCard={p.proceedFromMixedCard}
       onSubmitCash={p.submitCash}
@@ -88,7 +93,7 @@ export default function PosPaymentFlow({
       </header>
 
       <div className="pos-pay-panel__body">
-        {p.step === 'method' || p.step === 'receipt' ? (
+        {p.step === 'method' || p.step === 'receipt' || p.step === 'creditCustomer' || p.step === 'advanceAmount' ? (
           <div className="pos-pay-panel__scroll">
             {p.step === 'receipt' && (
               <PosPaymentReceiptStep
@@ -100,6 +105,44 @@ export default function PosPaymentFlow({
             )}
             {p.step === 'method' && (
               <PosPaymentMethodStep t={p.t} toPay={p.toPay} handleMethod={p.handleMethod} />
+            )}
+            {p.step === 'advanceAmount' && (
+              <PosPaymentAdvanceAmountStep
+                t={p.t}
+                toPay={p.checkTotal}
+                balance={p.advanceBalance}
+                advanceAmount={p.advanceInput}
+                setAdvanceAmount={p.setAdvanceInput}
+                customerName={p.creditCustomer.selectedName}
+              />
+            )}
+            {p.step === 'creditCustomer' && (
+              <PosPaymentCreditCustomerStep
+                t={p.t}
+                hint={
+                  p.payMethod === 'advance'
+                    ? p.t('pos.advancePayCustomerHint')
+                    : p.receiptType === 'ADVANCE'
+                      ? p.t('pos.advanceCustomerHint')
+                      : p.t('pos.creditCustomerHint')
+                }
+                search={p.creditCustomer.search}
+                setSearch={p.creditCustomer.setSearch}
+                customers={p.creditCustomer.customers}
+                selectedId={p.creditCustomer.selectedId}
+                selectCustomer={p.creditCustomer.selectCustomer}
+                isLoading={p.creditCustomer.isLoading}
+                isFetching={p.creditCustomer.isFetching}
+                isError={p.creditCustomer.isError}
+                showCreate={p.creditCustomer.showCreate}
+                toggleCreate={p.creditCustomer.toggleCreate}
+                createName={p.creditCustomer.createName}
+                setCreateName={p.creditCustomer.setCreateName}
+                createPhone={p.creditCustomer.createPhone}
+                setCreatePhone={p.creditCustomer.setCreatePhone}
+                submitCreate={p.creditCustomer.submitCreate}
+                isCreating={p.creditCustomer.isCreating}
+              />
             )}
           </div>
         ) : (
