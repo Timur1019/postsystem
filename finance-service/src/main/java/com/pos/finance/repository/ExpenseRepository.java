@@ -21,6 +21,10 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
         Integer companyId, ExpenseSourceType sourceType, String sourceId
     );
 
+    boolean existsByCompanyIdAndSourceTypeAndSourceIdAndDeletedFalse(
+        Integer companyId, ExpenseSourceType sourceType, String sourceId
+    );
+
     Optional<Expense> findByIdAndCompanyIdAndDeletedFalse(UUID id, Integer companyId);
 
     @Query("""

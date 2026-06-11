@@ -1,5 +1,7 @@
 package com.pos.finance.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -11,6 +13,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(FinanceException.class)
     public ResponseEntity<Map<String, Object>> handleFinance(FinanceException ex) {
@@ -33,5 +37,14 @@ public class GlobalExceptionHandler {
             "timestamp", Instant.now().toString(),
             "message", message
         ));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleUnexpected(Exception ex) {
+        LOG.error("Unhandled finance error", ex);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("message", ex.getMessage() != null ? ex.getMessage() : "Internal error");
+        return ResponseEntity.internalServerError().body(body);
     }
 }

@@ -34,9 +34,9 @@ public class PurchaseIntegrationServiceImpl implements PurchaseIntegrationServic
         if (request.totalAmount() == null || request.totalAmount().signum() <= 0) {
             return;
         }
-        if (expenseRepository.findByCompanyIdAndSourceTypeAndSourceIdAndDeletedFalse(
+        if (expenseRepository.existsByCompanyIdAndSourceTypeAndSourceIdAndDeletedFalse(
             request.companyId(), ExpenseSourceType.PURCHASE, request.receiptId().toString()
-        ).isPresent()) {
+        )) {
             LogUtil.info(PurchaseIntegrationServiceImpl.class, "Purchase expense already recorded: receiptId={}", request.receiptId());
             return;
         }

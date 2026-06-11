@@ -20,6 +20,10 @@ public interface IncomeRepository extends JpaRepository<Income, UUID> {
         Integer companyId, IncomeSourceType sourceType, String sourceId
     );
 
+    boolean existsByCompanyIdAndSourceTypeAndSourceIdAndDeletedFalse(
+        Integer companyId, IncomeSourceType sourceType, String sourceId
+    );
+
     Optional<Income> findByIdAndCompanyIdAndDeletedFalse(UUID id, Integer companyId);
 
     @Query("""
